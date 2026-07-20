@@ -1,0 +1,60 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+web_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Production/Development local environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.development
+.env.test
+.env.production
+
+# SQLite databases & temp files (CRITICAL: Do not upload credentials and dev data)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+database.db
+
+# Dynamic client upload directories (CRITICAL: Do not upload client photos or logos to GitHub)
+public/staging_uploads/
+public/vendor_logos/
+public/staging_uploads/*
+public/vendor_logos/*
+
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor configurations and backups
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*~
+session.lock
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+logs/
+*.log
