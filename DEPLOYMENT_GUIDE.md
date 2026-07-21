@@ -108,9 +108,39 @@ Meskipun skema awal sudah disempurnakan di Fase 1, blok pengecekan migrasi (`try
 
 ---
 
-## 🔒 3. Berkas Keamanan Penting (`.gitignore`)
+---
+
+## 💾 3. Strategi Cadangan Data (Backup Strategy)
+
+Guna melindungi data vendor dari kerusakan basis data (SQLite corruption) akibat kepenuhan kapasitas disk, Anda wajib menerapkan pencadangan berkala di server VPS.
+
+### A. Lokasi Skrip Cadangan
+Aplikasi menyertakan dua skrip bash siap pakai di dalam folder `scripts/`:
+1. **[`backup-db.sh`](file:///Users/armansyam/Documents/Project%20AmsDev/pick-your-photo/scripts/backup-db.sh):** Melakukan salinan database secara aman dengan fitur `.backup` SQLite (bebas lock contention) dan menghapus cadangan berusia > 7 hari.
+2. **[`backup-photos.sh`](file:///Users/armansyam/Documents/Project%20AmsDev/pick-your-photo/scripts/backup-photos.sh):** Melakukan sinkronisasi foto vendor secara inkremental menggunakan `rsync`.
+
+### B. Konfigurasi Path Produksi (VPS)
+Sebelum mengaktifkan cron job, edit kedua file di folder `scripts/` untuk menyesuaikan path:
+*   Ubah variabel `PROJECT_DIR` ke folder aplikasi Anda di server (contoh: `/var/www/pick-your-photo`).
+*   **Sangat Direkomendasikan:** Ubah path tujuan backup (`BACKUP_DIR` dan `DEST_DIR`) agar mengarah ke **hard disk eksternal / volume terpisah** (misal `/mnt/volume-eksternal/saas-backups/`). Hal ini guna mencegah kegagalan backup saat disk utama VPS Anda terisi 100%.
+
+### C. Mengaktifkan Otomatisasi dengan Cron Job di VPS
+Jalankan perintah `crontab -e` di VPS host Anda dan tempel konfigurasi berikut:
+
+```text
+# Backup database SQLite setiap 6 jam
+0 */6 * * * /var/www/pick-your-photo/scripts/backup-db.sh >> /var/www/pick-your-photo/backups/backup.log 2>&1
+
+# Inkremental backup foto vendor setiap hari jam 2 dini hari
+0 2 * * * /var/www/pick-your-photo/scripts/backup-photos.sh >> /var/www/pick-your-photo/backups/backup.log 2>&1
+```
+
+---
+
+## 🔒 4. Berkas Keamanan Penting (`.gitignore`)
 Pastikan berkas berikut telah terdaftar di `.gitignore` sebelum melakukan *push* ke repositori Git:
 *   `database.db` (database lokal Anda saat development tidak boleh menimpa database produksi).
 *   `public/staging_uploads/` (file gambar percobaan lokal).
 *   `public/vendor_logos/` (logo uji coba).
 *   `.env.local` (kredensial API Google & JWT Key).
+*   `backups/` (cadangan data lokal tidak boleh masuk ke repositori).
