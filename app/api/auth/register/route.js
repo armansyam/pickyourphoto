@@ -19,6 +19,45 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Name, email, WhatsApp, password, and plan are required.' }, { status: 400 });
         }
 
+        // --- NEW: Registration Settings & Disk Protection Backend Check ---
+        const settings = db.prepare("SELECT * FROM system_settings WHERE id = 1").get() || {
+            enable_registration: 1,
+            enable_free_trial: 1,
+            max_vendor_quota: null,
+            disk_critical_threshold_percent: 10
+        };
+
+        if (settings.enable_registration === 0) {
+            return NextResponse.json({ message: 'Pendaftaran ditutup oleh administrator.' }, { status: 403 });
+        }
+
+        try {
+            const { statfs } = require('fs/promises');
+            const stats = await statfs(process.cwd());
+            const totalBytes = stats.blocks * stats.bsize;
+            const freeBytes = stats.bfree * stats.bsize;
+            const freePercent = (freeBytes / totalBytes) * 100;
+
+            if (freePercent < settings.disk_critical_threshold_percent) {
+                return NextResponse.json({ message: 'Kuota registrasi kami sudah penuh saat ini.' }, { status: 403 });
+            }
+        } catch (diskErr) {
+            console.error('Failed to read disk space during registration POST check:', diskErr);
+        }
+
+        if (settings.max_vendor_quota !== null && settings.max_vendor_quota > 0) {
+            const activeVendorCount = db.prepare(`
+                SELECT COUNT(*) as count 
+                FROM vendors 
+                WHERE role = 'vendor' AND status = 'active'
+            `).get()?.count || 0;
+
+            if (activeVendorCount >= settings.max_vendor_quota) {
+                return NextResponse.json({ message: 'Kuota registrasi kami sudah penuh saat ini.' }, { status: 403 });
+            }
+        }
+        // ------------------------------------------------------------------
+
         const checkStmt = db.prepare('SELECT id FROM vendors WHERE email = ?');
         const existingVendor = checkStmt.get(email);
 
@@ -42,6 +81,11 @@ export async function POST(request) {
         }
 
         const isFreePlan = planDetails.price === 0;
+
+        // Reject if free trials are disabled but user requests a free plan
+        if (isFreePlan && settings.enable_free_trial === 0) {
+            return NextResponse.json({ message: 'Paket uji coba gratis tidak tersedia saat ini.' }, { status: 400 });
+        }
 
         // Verify payment proof file if plan is paid
         if (!isFreePlan && !paymentProofFile) {

@@ -75,6 +75,49 @@ export default function AdminDashboard({ adminUser }) {
     const [profileSuccessMsg, setProfileSuccessMsg] = useState('');
     const [profileErrorMsg, setProfileErrorMsg] = useState('');
 
+    // --- NEW: System settings and disk stats states ---
+    const [sysEnableReg, setSysEnableReg] = useState(true);
+    const [sysEnableTrial, setSysEnableTrial] = useState(true);
+    const [sysMaxQuota, setSysMaxQuota] = useState(null);
+    const [sysWarnThreshold, setSysWarnThreshold] = useState(20);
+    const [sysCritThreshold, setSysCritThreshold] = useState(10);
+
+    const [diskStats, setDiskStats] = useState({
+        total_gb: '0',
+        used_gb: '0',
+        free_gb: '0',
+        free_percent: '100',
+        status: 'safe'
+    });
+
+    const fetchSystemSettings = async () => {
+        try {
+            const res = await fetch('/api/admin/settings');
+            if (res.ok) {
+                const data = await res.json();
+                setSysEnableReg(data.enable_registration === 1);
+                setSysEnableTrial(data.enable_free_trial === 1);
+                setSysMaxQuota(data.max_vendor_quota);
+                setSysWarnThreshold(data.disk_warning_threshold_percent);
+                setSysCritThreshold(data.disk_critical_threshold_percent);
+            }
+        } catch (err) {
+            console.error('Failed to fetch system settings:', err);
+        }
+    };
+
+    const fetchDiskStats = async () => {
+        try {
+            const res = await fetch('/api/admin/disk-stats');
+            if (res.ok) {
+                const data = await res.json();
+                setDiskStats(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch disk stats:', err);
+        }
+    };
+
     // Load initial data
     const fetchData = async () => {
         setLoading(true);
@@ -118,6 +161,11 @@ export default function AdminDashboard({ adminUser }) {
 
     useEffect(() => {
         fetchData();
+        fetchSystemSettings();
+        fetchDiskStats();
+
+        const interval = setInterval(fetchDiskStats, 30000);
+        return () => clearInterval(interval);
     }, []);
 
     // Calculate Analytics
@@ -410,6 +458,7 @@ export default function AdminDashboard({ adminUser }) {
         setProfileErrorMsg('');
 
         try {
+            // 1. Update Profile & SaaS Settings
             const res = await fetch('/api/admin/profile', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -428,9 +477,29 @@ export default function AdminDashboard({ adminUser }) {
                 throw new Error(data.message || 'Failed to update settings profile.');
             }
 
+            // 2. Update System Settings & Disk Protection Settings
+            const resSysSettings = await fetch('/api/admin/settings', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enable_registration: sysEnableReg,
+                    enable_free_trial: sysEnableTrial,
+                    max_vendor_quota: sysMaxQuota,
+                    disk_warning_threshold_percent: sysWarnThreshold,
+                    disk_critical_threshold_percent: sysCritThreshold
+                })
+            });
+
+            if (!resSysSettings.ok) {
+                const sysData = await resSysSettings.json();
+                throw new Error(sysData.message || 'Failed to update system settings.');
+            }
+
             setProfileSuccessMsg('Superadmin profile and SaaS settings updated successfully.');
             setNewPassword(''); // reset input
             fetchData();
+            fetchSystemSettings();
+            fetchDiskStats();
         } catch (err) {
             setProfileErrorMsg(err.message);
         } finally {
@@ -446,6 +515,33 @@ export default function AdminDashboard({ adminUser }) {
 
     return (
         <div>
+            {/* Critical Disk Alert Banner */}
+            {diskStats.status === 'critical' && (
+                <div style={{ 
+                    background: '#ef4444', 
+                    color: '#ffffff', 
+                    padding: '10px 20px', 
+                    textAlign: 'center', 
+                    fontWeight: 'bold', 
+                    fontSize: '13px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '10px',
+                    animation: 'pulse 2s infinite'
+                }}>
+                    <style>{`
+                        @keyframes pulse {
+                            0% { background-color: #ef4444; }
+                            50% { background-color: #b91c1c; }
+                            100% { background-color: #ef4444; }
+                        }
+                    `}</style>
+                    <span>⚠️</span>
+                    <span><strong>PERINGATAN KRITIS:</strong> Ruang disk server tinggal {diskStats.free_percent}% ({diskStats.free_gb} GB kosong). Registrasi vendor baru telah dinonaktifkan secara otomatis untuk melindungi kestabilan database.</span>
+                </div>
+            )}
+
             {/* Header */}
             <header className="dashboard-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -573,6 +669,58 @@ export default function AdminDashboard({ adminUser }) {
                                 </span>
                                 <span style={{ fontSize: '10px', color: '#71717a' }}>Suspended</span>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Real-time Server Disk space status Card */}
+                    <div className="glass-card" style={{ 
+                        padding: '20px', 
+                        borderRadius: '12px',
+                        border: diskStats.status === 'critical' 
+                            ? '1px solid rgba(239, 68, 68, 0.4)' 
+                            : diskStats.status === 'warning' 
+                                ? '1px solid rgba(251, 191, 36, 0.4)' 
+                                : '1px solid rgba(255, 255, 255, 0.08)'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Kapasitas Disk Server</span>
+                            <span style={{ 
+                                fontSize: '10px', 
+                                padding: '2px 8px', 
+                                borderRadius: '12px', 
+                                fontWeight: 'bold',
+                                color: '#ffffff',
+                                background: diskStats.status === 'critical' 
+                                    ? '#ef4444' 
+                                    : diskStats.status === 'warning' 
+                                        ? '#fbbf24' 
+                                        : '#10b981'
+                            }}>
+                                {diskStats.status === 'critical' ? 'KRITIS' : diskStats.status === 'warning' ? 'PERINGATAN' : 'AMAN'}
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
+                            <h2 style={{ fontSize: '22px', margin: 0, fontWeight: 'bold', color: '#ffffff' }}>
+                                {diskStats.used_gb} GB <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#71717a' }}>terpakai dari</span> {diskStats.total_gb} GB
+                            </h2>
+                        </div>
+                        {/* progress bar */}
+                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '12px', overflow: 'hidden' }}>
+                            <div style={{ 
+                                width: `${100 - parseFloat(diskStats.free_percent)}%`, 
+                                height: '100%', 
+                                background: diskStats.status === 'critical' 
+                                    ? 'linear-gradient(90deg, #ef4444, #f87171)' 
+                                    : diskStats.status === 'warning' 
+                                        ? 'linear-gradient(90deg, #fbbf24, #fbbf24)' 
+                                        : 'linear-gradient(90deg, #10b981, #34d399)', 
+                                borderRadius: '3px', 
+                                transition: 'width 0.5s ease-in-out' 
+                            }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#71717a', marginTop: '6px' }}>
+                            <span>Kosong: {diskStats.free_gb} GB ({diskStats.free_percent}%)</span>
+                            <span>Batas: Min {diskStats.critical_threshold}%</span>
                         </div>
                     </div>
 
@@ -1109,6 +1257,71 @@ export default function AdminDashboard({ adminUser }) {
                                     />
                                 </div>
                             </div>
+
+                            {/* Registration & Disk Protection Section */}
+                            <h4 style={{ margin: '28px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#fbbf24', fontWeight: 'bold' }}>Registrasi & Pengamanan Disk</h4>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="enable_registration"
+                                        checked={sysEnableReg}
+                                        onChange={e => setSysEnableReg(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    />
+                                    <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>Buka Pendaftaran Vendor Baru</label>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="enable_free_trial"
+                                        checked={sysEnableTrial}
+                                        onChange={e => setSysEnableTrial(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    />
+                                    <label htmlFor="enable_free_trial" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>Aktifkan Free Trial</label>
+                                </div>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: '16px' }}>
+                                <label className="form-label">Batas Maksimal Vendor Aktif (Kosongkan/isi 0 untuk tanpa batas manual)</label>
+                                <input 
+                                    type="number" 
+                                    className="input-text" 
+                                    placeholder="Contoh: 50"
+                                    value={sysMaxQuota === null ? '' : sysMaxQuota}
+                                    onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
+                                />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '10px' }}>
+                                <div className="form-group">
+                                    <label className="form-label">Batas Peringatan Ruang Disk / Warning (%)</label>
+                                    <input 
+                                        type="number" 
+                                        className="input-text" 
+                                        required
+                                        placeholder="Contoh: 20"
+                                        value={sysWarnThreshold}
+                                        onChange={e => setSysWarnThreshold(parseInt(e.target.value))}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Batas Kritis Ruang Disk / Critical (%)</label>
+                                    <input 
+                                        type="number" 
+                                        className="input-text" 
+                                        required
+                                        placeholder="Contoh: 10"
+                                        value={sysCritThreshold}
+                                        onChange={e => setSysCritThreshold(parseInt(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+                            <p style={{ color: '#a1a1aa', fontSize: '12px', marginTop: '0', marginBottom: '28px', lineHeight: '1.4' }}>
+                                💡 *Sistem otomatis menolak pendaftaran baru jika kapasitas ruang disk kosong di bawah persentase batas Kritis (Critical).*
+                            </p>
 
                             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                 <button type="submit" className="btn-primary" disabled={savingProfile} style={{ padding: '12px 32px' }}>

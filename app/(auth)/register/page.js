@@ -17,11 +17,28 @@ export default function RegisterPage() {
     const [success, setSuccess] = useState(false);
     const [selectedTab, setSelectedTab] = useState('limit');
     const [step, setStep] = useState(1);
+    
+    // --- NEW: Registration status state ---
+    const [regStatus, setRegStatus] = useState({ registration_open: true, free_trial_available: true, reason_closed: null });
+    const [checkingStatus, setCheckingStatus] = useState(true);
 
     const trialPlan = plans.find(p => p.price === 0 && p.planType === selectedTab);
-    const hasTrial = !!trialPlan;
+    const hasTrial = !!trialPlan && regStatus.free_trial_available;
 
     useEffect(() => {
+        const checkRegStatus = async () => {
+            try {
+                const res = await fetch('/api/register/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    setRegStatus(data);
+                }
+            } catch (err) {
+                console.error('Failed to check registration status:', err);
+            } finally {
+                setCheckingStatus(false);
+            }
+        };
         const fetchPlans = async () => {
             try {
                 const res = await fetch('/api/plans');
@@ -48,6 +65,7 @@ export default function RegisterPage() {
                 console.error('Failed to load SaaS settings:', err);
             }
         };
+        checkRegStatus();
         fetchPlans();
         fetchSettings();
     }, []);
@@ -142,6 +160,31 @@ export default function RegisterPage() {
             setLoading(false);
         }
     };
+
+    if (checkingStatus) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#09090b', color: '#ffffff' }}>
+                <p style={{ color: '#a1a1aa' }}>Checking system status...</p>
+            </div>
+        );
+    }
+
+    if (!regStatus.registration_open) {
+        return (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', background: '#09090b', color: '#ffffff' }}>
+                <div className="glass-card" style={{ maxWidth: '480px', width: '100%', padding: '40px 32px', textAlign: 'center', borderRadius: '20px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                    <div style={{ fontSize: '64px', marginBottom: '20px' }}>🔒</div>
+                    <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '16px', color: '#ef4444' }}>Pendaftaran Ditutup</h2>
+                    <p style={{ color: '#a1a1aa', fontSize: '15px', lineHeight: '1.6', marginBottom: '24px' }}>
+                        {regStatus.reason_closed || 'Pendaftaran vendor baru saat ini sedang ditutup.'}
+                    </p>
+                    <a href="/login" className="btn-secondary" style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '10px', fontSize: '14px', textDecoration: 'none', color: '#ffffff' }}>
+                        Kembali ke Login
+                    </a>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', padding: '16px' }}>
