@@ -189,7 +189,7 @@ export default function ClientGalleryPage({ params }) {
     const isAtLimit = maxSelection > 0 && selectedIds.size >= maxSelection;
 
     const handleSubmitSelection = () => {
-        if (project?.isProjectExpired) { addToast('🔒 Proyek ini telah kedaluwarsa dan terkunci.', 'error', 12000); return; }
+        if (project?.isProjectExpired) { addToast('🔒 Project ini telah kedaluwarsa dan terkunci.', 'error', 12000); return; }
         if (selectedIds.size === 0) { addToast('📸 Silakan pilih minimal satu foto sebelum mengirim.', 'warning', 10000); return; }
         setShowConfirmModal(true);
     };
@@ -348,7 +348,7 @@ export default function ClientGalleryPage({ params }) {
                             <div className="action-tray-head">
                                 <div>
                                     <h4>{selectedIds.size}{maxSelection > 0 ? ` / ${maxSelection}` : ''} Foto Dipilih</h4>
-                                    <p>{submitted ? 'Pilihan terkunci' : project.isProjectExpired ? 'Proyek kedaluwarsa & terkunci' : isAtLimit ? 'Batas maksimal tercapai!' : 'Klik foto untuk menandai pilihan'}</p>
+                                    <p>{submitted ? 'Pilihan terkunci' : project.isProjectExpired ? 'Project kedaluwarsa & terkunci' : isAtLimit ? 'Batas maksimal tercapai!' : 'Klik foto untuk menandai pilihan'}</p>
                                 </div>
                                 {submitted ? (
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

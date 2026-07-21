@@ -22,7 +22,7 @@ export async function POST(request, { params }) {
         // Fetch project details
         const project = db.prepare('SELECT * FROM projects WHERE id = ?').get(projectId);
         if (!project) {
-            return NextResponse.json({ message: 'Proyek tidak ditemukan.' }, { status: 404 });
+            return NextResponse.json({ message: 'Project tidak ditemukan.' }, { status: 404 });
         }
 
         // Verify ownership
@@ -32,11 +32,11 @@ export async function POST(request, { params }) {
 
         // Must be in failed status to retry
         if (project.status !== 'failed') {
-            return NextResponse.json({ message: 'Hanya proyek yang berstatus Gagal (failed) yang dapat diimpor ulang.' }, { status: 400 });
+            return NextResponse.json({ message: 'Hanya project yang berstatus Gagal (failed) yang dapat diimpor ulang.' }, { status: 400 });
         }
 
         if (!project.folderUrl) {
-            return NextResponse.json({ message: 'URL folder Google Drive asal tidak ditemukan untuk proyek ini.' }, { status: 400 });
+            return NextResponse.json({ message: 'URL folder Google Drive asal tidak ditemukan untuk project ini.' }, { status: 400 });
         }
 
         const folderId = parseFolderId(project.folderUrl);

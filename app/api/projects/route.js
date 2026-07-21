@@ -96,14 +96,14 @@ export async function POST(request) {
 
             if (projectCount >= vendor.maxProjects) {
                 return NextResponse.json({
-                    message: `Batas jumlah proyek tercapai. Anda telah menggunakan ${projectCount} dari ${vendor.maxProjects} proyek yang diperbolehkan. Silakan upgrade paket Anda.`
+                    message: `Batas jumlah project tercapai. Anda telah menggunakan ${projectCount} dari ${vendor.maxProjects} project yang diperbolehkan. Silakan upgrade paket Anda.`
                 }, { status: 403 });
             }
         } else if (planType === 'storage') {
             const maxStorageBytes = (vendor.maxStorageMB || 0) * 1024 * 1024;
             if (vendor.usedStorageBytes >= maxStorageBytes) {
                 return NextResponse.json({
-                    message: `Kapasitas penyimpanan Anda penuh (${(vendor.usedStorageBytes / (1024 * 1024)).toFixed(1)} MB dari ${vendor.maxStorageMB} MB). Silakan arsipkan proyek lain terlebih dahulu.`
+                    message: `Kapasitas penyimpanan Anda penuh (${(vendor.usedStorageBytes / (1024 * 1024)).toFixed(1)} MB dari ${vendor.maxStorageMB} MB). Silakan arsipkan project lain terlebih dahulu.`
                 }, { status: 403 });
             }
         }
@@ -189,7 +189,7 @@ export async function POST(request) {
         });
 
         return NextResponse.json({
-            message: 'Proyek berhasil dibuat! Foto-foto sedang diimpor di background. Anda dapat menutup popup ini.',
+            message: 'Project berhasil dibuat! Foto-foto sedang diimpor di background. Anda dapat menutup popup ini.',
             projectId,
             slug
         }, { status: 201 });

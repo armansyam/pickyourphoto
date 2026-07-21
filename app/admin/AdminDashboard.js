@@ -955,7 +955,7 @@ export default function AdminDashboard({ adminUser }) {
                             </div>
                         </div>
 
-                        {/* ═══════════ SECTION 3: TOP VENDOR PROYEK BERJALAN ═══════════ */}
+                        {/* ═══════════ SECTION 3: TOP VENDOR PROJECT BERJALAN ═══════════ */}
                         {(() => {
                             const activeProjectVendors = (vendors || [])
                                 .map(v => {
@@ -972,12 +972,12 @@ export default function AdminDashboard({ adminUser }) {
                                 <div className="glass-card" style={{ padding: '20px 24px', borderRadius: '14px', marginBottom: '24px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                                         <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#38bdf8' }}>
-                                            📊 Top Vendor: Proyek Berjalan (In-Progress)
+                                            📊 Top Vendor: Project Berjalan (In-Progress)
                                         </h4>
-                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Vendor dengan proyek aktif terbanyak</span>
+                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Vendor dengan project aktif terbanyak</span>
                                     </div>
                                     {activeProjectVendors.length === 0 ? (
-                                        <p style={{ color: '#a1a1aa', fontSize: '12px', margin: 0 }}>Semua proyek vendor telah selesai dinikmati klien!</p>
+                                        <p style={{ color: '#a1a1aa', fontSize: '12px', margin: 0 }}>Semua project vendor telah selesai dinikmati klien!</p>
                                     ) : (
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
                                             {activeProjectVendors.map(v => (
@@ -1094,8 +1094,8 @@ export default function AdminDashboard({ adminUser }) {
                                                 <strong style={{ color: '#ffffff' }}>{analytics.systemStats.totalPhotos.toLocaleString()} File</strong>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                <span style={{ color: '#a1a1aa' }}>Total Proyek Vendor:</span>
-                                                <strong style={{ color: '#ffffff' }}>{analytics.systemStats.totalProjects.toLocaleString()} Proyek</strong>
+                                                <span style={{ color: '#a1a1aa' }}>Total Project Vendor:</span>
+                                                <strong style={{ color: '#ffffff' }}>{analytics.systemStats.totalProjects.toLocaleString()} Project</strong>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <span style={{ color: '#a1a1aa' }}>Backup Terakhir:</span>
@@ -2056,7 +2056,7 @@ export default function AdminDashboard({ adminUser }) {
                                             onChange={(e) => setPlanMaxPhotos(parseInt(e.target.value) || 0)}
                                             disabled={savingPlan}
                                         />
-                                        <span style={{ fontSize: '11px', color: '#71717a' }}>Maksimal foto yang bisa diimpor dari Google Drive untuk setiap proyek (0 = Tanpa batas).</span>
+                                        <span style={{ fontSize: '11px', color: '#71717a' }}>Maksimal foto yang bisa diimpor dari Google Drive untuk setiap project (0 = Tanpa batas).</span>
                                     </div>
                                 </>
                             )}
@@ -2138,7 +2138,7 @@ export default function AdminDashboard({ adminUser }) {
                             <strong>TINDAKAN INI BERSIFAT PERMANEN & AKAN MENGHAPUS:</strong>
                             <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
                                 <li>Semua file foto fisik di server penyimpanan</li>
-                                <li>Semua proyek/galeri milik vendor ini</li>
+                                <li>Semua project/galeri milik vendor ini</li>
                                 <li>Semua data klien beserta hasil seleksi fotonya</li>
                                 <li>Riwayat bukti pembayaran & permintaan upgrade paket</li>
                             </ul>
