@@ -19,8 +19,22 @@ mkdir -p /var/www/pick-your-photo/uploads/staging_uploads
 mkdir -p /var/www/pick-your-photo/uploads/vendor_logos
 ```
 
-#### Langkah 2: Konfigurasi `docker-compose.yml`
-Petakan folder fisik tersebut ke dalam path container Docker:
+#### Langkah 2: Konfigurasi `.env` & `docker-compose.yml`
+Pengaturan direktori penyimpanan fleksibel dan dapat dikendalikan sepenuhnya melalui file `.env` tanpa mengubah `docker-compose.yml`:
+
+```env
+# File: .env di Server VPS
+DB_PATH=/var/www/pick-your-photo/data
+STAGING_PATH=/var/www/pick-your-photo/uploads/staging_uploads
+LOGOS_PATH=/var/www/pick-your-photo/uploads/vendor_logos
+```
+
+Jika di kemudian hari Anda menambahkan **Disk External Baru** (misal di-mount ke `/mnt/storage_external`), Anda cukup memperbarui file `.env`:
+```env
+STAGING_PATH=/mnt/storage_external/staging_uploads
+```
+
+Lalu petakan di `docker-compose.yml`:
 ```yaml
 version: '3.8'
 services:
@@ -30,17 +44,17 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - JWT_SECRET=ganti_dengan_jwt_secret_produksi_anda
-      - GOOGLE_API_KEY=ganti_dengan_api_key_gdrive_anda
+      - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
-      # Peta database SQLite ke host VPS
-      - /var/www/pick-your-photo/data:/app/data
-      # Peta folder upload foto klien ke host VPS
-      - /var/www/pick-your-photo/uploads/staging_uploads:/app/public/staging_uploads
-      # Peta folder upload logo vendor ke host VPS
-      - /var/www/pick-your-photo/uploads/vendor_logos:/app/public/vendor_logos
+      - ${DB_PATH:-/var/www/pick-your-photo/data}:/app/data
+      - ${STAGING_PATH:-/var/www/pick-your-photo/uploads/staging_uploads}:/app/public/staging_uploads
+      - ${LOGOS_PATH:-/var/www/pick-your-photo/uploads/vendor_logos}:/app/public/vendor_logos
     restart: always
 ```
+
+*Catatan: Dashboard Superadmin secara otomatis mendukung **Domain-Oriented Multi-Volume Monitoring**. Dashboard akan membaca sisa kapasitas fisik disk external tersebut secara real-time dan menampilkan statistik terpisah untuk 📸 **Storage Foto Staging** dan 🗄️ **Database & System**.*
+
 
 ---
 

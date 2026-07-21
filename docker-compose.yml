@@ -1,13 +1,20 @@
 version: '3.8'
+
 services:
   app:
     build: .
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-production}
+      - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
+      # Database & System Data Path (Default: ./data)
+      - ${DB_PATH:-./data}:/app/data
+      # Staging Photos Path (Default: ./public/staging_uploads)
+      - ${STAGING_PATH:-./public/staging_uploads}:/app/public/staging_uploads
+      # Vendor Logos Path (Default: ./public/vendor_logos)
+      - ${LOGOS_PATH:-./public/vendor_logos}:/app/public/vendor_logos
+    restart: always
+

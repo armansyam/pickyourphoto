@@ -95,23 +95,23 @@ export async function POST(request) {
             const projectCount = countStmt.get(vendor.id)?.count || 0;
 
             if (projectCount >= vendor.maxProjects) {
-                return NextResponse.json({ 
-                    message: `Batas jumlah proyek tercapai. Anda telah menggunakan ${projectCount} dari ${vendor.maxProjects} proyek yang diperbolehkan. Silakan upgrade paket Anda.` 
+                return NextResponse.json({
+                    message: `Batas jumlah proyek tercapai. Anda telah menggunakan ${projectCount} dari ${vendor.maxProjects} proyek yang diperbolehkan. Silakan upgrade paket Anda.`
                 }, { status: 403 });
             }
         } else if (planType === 'storage') {
             const maxStorageBytes = (vendor.maxStorageMB || 0) * 1024 * 1024;
             if (vendor.usedStorageBytes >= maxStorageBytes) {
                 return NextResponse.json({
-                    message: `Kapasitas penyimpanan Anda penuh (${(vendor.usedStorageBytes / (1024*1024)).toFixed(1)} MB dari ${vendor.maxStorageMB} MB). Silakan arsipkan proyek lain terlebih dahulu.`
+                    message: `Kapasitas penyimpanan Anda penuh (${(vendor.usedStorageBytes / (1024 * 1024)).toFixed(1)} MB dari ${vendor.maxStorageMB} MB). Silakan arsipkan proyek lain terlebih dahulu.`
                 }, { status: 403 });
             }
         }
 
         // Check subscription expiration
         if (vendor.isExpired) {
-            return NextResponse.json({ 
-                message: `Masa aktif langganan Anda telah berakhir pada ${new Date(vendor.expiresAt).toLocaleDateString()}. Silakan hubungi administrator untuk melakukan perpanjangan.` 
+            return NextResponse.json({
+                message: `Masa aktif langganan Anda telah berakhir pada ${new Date(vendor.expiresAt).toLocaleDateString()}. Silakan hubungi administrator untuk melakukan perpanjangan.`
             }, { status: 403 });
         }
 
@@ -217,24 +217,24 @@ export async function processImagesInBackground(projectId, files, uploadDir) {
             const sanitizedName = file.name.replace(/[\/\\?%*:|"<>]/g, '_');
             const ext = path.extname(sanitizedName) || '.jpg';
             const baseName = path.basename(sanitizedName, ext);
- 
+
             const origFileName = `${baseName}${ext}`;
             const thumbFileName = `${baseName}_thumb${ext}`;
- 
+
             // Save reference paths relative to public webserver root
             const origPathDb = `/staging_uploads/${vendorFolder}/${projectFolder}/${origFileName}`;
             const thumbPathDb = `/staging_uploads/${vendorFolder}/${projectFolder}/${thumbFileName}`;
- 
+
             // Check if photo is already imported (resumable import)
             const existingPhoto = db.prepare('SELECT id FROM photos WHERE projectId = ? AND originalPath = ?').get(projectId, origPathDb);
             if (existingPhoto) {
                 successCount++;
                 continue;
             }
- 
+
             // Download file buffer
             const buffer = await downloadFileBuffer(file.id);
- 
+
             const origFilePath = path.join(uploadDir, origFileName);
             const thumbFilePath = path.join(uploadDir, thumbFileName);
 
@@ -267,7 +267,7 @@ export async function processImagesInBackground(projectId, files, uploadDir) {
                 JOIN plans p ON v.planId = p.id 
                 WHERE v.id = ?
             `).get(project.vendorId);
-            
+
             if (vendorStore && vendorStore.planType === 'storage') {
                 const maxStorageBytes = vendorStore.maxStorageMB * 1024 * 1024;
                 if (vendorStore.usedStorageBytes > maxStorageBytes) {
@@ -320,15 +320,15 @@ async function rollbackProjectFiles(projectId, uploadDir, vendorId) {
     try {
         // 1. Get sum of fileSizeBytes for photos in this project
         const totalBytes = db.prepare('SELECT SUM(fileSizeBytes) as total FROM photos WHERE projectId = ?').get(projectId)?.total || 0;
-        
+
         // 2. Subtract from usedStorageBytes
         if (totalBytes > 0) {
             db.prepare('UPDATE vendors SET usedStorageBytes = MAX(0, usedStorageBytes - ?) WHERE id = ?').run(totalBytes, vendorId);
         }
-        
+
         // 3. Delete DB rows
         db.prepare('DELETE FROM photos WHERE projectId = ?').run(projectId);
-        
+
         // 4. Clean physical directory
         if (fs.existsSync(uploadDir)) {
             fs.rmSync(uploadDir, { recursive: true, force: true });

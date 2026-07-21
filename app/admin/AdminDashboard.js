@@ -89,7 +89,23 @@ export default function AdminDashboard({ adminUser }) {
         used_gb: '0',
         free_gb: '0',
         free_percent: '100',
-        status: 'safe'
+        status: 'safe',
+        staging: {
+            total_gb: '0',
+            used_gb: '0',
+            free_gb: '0',
+            free_percent: '100',
+            status: 'safe',
+            label: 'Storage Foto Staging (Vendor)'
+        },
+        system: {
+            total_gb: '0',
+            used_gb: '0',
+            free_gb: '0',
+            free_percent: '100',
+            status: 'safe',
+            label: 'Storage Database SQLite'
+        }
     });
 
     const fetchSystemSettings = async () => {
@@ -126,6 +142,8 @@ export default function AdminDashboard({ adminUser }) {
     const [analytics, setAnalytics] = useState({
         topStorageUsers: [],
         planDistribution: [],
+        expiringSoon: [],
+        resetRequests: [],
         systemStats: {
             totalPhotos: 0,
             totalProjects: 0,
@@ -133,6 +151,10 @@ export default function AdminDashboard({ adminUser }) {
             dbSizeMB: '0.00',
             lastBackupTime: 'Belum pernah'
         }
+    });
+    const [pendingUpgradeSummary, setPendingUpgradeSummary] = useState({
+        pendingCount: 0,
+        pendingTotalValue: 0
     });
     const [loadingAnalytics, setLoadingAnalytics] = useState(true);
 
@@ -172,7 +194,15 @@ export default function AdminDashboard({ adminUser }) {
             const resUpgrades = await fetch('/api/admin/upgrades');
             if (resUpgrades.ok) {
                 const dataUpgrades = await resUpgrades.json();
-                setUpgradeRequests(dataUpgrades);
+                if (Array.isArray(dataUpgrades)) {
+                    setUpgradeRequests(dataUpgrades);
+                    const pending = dataUpgrades.filter(r => r.status === 'pending');
+                    const totalVal = pending.reduce((acc, curr) => acc + (curr.proratedPrice || 0), 0);
+                    setPendingUpgradeSummary({ pendingCount: pending.length, pendingTotalValue: totalVal });
+                } else if (dataUpgrades && dataUpgrades.requests) {
+                    setUpgradeRequests(dataUpgrades.requests);
+                    setPendingUpgradeSummary(dataUpgrades.summary || { pendingCount: 0, pendingTotalValue: 0 });
+                }
             }
 
             // Fetch settings
@@ -600,218 +630,409 @@ export default function AdminDashboard({ adminUser }) {
             </header>
 
             <div className="app-container">
-                <div style={{ marginTop: '16px', marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div>
-                        <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>Admin Control Panel</h1>
-                        <p style={{ color: '#a1a1aa', margin: '4px 0 0 0' }}>SaaS progress analysis and vendor subscription management</p>
+                <div style={{ marginTop: '16px', marginBottom: '24px' }}>
+                    {/* Title Row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <div>
+                            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Admin Control Panel</h1>
+                            <p style={{ color: '#71717a', margin: '2px 0 0 0', fontSize: '13px' }}>Kelola vendor, paket & monitoring sistem</p>
+                        </div>
                     </div>
-                    {/* Tab Navigation */}
-                    <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                        <button 
-                            onClick={() => setActiveTab('monitor')}
-                            className={activeTab === 'monitor' ? 'btn-primary' : 'btn-secondary'}
-                            style={{ border: 'none', background: activeTab === 'monitor' ? '' : 'transparent', padding: '8px 16px', fontSize: '13px', boxShadow: activeTab === 'monitor' ? '' : 'none' }}
-                        >
-                            📊 Monitor & Analisis
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('vendors')}
-                            className={activeTab === 'vendors' ? 'btn-primary' : 'btn-secondary'}
-                            style={{ border: 'none', background: activeTab === 'vendors' ? '' : 'transparent', padding: '8px 16px', fontSize: '13px', boxShadow: activeTab === 'vendors' ? '' : 'none' }}
-                        >
-                            Manage Vendors
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('plans')}
-                            className={activeTab === 'plans' ? 'btn-primary' : 'btn-secondary'}
-                            style={{ border: 'none', background: activeTab === 'plans' ? '' : 'transparent', padding: '8px 16px', fontSize: '13px', boxShadow: activeTab === 'plans' ? '' : 'none' }}
-                        >
-                            Manage Plans
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('upgrades')}
-                            className={activeTab === 'upgrades' ? 'btn-primary' : 'btn-secondary'}
-                            style={{ border: 'none', background: activeTab === 'upgrades' ? '' : 'transparent', padding: '8px 16px', fontSize: '13px', boxShadow: activeTab === 'upgrades' ? '' : 'none' }}
-                        >
-                            Upgrade Requests ({upgradeRequests.filter(r => r.status === 'pending').length})
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('settings')}
-                            className={activeTab === 'settings' ? 'btn-primary' : 'btn-secondary'}
-                            style={{ border: 'none', background: activeTab === 'settings' ? '' : 'transparent', padding: '8px 16px', fontSize: '13px', boxShadow: activeTab === 'settings' ? '' : 'none' }}
-                        >
-                            Settings & Profil
-                        </button>
+
+                    {/* Tab Navigation - full width bar */}
+                    <div style={{ 
+                        display: 'flex', 
+                        gap: '4px', 
+                        background: 'rgba(255,255,255,0.04)', 
+                        padding: '4px', 
+                        borderRadius: '10px', 
+                        border: '1px solid rgba(255,255,255,0.06)'
+                    }}>
+                        {[
+                            { key: 'monitor', label: '📊 Monitor & Analisis' },
+                            { key: 'vendors', label: '👥 Kelola Vendor' },
+                            { key: 'plans', label: '📦 Kelola Paket' },
+                            { key: 'upgrades', label: `⬆️ Upgrade Request (${upgradeRequests.filter(r => r.status === 'pending').length})` },
+                            { key: 'settings', label: '⚙️ Settings & Profil' },
+                        ].map(tab => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveTab(tab.key)}
+                                style={{
+                                    flex: 1,
+                                    border: 'none',
+                                    padding: '10px 12px',
+                                    fontSize: '12px',
+                                    fontWeight: activeTab === tab.key ? '600' : '500',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    background: activeTab === tab.key 
+                                        ? 'linear-gradient(135deg, #6366f1, #818cf8)' 
+                                        : 'transparent',
+                                    color: activeTab === tab.key ? '#ffffff' : '#a1a1aa',
+                                    boxShadow: activeTab === tab.key 
+                                        ? '0 2px 8px rgba(99,102,241,0.3)' 
+                                        : 'none',
+                                }}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
                 {/* ── TAB 0: MONITOR & ANALISIS ── */}
                 {activeTab === 'monitor' && (
                     <div className="fade-in-up">
-                        {/* ── PROGRESS & REVENUE ANALYSIS DASHBOARD ── */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+
+                        {/* ═══════════ SECTION 1: SUMMARY STATS (4 equal cards) ═══════════ */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
                             
-                            {/* Potential Revenue Card */}
-                            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(0,0,0,0))' }}>
-                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Monthly Potential Revenue</span>
-                                <h2 style={{ fontSize: '32px', margin: '6px 0 2px 0', fontWeight: 'bold', color: '#34d399' }}>
+                            {/* Monthly Revenue */}
+                            <div className="glass-card" style={{ padding: '20px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(16,185,129,0.08), rgba(0,0,0,0))' }}>
+                                <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500' }}>Monthly Potential Revenue</span>
+                                <h2 style={{ fontSize: '28px', margin: '8px 0 4px 0', fontWeight: 'bold', color: '#34d399' }}>
                                     Rp {loading ? '...' : monthlyRevenue.toLocaleString()}
                                 </h2>
-                                <span style={{ fontSize: '11px', color: '#71717a' }}>From {activeVendors} active subscription plans</span>
+                                <span style={{ fontSize: '11px', color: '#71717a' }}>From {activeVendors} active plans</span>
                             </div>
 
-                            {/* Completion rate progress card */}
-                            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
-                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Client Selection Progress</span>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
-                                    <h2 style={{ fontSize: '32px', margin: 0, fontWeight: 'bold', color: '#818cf8' }}>
+                            {/* Client Selection Progress */}
+                            <div className="glass-card" style={{ padding: '20px', borderRadius: '14px' }}>
+                                <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500' }}>Client Selection Progress</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '8px' }}>
+                                    <h2 style={{ fontSize: '28px', margin: 0, fontWeight: 'bold', color: '#818cf8' }}>
                                         {loading ? '...' : `${completionRate}%`}
                                     </h2>
                                     <span style={{ fontSize: '11px', color: '#71717a' }}>
-                                        {completedProjects} of {totalProjects} projects
+                                        {completedProjects}/{totalProjects}
                                     </span>
                                 </div>
-                                {/* Custom visual progress bar */}
-                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '12px', overflow: 'hidden' }}>
+                                <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '10px', overflow: 'hidden' }}>
                                     <div style={{ width: `${completionRate}%`, height: '100%', background: 'linear-gradient(90deg, #818cf8, #6366f1)', borderRadius: '3px', transition: 'width 0.5s ease-in-out' }} />
                                 </div>
                             </div>
 
-                            {/* Funnel projects count card */}
-                            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
-                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Project Funnel Breakdown</span>
-                                <div style={{ display: 'flex', gap: '20px', marginTop: '14px' }}>
+                            {/* Project Funnel */}
+                            <div className="glass-card" style={{ padding: '20px', borderRadius: '14px' }}>
+                                <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500' }}>Project Funnel</span>
+                                <div style={{ display: 'flex', gap: '20px', marginTop: '12px' }}>
                                     <div>
-                                        <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#34d399', display: 'block' }}>
+                                        <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', display: 'block' }}>
                                             {loading ? '...' : completedProjects}
                                         </span>
                                         <span style={{ fontSize: '10px', color: '#71717a' }}>Selesai Dipilih</span>
                                     </div>
                                     <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '20px' }}>
-                                        <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#fbbf24', display: 'block' }}>
+                                        <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#fbbf24', display: 'block' }}>
                                             {loading ? '...' : pendingProjects}
                                         </span>
-                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Menunggu Seleksi</span>
+                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Menunggu</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Vendors Status Breakdown Card */}
-                            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
-                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Vendors Account Status</span>
-                                <div style={{ display: 'flex', gap: '16px', marginTop: '14px' }}>
+                            {/* Vendors Status */}
+                            <div className="glass-card" style={{ padding: '20px', borderRadius: '14px' }}>
+                                <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500' }}>Vendors Account</span>
+                                <div style={{ display: 'flex', gap: '14px', marginTop: '12px' }}>
                                     <div>
-                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#f4f4f5', display: 'block' }}>
+                                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#f4f4f5', display: 'block' }}>
                                             {loading ? '...' : totalVendors}
                                         </span>
                                         <span style={{ fontSize: '10px', color: '#71717a' }}>Registered</span>
                                     </div>
-                                    <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '16px' }}>
-                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fbbf24', display: 'block' }}>
+                                    <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '14px' }}>
+                                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#fbbf24', display: 'block' }}>
                                             {loading ? '...' : pendingApprovals}
                                         </span>
                                         <span style={{ fontSize: '10px', color: '#71717a' }}>Pending</span>
                                     </div>
-                                    <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '16px' }}>
-                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', display: 'block' }}>
+                                    <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '14px' }}>
+                                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#ef4444', display: 'block' }}>
                                             {loading ? '...' : suspendedVendors}
                                         </span>
                                         <span style={{ fontSize: '10px', color: '#71717a' }}>Suspended</span>
                                     </div>
                                 </div>
                             </div>
+                        </div>
 
-                            {/* Real-time Server Disk space status Card */}
+                        {/* ═══════════ SECTION 2: STORAGE + ACTIONABLE ALERTS (2 columns) ═══════════ */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '24px' }}>
+
+                            {/* LEFT: Storage Monitoring (stacked in one card) */}
                             <div className="glass-card" style={{ 
                                 padding: '20px', 
-                                borderRadius: '12px',
+                                borderRadius: '14px',
                                 border: diskStats.status === 'critical' 
                                     ? '1px solid rgba(239, 68, 68, 0.4)' 
                                     : diskStats.status === 'warning' 
                                         ? '1px solid rgba(251, 191, 36, 0.4)' 
-                                        : '1px solid rgba(255, 255, 255, 0.08)'
+                                        : '1px solid rgba(255, 255, 255, 0.08)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '16px'
                             }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Kapasitas Disk Server</span>
-                                    <span style={{ 
-                                        fontSize: '10px', 
-                                        padding: '2px 8px', 
-                                        borderRadius: '12px', 
-                                        fontWeight: 'bold',
-                                        color: '#ffffff',
-                                        background: diskStats.status === 'critical' 
-                                            ? '#ef4444' 
-                                            : diskStats.status === 'warning' 
-                                                ? '#fbbf24' 
-                                                : '#10b981'
-                                    }}>
-                                        {diskStats.status === 'critical' ? 'KRITIS' : diskStats.status === 'warning' ? 'PERINGATAN' : 'AMAN'}
-                                    </span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
-                                    <h2 style={{ fontSize: '22px', margin: 0, fontWeight: 'bold', color: '#ffffff' }}>
-                                        {diskStats.used_gb} GB <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#71717a' }}>terpakai dari</span> {diskStats.total_gb} GB
-                                    </h2>
-                                </div>
-                                {/* progress bar */}
-                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '12px', overflow: 'hidden' }}>
-                                    <div style={{ 
-                                        width: `${100 - parseFloat(diskStats.free_percent)}%`, 
-                                        height: '100%', 
-                                        background: diskStats.status === 'critical' 
-                                            ? 'linear-gradient(90deg, #ef4444, #f87171)' 
-                                            : diskStats.status === 'warning' 
-                                                ? 'linear-gradient(90deg, #fbbf24, #fbbf24)' 
-                                                : 'linear-gradient(90deg, #10b981, #34d399)', 
-                                        borderRadius: '3px', 
-                                        transition: 'width 0.5s ease-in-out' 
-                                    }} />
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#71717a', marginTop: '6px' }}>
-                                    <span>Kosong: {diskStats.free_gb} GB ({diskStats.free_percent}%)</span>
-                                    <span>Batas: Min {diskStats.critical_threshold}%</span>
-                                </div>
+                                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#e4e4e7', letterSpacing: '0.3px' }}>💾 Kapasitas Penyimpanan</h4>
+
+                                {/* Volume 1: Staging Photos Storage */}
+                                {(() => {
+                                    const stg = diskStats.staging || diskStats;
+                                    return (
+                                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '600' }}>
+                                                    📸 Foto Staging (Vendor)
+                                                </span>
+                                                <span style={{ 
+                                                    fontSize: '9px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold',
+                                                    color: '#ffffff',
+                                                    background: stg.status === 'critical' ? '#ef4444' : stg.status === 'warning' ? '#fbbf24' : '#10b981'
+                                                }}>
+                                                    {stg.status === 'critical' ? 'KRITIS' : stg.status === 'warning' ? 'PERINGATAN' : 'AMAN'}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>
+                                                    {stg.used_gb} GB <span style={{ fontSize: '10px', fontWeight: 'normal', color: '#71717a' }}>/ {stg.total_gb} GB</span>
+                                                </span>
+                                            </div>
+                                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', marginTop: '8px', overflow: 'hidden' }}>
+                                                <div style={{ 
+                                                    width: `${Math.min(100, Math.max(0, 100 - parseFloat(stg.free_percent || 0)))}%`, 
+                                                    height: '100%', 
+                                                    background: stg.status === 'critical' ? 'linear-gradient(90deg, #ef4444, #f87171)' : stg.status === 'warning' ? 'linear-gradient(90deg, #fbbf24, #fbbf24)' : 'linear-gradient(90deg, #10b981, #34d399)', 
+                                                    borderRadius: '2px', transition: 'width 0.5s ease-in-out' 
+                                                }} />
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#71717a', marginTop: '4px' }}>
+                                                <span>Kosong: {stg.free_gb} GB ({stg.free_percent}%)</span>
+                                                <span>{stg.path ? stg.path.split('/').slice(-2).join('/') : 'public/staging'}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                {/* Volume 2: Database Storage */}
+                                {(() => {
+                                    const sys = diskStats.system || diskStats;
+                                    return (
+                                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '600' }}>
+                                                    🗄️ Database SQLite
+                                                </span>
+                                                <span style={{ 
+                                                    fontSize: '9px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold',
+                                                    color: '#ffffff',
+                                                    background: sys.status === 'critical' ? '#ef4444' : sys.status === 'warning' ? '#fbbf24' : '#10b981'
+                                                }}>
+                                                    {sys.status === 'critical' ? 'KRITIS' : sys.status === 'warning' ? 'PERINGATAN' : 'AMAN'}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                                                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>
+                                                    {sys.used_gb} GB <span style={{ fontSize: '10px', fontWeight: 'normal', color: '#71717a' }}>/ {sys.total_gb} GB</span>
+                                                </span>
+                                                <span style={{ fontSize: '10px', color: '#818cf8', fontWeight: '600' }}>DB: {sys.db_file_size_mb || '0.00'} MB</span>
+                                            </div>
+                                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', marginTop: '8px', overflow: 'hidden' }}>
+                                                <div style={{ 
+                                                    width: `${Math.min(100, Math.max(0, 100 - parseFloat(sys.free_percent || 0)))}%`, 
+                                                    height: '100%', 
+                                                    background: sys.status === 'critical' ? 'linear-gradient(90deg, #ef4444, #f87171)' : sys.status === 'warning' ? 'linear-gradient(90deg, #fbbf24, #fbbf24)' : 'linear-gradient(90deg, #10b981, #34d399)', 
+                                                    borderRadius: '2px', transition: 'width 0.5s ease-in-out' 
+                                                }} />
+                                            </div>
+                                            <div style={{ fontSize: '10px', color: '#71717a', marginTop: '4px' }}>
+                                                Kosong: {sys.free_gb} GB ({sys.free_percent}%)
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
+                            {/* RIGHT: Actionable Alerts (stacked 3 compact cards) */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                                {/* ALERT 1: Upgrade Pending Value */}
+                                <div className="glass-card" style={{ padding: '16px 20px', borderRadius: '14px', border: pendingUpgradeSummary.pendingCount > 0 ? '1px solid rgba(251, 191, 36, 0.3)' : '1px solid rgba(255,255,255,0.06)', flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '600' }}>
+                                            💰 Upgrade Request Pending
+                                        </span>
+                                        {pendingUpgradeSummary.pendingCount > 0 && (
+                                            <span style={{ fontSize: '9px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', background: '#fbbf24', color: '#000' }}>
+                                                {pendingUpgradeSummary.pendingCount} PENDING
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                                        <h3 style={{ fontSize: '22px', margin: 0, fontWeight: 'bold', color: pendingUpgradeSummary.pendingCount > 0 ? '#fbbf24' : '#ffffff' }}>
+                                            Rp {pendingUpgradeSummary.pendingTotalValue.toLocaleString('id-ID')}
+                                        </h3>
+                                        <button 
+                                            onClick={() => setActiveTab('upgrades')}
+                                            style={{ padding: '5px 12px', background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)', color: '#fbbf24', borderRadius: '8px', fontSize: '10px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                                        >
+                                            Kelola →
+                                        </button>
+                                    </div>
+                                    <p style={{ fontSize: '10px', color: '#71717a', margin: '4px 0 0 0' }}>
+                                        {pendingUpgradeSummary.pendingCount > 0 
+                                            ? `${pendingUpgradeSummary.pendingCount} permintaan berlangganan menunggu konfirmasi`
+                                            : 'Tidak ada permintaan upgrade pending'}
+                                    </p>
+                                </div>
+
+                                {/* ALERT 2: Expired dalam 7 Hari */}
+                                <div className="glass-card" style={{ padding: '16px 20px', borderRadius: '14px', border: analytics.expiringSoon?.length > 0 ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(255,255,255,0.06)', flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '600' }}>
+                                            ⏳ Expired dalam 7 Hari
+                                        </span>
+                                        <span style={{ fontSize: '9px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', background: analytics.expiringSoon?.length > 0 ? '#f59e0b' : '#10b981', color: '#fff' }}>
+                                            {analytics.expiringSoon?.length || 0} Vendor
+                                        </span>
+                                    </div>
+                                    {loadingAnalytics ? (
+                                        <p style={{ color: '#71717a', fontSize: '11px', margin: 0 }}>Memuat...</p>
+                                    ) : !analytics.expiringSoon || analytics.expiringSoon.length === 0 ? (
+                                        <p style={{ color: '#10b981', fontSize: '11px', margin: 0, fontWeight: '600' }}>✓ Semua vendor aman, tidak ada yang segera expired.</p>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '80px', overflowY: 'auto' }}>
+                                            {analytics.expiringSoon.map(v => {
+                                                const daysLeft = Math.max(0, Math.ceil((new Date(v.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)));
+                                                return (
+                                                    <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '5px 10px', borderRadius: '6px', fontSize: '11px' }}>
+                                                        <span style={{ color: '#ffffff', fontWeight: '500' }}>{v.name}</span>
+                                                        <span style={{ color: daysLeft <= 2 ? '#ef4444' : '#f59e0b', fontWeight: 'bold', fontSize: '10px' }}>
+                                                            {daysLeft === 0 ? 'Hari Ini!' : `${daysLeft} Hari`}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* ALERT 3: Reset Password */}
+                                <div className="glass-card" style={{ padding: '16px 20px', borderRadius: '14px', border: analytics.resetRequests?.length > 0 ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(255,255,255,0.06)', flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '600' }}>
+                                            🔑 Reset Password
+                                        </span>
+                                        <span style={{ fontSize: '9px', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', background: analytics.resetRequests?.length > 0 ? '#ef4444' : '#10b981', color: '#fff' }}>
+                                            {analytics.resetRequests?.length || 0} Request
+                                        </span>
+                                    </div>
+                                    {loadingAnalytics ? (
+                                        <p style={{ color: '#71717a', fontSize: '11px', margin: 0 }}>Memuat...</p>
+                                    ) : !analytics.resetRequests || analytics.resetRequests.length === 0 ? (
+                                        <p style={{ color: '#10b981', fontSize: '11px', margin: 0, fontWeight: '600' }}>✓ Tidak ada permintaan reset password.</p>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '80px', overflowY: 'auto' }}>
+                                            {analytics.resetRequests.map(v => (
+                                                <div key={v.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(239, 68, 68, 0.04)', padding: '5px 10px', borderRadius: '6px', fontSize: '11px' }}>
+                                                    <div>
+                                                        <span style={{ color: '#ffffff', fontWeight: '500', display: 'block' }}>{v.name}</span>
+                                                        <span style={{ color: '#71717a', fontSize: '9px' }}>{v.email}</span>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => { setActiveTab('vendors'); setSearchTerm(v.email); }}
+                                                        style={{ padding: '3px 8px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '5px', fontSize: '9px', fontWeight: 'bold', cursor: 'pointer' }}
+                                                    >
+                                                        Reset →
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                            </div>
                         </div>
 
-                        {/* ── NEW ANALYTICS WIDGETS ── */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-                            {/* TOP STORAGE USERS */}
-                            <div className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
-                                <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    📁 Top Storage Users (Vendor)
-                                </h3>
+                        {/* ═══════════ SECTION 3: TOP VENDOR PROYEK BERJALAN ═══════════ */}
+                        {(() => {
+                            const activeProjectVendors = (vendors || [])
+                                .map(v => {
+                                    const total = v.projectCount || 0;
+                                    const completed = v.completedProjectsCount || 0;
+                                    const activeCount = Math.max(0, total - completed);
+                                    return { ...v, activeCount, completed };
+                                })
+                                .filter(v => v.activeCount > 0)
+                                .sort((a, b) => b.activeCount - a.activeCount)
+                                .slice(0, 5);
+
+                            return (
+                                <div className="glass-card" style={{ padding: '20px 24px', borderRadius: '14px', marginBottom: '24px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                                        <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#38bdf8' }}>
+                                            📊 Top Vendor: Proyek Berjalan (In-Progress)
+                                        </h4>
+                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Vendor dengan proyek aktif terbanyak</span>
+                                    </div>
+                                    {activeProjectVendors.length === 0 ? (
+                                        <p style={{ color: '#a1a1aa', fontSize: '12px', margin: 0 }}>Semua proyek vendor telah selesai dinikmati klien!</p>
+                                    ) : (
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
+                                            {activeProjectVendors.map(v => (
+                                                <div key={v.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', padding: '12px 14px', borderRadius: '10px' }}>
+                                                    <strong style={{ color: '#ffffff', fontSize: '12px', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{v.name}</strong>
+                                                    <span style={{ fontSize: '10px', color: '#71717a', display: 'block', marginBottom: '6px' }}>{v.planName || 'Vendor'}</span>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px' }}>
+                                                        <span style={{ color: '#38bdf8', fontWeight: 'bold' }}>{v.activeCount} Aktif</span>
+                                                        <span style={{ color: '#a1a1aa' }}>{v.completed} ✓</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
+                        {/* ═══════════ SECTION 4: ANALYTICS DEEP DIVE (2 columns) ═══════════ */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
+                            {/* LEFT: TOP VENDOR PEMAKAI DISK TERBESAR */}
+                            <div className="glass-card" style={{ padding: '20px 24px', borderRadius: '14px' }}>
+                                <h4 style={{ margin: '0 0 14px 0', fontSize: '14px', fontWeight: '600', color: '#fbbf24' }}>
+                                    📁 Top Vendor: Pemakai Disk Terbesar (Server Space)
+                                </h4>
                                 {loadingAnalytics ? (
-                                    <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Loading storage analytics...</p>
+                                    <p style={{ color: '#a1a1aa', fontSize: '12px' }}>Loading storage analytics...</p>
                                 ) : analytics.topStorageUsers.length === 0 ? (
-                                    <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Belum ada data penyimpanan vendor.</p>
+                                    <p style={{ color: '#a1a1aa', fontSize: '12px' }}>Belum ada data penyimpanan vendor.</p>
                                 ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                         {analytics.topStorageUsers.map(u => {
                                             const storageLimit = u.maxStorageMB || 0;
                                             const storageUsed = parseFloat(u.totalMB);
                                             const percentUsed = storageLimit > 0 ? Math.min((storageUsed / storageLimit) * 100, 100).toFixed(1) : 0;
                                             return (
-                                                <div key={u.id} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', padding: '12px 16px', borderRadius: '12px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                <div key={u.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', padding: '10px 14px', borderRadius: '10px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                                         <div>
-                                                            <strong style={{ display: 'block', fontSize: '14px', color: '#ffffff' }}>{u.name}</strong>
-                                                            <span style={{ fontSize: '11px', color: '#71717a' }}>{u.email} • {u.planName || 'No Plan'}</span>
+                                                            <strong style={{ display: 'block', fontSize: '13px', color: '#ffffff' }}>{u.name}</strong>
+                                                            <span style={{ fontSize: '10px', color: '#71717a' }}>{u.email} • {u.planName || 'No Plan'}</span>
                                                         </div>
                                                         <div style={{ textAlign: 'right' }}>
-                                                            <strong style={{ fontSize: '14px', color: '#818cf8' }}>{storageUsed >= 1024 ? `${(storageUsed/1024).toFixed(2)} GB` : `${storageUsed.toFixed(1)} MB`}</strong>
-                                                            <span style={{ display: 'block', fontSize: '11px', color: '#71717a' }}>
-                                                                {storageLimit > 0 ? `Limit: ${storageLimit >= 1024 ? `${(storageLimit/1024).toFixed(0)} GB` : `${storageLimit} MB`}` : 'Limit: Unlimited'}
+                                                            <strong style={{ fontSize: '13px', color: '#818cf8' }}>{storageUsed >= 1024 ? `${(storageUsed/1024).toFixed(2)} GB` : `${storageUsed.toFixed(1)} MB`}</strong>
+                                                            <span style={{ display: 'block', fontSize: '10px', color: '#71717a' }}>
+                                                                {storageLimit > 0 ? `Limit: ${storageLimit >= 1024 ? `${(storageLimit/1024).toFixed(0)} GB` : `${storageLimit} MB`}` : 'Unlimited'}
                                                             </span>
                                                         </div>
                                                     </div>
                                                     {storageLimit > 0 && (
                                                         <div>
-                                                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                                                            <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
                                                                 <div style={{ width: `${percentUsed}%`, height: '100%', background: '#818cf8', borderRadius: '2px' }} />
                                                             </div>
-                                                            <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '9px', color: '#71717a', marginTop: '4px' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '9px', color: '#71717a', marginTop: '3px' }}>
                                                                 <span>Terpakai {percentUsed}%</span>
                                                             </div>
                                                         </div>
@@ -823,29 +1044,29 @@ export default function AdminDashboard({ adminUser }) {
                                 )}
                             </div>
 
-                            {/* PLAN DISTRIBUTION & SYSTEM HEALTH */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                {/* PLAN DISTRIBUTION */}
-                                <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', flex: 1 }}>
-                                    <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {/* RIGHT: PLAN DISTRIBUTION + SYSTEM HEALTH (stacked) */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                                {/* Plan Distribution */}
+                                <div className="glass-card" style={{ padding: '20px 24px', borderRadius: '14px', flex: 1 }}>
+                                    <h4 style={{ margin: '0 0 14px 0', fontSize: '14px', fontWeight: '600', color: '#818cf8' }}>
                                         📦 Distribusi Paket Aktif
-                                    </h3>
+                                    </h4>
                                     {loadingAnalytics ? (
-                                        <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Loading plan statistics...</p>
+                                        <p style={{ color: '#a1a1aa', fontSize: '12px' }}>Loading plan statistics...</p>
                                     ) : analytics.planDistribution.length === 0 ? (
-                                        <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Belum ada paket aktif.</p>
+                                        <p style={{ color: '#a1a1aa', fontSize: '12px' }}>Belum ada paket aktif.</p>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                             {analytics.planDistribution.map((p, idx) => {
                                                 const maxCount = Math.max(...analytics.planDistribution.map(item => item.count), 1);
                                                 const percent = ((p.count / maxCount) * 100).toFixed(0);
                                                 return (
                                                     <div key={idx}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
                                                             <span>{p.name} <span style={{ fontSize: '10px', color: '#71717a' }}>({p.planType === 'storage' ? 'Storage' : 'Limit'})</span></span>
                                                             <strong style={{ color: '#818cf8' }}>{p.count} Vendor</strong>
                                                         </div>
-                                                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                                                        <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
                                                             <div style={{ width: `${percent}%`, height: '100%', background: 'linear-gradient(90deg, #818cf8, #6366f1)', borderRadius: '3px' }} />
                                                         </div>
                                                     </div>
@@ -855,15 +1076,15 @@ export default function AdminDashboard({ adminUser }) {
                                     )}
                                 </div>
 
-                                {/* SYSTEM HEALTH & BACKUPS */}
-                                <div className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
-                                    <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#34d399', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {/* System Health & Backups */}
+                                <div className="glass-card" style={{ padding: '20px 24px', borderRadius: '14px' }}>
+                                    <h4 style={{ margin: '0 0 14px 0', fontSize: '14px', fontWeight: '600', color: '#34d399' }}>
                                         🛡️ Kesehatan Sistem & Backup
-                                    </h3>
+                                    </h4>
                                     {loadingAnalytics ? (
-                                        <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Loading system health...</p>
+                                        <p style={{ color: '#a1a1aa', fontSize: '12px' }}>Loading system health...</p>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                                                 <span style={{ color: '#a1a1aa' }}>Ukuran Database SQLite:</span>
                                                 <strong style={{ color: '#ffffff' }}>{analytics.systemStats.dbSizeMB} MB</strong>
@@ -877,11 +1098,9 @@ export default function AdminDashboard({ adminUser }) {
                                                 <strong style={{ color: '#ffffff' }}>{analytics.systemStats.totalProjects.toLocaleString()} Proyek</strong>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <span style={{ color: '#a1a1aa' }}>Backup Terakhir (Cron):</span>
+                                                <span style={{ color: '#a1a1aa' }}>Backup Terakhir:</span>
                                                 <span style={{ 
-                                                    fontSize: '11px', 
-                                                    padding: '2px 8px', 
-                                                    borderRadius: '4px', 
+                                                    fontSize: '10px', padding: '2px 8px', borderRadius: '4px', 
                                                     background: analytics.systemStats.lastBackupTime === 'Belum pernah' ? 'rgba(239,68,68,0.15)' : 'rgba(52,211,153,0.15)',
                                                     color: analytics.systemStats.lastBackupTime === 'Belum pernah' ? '#f87171' : '#34d399',
                                                     fontWeight: 'bold'
@@ -890,11 +1109,9 @@ export default function AdminDashboard({ adminUser }) {
                                                 </span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                                                <span style={{ color: '#a1a1aa' }}>Status Auto Backup:</span>
+                                                <span style={{ color: '#a1a1aa' }}>Auto Backup:</span>
                                                 <span style={{ 
-                                                    fontSize: '11px', 
-                                                    padding: '2px 8px', 
-                                                    borderRadius: '4px', 
+                                                    fontSize: '10px', padding: '2px 8px', borderRadius: '4px', 
                                                     background: analytics.enable_auto_backup === 1 ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.08)',
                                                     color: analytics.enable_auto_backup === 1 ? '#34d399' : '#a1a1aa',
                                                     fontWeight: 'bold'

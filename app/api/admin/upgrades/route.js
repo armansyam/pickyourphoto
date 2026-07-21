@@ -27,7 +27,18 @@ export async function GET() {
         `);
         const requests = stmt.all();
 
-        return NextResponse.json(requests);
+        const pendingSummary = db.prepare(`
+            SELECT 
+                COUNT(*) as pendingCount,
+                COALESCE(SUM(proratedPrice), 0) as pendingTotalValue
+            FROM subscription_requests
+            WHERE status = 'pending'
+        `).get() || { pendingCount: 0, pendingTotalValue: 0 };
+
+        return NextResponse.json({
+            requests,
+            summary: pendingSummary
+        });
     } catch (error) {
         console.error('Failed to list upgrade requests:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

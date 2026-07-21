@@ -113,9 +113,32 @@ export async function GET() {
             }
         }
 
+        // 4. Get vendors whose subscription is expiring within 7 days
+        const expiringSoonQuery = db.prepare(`
+            SELECT 
+                v.id, v.name, v.email, v.expiresAt, v.whatsapp,
+                p.name as planName
+            FROM vendors v
+            LEFT JOIN plans p ON v.planId = p.id
+            WHERE v.role = 'vendor'
+              AND v.status = 'active'
+              AND v.expiresAt IS NOT NULL
+              AND date(v.expiresAt) BETWEEN date('now') AND date('now', '+7 days')
+            ORDER BY v.expiresAt ASC
+        `);
+        const expiringSoon = expiringSoonQuery.all();
+
+        // 5. Get vendors requesting password reset
+        const resetRequestsQuery = db.prepare(`
+            SELECT id, name, email, whatsapp FROM vendors WHERE resetRequested = 1 ORDER BY id DESC
+        `);
+        const resetRequests = resetRequestsQuery.all();
+
         return NextResponse.json({
             topStorageUsers,
             planDistribution,
+            expiringSoon,
+            resetRequests,
             enable_auto_backup: settings.enable_auto_backup,
             backup_interval_hours: settings.backup_interval_hours,
             systemStats: {
