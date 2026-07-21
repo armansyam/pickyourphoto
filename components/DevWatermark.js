@@ -8,15 +8,15 @@ export default function DevWatermark() {
     return (
         <>
             {/* Developer Watermark Button */}
-            <button 
-                className="dev-watermark-btn" 
+            <button
+                className="dev-watermark-btn"
                 onClick={() => setShowDevOverlay(!showDevOverlay)}
                 title="Developer Info"
             >
-                <img 
-                    src="/ams-logo.png" 
-                    alt="AMS Logo" 
-                    style={{ width: '38px', height: '38px', objectFit: 'contain' }} 
+                <img
+                    src="/ams-logo.png"
+                    alt="AMS Logo"
+                    style={{ width: '38px', height: '38px', objectFit: 'contain' }}
                 />
             </button>
 
@@ -31,10 +31,10 @@ export default function DevWatermark() {
                         </div>
                     </div>
                     <div>
-                        <img 
-                            src="/ams-logo.png" 
-                            alt="AMS Logo" 
-                            style={{ height: '36px', objectFit: 'contain', marginBottom: '8px', display: 'block' }} 
+                        <img
+                            src="/ams-logo.png"
+                            alt="AMS Logo"
+                            style={{ height: '36px', objectFit: 'contain', marginBottom: '8px', display: 'block' }}
                         />
                         <p style={{ margin: 0, fontSize: '12px', color: '#64748b', lineHeight: '1.4' }}>
                             Designed, built, and optimized with Next.js, SQLite, and custom styling.
@@ -45,9 +45,9 @@ export default function DevWatermark() {
                         <strong style={{ color: '#1e293b' }}>v1.0.0</strong>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                        <a 
+                        <a
                             href="https://github.com/armansyam"
-                            target="_blank" 
+                            target="_blank"
                             rel="noopener noreferrer"
                             style={{
                                 flex: 1,
@@ -64,7 +64,7 @@ export default function DevWatermark() {
                         >
                             GitHub Profile
                         </a>
-                        <button 
+                        <button
                             onClick={() => setShowDevOverlay(false)}
                             style={{
                                 padding: '8px 12px',

@@ -6,6 +6,7 @@ export default function AdminDashboard({ adminUser }) {
     const [activeTab, setActiveTab] = useState('monitor'); // 'monitor' | 'vendors' | 'plans' | 'upgrades' | 'settings'
     const [vendorSubTab, setVendorSubTab] = useState('active'); // 'active' | 'inactive'
     const [vendors, setVendors] = useState([]);
+    const [overLimitVendors, setOverLimitVendors] = useState([]);
     const [plans, setPlans] = useState([]);
     const [upgradeRequests, setUpgradeRequests] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -184,6 +185,13 @@ export default function AdminDashboard({ adminUser }) {
             const dataVendors = await resVendors.json();
             setVendors(dataVendors);
 
+            // Fetch over-limit vendors
+            const resOverLimit = await fetch('/api/admin/vendors/over-limit');
+            if (resOverLimit.ok) {
+                const dataOverLimit = await resOverLimit.json();
+                setOverLimitVendors(dataOverLimit);
+            }
+
             // Fetch plans
             const resPlans = await fetch('/api/admin/plans');
             if (!resPlans.ok) throw new Error('Failed to retrieve plans.');
@@ -220,6 +228,46 @@ export default function AdminDashboard({ adminUser }) {
         } finally {
             setLoading(false);
         }
+    };
+
+    const normalizeWhatsappNumber = (rawNumber) => {
+        if (!rawNumber) return '';
+        let cleaned = rawNumber.replace(/\D/g, '');
+        if (cleaned.startsWith('0')) {
+            cleaned = '62' + cleaned.slice(1);
+        }
+        if (!cleaned.startsWith('62')) {
+            cleaned = '62' + cleaned;
+        }
+        return cleaned;
+    };
+
+    const generateWaLink = (vendor) => {
+        const olInfo = overLimitVendors.find(ol => ol.vendorId === vendor.id);
+        if (!olInfo) return '';
+
+        let text = '';
+        if (olInfo.planType === 'limit') {
+            text = `Halo ${olInfo.vendorName}, setelah perubahan paket Anda ke ${olInfo.planName}, jumlah project Anda saat ini (${olInfo.activeProjectsCount} project) melebihi batas maksimal paket baru Anda (${olInfo.maxProjects} project). Mohon arsipkan sebagian project, atau hubungi kami untuk menyesuaikan paket. Terima kasih.`;
+        } else if (olInfo.planType === 'storage') {
+            const formattedStorage = olInfo.usedStorageBytes >= 1024 * 1024 * 1024
+                ? `${(olInfo.usedStorageBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+                : `${(olInfo.usedStorageBytes / (1024 * 1024)).toFixed(1)} MB`;
+            
+            const formattedMaxStorage = olInfo.maxStorageMB >= 1024
+                ? `${(olInfo.maxStorageMB / 1024).toFixed(0)} GB`
+                : `${olInfo.maxStorageMB} MB`;
+
+            text = `Halo ${olInfo.vendorName}, setelah perubahan paket Anda ke ${olInfo.planName}, penyimpanan Anda saat ini (${formattedStorage}) melebihi kapasitas maksimal paket baru Anda (${formattedMaxStorage}). Mohon arsipkan sebagian foto, atau hubungi kami untuk menyesuaikan paket. Terima kasih.`;
+        } else {
+            // Fallback generic message
+            const formattedStorage = olInfo.usedStorageBytes >= 1024 * 1024 * 1024
+                ? `${(olInfo.usedStorageBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
+                : `${(olInfo.usedStorageBytes / (1024 * 1024)).toFixed(1)} MB`;
+            text = `Halo ${olInfo.vendorName}, setelah perubahan paket Anda ke ${olInfo.planName}, data Anda saat ini (${olInfo.activeProjectsCount} project / ${formattedStorage}) melebihi kapasitas paket baru Anda. Mohon arsipkan sebagian project/foto, atau hubungi kami untuk menyesuaikan paket. Terima kasih.`;
+        }
+
+        return `https://wa.me/${normalizeWhatsappNumber(olInfo.vendorWhatsapp)}?text=${encodeURIComponent(text)}`;
     };
 
     useEffect(() => {
@@ -1237,11 +1285,39 @@ export default function AdminDashboard({ adminUser }) {
                                                                     Minta Reset
                                                                 </span>
                                                             )}
+                                                            {overLimitVendors.some(ol => ol.vendorId === vendor.id) && (
+                                                                <>
+                                                                    <span style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(239,68,68,0.25)', fontWeight: 'bold' }}>
+                                                                        ⚠️ Over Limit
+                                                                    </span>
+                                                                    <a 
+                                                                        href={generateWaLink(vendor)}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        style={{
+                                                                            background: 'rgba(34,197,94,0.15)',
+                                                                            color: '#22c55e',
+                                                                            fontSize: '10px',
+                                                                            padding: '2px 6px',
+                                                                            borderRadius: '4px',
+                                                                            border: '1px solid rgba(34,197,94,0.25)',
+                                                                            fontWeight: 'bold',
+                                                                            textDecoration: 'none',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '4px',
+                                                                            cursor: 'pointer'
+                                                                        }}
+                                                                    >
+                                                                        💬 Kirim WA
+                                                                    </a>
+                                                                </>
+                                                            )}
                                                         </div>
                                                         <div style={{ fontSize: '12px', color: '#71717a', marginTop: '2px' }}>{vendor.email}</div>
                                                         {vendor.whatsapp && (
                                                             <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '4px' }}>
-                                                                🟢 WA: <a href={`https://wa.me/${vendor.whatsapp}`} target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'none' }}>{vendor.whatsapp}</a>
+                                                                🟢 WA: <a href={`https://wa.me/${normalizeWhatsappNumber(vendor.whatsapp)}`} target="_blank" rel="noopener noreferrer" style={{ color: '#6366f1', textDecoration: 'none' }}>{vendor.whatsapp}</a>
                                                             </div>
                                                         )}
                                                     </td>

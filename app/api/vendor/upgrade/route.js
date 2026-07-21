@@ -36,21 +36,37 @@ export async function POST(request) {
         // Fetch current plan details
         const currentPlan = db.prepare('SELECT * FROM plans WHERE id = ?').get(vendor.planId);
 
-        // Calculate proration
+        // Calculate proration with smart tiered discount multiplier
         let proratedPrice = newPlan.price;
 
-        // If target plan is more expensive than current plan, apply proration discount
         if (currentPlan && newPlan.price > currentPlan.price && currentPlan.price > 0 && vendor.expiresAt) {
             const expires = new Date(vendor.expiresAt);
             const now = new Date();
             const diffTime = expires.getTime() - now.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
             if (diffDays > 0) {
-                // Calculate plan duration based on standard 30-day monthly billing cycle
-                const planDuration = 30;
-                const unusedValue = (currentPlan.price / planDuration) * diffDays;
-                proratedPrice = Math.max(0, newPlan.price - unusedValue);
+                const planDuration = currentPlan.activePeriodDays || 30;
+                const daysUsed = Math.max(0, planDuration - diffDays);
+
+                // Determine if target plan is the highest tier active plan
+                const maxPlanPrice = db.prepare('SELECT MAX(price) as maxPrice FROM plans WHERE status = "active"').get()?.maxPrice || 0;
+                const isTopTierPlan = newPlan.price >= maxPlanPrice;
+
+                // Smart proration credit factor:
+                // 1.0 (100%) if upgrading to top tier plan (upsell promo)
+                // 0.85 (85%) if used <= 7 days (early upgrade bonus)
+                // 0.70 (70%) if used > 7 days (standard retention)
+                let prorationFactor = 0.70;
+                if (isTopTierPlan) {
+                    prorationFactor = 1.0;
+                } else if (daysUsed <= 7) {
+                    prorationFactor = 0.85;
+                }
+
+                const rawUnusedValue = (currentPlan.price / planDuration) * diffDays;
+                const discountValue = Math.round(rawUnusedValue * prorationFactor);
+                proratedPrice = Math.max(0, newPlan.price - discountValue);
             }
         }
 

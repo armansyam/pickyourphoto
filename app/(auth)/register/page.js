@@ -96,6 +96,7 @@ export default function RegisterPage() {
             return [
                 `Batas ${p.maxProjects} Project Aktif`,
                 `Maks. ${p.maxPhotosPerProject} Foto / Project`,
+                `Storage Lega (hingga ${(p.maxStorageMB / 1024).toFixed(0)}GB)`,
                 `Masa Aktif ${p.activePeriodDays} Hari`,
                 'Sistem Cleaner 5 Hari'
             ];
@@ -203,7 +204,7 @@ export default function RegisterPage() {
                     animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
             `}</style>
-            <div className="glass-card" style={{ width: '100%', maxWidth: step === 1 ? '400px' : '750px', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+            <div className="glass-card" style={{ width: '100%', maxWidth: step === 1 ? '400px' : '940px', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
                 {success ? (
                     <div style={{ textAlign: 'center', padding: '20px 0' }}>
                         <div style={{ 
@@ -504,29 +505,38 @@ export default function RegisterPage() {
                                         {/* Grid of Plans */}
                                         <style>{`
                                             .plans-swipe-container {
-                                                display: flex;
-                                                flex-flow: row nowrap;
-                                                overflow-x: auto;
-                                                scroll-snap-type: x mandatory;
-                                                gap: 24px;
-                                                margin-top: 30px;
+                                                display: grid;
+                                                grid-template-columns: repeat(3, minmax(0, 1fr));
+                                                gap: 20px;
+                                                margin-top: 24px;
                                                 margin-bottom: 20px;
                                                 padding: 10px 4px 20px 4px;
-                                                scrollbar-width: none;
-                                                -ms-overflow-style: none;
-                                                justify-content: flex-start;
-                                            }
-                                            .plans-swipe-container::-webkit-scrollbar {
-                                                display: none;
-                                            }
-                                            @media (min-width: 640px) {
-                                                .plans-swipe-container {
-                                                    justify-content: center;
-                                                }
                                             }
                                             .plan-card-item {
-                                                scroll-snap-align: start;
-                                                flex: 0 0 280px;
+                                                width: 100%;
+                                                box-sizing: border-box;
+                                            }
+                                            @media (max-width: 768px) {
+                                                .plans-swipe-container {
+                                                    display: flex;
+                                                    flex-flow: row nowrap;
+                                                    overflow-x: auto;
+                                                    scroll-snap-type: x mandatory;
+                                                    gap: 16px;
+                                                    justify-content: flex-start;
+                                                    padding: 12px 8% 24px 8%;
+                                                    scroll-padding-inline: 8%;
+                                                    scrollbar-width: none;
+                                                    -ms-overflow-style: none;
+                                                }
+                                                .plans-swipe-container::-webkit-scrollbar {
+                                                    display: none;
+                                                }
+                                                .plan-card-item {
+                                                    scroll-snap-align: center;
+                                                    flex: 0 0 84%;
+                                                    max-width: 290px;
+                                                }
                                             }
                                         `}</style>
                                         <div className="plans-swipe-container fade-in-up" key={selectedTab}>
@@ -537,7 +547,12 @@ export default function RegisterPage() {
                                                     <div 
                                                         key={p.id}
                                                         className="plan-card-item"
-                                                        onClick={() => !loading && setPlan(p.id.toString())}
+                                                        onClick={(e) => {
+                                                            if (!loading) {
+                                                                setPlan(p.id.toString());
+                                                                e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                                                            }
+                                                        }}
                                                         style={{
                                                             position: 'relative',
                                                             background: isSelected 

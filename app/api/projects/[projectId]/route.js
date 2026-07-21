@@ -144,11 +144,23 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ message: 'Project not found or unauthorized.' }, { status: 404 });
         }
 
-        // Start manual deletion of dependencies in SQLite
-        db.prepare('DELETE FROM selections WHERE photoId IN (SELECT id FROM photos WHERE projectId = ?)').run(projectId);
-        db.prepare('DELETE FROM photos WHERE projectId = ?').run(projectId);
-        db.prepare('DELETE FROM clients WHERE projectId = ?').run(projectId);
-        db.prepare('DELETE FROM projects WHERE id = ?').run(projectId);
+        // 1. Query SUM(fileSizeBytes) dari tabel photos untuk projectId tersebut sebelum dihapus
+        const totalBytes = db.prepare('SELECT SUM(fileSizeBytes) as total FROM photos WHERE projectId = ?').get(projectId)?.total || 0;
+
+        // Start manual deletion of dependencies in SQLite (grouped inside a transaction)
+        const runDeleteTx = db.transaction(() => {
+            db.prepare('DELETE FROM selections WHERE photoId IN (SELECT id FROM photos WHERE projectId = ?)').run(projectId);
+            db.prepare('DELETE FROM photos WHERE projectId = ?').run(projectId);
+            db.prepare('DELETE FROM clients WHERE projectId = ?').run(projectId);
+            db.prepare('DELETE FROM projects WHERE id = ?').run(projectId);
+
+            // 2. Kurangi usedStorageBytes vendor dengan totalBytes dari project yang dihapus
+            if (totalBytes > 0) {
+                db.prepare('UPDATE vendors SET usedStorageBytes = MAX(0, usedStorageBytes - ?) WHERE id = ?').run(totalBytes, project.vendorId);
+            }
+        });
+
+        runDeleteTx();
 
         // Delete physical files from disk recursively
         const uploadDir = path.join(process.cwd(), 'public', 'staging_uploads', `vendor_${project.vendorId}`, `project_${project.id}_${project.slug}`);

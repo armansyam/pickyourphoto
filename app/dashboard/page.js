@@ -42,6 +42,18 @@ function CountdownTimer({ expiresAt }) {
     );
 }
 
+const normalizeWhatsappNumber = (rawNumber) => {
+    if (!rawNumber) return '';
+    let cleaned = rawNumber.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) {
+        cleaned = '62' + cleaned.slice(1);
+    }
+    if (!cleaned.startsWith('62')) {
+        cleaned = '62' + cleaned;
+    }
+    return cleaned;
+};
+
 export default function DashboardPage() {
     const [projects, setProjects] = useState([]);
     const [vendorDetails, setVendorDetails] = useState(null);
@@ -94,6 +106,7 @@ export default function DashboardPage() {
 
     // Upgrade plan & WA admin states
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [upgradeTab, setUpgradeTab] = useState('limit');
     const [availablePlans, setAvailablePlans] = useState([]);
     const [adminWhatsapp, setAdminWhatsapp] = useState('');
     const [selectedUpgradePlan, setSelectedUpgradePlan] = useState(null);
@@ -133,13 +146,29 @@ export default function DashboardPage() {
         const expires = new Date(expiresAt);
         const now = new Date();
         const diffTime = expires.getTime() - now.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
         if (diffDays <= 0) {
             return { discount: 0, total: targetPlan.price, daysRemaining: 0, isDowngrade: false };
         }
 
-        const discount = Math.round((currentPrice / currentDays) * diffDays);
+        // Tiered Proration Factor:
+        // 1.0 (100%) for upgrading to highest tier plan (upsell promo)
+        // 0.85 (85%) if used <= 7 days (early upgrade bonus)
+        // 0.70 (70%) if used > 7 days (standard retention)
+        const maxPrice = availablePlans.length > 0 ? Math.max(...availablePlans.map(p => p.price)) : 0;
+        const isTopTier = targetPlan.price >= maxPrice && maxPrice > 0;
+        const daysUsed = Math.max(0, currentDays - diffDays);
+
+        let factor = 0.70;
+        if (isTopTier) {
+            factor = 1.0;
+        } else if (daysUsed <= 7) {
+            factor = 0.85;
+        }
+
+        const rawDiscount = (currentPrice / currentDays) * diffDays;
+        const discount = Math.round(rawDiscount * factor);
         const total = Math.max(0, targetPlan.price - discount);
 
         return {
@@ -279,6 +308,11 @@ export default function DashboardPage() {
         } finally {
             setImporting(false);
         }
+    };
+
+    const handleOpenUpgradeModal = () => {
+        setUpgradeTab(vendorDetails?.planType || 'limit');
+        setShowUpgradeModal(true);
     };
 
     // Submit upgrade plan request with transfer proof file
@@ -603,7 +637,7 @@ export default function DashboardPage() {
                     </div>
                     {vendorDetails.planPrice > 0 && (
                         <button 
-                            onClick={() => setShowUpgradeModal(true)} 
+                            onClick={handleOpenUpgradeModal} 
                             className="btn-primary" 
                             style={{ background: '#f87171', border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', cursor: 'pointer' }}
                         >
@@ -623,7 +657,7 @@ export default function DashboardPage() {
                     </div>
                     {adminWhatsapp && (
                         <a
-                            href={`https://wa.me/${adminWhatsapp}?text=${encodeURIComponent(`Halo Admin, saya vendor ${vendorDetails.name}. Saya sudah mengupload bukti transfer pembayaran upgrade ke paket ${vendorDetails.upgradeRequest.planName} sebesar Rp ${Number(vendorDetails.upgradeRequest.proratedPrice).toLocaleString('id-ID')}. Mohon bantuannya untuk melakukan konfirmasi. Terima kasih!`)}`}
+                            href={`https://wa.me/${normalizeWhatsappNumber(adminWhatsapp)}?text=${encodeURIComponent(`Halo Admin, saya vendor ${vendorDetails.name}. Saya sudah mengupload bukti transfer pembayaran upgrade ke paket ${vendorDetails.upgradeRequest.planName} sebesar Rp ${Number(vendorDetails.upgradeRequest.proratedPrice).toLocaleString('id-ID')}. Mohon bantuannya untuk melakukan konfirmasi. Terima kasih!`)}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-primary"
@@ -648,7 +682,7 @@ export default function DashboardPage() {
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                     {adminWhatsapp && (
                         <a
-                            href={`https://wa.me/${adminWhatsapp}?text=${encodeURIComponent('Halo Admin, saya vendor ' + (vendorDetails?.name || '') + '. Saya ingin bertanya mengenai layanan Pick Your Photo.')}`}
+                            href={`https://wa.me/${normalizeWhatsappNumber(adminWhatsapp)}?text=${encodeURIComponent('Halo Admin, saya vendor ' + (vendorDetails?.name || '') + '. Saya ingin bertanya mengenai layanan Pick Your Photo.')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Hubungi Admin via WhatsApp"
@@ -658,7 +692,7 @@ export default function DashboardPage() {
                         </a>
                     )}
                     <button
-                        onClick={() => setShowUpgradeModal(true)}
+                        onClick={handleOpenUpgradeModal}
                         title="Lihat & Upgrade Plan"
                         style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)', background: 'rgba(251,191,36,0.06)', borderRadius: '8px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
                     >
@@ -1407,22 +1441,72 @@ export default function DashboardPage() {
                     setTransferProofFile(null);
                     setUpgradeError('');
                 }}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: selectedUpgradePlan ? '560px' : '760px' }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: selectedUpgradePlan ? '560px' : '780px' }}>
                         <h2 style={{ margin: '0 0 8px 0', fontSize: '22px' }}>🚀 Upgrade Plan</h2>
                         
                         {!selectedUpgradePlan ? (
                             <>
-                                <p style={{ margin: '0 0 24px 0', color: '#a1a1aa', fontSize: '14px' }}>
-                                    Pilih paket yang sesuai kebutuhan Anda. Nilai sisa paket lama Anda akan otomatis memotong harga paket baru secara prorata.
+                                <p style={{ margin: '0 0 16px 0', color: '#a1a1aa', fontSize: '14px' }}>
+                                    Pilih paket berlangganan yang Anda inginkan. Sisa nilai paket lama Anda akan otomatis menjadi potongan hemat (*tukar-tambah*) untuk paket baru.
                                 </p>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: availablePlans.length > 2 ? 'repeat(auto-fit, minmax(200px, 1fr))' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                                {/* Tab Switcher for Upgrade Modal */}
+                                <div style={{ 
+                                    display: 'flex', 
+                                    background: 'rgba(0, 0, 0, 0.25)', 
+                                    padding: '4px', 
+                                    borderRadius: '10px', 
+                                    border: '1px solid rgba(255, 255, 255, 0.08)', 
+                                    marginBottom: '20px' 
+                                }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setUpgradeTab('limit')}
+                                        style={{
+                                            flex: 1,
+                                            background: upgradeTab === 'limit' ? '#6366f1' : 'transparent',
+                                            color: upgradeTab === 'limit' ? '#ffffff' : '#a1a1aa',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            padding: '8px 12px',
+                                            fontSize: '13px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            outline: 'none'
+                                        }}
+                                    >
+                                        📁 Limit-Based
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setUpgradeTab('storage')}
+                                        style={{
+                                            flex: 1,
+                                            background: upgradeTab === 'storage' ? '#6366f1' : 'transparent',
+                                            color: upgradeTab === 'storage' ? '#ffffff' : '#a1a1aa',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            padding: '8px 12px',
+                                            fontSize: '13px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            outline: 'none'
+                                        }}
+                                    >
+                                        📦 Storage-Based
+                                    </button>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: availablePlans.filter(p => (p.planType || 'limit') === upgradeTab).length > 2 ? 'repeat(auto-fit, minmax(210px, 1fr))' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                                     {availablePlans.filter(plan => {
                                         const isCurrentPlan = vendorDetails?.planId === plan.id;
                                         if (plan.price === 0 && !isCurrentPlan) {
                                             return false;
                                         }
-                                        return true;
+                                        const type = plan.planType || 'limit';
+                                        return type === upgradeTab;
                                     }).map(plan => {
                                         const isCurrentPlan = vendorDetails?.planId === plan.id;
                                         const accentColor = isCurrentPlan ? '#6366f1' : '#71717a';
@@ -1453,18 +1537,27 @@ export default function DashboardPage() {
                                                     </p>
                                                     
                                                     {!isCurrentPlan && discount > 0 && (
-                                                        <div style={{ background: 'rgba(52,211,153,0.08)', borderRadius: '8px', padding: '6px 10px', marginBottom: '14px', fontSize: '11px', color: '#34d399', border: '1px solid rgba(52,211,153,0.15)' }}>
-                                                            Potongan Prorata:<br/>
-                                                            <strong>- Rp {discount.toLocaleString('id-ID')}</strong> (Sisa {getProrationDetails(plan).daysRemaining} hari)
+                                                        <div style={{ background: 'rgba(52,211,153,0.08)', borderRadius: '8px', padding: '8px 12px', marginBottom: '14px', fontSize: '11px', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
+                                                            🏷️ <strong>Potongan Hemat Tukar-Tambah:</strong><br/>
+                                                            <strong style={{ fontSize: '12px' }}>- Rp {discount.toLocaleString('id-ID')}</strong> (Sisa {getProrationDetails(plan).daysRemaining} hari)
                                                         </div>
                                                     )}
 
-                                                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '2' }}>
-                                                        <li>📁 Maks <strong style={{ color: '#e4e4e7' }}>{plan.maxProjects}</strong> project</li>
-                                                        <li>⏳ Masa Aktif Akun: <strong style={{ color: '#e4e4e7' }}>{plan.activePeriodDays || '—'}</strong> hari</li>
-                                                        <li>⏳ Masa Aktif Galeri Klien: <strong style={{ color: '#e4e4e7' }}>{plan.projectExpireDays || '—'}</strong> hari</li>
-                                                        <li>📷 Maks <strong style={{ color: '#e4e4e7' }}>{plan.maxPhotosPerProject || '∞'}</strong> foto/project</li>
-                                                    </ul>
+                                                    {plan.planType === 'storage' ? (
+                                                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '2' }}>
+                                                            <li>📦 Storage: <strong style={{ color: '#e4e4e7' }}>{plan.maxStorageMB >= 1024 ? `${(plan.maxStorageMB / 1024).toFixed(0)} GB` : `${plan.maxStorageMB} MB`}</strong></li>
+                                                            <li>📁 Project: <strong style={{ color: '#34d399' }}>Tanpa Batas</strong></li>
+                                                            <li>📷 Foto: <strong style={{ color: '#34d399' }}>Tanpa Batas</strong></li>
+                                                            <li>⏳ Masa Aktif Akun: <strong style={{ color: '#e4e4e7' }}>{plan.activePeriodDays || '—'}</strong> hari</li>
+                                                        </ul>
+                                                    ) : (
+                                                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '2' }}>
+                                                            <li>📁 Maks <strong style={{ color: '#e4e4e7' }}>{plan.maxProjects}</strong> project</li>
+                                                            <li>📷 Maks <strong style={{ color: '#e4e4e7' }}>{plan.maxPhotosPerProject || '∞'}</strong> foto/project</li>
+                                                            <li>⏳ Masa Aktif Akun: <strong style={{ color: '#e4e4e7' }}>{plan.activePeriodDays || '—'}</strong> hari</li>
+                                                            <li>⏳ Masa Aktif Galeri: <strong style={{ color: '#e4e4e7' }}>{plan.projectExpireDays || '—'}</strong> hari</li>
+                                                        </ul>
+                                                    )}
                                                 </div>
 
                                                 {isCurrentPlan ? (
