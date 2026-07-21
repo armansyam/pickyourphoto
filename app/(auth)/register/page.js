@@ -18,7 +18,7 @@ export default function RegisterPage() {
     const [selectedTab, setSelectedTab] = useState('limit');
     const [step, setStep] = useState(1);
 
-    const trialPlan = plans.find(p => p.price === 0);
+    const trialPlan = plans.find(p => p.price === 0 && p.planType === selectedTab);
     const hasTrial = !!trialPlan;
 
     useEffect(() => {
@@ -376,7 +376,10 @@ export default function RegisterPage() {
                                                         Coba Gratis Sekarang! ({trialPlan.name})
                                                     </div>
                                                     <div style={{ fontSize: '12px', color: '#a1a1aa', marginTop: '2px' }}>
-                                                        Batas {trialPlan.maxProjects} Project • Maks. {trialPlan.maxPhotosPerProject} Foto/Project • Aktif {trialPlan.activePeriodDays} Hari
+                                                        {trialPlan.planType === 'storage'
+                                                            ? `Kapasitas Storage ${trialPlan.maxStorageMB >= 1024 ? `${(trialPlan.maxStorageMB / 1024).toFixed(0)} GB` : `${trialPlan.maxStorageMB} MB`} • Aktif ${trialPlan.activePeriodDays} Hari`
+                                                            : `Batas ${trialPlan.maxProjects} Project • Maks. ${trialPlan.maxPhotosPerProject} Foto/Project • Aktif ${trialPlan.activePeriodDays} Hari`
+                                                        }
                                                      </div>
                                                 </div>
                                             </div>
@@ -456,19 +459,41 @@ export default function RegisterPage() {
                                         </div>
 
                                         {/* Grid of Plans */}
-                                        <div style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                                            gap: '24px',
-                                            marginBottom: '20px',
-                                            marginTop: '30px'
-                                        }} className="fade-in-up" key={selectedTab}>
+                                        <style>{`
+                                            .plans-swipe-container {
+                                                display: flex;
+                                                flex-flow: row nowrap;
+                                                overflow-x: auto;
+                                                scroll-snap-type: x mandatory;
+                                                gap: 24px;
+                                                margin-top: 30px;
+                                                margin-bottom: 20px;
+                                                padding: 10px 4px 20px 4px;
+                                                scrollbar-width: none;
+                                                -ms-overflow-style: none;
+                                                justify-content: flex-start;
+                                            }
+                                            .plans-swipe-container::-webkit-scrollbar {
+                                                display: none;
+                                            }
+                                            @media (min-width: 640px) {
+                                                .plans-swipe-container {
+                                                    justify-content: center;
+                                                }
+                                            }
+                                            .plan-card-item {
+                                                scroll-snap-align: start;
+                                                flex: 0 0 280px;
+                                            }
+                                        `}</style>
+                                        <div className="plans-swipe-container fade-in-up" key={selectedTab}>
                                             {plans.filter(p => p.price > 0 && p.planType === selectedTab).map(p => {
                                                 const isSelected = parseInt(plan) === p.id;
                                                 const isFree = p.price === 0;
                                                 return (
                                                     <div 
                                                         key={p.id}
+                                                        className="plan-card-item"
                                                         onClick={() => !loading && setPlan(p.id.toString())}
                                                         style={{
                                                             position: 'relative',

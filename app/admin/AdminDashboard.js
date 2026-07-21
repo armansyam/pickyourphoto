@@ -786,8 +786,11 @@ export default function AdminDashboard({ adminUser }) {
                 {/* ── TAB 2: MANAGE PLANS ── */}
                 {activeTab === 'plans' && (
                     <div className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                            <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Subscription Packages</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>Subscription Packages</h3>
+                                <p style={{ color: '#a1a1aa', margin: '4px 0 0 0', fontSize: '13px' }}>Kelola paket langganan dan kuota penyimpanan untuk vendor</p>
+                            </div>
                             <button className="btn-primary" onClick={handleOpenCreatePlan}>
                                 Add Package
                             </button>
@@ -798,79 +801,106 @@ export default function AdminDashboard({ adminUser }) {
                         ) : plans.length === 0 ? (
                             <p style={{ textAlign: 'center', color: '#a1a1aa', padding: '24px 0' }}>No packages defined. Click Add Package to create one.</p>
                         ) : (
-                            <div style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                                    <thead>
-                                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px' }}>Package Name</th>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px' }}>Type & Storage</th>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px', textAlign: 'center' }}>Maksimal Project</th>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px', textAlign: 'center' }}>Vendor Duration</th>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px', textAlign: 'center' }}>Status</th>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px', textAlign: 'center' }}>Max Photos/Proj</th>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px', textAlign: 'center' }}>Monthly Cost</th>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px', textAlign: 'center' }}>Active Subscribers</th>
-                                            <th style={{ padding: '12px 8px', color: '#a1a1aa', fontWeight: '600', fontSize: '14px', textAlign: 'right' }}>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {plans.map((p) => {
-                                            const subscriberCount = vendors.filter(v => v.planId === p.id && v.status === 'active').length;
-                                            return (
-                                                <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                                    <td style={{ padding: '16px 8px', fontWeight: 'bold', fontSize: '16px' }}>{p.name}</td>
-                                                    <td style={{ padding: '16px 8px', fontSize: '15px' }}>
-                                                        {p.planType === 'storage' ? (
-                                                            <span style={{ color: '#818cf8', fontWeight: '500' }}>
-                                                                📦 Storage ({p.maxStorageMB >= 1024 ? `${(p.maxStorageMB / 1024).toFixed(0)} GB` : `${p.maxStorageMB} MB`})
-                                                            </span>
-                                                        ) : (
-                                                            <span style={{ color: '#fbbf24', fontWeight: '500' }}>
-                                                                📁 Limit-Based
-                                                            </span>
-                                                        )}
-                                                    </td>
-                                                    <td style={{ padding: '16px 8px', textAlign: 'center', fontSize: '15px' }}>{p.maxProjects} project</td>
-                                                    <td style={{ padding: '16px 8px', textAlign: 'center', fontSize: '15px' }}>{p.activePeriodDays > 0 ? `${p.activePeriodDays} days active` : 'Unlimited'}</td>
-                                                    <td style={{ padding: '16px 8px', textAlign: 'center' }}>
-                                                        <span className={`status-badge ${p.status === 'inactive' ? 'btn-danger' : 'status-completed'}`} style={{
-                                                            background: p.status === 'inactive' ? 'rgba(239, 68, 68, 0.15)' : '',
-                                                            color: p.status === 'inactive' ? '#f87171' : '',
-                                                            border: p.status === 'inactive' ? '1px solid rgba(239, 68, 68, 0.25)' : ''
-                                                        }}>
-                                                            {p.status === 'inactive' ? 'Inactive' : 'Active'}
-                                                        </span>
-                                                    </td>
-                                                    <td style={{ padding: '16px 8px', textAlign: 'center', fontSize: '15px' }}>{p.maxPhotosPerProject > 0 ? `${p.maxPhotosPerProject} foto` : 'Tanpa Batas'}</td>
-                                                    <td style={{ padding: '16px 8px', textAlign: 'center', fontSize: '15px', color: '#34d399', fontWeight: '600' }}>
-                                                        Rp {p.price.toLocaleString()} / bln
-                                                     </td>
-                                                    <td style={{ padding: '16px 8px', textAlign: 'center', fontSize: '15px', fontWeight: 'bold', color: '#818cf8' }}>
-                                                        {subscriberCount} vendors
-                                                    </td>
-                                                    <td style={{ padding: '16px 8px', textAlign: 'right' }}>
-                                                        <div style={{ display: 'inline-flex', gap: '8px' }}>
-                                                            <button 
-                                                                className="btn-secondary" 
-                                                                style={{ padding: '6px 12px', fontSize: '12px' }}
-                                                                onClick={() => handleOpenEditPlan(p)}
-                                                            >
-                                                                Edit
-                                                            </button>
-                                                            <button 
-                                                                className="btn-danger" 
-                                                                style={{ padding: '6px 12px', fontSize: '12px', boxShadow: 'none' }}
-                                                                onClick={() => handleDeletePlan(p)}
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        </div>
-                                                    </td>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: '24px' }}>
+                                {/* LIMIT-BASED PLANS */}
+                                <div className="glass-card" style={{ padding: '16px', border: '1px solid rgba(251, 191, 36, 0.15)', background: 'rgba(255,255,255,0.01)', borderRadius: '12px' }}>
+                                    <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        📁 Limit-Based Packages
+                                    </h4>
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '450px' }}>
+                                            <thead>
+                                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px' }}>Package Name</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>Max Projects</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>Max Photos/Proj</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>Cost</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>Subscribers</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'right' }}>Actions</th>
                                                 </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
+                                            </thead>
+                                            <tbody>
+                                                {plans.filter(p => p.planType !== 'storage').map((p) => {
+                                                    const subscriberCount = vendors.filter(v => v.planId === p.id && v.status === 'active').length;
+                                                    return (
+                                                        <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                            <td style={{ padding: '12px 4px', fontWeight: 'bold', fontSize: '14px' }}>
+                                                                {p.name}
+                                                                {p.price === 0 && <span style={{ marginLeft: '6px', fontSize: '10px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>TRIAL</span>}
+                                                            </td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'center', fontSize: '13px' }}>{p.maxProjects} project</td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'center', fontSize: '13px' }}>{p.maxPhotosPerProject > 0 ? `${p.maxPhotosPerProject} foto` : 'Unlimited'}</td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'center', fontSize: '13px', color: '#34d399', fontWeight: '600' }}>
+                                                                {p.price === 0 ? 'Free' : `Rp ${p.price.toLocaleString()}`}
+                                                            </td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#fbbf24' }}>
+                                                                {subscriberCount}
+                                                            </td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'right' }}>
+                                                                <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                                                    <button className="btn-secondary" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => handleOpenEditPlan(p)}>Edit</button>
+                                                                    <button className="btn-danger" style={{ padding: '4px 8px', fontSize: '11px', boxShadow: 'none' }} onClick={() => handleDeletePlan(p)}>Delete</button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {/* STORAGE-BASED PLANS */}
+                                <div className="glass-card" style={{ padding: '16px', border: '1px solid rgba(129, 140, 248, 0.15)', background: 'rgba(255,255,255,0.01)', borderRadius: '12px' }}>
+                                    <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: '600', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        📦 Storage-Based Packages
+                                    </h4>
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '450px' }}>
+                                            <thead>
+                                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px' }}>Package Name</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>Storage Size</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>Active Period</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>Cost</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'center' }}>Subscribers</th>
+                                                    <th style={{ padding: '8px 4px', color: '#a1a1aa', fontWeight: '600', fontSize: '13px', textAlign: 'right' }}>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {plans.filter(p => p.planType === 'storage').map((p) => {
+                                                    const subscriberCount = vendors.filter(v => v.planId === p.id && v.status === 'active').length;
+                                                    return (
+                                                        <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                            <td style={{ padding: '12px 4px', fontWeight: 'bold', fontSize: '14px' }}>
+                                                                {p.name}
+                                                                {p.price === 0 && <span style={{ marginLeft: '6px', fontSize: '10px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>TRIAL</span>}
+                                                            </td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'center', fontSize: '13px', color: '#818cf8', fontWeight: '500' }}>
+                                                                {p.maxStorageMB >= 1024 ? `${(p.maxStorageMB / 1024).toFixed(0)} GB` : `${p.maxStorageMB} MB`}
+                                                            </td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'center', fontSize: '13px' }}>
+                                                                {p.activePeriodDays > 0 ? `${p.activePeriodDays} Hari` : 'Selamanya'}
+                                                            </td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'center', fontSize: '13px', color: '#34d399', fontWeight: '600' }}>
+                                                                {p.price === 0 ? 'Free' : `Rp ${p.price.toLocaleString()}`}
+                                                            </td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold', color: '#818cf8' }}>
+                                                                {subscriberCount}
+                                                            </td>
+                                                            <td style={{ padding: '12px 4px', textAlign: 'right' }}>
+                                                                <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                                                    <button className="btn-secondary" style={{ padding: '4px 8px', fontSize: '11px' }} onClick={() => handleOpenEditPlan(p)}>Edit</button>
+                                                                    <button className="btn-danger" style={{ padding: '4px 8px', fontSize: '11px', boxShadow: 'none' }} onClick={() => handleDeletePlan(p)}>Delete</button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
