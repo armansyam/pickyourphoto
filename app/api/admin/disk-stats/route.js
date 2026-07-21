@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
 import { statfs } from 'fs/promises';
+import path from 'path';
+import fs from 'fs';
 
 export async function GET() {
     try {
@@ -15,7 +17,11 @@ export async function GET() {
             disk_critical_threshold_percent: 10
         };
 
-        const checkPath = process.cwd();
+        let checkPath = process.cwd();
+        const uploadsPath = path.join(process.cwd(), 'public', 'staging_uploads');
+        if (fs.existsSync(uploadsPath)) {
+            checkPath = uploadsPath;
+        }
         const stats = await statfs(checkPath);
         const totalBytes = stats.blocks * stats.bsize;
         const freeBytes = stats.bfree * stats.bsize;

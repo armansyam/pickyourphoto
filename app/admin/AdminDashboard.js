@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 export default function AdminDashboard({ adminUser }) {
-    const [activeTab, setActiveTab] = useState('vendors'); // 'vendors' | 'plans' | 'upgrades' | 'settings'
+    const [activeTab, setActiveTab] = useState('monitor'); // 'monitor' | 'vendors' | 'plans' | 'upgrades' | 'settings'
     const [vendorSubTab, setVendorSubTab] = useState('active'); // 'active' | 'inactive'
     const [vendors, setVendors] = useState([]);
     const [plans, setPlans] = useState([]);
@@ -81,6 +81,8 @@ export default function AdminDashboard({ adminUser }) {
     const [sysMaxQuota, setSysMaxQuota] = useState(null);
     const [sysWarnThreshold, setSysWarnThreshold] = useState(20);
     const [sysCritThreshold, setSysCritThreshold] = useState(10);
+    const [sysEnableBackup, setSysEnableBackup] = useState(false);
+    const [sysBackupInterval, setSysBackupInterval] = useState(6);
 
     const [diskStats, setDiskStats] = useState({
         total_gb: '0',
@@ -100,6 +102,8 @@ export default function AdminDashboard({ adminUser }) {
                 setSysMaxQuota(data.max_vendor_quota);
                 setSysWarnThreshold(data.disk_warning_threshold_percent);
                 setSysCritThreshold(data.disk_critical_threshold_percent);
+                setSysEnableBackup(data.enable_auto_backup === 1);
+                setSysBackupInterval(data.backup_interval_hours);
             }
         } catch (err) {
             console.error('Failed to fetch system settings:', err);
@@ -115,6 +119,35 @@ export default function AdminDashboard({ adminUser }) {
             }
         } catch (err) {
             console.error('Failed to fetch disk stats:', err);
+        }
+    };
+
+    // --- NEW: Analytics state ---
+    const [analytics, setAnalytics] = useState({
+        topStorageUsers: [],
+        planDistribution: [],
+        systemStats: {
+            totalPhotos: 0,
+            totalProjects: 0,
+            dbSizeBytes: 0,
+            dbSizeMB: '0.00',
+            lastBackupTime: 'Belum pernah'
+        }
+    });
+    const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
+    const fetchAnalytics = async () => {
+        setLoadingAnalytics(true);
+        try {
+            const res = await fetch('/api/admin/analytics');
+            if (res.ok) {
+                const data = await res.json();
+                setAnalytics(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch analytics data:', err);
+        } finally {
+            setLoadingAnalytics(false);
         }
     };
 
@@ -163,8 +196,12 @@ export default function AdminDashboard({ adminUser }) {
         fetchData();
         fetchSystemSettings();
         fetchDiskStats();
+        fetchAnalytics();
 
-        const interval = setInterval(fetchDiskStats, 30000);
+        const interval = setInterval(() => {
+            fetchDiskStats();
+            fetchAnalytics();
+        }, 30000);
         return () => clearInterval(interval);
     }, []);
 
@@ -486,7 +523,9 @@ export default function AdminDashboard({ adminUser }) {
                     enable_free_trial: sysEnableTrial,
                     max_vendor_quota: sysMaxQuota,
                     disk_warning_threshold_percent: sysWarnThreshold,
-                    disk_critical_threshold_percent: sysCritThreshold
+                    disk_critical_threshold_percent: sysCritThreshold,
+                    enable_auto_backup: sysEnableBackup,
+                    backup_interval_hours: sysBackupInterval
                 })
             });
 
@@ -569,6 +608,13 @@ export default function AdminDashboard({ adminUser }) {
                     {/* Tab Navigation */}
                     <div style={{ display: 'flex', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
                         <button 
+                            onClick={() => setActiveTab('monitor')}
+                            className={activeTab === 'monitor' ? 'btn-primary' : 'btn-secondary'}
+                            style={{ border: 'none', background: activeTab === 'monitor' ? '' : 'transparent', padding: '8px 16px', fontSize: '13px', boxShadow: activeTab === 'monitor' ? '' : 'none' }}
+                        >
+                            📊 Monitor & Analisis
+                        </button>
+                        <button 
                             onClick={() => setActiveTab('vendors')}
                             className={activeTab === 'vendors' ? 'btn-primary' : 'btn-secondary'}
                             style={{ border: 'none', background: activeTab === 'vendors' ? '' : 'transparent', padding: '8px 16px', fontSize: '13px', boxShadow: activeTab === 'vendors' ? '' : 'none' }}
@@ -599,132 +645,271 @@ export default function AdminDashboard({ adminUser }) {
                     </div>
                 </div>
 
-                {/* ── PROGRESS & REVENUE ANALYSIS DASHBOARD ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-                    
-                    {/* Potential Revenue Card */}
-                    <div className="glass-card" style={{ padding: '20px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(0,0,0,0))' }}>
-                        <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Monthly Potential Revenue</span>
-                        <h2 style={{ fontSize: '32px', margin: '6px 0 2px 0', fontWeight: 'bold', color: '#34d399' }}>
-                            Rp {loading ? '...' : monthlyRevenue.toLocaleString()}
-                        </h2>
-                        <span style={{ fontSize: '11px', color: '#71717a' }}>From {activeVendors} active subscription plans</span>
-                    </div>
+                {/* ── TAB 0: MONITOR & ANALISIS ── */}
+                {activeTab === 'monitor' && (
+                    <div className="fade-in-up">
+                        {/* ── PROGRESS & REVENUE ANALYSIS DASHBOARD ── */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+                            
+                            {/* Potential Revenue Card */}
+                            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(0,0,0,0))' }}>
+                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Monthly Potential Revenue</span>
+                                <h2 style={{ fontSize: '32px', margin: '6px 0 2px 0', fontWeight: 'bold', color: '#34d399' }}>
+                                    Rp {loading ? '...' : monthlyRevenue.toLocaleString()}
+                                </h2>
+                                <span style={{ fontSize: '11px', color: '#71717a' }}>From {activeVendors} active subscription plans</span>
+                            </div>
 
-                    {/* Completion rate progress card */}
-                    <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
-                        <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Client Selection Progress</span>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
-                            <h2 style={{ fontSize: '32px', margin: 0, fontWeight: 'bold', color: '#818cf8' }}>
-                                {loading ? '...' : `${completionRate}%`}
-                            </h2>
-                            <span style={{ fontSize: '11px', color: '#71717a' }}>
-                                {completedProjects} of {totalProjects} projects
-                            </span>
-                        </div>
-                        {/* Custom visual progress bar */}
-                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '12px', overflow: 'hidden' }}>
-                            <div style={{ width: `${completionRate}%`, height: '100%', background: 'linear-gradient(90deg, #818cf8, #6366f1)', borderRadius: '3px', transition: 'width 0.5s ease-in-out' }} />
-                        </div>
-                    </div>
+                            {/* Completion rate progress card */}
+                            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
+                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Client Selection Progress</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
+                                    <h2 style={{ fontSize: '32px', margin: 0, fontWeight: 'bold', color: '#818cf8' }}>
+                                        {loading ? '...' : `${completionRate}%`}
+                                    </h2>
+                                    <span style={{ fontSize: '11px', color: '#71717a' }}>
+                                        {completedProjects} of {totalProjects} projects
+                                    </span>
+                                </div>
+                                {/* Custom visual progress bar */}
+                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '12px', overflow: 'hidden' }}>
+                                    <div style={{ width: `${completionRate}%`, height: '100%', background: 'linear-gradient(90deg, #818cf8, #6366f1)', borderRadius: '3px', transition: 'width 0.5s ease-in-out' }} />
+                                </div>
+                            </div>
 
-                    {/* Funnel projects count card */}
-                    <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
-                        <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Project Funnel Breakdown</span>
-                        <div style={{ display: 'flex', gap: '20px', marginTop: '14px' }}>
-                            <div>
-                                <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#34d399', display: 'block' }}>
-                                    {loading ? '...' : completedProjects}
-                                </span>
-                                <span style={{ fontSize: '10px', color: '#71717a' }}>Selesai Dipilih</span>
+                            {/* Funnel projects count card */}
+                            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
+                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Project Funnel Breakdown</span>
+                                <div style={{ display: 'flex', gap: '20px', marginTop: '14px' }}>
+                                    <div>
+                                        <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#34d399', display: 'block' }}>
+                                            {loading ? '...' : completedProjects}
+                                        </span>
+                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Selesai Dipilih</span>
+                                    </div>
+                                    <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '20px' }}>
+                                        <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#fbbf24', display: 'block' }}>
+                                            {loading ? '...' : pendingProjects}
+                                        </span>
+                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Menunggu Seleksi</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '20px' }}>
-                                <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#fbbf24', display: 'block' }}>
-                                    {loading ? '...' : pendingProjects}
-                                </span>
-                                <span style={{ fontSize: '10px', color: '#71717a' }}>Menunggu Seleksi</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Vendors Status Breakdown Card */}
-                    <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
-                        <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Vendors Account Status</span>
-                        <div style={{ display: 'flex', gap: '16px', marginTop: '14px' }}>
-                            <div>
-                                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#f4f4f5', display: 'block' }}>
-                                    {loading ? '...' : totalVendors}
-                                </span>
-                                <span style={{ fontSize: '10px', color: '#71717a' }}>Registered</span>
+                            {/* Vendors Status Breakdown Card */}
+                            <div className="glass-card" style={{ padding: '20px', borderRadius: '12px' }}>
+                                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Vendors Account Status</span>
+                                <div style={{ display: 'flex', gap: '16px', marginTop: '14px' }}>
+                                    <div>
+                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#f4f4f5', display: 'block' }}>
+                                            {loading ? '...' : totalVendors}
+                                        </span>
+                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Registered</span>
+                                    </div>
+                                    <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '16px' }}>
+                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fbbf24', display: 'block' }}>
+                                            {loading ? '...' : pendingApprovals}
+                                        </span>
+                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Pending</span>
+                                    </div>
+                                    <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '16px' }}>
+                                        <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', display: 'block' }}>
+                                            {loading ? '...' : suspendedVendors}
+                                        </span>
+                                        <span style={{ fontSize: '10px', color: '#71717a' }}>Suspended</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '16px' }}>
-                                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#fbbf24', display: 'block' }}>
-                                    {loading ? '...' : pendingApprovals}
-                                </span>
-                                <span style={{ fontSize: '10px', color: '#71717a' }}>Pending</span>
-                            </div>
-                            <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '16px' }}>
-                                <span style={{ fontSize: '16px', fontWeight: 'bold', color: '#ef4444', display: 'block' }}>
-                                    {loading ? '...' : suspendedVendors}
-                                </span>
-                                <span style={{ fontSize: '10px', color: '#71717a' }}>Suspended</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Real-time Server Disk space status Card */}
-                    <div className="glass-card" style={{ 
-                        padding: '20px', 
-                        borderRadius: '12px',
-                        border: diskStats.status === 'critical' 
-                            ? '1px solid rgba(239, 68, 68, 0.4)' 
-                            : diskStats.status === 'warning' 
-                                ? '1px solid rgba(251, 191, 36, 0.4)' 
-                                : '1px solid rgba(255, 255, 255, 0.08)'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Kapasitas Disk Server</span>
-                            <span style={{ 
-                                fontSize: '10px', 
-                                padding: '2px 8px', 
-                                borderRadius: '12px', 
-                                fontWeight: 'bold',
-                                color: '#ffffff',
-                                background: diskStats.status === 'critical' 
-                                    ? '#ef4444' 
+                            {/* Real-time Server Disk space status Card */}
+                            <div className="glass-card" style={{ 
+                                padding: '20px', 
+                                borderRadius: '12px',
+                                border: diskStats.status === 'critical' 
+                                    ? '1px solid rgba(239, 68, 68, 0.4)' 
                                     : diskStats.status === 'warning' 
-                                        ? '#fbbf24' 
-                                        : '#10b981'
+                                        ? '1px solid rgba(251, 191, 36, 0.4)' 
+                                        : '1px solid rgba(255, 255, 255, 0.08)'
                             }}>
-                                {diskStats.status === 'critical' ? 'KRITIS' : diskStats.status === 'warning' ? 'PERINGATAN' : 'AMAN'}
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
-                            <h2 style={{ fontSize: '22px', margin: 0, fontWeight: 'bold', color: '#ffffff' }}>
-                                {diskStats.used_gb} GB <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#71717a' }}>terpakai dari</span> {diskStats.total_gb} GB
-                            </h2>
-                        </div>
-                        {/* progress bar */}
-                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '12px', overflow: 'hidden' }}>
-                            <div style={{ 
-                                width: `${100 - parseFloat(diskStats.free_percent)}%`, 
-                                height: '100%', 
-                                background: diskStats.status === 'critical' 
-                                    ? 'linear-gradient(90deg, #ef4444, #f87171)' 
-                                    : diskStats.status === 'warning' 
-                                        ? 'linear-gradient(90deg, #fbbf24, #fbbf24)' 
-                                        : 'linear-gradient(90deg, #10b981, #34d399)', 
-                                borderRadius: '3px', 
-                                transition: 'width 0.5s ease-in-out' 
-                            }} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#71717a', marginTop: '6px' }}>
-                            <span>Kosong: {diskStats.free_gb} GB ({diskStats.free_percent}%)</span>
-                            <span>Batas: Min {diskStats.critical_threshold}%</span>
-                        </div>
-                    </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Kapasitas Disk Server</span>
+                                    <span style={{ 
+                                        fontSize: '10px', 
+                                        padding: '2px 8px', 
+                                        borderRadius: '12px', 
+                                        fontWeight: 'bold',
+                                        color: '#ffffff',
+                                        background: diskStats.status === 'critical' 
+                                            ? '#ef4444' 
+                                            : diskStats.status === 'warning' 
+                                                ? '#fbbf24' 
+                                                : '#10b981'
+                                    }}>
+                                        {diskStats.status === 'critical' ? 'KRITIS' : diskStats.status === 'warning' ? 'PERINGATAN' : 'AMAN'}
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginTop: '6px' }}>
+                                    <h2 style={{ fontSize: '22px', margin: 0, fontWeight: 'bold', color: '#ffffff' }}>
+                                        {diskStats.used_gb} GB <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#71717a' }}>terpakai dari</span> {diskStats.total_gb} GB
+                                    </h2>
+                                </div>
+                                {/* progress bar */}
+                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', marginTop: '12px', overflow: 'hidden' }}>
+                                    <div style={{ 
+                                        width: `${100 - parseFloat(diskStats.free_percent)}%`, 
+                                        height: '100%', 
+                                        background: diskStats.status === 'critical' 
+                                            ? 'linear-gradient(90deg, #ef4444, #f87171)' 
+                                            : diskStats.status === 'warning' 
+                                                ? 'linear-gradient(90deg, #fbbf24, #fbbf24)' 
+                                                : 'linear-gradient(90deg, #10b981, #34d399)', 
+                                        borderRadius: '3px', 
+                                        transition: 'width 0.5s ease-in-out' 
+                                    }} />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#71717a', marginTop: '6px' }}>
+                                    <span>Kosong: {diskStats.free_gb} GB ({diskStats.free_percent}%)</span>
+                                    <span>Batas: Min {diskStats.critical_threshold}%</span>
+                                </div>
+                            </div>
 
-                </div>
+                        </div>
+
+                        {/* ── NEW ANALYTICS WIDGETS ── */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                            {/* TOP STORAGE USERS */}
+                            <div className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
+                                <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    📁 Top Storage Users (Vendor)
+                                </h3>
+                                {loadingAnalytics ? (
+                                    <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Loading storage analytics...</p>
+                                ) : analytics.topStorageUsers.length === 0 ? (
+                                    <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Belum ada data penyimpanan vendor.</p>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                        {analytics.topStorageUsers.map(u => {
+                                            const storageLimit = u.maxStorageMB || 0;
+                                            const storageUsed = parseFloat(u.totalMB);
+                                            const percentUsed = storageLimit > 0 ? Math.min((storageUsed / storageLimit) * 100, 100).toFixed(1) : 0;
+                                            return (
+                                                <div key={u.id} style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', padding: '12px 16px', borderRadius: '12px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                        <div>
+                                                            <strong style={{ display: 'block', fontSize: '14px', color: '#ffffff' }}>{u.name}</strong>
+                                                            <span style={{ fontSize: '11px', color: '#71717a' }}>{u.email} • {u.planName || 'No Plan'}</span>
+                                                        </div>
+                                                        <div style={{ textAlign: 'right' }}>
+                                                            <strong style={{ fontSize: '14px', color: '#818cf8' }}>{storageUsed >= 1024 ? `${(storageUsed/1024).toFixed(2)} GB` : `${storageUsed.toFixed(1)} MB`}</strong>
+                                                            <span style={{ display: 'block', fontSize: '11px', color: '#71717a' }}>
+                                                                {storageLimit > 0 ? `Limit: ${storageLimit >= 1024 ? `${(storageLimit/1024).toFixed(0)} GB` : `${storageLimit} MB`}` : 'Limit: Unlimited'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    {storageLimit > 0 && (
+                                                        <div>
+                                                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                                                                <div style={{ width: `${percentUsed}%`, height: '100%', background: '#818cf8', borderRadius: '2px' }} />
+                                                            </div>
+                                                            <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '9px', color: '#71717a', marginTop: '4px' }}>
+                                                                <span>Terpakai {percentUsed}%</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* PLAN DISTRIBUTION & SYSTEM HEALTH */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                {/* PLAN DISTRIBUTION */}
+                                <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', flex: 1 }}>
+                                    <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        📦 Distribusi Paket Aktif
+                                    </h3>
+                                    {loadingAnalytics ? (
+                                        <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Loading plan statistics...</p>
+                                    ) : analytics.planDistribution.length === 0 ? (
+                                        <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Belum ada paket aktif.</p>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {analytics.planDistribution.map((p, idx) => {
+                                                const maxCount = Math.max(...analytics.planDistribution.map(item => item.count), 1);
+                                                const percent = ((p.count / maxCount) * 100).toFixed(0);
+                                                return (
+                                                    <div key={idx}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                                                            <span>{p.name} <span style={{ fontSize: '10px', color: '#71717a' }}>({p.planType === 'storage' ? 'Storage' : 'Limit'})</span></span>
+                                                            <strong style={{ color: '#818cf8' }}>{p.count} Vendor</strong>
+                                                        </div>
+                                                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                                                            <div style={{ width: `${percent}%`, height: '100%', background: 'linear-gradient(90deg, #818cf8, #6366f1)', borderRadius: '3px' }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* SYSTEM HEALTH & BACKUPS */}
+                                <div className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
+                                    <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '600', color: '#34d399', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        🛡️ Kesehatan Sistem & Backup
+                                    </h3>
+                                    {loadingAnalytics ? (
+                                        <p style={{ color: '#a1a1aa', fontSize: '14px' }}>Loading system health...</p>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '13px' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                <span style={{ color: '#a1a1aa' }}>Ukuran Database SQLite:</span>
+                                                <strong style={{ color: '#ffffff' }}>{analytics.systemStats.dbSizeMB} MB</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                <span style={{ color: '#a1a1aa' }}>Total Foto Di Server:</span>
+                                                <strong style={{ color: '#ffffff' }}>{analytics.systemStats.totalPhotos.toLocaleString()} File</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                                <span style={{ color: '#a1a1aa' }}>Total Proyek Vendor:</span>
+                                                <strong style={{ color: '#ffffff' }}>{analytics.systemStats.totalProjects.toLocaleString()} Proyek</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ color: '#a1a1aa' }}>Backup Terakhir (Cron):</span>
+                                                <span style={{ 
+                                                    fontSize: '11px', 
+                                                    padding: '2px 8px', 
+                                                    borderRadius: '4px', 
+                                                    background: analytics.systemStats.lastBackupTime === 'Belum pernah' ? 'rgba(239,68,68,0.15)' : 'rgba(52,211,153,0.15)',
+                                                    color: analytics.systemStats.lastBackupTime === 'Belum pernah' ? '#f87171' : '#34d399',
+                                                    fontWeight: 'bold'
+                                                }}>
+                                                    {analytics.systemStats.lastBackupTime}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                                <span style={{ color: '#a1a1aa' }}>Status Auto Backup:</span>
+                                                <span style={{ 
+                                                    fontSize: '11px', 
+                                                    padding: '2px 8px', 
+                                                    borderRadius: '4px', 
+                                                    background: analytics.enable_auto_backup === 1 ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.08)',
+                                                    color: analytics.enable_auto_backup === 1 ? '#34d399' : '#a1a1aa',
+                                                    fontWeight: 'bold'
+                                                }}>
+                                                    {analytics.enable_auto_backup === 1 ? `Aktif (${analytics.backup_interval_hours} jam)` : 'Nonaktif'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                )}
 
                 {/* ── TAB 1: MANAGE VENDORS ── */}
                 {activeTab === 'vendors' && (
@@ -1322,6 +1507,39 @@ export default function AdminDashboard({ adminUser }) {
                             <p style={{ color: '#a1a1aa', fontSize: '12px', marginTop: '0', marginBottom: '28px', lineHeight: '1.4' }}>
                                 💡 *Sistem otomatis menolak pendaftaran baru jika kapasitas ruang disk kosong di bawah persentase batas Kritis (Critical).*
                             </p>
+
+                            {/* --- NEW: Auto Backup Settings --- */}
+                            <h4 style={{ margin: '24px 0 12px 0', fontSize: '15px', color: '#f4f4f5', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px' }}>
+                                💾 Konfigurasi Backup Otomatis (Cron)
+                            </h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="sysEnableBackup"
+                                        checked={sysEnableBackup}
+                                        onChange={e => setSysEnableBackup(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    />
+                                    <label htmlFor="sysEnableBackup" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>
+                                        Aktifkan Backup Otomatis
+                                    </label>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label" style={{ marginTop: 0 }}>Interval Backup Terjadwal</label>
+                                    <select 
+                                        className="input-text"
+                                        value={sysBackupInterval}
+                                        onChange={e => setSysBackupInterval(parseInt(e.target.value))}
+                                        disabled={!sysEnableBackup}
+                                        style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', color: '#ffffff', height: '40px' }}
+                                    >
+                                        <option value="6">Setiap 6 Jam</option>
+                                        <option value="12">Setiap 12 Jam</option>
+                                        <option value="24">Setiap 24 Jam (Sekali Sehari)</option>
+                                    </select>
+                                </div>
+                            </div>
 
                             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                 <button type="submit" className="btn-primary" disabled={savingProfile} style={{ padding: '12px 32px' }}>
