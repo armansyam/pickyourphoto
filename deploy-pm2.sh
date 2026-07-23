@@ -52,7 +52,10 @@ echo "📦 3. Menginstal semua dependensi (termasuk devDependencies)..."
 npm install
 
 echo "🏗️ 4. Membangun aplikasi Next.js (npm run build)..."
-npm run build
+# Hapus cache build lama jika ada
+rm -rf .next
+# Jalankan build dengan batasan memori Node.js agar tidak memicu OOM Killer di VPS kecil
+NODE_OPTIONS="--max-old-space-size=768" npm run build
 
 # Bersihkan devDependencies setelah build selesai agar hemat space disk di VPS
 echo "🧹 5. Membersihkan devDependencies (npm prune)..."
