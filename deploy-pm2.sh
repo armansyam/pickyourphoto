@@ -15,9 +15,11 @@ echo "📥 1. Menarik pembaruan kode terbaru dari Git (main branch)..."
 git pull origin main
 
 # 2. Setup berkas .env.local & Otomatisasi JWT_SECRET
+ENV_CREATED=0
 if [ ! -f .env.local ]; then
     echo "📄 Pembuatan .env.local otomatis dari template .env.example..."
     cp .env.example .env.local
+    ENV_CREATED=1
 fi
 
 # Cek apakah JWT_SECRET masih menggunakan nilai default template
@@ -33,6 +35,16 @@ if grep -q "JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman" .env.local; then
       fs.writeFileSync('.env.local', content, 'utf8');
     "
     echo "✅ JWT_SECRET aman berhasil di-generate dan disimpan ke .env.local!"
+fi
+
+# Jika berkas baru dibuat, hentikan sementara agar pengguna bisa mengisi GOOGLE_API_KEY
+if [ $ENV_CREATED -eq 1 ]; then
+    echo ""
+    echo "⚠️  [PENTING] Berkas .env.local baru saja dibuat otomatis dengan JWT_SECRET yang aman."
+    echo "👉 Silakan edit berkas tersebut sekarang dengan perintah: nano .env.local"
+    echo "👉 Masukkan GOOGLE_API_KEY Anda, lalu jalankan kembali script ./deploy-pm2.sh ini."
+    echo ""
+    exit 0
 fi
 
 # 3. Install dependencies & Build
