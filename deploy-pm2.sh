@@ -47,15 +47,19 @@ if [ $ENV_CREATED -eq 1 ]; then
     exit 0
 fi
 
-# 3. Install dependencies & Build
-echo "📦 3. Menginstal dependensi produksi..."
-npm install --production
+# 3. Install all dependencies (including devDependencies needed for build, like ESLint)
+echo "📦 3. Menginstal semua dependensi (termasuk devDependencies)..."
+npm install
 
 echo "🏗️ 4. Membangun aplikasi Next.js (npm run build)..."
 npm run build
 
+# Bersihkan devDependencies setelah build selesai agar hemat space disk di VPS
+echo "🧹 5. Membersihkan devDependencies (npm prune)..."
+npm prune --production
+
 # 4. Restart/Reload aplikasi di PM2
-echo "🔄 5. Melakukan reload service di PM2..."
+echo "🔄 6. Melakukan reload service di PM2..."
 # Cek apakah PM2 dengan nama "pick-your-photo" sudah terdaftar
 if pm2 describe "pick-your-photo" > /dev/null 2>&1; then
     echo "⚡ Service ditemukan. Melakukan zero-downtime reload..."
