@@ -84,12 +84,13 @@ export async function POST(request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Compress and resize payment proof using Sharp
+        // Compress and resize payment proof using Sharp (WebP format & auto-rotate EXIF)
         let compressedBuffer;
         try {
             compressedBuffer = await sharp(buffer)
-                .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
-                .jpeg({ quality: 75 })
+                .rotate()
+                .resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: 75, effort: 4 })
                 .toBuffer();
         } catch (err) {
             console.error('Failed to compress transfer proof:', err);
@@ -103,7 +104,7 @@ export async function POST(request) {
         }
 
         // Generate safe unique filename
-        const uniqueName = `${crypto.randomBytes(16).toString('hex')}.jpg`;
+        const uniqueName = `${crypto.randomBytes(16).toString('hex')}.webp`;
         const filePath = path.join(uploadDir, uniqueName);
 
         // Write file

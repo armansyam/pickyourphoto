@@ -99,10 +99,11 @@ export async function POST(request) {
                 const arrayBuffer = await paymentProofFile.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
 
-                // Resize and compress
+                // Resize and compress (WebP format & auto-rotate EXIF)
                 const compressedBuffer = await sharp(buffer)
-                    .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
-                    .jpeg({ quality: 70 })
+                    .rotate()
+                    .resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true })
+                    .webp({ quality: 75, effort: 4 })
                     .toBuffer();
 
                 // Setup directories
@@ -111,7 +112,7 @@ export async function POST(request) {
                     fs.mkdirSync(proofDir, { recursive: true });
                 }
 
-                const filename = `${Date.now()}_proof.jpg`;
+                const filename = `${Date.now()}_proof.webp`;
                 const filepath = path.join(proofDir, filename);
                 await fs.promises.writeFile(filepath, compressedBuffer);
                 

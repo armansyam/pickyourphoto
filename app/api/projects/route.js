@@ -211,15 +211,22 @@ export async function processImagesInBackground(projectId, files, uploadDir) {
     let failCount = 0;
     let isStorageFull = false;
 
-    for (const file of files) {
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        // Base throttle delay (250ms) between file requests to prevent Google Drive rate limit burst
+        if (i > 0) {
+            await new Promise(r => setTimeout(r, 250));
+        }
+
         try {
             // Sanitize file name for filesystem
             const sanitizedName = file.name.replace(/[\/\\?%*:|"<>]/g, '_');
             const ext = path.extname(sanitizedName) || '.jpg';
             const baseName = path.basename(sanitizedName, ext);
 
-            const origFileName = `${baseName}${ext}`;
-            const thumbFileName = `${baseName}_thumb${ext}`;
+            const origFileName = `${baseName}.webp`;
+            const thumbFileName = `${baseName}_thumb.webp`;
 
             // Save reference paths relative to public webserver root
             const origPathDb = `/staging_uploads/${vendorFolder}/${projectFolder}/${origFileName}`;
@@ -238,16 +245,18 @@ export async function processImagesInBackground(projectId, files, uploadDir) {
             const origFilePath = path.join(uploadDir, origFileName);
             const thumbFilePath = path.join(uploadDir, thumbFileName);
 
-            // Compress preview image (max width 1200px, quality 70)
+            // Compress preview image (max width 1000px, quality 75, WebP format, auto-rotate EXIF)
             await sharp(buffer)
-                .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true })
-                .jpeg({ quality: 70 })
+                .rotate()
+                .resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true })
+                .webp({ quality: 75, effort: 4 })
                 .toFile(origFilePath);
 
-            // Create thumbnail (max width 400px, quality 60)
+            // Create thumbnail (max width 400px, quality 60, WebP format, auto-rotate EXIF)
             await sharp(buffer)
+                .rotate()
                 .resize({ width: 400, height: 400, fit: 'inside', withoutEnlargement: true })
-                .jpeg({ quality: 60 })
+                .webp({ quality: 60, effort: 4 })
                 .toFile(thumbFilePath);
 
             // Calculate exact file size written to disk

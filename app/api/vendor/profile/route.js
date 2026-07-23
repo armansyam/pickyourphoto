@@ -60,19 +60,20 @@ export async function PUT(request) {
             const arrayBuffer = await logoFile.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             
-            // Resize and compress logo using Sharp (preserving PNG transparency)
+            // Resize and compress logo using Sharp (preserving WebP transparency & auto-rotate EXIF)
             let compressedBuffer;
             try {
                 compressedBuffer = await sharp(buffer)
+                    .rotate()
                     .resize({ width: 500, height: 500, fit: 'inside', withoutEnlargement: true })
-                    .png({ quality: 85, compressionLevel: 9 })
+                    .webp({ quality: 85, effort: 4 })
                     .toBuffer();
             } catch (err) {
                 console.error('Failed to compress brand logo:', err);
                 return NextResponse.json({ message: 'Gagal memproses gambar logo.' }, { status: 400 });
             }
 
-            const fileName = `${vendor.id}_${Date.now()}_brandlogo.png`;
+            const fileName = `${vendor.id}_${Date.now()}_brandlogo.webp`;
             const filePath = path.join(logoDir, fileName);
             
             fs.writeFileSync(filePath, compressedBuffer);
