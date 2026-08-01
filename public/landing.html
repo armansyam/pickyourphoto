@@ -308,8 +308,8 @@
     </div>
     <div style="display:flex;gap:14px;align-items:center;">
       <div class="lang-switch" id="langSwitch">
-        <button type="button" class="lang-btn" data-lang="id">ID</button>
-        <button type="button" class="lang-btn active" data-lang="en">EN</button>
+        <button type="button" class="lang-btn active" data-lang="id">ID</button>
+        <button type="button" class="lang-btn" data-lang="en">EN</button>
       </div>
       <a href="/login" style="font-size:14.5px;color:var(--muted);font-weight:500;" data-i18n="nav.masuk">Masuk</a>
     </div>
@@ -325,8 +325,8 @@
       <h1 data-i18n="hero.h1">Klien pilih fotonya.<br>Anda langsung buka <em>Lightroom</em>.</h1>
       <p class="lead" data-i18n="hero.lead">Kami urus galeri seleksinya — klien buka satu tautan, pilih foto yang mau diedit, selesai. Tidak ada lagi bolak-balik WhatsApp, tidak ada Excel yang hilang.</p>
       <div class="hero-ctas">
-        <a href="/register" class="btn-primary" data-i18n="hero.ctaPrimary">Coba Gratis Sekarang &rarr;</a>
-        <a href="#how-it-works" class="btn-secondary" data-i18n="hero.ctaSecondary">Lihat cara kerjanya</a>
+        <a href="#trial-box" class="btn-primary" style="background: linear-gradient(135deg, #6366f1, #9333ea); color: #ffffff; font-weight: bold;">⚡ Tes Trial Instan (1 Jam) &rarr;</a>
+        <a href="/register" class="btn-secondary" data-i18n="hero.ctaPrimary">Daftar Vendor</a>
       </div>
       <div class="trust-line">
         <span data-i18n="hero.trust1">BUKAN CLOUD STORAGE</span>
@@ -348,6 +348,306 @@
       </div>
     </div>
   </section>
+
+  <!-- INSTANT TRIAL BOX SECTION -->
+  <section id="trial-box" style="padding: 40px 0 60px 0;">
+    <div style="background: linear-gradient(145deg, #15122A, #0B0918); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 20px; padding: 40px 32px; max-width: 720px; margin: 0 auto; text-align: center; box-shadow: 0 20px 50px rgba(99, 102, 241, 0.15);">
+      <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); padding: 6px 16px; border-radius: 20px; font-size: 12px; color: #a5b4fc; font-weight: bold; font-family: var(--mono); margin-bottom: 16px;">
+        ⚡ FREE INSTANT TRIAL (1 JAM) — TANPA REGISTRASI
+      </div>
+      <h2 style="font-family: var(--serif); font-size: 32px; font-weight: 600; color: #EAE8F7; margin-bottom: 12px;">
+        Uji Coba Kecepatan Galeri Seleksi Live
+      </h2>
+      <p style="color: #9791B8; font-size: 15px; max-width: 540px; margin: 0 auto 28px; line-height: 1.6;">
+        Tempelkan link folder Google Drive publik Anda di bawah ini. Galeri seleksi foto simulasi akan dibuat dalam <strong>1-2 detik</strong> tanpa mendownload foto ke server!
+      </p>
+
+      <!-- CTA BUTTON (visible by default) -->
+      <button
+        type="button"
+        id="trialCTABtn"
+        style="width: 100%; background: linear-gradient(135deg, #6366f1, #9333ea); color: #fff; border: none; padding: 16px 24px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--sans);"
+      >
+        🚀 Mulai Uji Coba Gratis <span style="font-size: 18px;">→</span>
+      </button>
+
+      <!-- COLLAPSIBLE FORM WRAPPER -->
+      <div id="trialFormWrapper" style="max-height: 0; overflow: hidden; transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease; opacity: 0;">
+      <form id="landingTrialForm" style="display: flex; flex-direction: column; gap: 16px; text-align: left; padding-top: 4px;">
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #D8D5EE; margin-bottom: 6px; font-family: var(--mono);">
+            Link Folder Google Drive (Public) *
+          </label>
+          <input
+            type="url"
+            id="trialFolderUrl"
+            placeholder="https://drive.google.com/drive/folders/..."
+            required
+            style="width: 100%; padding: 14px 18px; background: rgba(11, 9, 24, 0.8); border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 10px; color: #EAE8F7; font-size: 14px; outline: none; font-family: var(--sans);"
+          />
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #71717a;">
+            <span>* Pastikan folder diset: "Siapa saja yang memiliki link dapat melihat".</span>
+            <span style="color: #a5b4fc; font-weight: bold;">⚡ Maksimal 100 Foto per Folder Trial</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; color: #D8D5EE; margin-bottom: 6px; font-family: var(--mono);">
+              Judul Galeri (Opsional)
+            </label>
+            <input
+              type="text"
+              id="trialTitle"
+              placeholder="Contoh: Wisuda Sarah 2026"
+              style="width: 100%; padding: 12px 14px; background: rgba(11, 9, 24, 0.8); border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 10px; color: #EAE8F7; font-size: 14px; outline: none; font-family: var(--sans);"
+            />
+          </div>
+          <div>
+            <label style="display: block; font-size: 13px; font-weight: 600; color: #D8D5EE; margin-bottom: 6px; font-family: var(--mono);">
+              Batas Foto Dipilih (Kuota)
+            </label>
+            <input
+              type="number"
+              id="trialMaxSelect"
+              min="1"
+              max="15"
+              value="10"
+              style="width: 100%; padding: 12px 14px; background: rgba(11, 9, 24, 0.8); border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 10px; color: #EAE8F7; font-size: 14px; outline: none; font-family: var(--sans);"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #D8D5EE; margin-bottom: 6px; font-family: var(--mono);">
+            🖼️ Upload Logo Studio Anda (Opsional - Simulasi White-Label)
+          </label>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input
+              type="file"
+              id="trialLogoFile"
+              accept="image/png, image/jpeg, image/webp"
+              style="flex: 1; padding: 10px 14px; background: rgba(11, 9, 24, 0.8); border: 1px dashed rgba(129, 140, 248, 0.4); border-radius: 10px; color: #9791B8; font-size: 13px; cursor: pointer; font-family: var(--sans);"
+            />
+            <div id="trialLogoPreviewBox" style="display: none; position: relative; align-items: center;">
+              <img id="trialLogoPreviewImg" src="" alt="Preview Logo" style="height: 38px; width: auto; max-height: 38px; border-radius: 6px; border: 1px solid #6366f1; background: #fff; padding: 2px;" />
+              <button type="button" id="removeTrialLogoBtn" style="position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+            </div>
+          </div>
+          <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
+            * Maks 500KB • Format: PNG/JPG/WebP • Otomatis dikompres ke WebP untuk loading cepat
+          </div>
+        </div>
+
+        <div id="trialErrorMsg" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 12px; border-radius: 8px; font-size: 13px;"></div>
+
+        <div style="display: flex; gap: 10px;">
+          <button
+            type="submit"
+            id="trialSubmitBtn"
+            style="flex: 1; background: linear-gradient(135deg, #6366f1, #818cf8); color: #ffffff; border: none; padding: 16px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35); font-family: var(--sans); display: flex; align-items: center; justify-content: center; gap: 8px;"
+          >
+            <span>🚀 Buat Galeri Trial (Aktif 1 Jam)</span>
+          </button>
+          <button
+            type="button"
+            id="trialCollapseBtn"
+            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #71717a; padding: 14px 16px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s ease;"
+          >✕</button>
+        </div>
+      </form>
+      </div>
+
+      <!-- RESULT CARD WITH COPY URLS (INLINE DISPLAY) -->
+      <div id="trialResultCard" style="display: none; text-align: left; background: rgba(0,0,0,0.3); border: 1px solid #6366f1; border-radius: 14px; padding: 24px; margin-top: 20px;">
+        <div style="font-size: 20px; font-weight: bold; color: #34d399; margin-bottom: 6px;">🎉 Galeri Trial Instan Berhasil Dibuat!</div>
+        <p style="color: #9791B8; font-size: 13px; margin: 0 0 20px 0;">Folder Google Drive Anda berhasil terhubung (0 Bytes disk server terpakai). Silakan salin link di bawah ini:</p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
+          <!-- Box 1: Link Galeri Klien -->
+          <div style="background: rgba(11,9,24,0.8); border: 1px solid rgba(129,140,248,0.3); padding: 12px; border-radius: 10px;">
+            <span style="font-size: 11px; color: #818cf8; font-weight: bold; display: block; margin-bottom: 4px;">📱 Link Galeri Klien (Halaman Seleksi Foto):</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <code id="resClientUrlText" style="font-size: 12px; color: #EAE8F7; fontFamily: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></code>
+              <button type="button" id="copyClientUrlBtn" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;">📋 Salin</button>
+            </div>
+          </div>
+
+          <!-- Box 2: Link Hasil Seleksi -->
+          <div style="background: rgba(11,9,24,0.8); border: 1px solid rgba(16,185,129,0.3); padding: 12px; border-radius: 10px;">
+            <span style="font-size: 11px; color: #34d399; font-weight: bold; display: block; margin-bottom: 4px;">📋 Link Hasil Seleksi (Halaman Lightroom Ready):</span>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <code id="resResultUrlText" style="font-size: 12px; color: #EAE8F7; fontFamily: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></code>
+              <button type="button" id="copyResultUrlBtn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;">📋 Salin</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <a id="openGalleryBtn" href="#" target="_blank" style="flex: 1; background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; text-align: center; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; text-decoration: none;">📱 Buka &amp; Tes Galeri Seleksi &rarr;</a>
+          <button type="button" id="resetTrialFormBtn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9791B8; padding: 14px 18px; border-radius: 10px; font-size: 13px; cursor: pointer;">↺ Buat Baru</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const trialForm = document.getElementById('landingTrialForm');
+      const trialResultCard = document.getElementById('trialResultCard');
+      const btn = document.getElementById('trialSubmitBtn');
+      const errBox = document.getElementById('trialErrorMsg');
+      const logoInput = document.getElementById('trialLogoFile');
+      const logoPreviewBox = document.getElementById('trialLogoPreviewBox');
+      const logoPreviewImg = document.getElementById('trialLogoPreviewImg');
+      const removeLogoBtn = document.getElementById('removeTrialLogoBtn');
+      let uploadedLogoUrl = null;
+
+      // WebP compression via Canvas API
+      function compressToWebP(file, maxDim, quality) {
+        return new Promise(function(resolve, reject) {
+          var img = new Image();
+          img.onload = function() {
+            var w = img.width, h = img.height;
+            if (w > maxDim || h > maxDim) {
+              var ratio = Math.min(maxDim / w, maxDim / h);
+              w = Math.round(w * ratio);
+              h = Math.round(h * ratio);
+            }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            URL.revokeObjectURL(img.src);
+            resolve(canvas.toDataURL('image/webp', quality));
+          };
+          img.onerror = function() { URL.revokeObjectURL(img.src); reject(new Error('Gagal memproses gambar')); };
+          img.src = URL.createObjectURL(file);
+        });
+      }
+
+      // CTA button toggle
+      var ctaBtn = document.getElementById('trialCTABtn');
+      var formWrapper = document.getElementById('trialFormWrapper');
+      var collapseBtn = document.getElementById('trialCollapseBtn');
+
+      if (ctaBtn && formWrapper) {
+        ctaBtn.addEventListener('click', function() {
+          ctaBtn.style.display = 'none';
+          formWrapper.style.maxHeight = formWrapper.scrollHeight + 40 + 'px';
+          formWrapper.style.opacity = '1';
+        });
+      }
+      if (collapseBtn && formWrapper && ctaBtn) {
+        collapseBtn.addEventListener('click', function() {
+          formWrapper.style.maxHeight = '0';
+          formWrapper.style.opacity = '0';
+          setTimeout(function() { ctaBtn.style.display = 'flex'; }, 350);
+        });
+      }
+
+      if (logoInput) {
+        logoInput.addEventListener('change', async function(e) {
+          const file = e.target.files && e.target.files[0];
+          if (file) {
+            if (file.size > 500 * 1024) {
+              alert('Ukuran file logo maksimal 500KB. Gunakan gambar yang lebih kecil.');
+              logoInput.value = '';
+              return;
+            }
+            try {
+              uploadedLogoUrl = await compressToWebP(file, 512, 0.8);
+              logoPreviewImg.src = uploadedLogoUrl;
+              logoPreviewBox.style.display = 'flex';
+            } catch (err) {
+              alert(err.message || 'Gagal memproses logo');
+            }
+          }
+        });
+      }
+
+      if (removeLogoBtn) {
+        removeLogoBtn.addEventListener('click', function() {
+          uploadedLogoUrl = null;
+          if (logoInput) logoInput.value = '';
+          if (logoPreviewBox) logoPreviewBox.style.display = 'none';
+        });
+      }
+
+      if (!trialForm) return;
+
+      trialForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const folderUrl = document.getElementById('trialFolderUrl').value;
+        const title = document.getElementById('trialTitle').value;
+        const maxSelection = document.getElementById('trialMaxSelect').value;
+
+        errBox.style.display = 'none';
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Memindai Folder Drive...';
+
+        try {
+          const res = await fetch('/api/trial/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              folderUrl: folderUrl.trim(),
+              title: title.trim() || 'Galeri Seleksi Foto (Trial)',
+              maxSelection: parseInt(maxSelection) || 10,
+              logoUrl: uploadedLogoUrl || undefined,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.message || data.error || 'Gagal membaca folder Google Drive. Pastikan folder diset Publik!');
+          }
+
+          // Build URLs
+          const clientUrl = window.location.origin + '/trial-gallery/' + data.slug;
+          const resultUrl = window.location.origin + '/trial-gallery/' + data.slug + '/result';
+
+          document.getElementById('resClientUrlText').textContent = clientUrl;
+          document.getElementById('resResultUrlText').textContent = resultUrl;
+          document.getElementById('openGalleryBtn').href = clientUrl;
+
+          // Wire copy buttons
+          document.getElementById('copyClientUrlBtn').onclick = function() {
+            navigator.clipboard.writeText(clientUrl);
+            alert('✓ Link Galeri Klien berhasil disalin!');
+          };
+          document.getElementById('copyResultUrlBtn').onclick = function() {
+            navigator.clipboard.writeText(resultUrl);
+            alert('✓ Link Hasil Seleksi berhasil disalin!');
+          };
+
+          // Switch UI from form to result card cleanly inside trial box
+          trialForm.style.display = 'none';
+          trialResultCard.style.display = 'block';
+
+        } catch (err) {
+          errBox.textContent = '⚠️ ' + err.message;
+          errBox.style.display = 'block';
+          btn.disabled = false;
+          btn.innerHTML = '🚀 Buat Galeri Trial (Aktif 1 Jam)';
+        }
+      });
+
+      // Reset button
+      const resetBtn = document.getElementById('resetTrialFormBtn');
+      if (resetBtn) {
+        resetBtn.addEventListener('click', function() {
+          trialForm.reset();
+          btn.disabled = false;
+          btn.innerHTML = '<span>🚀 Buat Galeri Trial (Aktif 1 Jam)</span>';
+          trialResultCard.style.display = 'none';
+          // Collapse form and show CTA again
+          if (formWrapper) { formWrapper.style.maxHeight = '0'; formWrapper.style.opacity = '0'; }
+          if (ctaBtn) { setTimeout(function() { ctaBtn.style.display = 'flex'; }, 350); }
+          uploadedLogoUrl = null;
+          if (logoPreviewBox) logoPreviewBox.style.display = 'none';
+        });
+      }
+    });
+  </script>
 
   <div class="sprocket-rule"><div class="line"></div><div class="dots"><span></span><span></span><span></span></div><div class="line"></div></div>
 
@@ -500,43 +800,49 @@
     </div>
   </section>
 
-  <!-- PAKET -->
+  <!-- PAKET LAYANAN -->
   <section id="pricing">
     <div class="section-head reveal">
-      <div class="eyebrow" data-i18n="pricing.eyebrow">Paket Layanan</div>
-      <h2 data-i18n="pricing.h2">Mulai coba gratis, naik kelas saat proyek bertambah.</h2>
-      <p data-i18n="pricing.p">Setiap paket punya kuota proyek dan masa aktif yang berbeda. Tidak ada kartu kredit — aktivasi dikonfirmasi langsung lewat WhatsApp.</p>
+      <div class="eyebrow" data-i18n="pricing.eyebrow">Paket Layanan SaaS</div>
+      <h2 data-i18n="pricing.h2">Pilih paket berlangganan sesuai skala studio Anda.</h2>
+      <p data-i18n="pricing.p">Semua paket dilengkapi arsitektur Zero-Storage Streaming langsung dari Google Drive. Pilih paket &amp; aktifkan langsung lewat WhatsApp / Transfer Bank.</p>
     </div>
     <div class="tier-grid reveal">
       <div class="tier">
-        <div class="tier-name" data-i18n="pricing.t1.name">Free Trial</div>
-        <div class="tier-note" data-i18n="pricing.t1.note">Sekali coba saat pertama daftar</div>
+        <div class="tier-name" data-i18n="pricing.t1.name">Starter Plan</div>
+        <div style="font-size: 22px; font-weight: 850; color: var(--brass-bright); margin-bottom: 4px;">Rp 49.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
+        <div class="tier-note" data-i18n="pricing.t1.note">Cocok untuk fotografer pemula / freelance</div>
         <ul>
-          <li data-i18n="pricing.t1.li1">1 proyek aktif</li>
-          <li data-i18n="pricing.t1.li2">Kami ambil &amp; kompres dari Google Drive penuh</li>
-          <li data-i18n="pricing.t1.li3">Galeri terlindungi kunci akses</li>
-          <li data-i18n="pricing.t1.li4">Masa aktif terbatas</li>
+          <li data-i18n="pricing.t1.li1">Maksimal 5 Proyek Aktif</li>
+          <li data-i18n="pricing.t1.li2">Maksimal 100 Foto / Proyek</li>
+          <li data-i18n="pricing.t1.li3">Masa Simpan Galeri 30 Hari</li>
+          <li data-i18n="pricing.t1.li4">Zero-Storage Drive Streaming</li>
+          <li style="color: var(--muted-dark);">Logo Default SaaS Standard</li>
         </ul>
       </div>
       <div class="tier featured">
         <span class="tier-badge" data-i18n="pricing.badge">PALING DIPILIH</span>
-        <div class="tier-name" data-i18n="pricing.t2.name">Medium</div>
-        <div class="tier-note" data-i18n="pricing.t2.note">Untuk fotografer dengan proyek rutin</div>
+        <div class="tier-name" data-i18n="pricing.t2.name">Pro Studio Plan</div>
+        <div style="font-size: 22px; font-weight: 850; color: #fbbf24; margin-bottom: 4px;">Rp 129.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
+        <div class="tier-note" data-i18n="pricing.t2.note">Untuk fotografer profesional &amp; tim studio</div>
         <ul>
-          <li data-i18n="pricing.t2.li1">Kuota proyek lebih besar</li>
-          <li data-i18n="pricing.t2.li2">Masa aktif akun lebih panjang</li>
-          <li data-i18n="pricing.t2.li3">Anda atur batas pilihan foto per proyek</li>
-          <li data-i18n="pricing.t2.li4">Struktur folder terpisah per proyek</li>
+          <li data-i18n="pricing.t2.li1">Maksimal 25 Proyek Aktif</li>
+          <li data-i18n="pricing.t2.li2">Maksimal 400 Foto / Proyek</li>
+          <li data-i18n="pricing.t2.li3">Masa Simpan Galeri 180 Hari</li>
+          <li data-i18n="pricing.t2.li4">Zero-Storage Drive Streaming</li>
+          <li style="color: #818cf8; font-weight: bold;">Custom Logo Studio (White-Label)</li>
         </ul>
       </div>
       <div class="tier">
-        <div class="tier-name" data-i18n="pricing.t3.name">Unlimited</div>
-        <div class="tier-note" data-i18n="pricing.t3.note">Untuk studio dan tim volume tinggi</div>
+        <div class="tier-name" data-i18n="pricing.t3.name">Business Studio Plan</div>
+        <div style="font-size: 22px; font-weight: 850; color: var(--brass-bright); margin-bottom: 4px;">Rp 249.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
+        <div class="tier-note" data-i18n="pricing.t3.note">Untuk studio besar &amp; vendor volume tinggi</div>
         <ul>
-          <li data-i18n="pricing.t3.li1">Proyek tanpa batas</li>
-          <li data-i18n="pricing.t3.li2">Prioritas pemrosesan impor</li>
-          <li data-i18n="pricing.t3.li3">Masa berlaku galeri klien terpanjang</li>
-          <li data-i18n="pricing.t3.li4">Dukungan langsung dari admin</li>
+          <li data-i18n="pricing.t3.li1">Maksimal 60 Proyek Aktif</li>
+          <li data-i18n="pricing.t3.li2">Maksimal 1.000 Foto / Proyek</li>
+          <li data-i18n="pricing.t3.li3">Masa Simpan Galeri 365 Hari</li>
+          <li data-i18n="pricing.t3.li4">Zero-Storage Drive Streaming</li>
+          <li style="color: #818cf8; font-weight: bold;">Custom Logo Studio (White-Label)</li>
         </ul>
       </div>
     </div>
@@ -672,7 +978,7 @@
       "hero.h1":"Klien pilih fotonya.<br>Anda langsung buka <em>Lightroom</em>.",
       "hero.lead":"Kami urus galeri seleksinya — klien buka satu tautan, pilih foto yang mau diedit, selesai. Tidak ada lagi bolak-balik WhatsApp, tidak ada Excel yang hilang.",
       "hero.ctaPrimary":"Coba Gratis Sekarang \u2192","hero.ctaSecondary":"Lihat cara kerjanya",
-      "hero.trust1":"BUKAN CLOUD STORAGE","hero.trust2":"MEJA SELEKSI SEMENTARA","hero.trust3":"SIAP KE LIGHTROOM",
+      "hero.trust1":"ZERO-STORAGE DRIVE STREAMING","hero.trust2":"MEJA SELEKSI SEMENTARA","hero.trust3":"SIAP KE LIGHTROOM",
       "hero.csRec":"SEDANG DIPILIH","hero.csImported":"240 foto diambil dari Drive","hero.csSelected":"42 / 50 dipilih",
       "compare.eyebrow":"Masalahnya","compare.h2":"Klien Anda bingung, Anda yang pusing.",
       "compare.p":"Bukan salah klien — sistem seleksinya memang belum ada. Kami yang beresin, supaya Anda bisa fokus memotret.",
@@ -681,13 +987,13 @@
       "compare.before3":"File RAW besar dikirim mentah, kuota klien jebol","compare.before4":"Tidak ada batas pilihan — hasil akhir bisa membengkak",
       "compare.before5":"Nama file disalin manual sebelum bisa masuk Lightroom",
       "compare.after1":"Klien buka satu tautan, langsung pilih di galeri","compare.after2":"Pilihan tersimpan otomatis, terkunci saat selesai",
-      "compare.after3":"Preview terkompresi — galeri ringan bahkan di 4G lemah","compare.after4":"Anda yang tentukan berapa foto boleh dipilih",
+      "compare.after3":"Zero-storage CDN stream — galeri ringan bahkan di 4G lemah","compare.after4":"Anda yang tentukan berapa foto boleh dipilih",
       "compare.after5":"Satu klik salin nama file — langsung filter di Lightroom",
       "timeline.eyebrow":"Cara Kerja","timeline.h2":"Tiga langkah — dari Drive Anda ke tangan klien.",
       "timeline.p":"Tidak ada instalasi, tidak ada software tambahan. Kami kerjakan di background, Anda bisa langsung lanjut pekerjaan lain.",
-      "timeline.step1.num":"01 \u00b7 Ambil","timeline.step1.h3":"Tempel link Google Drive Anda",
-      "timeline.step1.p":"Buat proyek baru, tempel link folder Drive. Kami ambil sementara file-file Anda dan kompres di background \u2014 file asli tetap 100% di Drive Anda.",
-      "timeline.step1.tag":"preview 1200px \u00b7 thumbnail 400px \u00b7 JPEG 70%",
+      "timeline.step1.num":"01 \u00b7 Hubungkan","timeline.step1.h3":"Tempel link Google Drive Anda",
+      "timeline.step1.p":"Buat proyek baru, tempel link folder Drive publik. Foto di-stream langsung via Google CDN \u2014 0 Bytes beban harddisk server terpakai.",
+      "timeline.step1.tag":"zero-storage streaming \u00b7 google cdn powered",
       "timeline.step2.num":"02 \u00b7 Kirim","timeline.step2.h3":"Klien terima tautan galeri",
       "timeline.step2.p":"Klien buka galeri pakai kunci akses unik di URL \u2014 tanpa perlu buat akun. Tampil rapi di HP maupun laptop, langsung pilih.",
       "timeline.step2.tag":"akses tanpa login \u00b7 dark mode glassmorphism",
@@ -696,12 +1002,12 @@
       "timeline.step3.tag":"satu klik salin \u00b7 lightroom-ready",
       "features.eyebrow":"Yang Kami Kerjakan","features.h2":"Supaya klien Anda terkesan, bukan bingung.",
       "features.p":"Setiap hal yang kami kerjakan lahir dari titik macet nyata di studio \u2014 file bergiga-giga, klien bolak-balik chat, nama file disalin manual.",
-      "features.f1.h3":"Kami Ambil dari Drive Anda","features.f1.p":"Tempel link folder Drive publik. Kami tarik seluruh file di background tanpa Anda perlu menunggu \u2014 file asli tetap aman di Drive Anda.",
-      "features.f2.h3":"Tidak Akan Macet di Tengah Jalan","features.f2.p":"Koneksi putus atau Drive kena rate-limit? Satu tombol mengulang prosesnya otomatis \u2014 tanpa perlu mulai dari awal.",
-      "features.f3.h3":"Galeri Tetap Ngebut, Meski Kuota Klien Pas-pasan","features.f3.p":"Foto kami kompres jadi preview dan thumbnail optimal \u2014 galeri terbuka dalam detik meski klien pakai 4G seadanya.",
+      "features.f1.h3":"Stream Langsung dari Drive Anda","features.f1.p":"Tempel link folder Drive publik. Kami tayangkan gambar secara live via Google CDN tanpa mendownload fisik ke server kami.",
+      "features.f2.h3":"Tidak Akan Macet di Tengah Jalan","features.f2.p":"Koneksi putus atau Drive kena rate-limit? Sistem stream otomatis melanjutkan sesi tayang galeri tanpa kendala.",
+      "features.f3.h3":"Galeri Tetap Ngebut, Meski Kuota Klien Pas-pasan","features.f3.p":"Foto di-stream melalui thumbnail CDN Google Drive terkompresi optimal \u2014 galeri terbuka dalam detik meski klien pakai 4G seadanya.",
       "features.f4.h3":"Foto Klien Anda, Aman Cuma untuk Mereka","features.f4.p":"Setiap galeri dilindungi kunci akses unik di URL. Hanya klien yang pegang tautan yang bisa membukanya.",
       "features.f5.h3":"Anda yang Tentukan Berapa Foto Boleh Dipilih","features.f5.p":"Atur batas maksimal dari awal \u2014 misalnya 50 dari 200 foto. Klien tidak bisa lebih, hasil akhir selalu sesuai kesepakatan.",
-      "features.f6.h3":"Galeri Ini Memang Dirancang Sementara","features.f6.p":"Ini bukan cloud storage \u2014 ini meja seleksi. Setelah masa aktif habis, preview kami hapus otomatis. File asli Anda tetap utuh di Drive.",
+      "features.f6.h3":"Galeri Ini Memang Dirancang Sementara","features.f6.p":"Ini bukan cloud storage \u2014 ini meja seleksi instan. Setelah proyek kedaluwarsa, galeri dibersihkan otomatis sementara Drive Anda tetap 100% utuh.",
       "audience.eyebrow":"Untuk Siapa","audience.h2":"Untuk vendor dan fotografer yang pekerjaannya terlalu berharga untuk macet di proses seleksi.",
       "audience.a1.role":"Wedding &amp; Event","audience.a1.h3":"Ribuan jepretan, puluhan pilihan final",
       "audience.a1.p":"Satu galeri untuk seluruh momen acara. Klien pilih foto favoritnya \u2014 tanpa satu pun pesan WhatsApp soal \"foto nomor berapa tadi?\".",
@@ -710,19 +1016,19 @@
       "audience.a3.role":"Product &amp; Commercial","audience.a3.h3":"Persetujuan aset yang rapi dan bisa dilacak",
       "audience.a3.p":"Kerja sama dengan brand atau klien korporasi \u2014 persetujuan aset foto jadi terstruktur, tercatat, tidak ada yang \"sudah approve tapi lupa nomor fotonya\".",
       "stats.s1":"lebih sedikit waktu yang terbuang untuk proses seleksi","stats.s2":"galeri terbuka bahkan di jaringan seluler lemah",
-      "stats.s3":"repot pantau server \u2014 kami yang beresin otomatis","stats.s4":"klik untuk salin semua nama file ke Lightroom",
-      "pricing.eyebrow":"Paket Layanan","pricing.h2":"Mulai coba gratis, naik kelas saat proyek bertambah.",
-      "pricing.p":"Setiap paket punya kuota proyek dan masa aktif yang berbeda. Tidak ada kartu kredit \u2014 aktivasi dikonfirmasi langsung lewat WhatsApp.",
+      "stats.s3":"0 MB beban harddisk server — streaming langsung via Google CDN","stats.s4":"klik untuk salin semua nama file ke Lightroom",
+      "pricing.eyebrow":"Paket Layanan SaaS","pricing.h2":"Pilih paket berlangganan sesuai skala studio Anda.",
+      "pricing.p":"Semua paket dilengkapi arsitektur Zero-Storage Streaming langsung dari Google Drive. Pilih paket &amp; aktifkan langsung lewat WhatsApp / Transfer Bank.",
       "pricing.badge":"PALING DIPILIH",
-      "pricing.t1.name":"Free Trial","pricing.t1.note":"Sekali coba saat pertama daftar",
-      "pricing.t1.li1":"1 proyek aktif","pricing.t1.li2":"Kami ambil &amp; kompres dari Google Drive penuh","pricing.t1.li3":"Galeri terlindungi kunci akses","pricing.t1.li4":"Masa aktif terbatas",
-      "pricing.t2.name":"Medium","pricing.t2.note":"Untuk fotografer dengan proyek rutin",
-      "pricing.t2.li1":"Kuota proyek lebih besar","pricing.t2.li2":"Masa aktif akun lebih panjang","pricing.t2.li3":"Anda atur batas pilihan foto per proyek","pricing.t2.li4":"Struktur folder terpisah per proyek",
-      "pricing.t3.name":"Unlimited","pricing.t3.note":"Untuk studio dan tim volume tinggi",
-      "pricing.t3.li1":"Proyek tanpa batas","pricing.t3.li2":"Prioritas pemrosesan impor","pricing.t3.li3":"Masa berlaku galeri klien terpanjang","pricing.t3.li4":"Dukungan langsung dari admin",
+      "pricing.t1.name":"Starter Plan","pricing.t1.note":"Cocok untuk fotografer pemula / freelance",
+      "pricing.t1.li1":"Maksimal 5 Proyek Aktif","pricing.t1.li2":"Maksimal 100 Foto / Proyek","pricing.t1.li3":"Masa Simpan Galeri 30 Hari","pricing.t1.li4":"Zero-Storage Drive Streaming",
+      "pricing.t2.name":"Pro Studio Plan","pricing.t2.note":"Untuk fotografer profesional &amp; tim studio",
+      "pricing.t2.li1":"Maksimal 25 Proyek Aktif","pricing.t2.li2":"Maksimal 400 Foto / Proyek","pricing.t2.li3":"Masa Simpan Galeri 180 Hari","pricing.t2.li4":"Custom Logo Studio (White-Label)",
+      "pricing.t3.name":"Business Studio Plan","pricing.t3.note":"Untuk studio besar &amp; vendor volume tinggi",
+      "pricing.t3.li1":"Maksimal 60 Proyek Aktif","pricing.t3.li2":"Maksimal 1.000 Foto / Proyek","pricing.t3.li3":"Masa Simpan Galeri 365 Hari","pricing.t3.li4":"Custom Logo Studio (White-Label)",
       "finalCta.h2":"Hentikan drama seleksi foto lewat chat.",
-      "finalCta.p":"Daftar sekarang, aktifkan sekali coba gratis, dan kirim galeri seleksi pertama Anda hari ini juga. Klien Anda akan terkesan.",
-      "finalCta.cta":"Mulai Gratis Sekarang \u2192",
+      "finalCta.p":"Daftar sekarang dengan Google Sign-In 1-klik, uji galeri seleksi trial instan, dan buat proyek pertama Anda hari ini juga. Klien Anda akan terkesan.",
+      "finalCta.cta":"Daftar Vendor Sekarang \u2192",
       "footer.tagline":"GALERI SELEKSI FOTO \u2014 MEJA KERJA SEMENTARA UNTUK VENDOR PROFESIONAL"
     },
     en:{
@@ -731,7 +1037,7 @@
       "hero.h1":"Your client picks the photos.<br>You go straight to <em>Lightroom</em>.",
       "hero.lead":"We handle the selection gallery \u2014 clients open one link, pick the photos they want edited, done. No more WhatsApp back-and-forth, no more lost spreadsheets.",
       "hero.ctaPrimary":"Try It Free \u2192","hero.ctaSecondary":"See how it works",
-      "hero.trust1":"NOT CLOUD STORAGE","hero.trust2":"TEMPORARY SELECTION DESK","hero.trust3":"READY FOR LIGHTROOM",
+      "hero.trust1":"ZERO-STORAGE DRIVE STREAMING","hero.trust2":"TEMPORARY SELECTION DESK","hero.trust3":"READY FOR LIGHTROOM",
       "hero.csRec":"SELECTING NOW","hero.csImported":"240 photos pulled from Drive","hero.csSelected":"42 / 50 selected",
       "compare.eyebrow":"The Problem","compare.h2":"Your client is confused. You\u2019re the one who suffers.",
       "compare.p":"It\u2019s not the client\u2019s fault \u2014 there just isn\u2019t a proper system for this. We built one so you can focus on shooting.",
@@ -740,13 +1046,13 @@
       "compare.before3":"Full-size RAW files sent raw, blowing through client data","compare.before4":"No selection limit \u2014 the final count can balloon out of control",
       "compare.before5":"You copy filenames by hand before you can even open Lightroom",
       "compare.after1":"Clients open one gallery link and start picking","compare.after2":"Selections save automatically and lock when done",
-      "compare.after3":"Compressed previews \u2014 gallery loads fast even on slow 4G","compare.after4":"You set the selection limit up front",
+      "compare.after3":"Zero-storage CDN stream \u2014 gallery loads fast even on slow 4G","compare.after4":"You set the selection limit up front",
       "compare.after5":"One click to copy all filenames \u2014 straight into Lightroom",
       "timeline.eyebrow":"How It Works","timeline.h2":"Three steps \u2014 from your Drive to your client\u2019s hands.",
       "timeline.p":"No installation, no extra software. We work in the background while you get on with everything else.",
-      "timeline.step1.num":"01 \u00b7 Pull","timeline.step1.h3":"Paste your Google Drive link",
-      "timeline.step1.p":"Create a new project and paste your Drive folder link. We temporarily pull and compress your files in the background \u2014 originals stay 100% on your Drive.",
-      "timeline.step1.tag":"1200px preview \u00b7 400px thumbnail \u00b7 70% JPEG",
+      "timeline.step1.num":"01 \u00b7 Connect","timeline.step1.h3":"Paste your Google Drive link",
+      "timeline.step1.p":"Create a new project and paste your Drive folder link. We stream your files directly via Google CDN \u2014 0 Bytes server disk required.",
+      "timeline.step1.tag":"zero-storage streaming \u00b7 google cdn powered",
       "timeline.step2.num":"02 \u00b7 Send","timeline.step2.h3":"Your client receives the gallery link",
       "timeline.step2.p":"Clients open the gallery with a unique access key in the URL \u2014 no account needed. Works beautifully on mobile and desktop.",
       "timeline.step2.tag":"no login required \u00b7 dark-mode glassmorphism",
@@ -755,12 +1061,12 @@
       "timeline.step3.tag":"one-click copy \u00b7 Lightroom-ready",
       "features.eyebrow":"What We Do For You","features.h2":"So your clients are impressed, not confused.",
       "features.p":"Everything we built comes from real friction points in the studio \u2014 multi-gigabyte files, clients spamming chat, filenames copied by hand.",
-      "features.f1.h3":"We Pull the Files from Your Drive","features.f1.p":"Paste a public folder link. We fetch every file in the background without making you wait \u2014 originals stay safe on your own Drive.",
-      "features.f2.h3":"It Won\u2019t Stall Halfway Through","features.f2.p":"Connection drops or Drive hits a rate limit? One button automatically retries the whole process \u2014 no need to start over.",
-      "features.f3.h3":"Gallery Stays Fast, Even on Weak Data","features.f3.p":"We compress photos into optimal preview and thumbnail sizes \u2014 gallery opens in seconds even on a bare-minimum data plan.",
+      "features.f1.h3":"We Stream Direct from Your Drive","features.f1.p":"Paste a public folder link. We stream files live via Google CDN without storing physical files on our server.",
+      "features.f2.h3":"It Won\u2019t Stall Halfway Through","features.f2.p":"Connection drops or Drive hits a rate limit? Automatic fallback stream keeps the gallery working seamlessly.",
+      "features.f3.h3":"Gallery Stays Fast, Even on Weak Data","features.f3.p":"Photos stream via optimized Google Drive CDN thumbnails \u2014 gallery opens in seconds even on a bare-minimum data plan.",
       "features.f4.h3":"Your Client\u2019s Photos, Safe Only for Them","features.f4.p":"Every gallery is protected by a unique access key in the URL. Only the client holding the link can open it.",
       "features.f5.h3":"You Decide How Many Photos They Can Pick","features.f5.p":"Set a maximum selection limit up front \u2014 say, 50 out of 200. The client can\u2019t go over, so the final count always matches your agreement.",
-      "features.f6.h3":"This Gallery Is Designed to Be Temporary","features.f6.p":"This isn\u2019t cloud storage \u2014 it\u2019s a selection desk. Once the active period ends, we auto-delete the previews. Your original files stay intact on Drive.",
+      "features.f6.h3":"This Gallery Is Designed to Be Temporary","features.f6.p":"This isn\u2019t cloud storage \u2014 it\u2019s a selection desk. Once expired, the project is cleaned up automatically while your Drive remains 100% intact.",
       "audience.eyebrow":"Who It\u2019s For","audience.h2":"For vendors and photographers whose work is too valuable to stall at the selection stage.",
       "audience.a1.role":"Wedding &amp; Event","audience.a1.h3":"Thousands of shots, dozens of final picks",
       "audience.a1.p":"One gallery for the whole event. Clients pick their favorites \u2014 without a single WhatsApp message asking \u201cwhich photo number was that again?\u201d",
@@ -769,19 +1075,19 @@
       "audience.a3.role":"Product &amp; Commercial","audience.a3.h3":"Clean, trackable asset approval",
       "audience.a3.p":"Working with brands or corporate clients \u2014 photo asset approval becomes structured, on record, no one saying \u201cI approved it but can\u2019t remember which one.\u201d",
       "stats.s1":"less time wasted on the selection process","stats.s2":"gallery load time, even on a weak mobile network",
-      "stats.s3":"server headaches \u2014 we handle cleanup automatically","stats.s4":"click to copy all filenames into Lightroom",
-      "pricing.eyebrow":"Service Plans","pricing.h2":"Start free, upgrade as your projects grow.",
-      "pricing.p":"Each plan has its own project quota and account validity. No credit card \u2014 activation confirmed directly over WhatsApp.",
+      "stats.s3":"0 MB server disk usage \u2014 live Google CDN stream","stats.s4":"click to copy all filenames into Lightroom",
+      "pricing.eyebrow":"SaaS Service Plans","pricing.h2":"Choose a plan tailored to your studio scale.",
+      "pricing.p":"All plans feature Zero-Storage Drive Streaming. Pick a plan and activate directly via Bank Transfer / WhatsApp.",
       "pricing.badge":"MOST POPULAR",
-      "pricing.t1.name":"Free Trial","pricing.t1.note":"One-time trial when you first sign up",
-      "pricing.t1.li1":"1 active project","pricing.t1.li2":"Full pull &amp; compression from Google Drive","pricing.t1.li3":"Gallery with access key protection","pricing.t1.li4":"Limited account validity",
-      "pricing.t2.name":"Medium","pricing.t2.note":"For photographers with regular projects",
-      "pricing.t2.li1":"Larger project quota","pricing.t2.li2":"Longer account validity","pricing.t2.li3":"You set the selection limit per project","pricing.t2.li4":"Separate folder structure per project",
-      "pricing.t3.name":"Unlimited","pricing.t3.note":"For studios and high-volume teams",
-      "pricing.t3.li1":"Unlimited projects","pricing.t3.li2":"Priority import processing","pricing.t3.li3":"Longest client gallery validity","pricing.t3.li4":"Direct support from the admin",
+      "pricing.t1.name":"Starter Plan","pricing.t1.note":"Ideal for freelance &amp; beginner photographers",
+      "pricing.t1.li1":"Up to 5 Active Projects","pricing.t1.li2":"Max 100 Photos / Project","pricing.t1.li3":"30 Days Gallery Lifetime","pricing.t1.li4":"Zero-Storage Drive Streaming",
+      "pricing.t2.name":"Pro Studio Plan","pricing.t2.note":"For professional photographers &amp; studio teams",
+      "pricing.t2.li1":"Up to 25 Active Projects","pricing.t2.li2":"Max 400 Photos / Project","pricing.t2.li3":"180 Days Gallery Lifetime","pricing.t2.li4":"Custom Studio Logo (White-Label)",
+      "pricing.t3.name":"Business Studio Plan","pricing.t3.note":"For large studios &amp; high volume vendors",
+      "pricing.t3.li1":"Up to 60 Active Projects","pricing.t3.li2":"Max 1.000 Photos / Project","pricing.t3.li3":"365 Days Gallery Lifetime","pricing.t3.li4":"Custom Studio Logo (White-Label)",
       "finalCta.h2":"Stop managing photo selection over chat.",
-      "finalCta.p":"Sign up now, activate your one-time free trial, and send your first selection gallery today. Your clients will be impressed.",
-      "finalCta.cta":"Start Free Now \u2192",
+      "finalCta.p":"Sign up now with 1-click Google Sign-In, try our free instant trial gallery, and launch your first project today. Your clients will be impressed.",
+      "finalCta.cta":"Register as Vendor Now \u2192",
       "footer.tagline":"PHOTO SELECTION GALLERIES \u2014 TEMPORARY WORK DESK FOR PROFESSIONAL VENDORS"
     }
   };
@@ -795,7 +1101,7 @@
     document.querySelectorAll('.lang-btn').forEach(function(btn){btn.classList.toggle('active',btn.dataset.lang===lang);});
   }
   document.querySelectorAll('.lang-btn').forEach(function(btn){btn.addEventListener('click',function(){applyLang(btn.dataset.lang);});});
-  applyLang('en');
+  applyLang('id');
 
   // Developer Watermark Toggle
   var devBtn = document.getElementById('devWatermarkBtn');
