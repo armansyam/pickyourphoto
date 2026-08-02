@@ -48,9 +48,12 @@ export default function PrivacyPage() {
                 </section>
 
                 <section style={{ marginBottom: '24px' }}>
-                    <h2 style={{ fontSize: '20px', color: '#818CF8', marginBottom: '12px' }}>3. Penggunaan Data Google OAuth</h2>
+                    <h2 style={{ fontSize: '20px', color: '#818CF8', marginBottom: '12px' }}>3. Penggunaan Data Google OAuth &amp; Kepatuhan Kebijakan Google</h2>
+                    <p style={{ color: '#D8D5EE', fontSize: '15px', marginBottom: '10px' }}>
+                        Data yang diperoleh dari integrasi Google OAuth hanya digunakan secara eksklusif untuk proses otentikasi dan pembuatan akun vendor di platform Pick Your Photo. Kami <strong>TIDAK PERNAH</strong> menjual, menyewakan, atau membagikan data identitas atau file foto Anda kepada pihak ketiga mana pun.
+                    </p>
                     <p style={{ color: '#D8D5EE', fontSize: '15px' }}>
-                        Data yang diperoleh dari integrasi Google OAuth hanya digunakan secara eksklusif untuk proses autentikasi dan pembuatan akun vendor di platform Pick Your Photo. Kami **TIDAK PERNAH** menjual, menyewakan, atau membagikan data identitas atau file foto Anda kepada pihak ketiga mana pun.
+                        Penggunaan dan pengalihan informasi yang diterima dari Google APIs oleh platform Pick Your Photo ke aplikasi lain akan sepenuhnya mematuhi <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style={{ color: '#A5B4FC', textDecoration: 'underline' }}>Google API Services User Data Policy</a>, termasuk persyaratan <strong>Penggunaan Terbatas (Limited Use Requirements)</strong>.
                     </p>
                 </section>
 
