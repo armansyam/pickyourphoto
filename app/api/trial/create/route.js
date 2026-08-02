@@ -39,12 +39,16 @@ export async function POST(request) {
     const expiresAt = new Date(Date.now() + trialMinutes * 60 * 1000).toISOString();
 
     // Read dynamic limits from saas_settings
-    const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('trial_max_selection', 'trial_max_photos', 'trial_max_subfolders')").all() || [];
+    const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('trial_max_selection', 'trial_max_photos', 'trial_preview_photos', 'trial_max_subfolders')").all() || [];
     const saasMap = {};
     saasRows.forEach(r => { saasMap[r.key] = r.value; });
-    const dynamicMaxPhotos = parseInt(saasMap.trial_max_photos || '50');
+    // trial_max_photos  = TOTAL shared pool across all unlocked tabs (e.g. 50)
+    // trial_preview_photos = per-tab cap: max photos one tab can take from the pool (e.g. 20)
+    // → Tab 1 takes min(its_files, 20, pool); leftover pool carries to Tab 2, and so on.
+    const dynamicTotalPool    = parseInt(saasMap.trial_max_photos || '50');    // shared budget across all tabs
+    const dynamicPerTabCap    = parseInt(saasMap.trial_preview_photos || '12'); // max photos per individual tab
     const dynamicMaxSelection = parseInt(saasMap.trial_max_selection || '10');
-    const dynamicMaxSubfolders = parseInt(saasMap.trial_max_subfolders || '1');
+    const dynamicMaxSubfolders= parseInt(saasMap.trial_max_subfolders || '1');
 
     // Group files by category/subfolder
     const categoryMap = new Map();
@@ -55,16 +59,17 @@ export async function POST(request) {
     }
     const categories = [...categoryMap.keys()];
 
-    // First N categories = unlocked, total photos across ALL unlocked tabs = trial_max_photos (shared pool)
-    // Remaining categories = locked (only a lightweight marker with count — no real file IDs proxied)
+    // First N tabs = unlocked. Each tab consumes from the shared pool, capped at dynamicPerTabCap.
+    // If a tab has fewer photos than the cap, the remainder rolls over to the next tab.
+    // Remaining tabs (beyond N) = locked — lightweight marker, no real file IDs proxied.
     const trialFiles = [];
-    let photoPool = dynamicMaxPhotos; // shared budget across all unlocked tabs
+    let sharedPool = dynamicTotalPool; // starts at trial_max_photos, decreases each tab
 
     categories.forEach((cat, idx) => {
       const catFiles = categoryMap.get(cat);
       if (idx < dynamicMaxSubfolders) {
-        // Unlocked tab: consume from the shared pool greedily
-        const quota = Math.min(catFiles.length, photoPool);
+        // quota = min(files available, per-tab cap, remaining shared pool)
+        const quota = Math.min(catFiles.length, dynamicPerTabCap, sharedPool);
         catFiles.slice(0, quota).forEach((file, fileIdx) => {
           trialFiles.push({
             id: file.id,
@@ -74,7 +79,7 @@ export async function POST(request) {
             origUrl: `/api/proxy/thumb/${file.id}?sz=w1200`,
           });
         });
-        photoPool -= quota; // deduct from shared budget
+        sharedPool -= quota; // roll leftover to the next tab
       } else {
         // Locked tabs: single marker entry — just name + count, no real file IDs
         trialFiles.push({
