@@ -15,6 +15,7 @@ export default function TrialGalleryPage({ params }) {
   const [submitted, setSubmitted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [filterMode, setFilterMode] = useState('all'); // 'all' | 'selected'
+  const [activeCategoryTab, setActiveCategoryTab] = useState(null); // Active category tab (null = auto-select root or first unlocked)
   const [activeLockedCategory, setActiveLockedCategory] = useState(null); // Locked category upsell modal
 
   useEffect(() => {
@@ -378,10 +379,15 @@ export default function TrialGalleryPage({ params }) {
         {(() => {
           const allPhotos = data.photos || [];
           const hasRootPhotos = allPhotos.some(p => !p.category || p.category === '');
-          // Get unique categories — markers (_isLocked) still appear here for tab rendering
           const categories = Array.from(new Set(allPhotos.map(p => p.category).filter(Boolean)));
           
           if (!hasRootPhotos && categories.length === 0) return null;
+
+          let currentTab = activeCategoryTab;
+          if (!currentTab) {
+            if (hasRootPhotos) currentTab = '__ROOT__';
+            else if (categories.length > 0) currentTab = categories[0];
+          }
 
           return (
             <div style={{ marginBottom: '28px', textAlign: 'center', padding: '0 4px' }}>
@@ -391,39 +397,39 @@ export default function TrialGalleryPage({ params }) {
                   <button
                     type="button"
                     className="trial-cat-btn"
-                    onClick={() => setActiveLockedCategory(null)}
+                    onClick={() => { setActiveCategoryTab('__ROOT__'); setActiveLockedCategory(null); }}
                     style={{
-                      background: !activeLockedCategory ? 'linear-gradient(135deg, #6366f1, #818cf8)' : 'rgba(255,255,255,0.06)',
+                      background: (!activeLockedCategory && currentTab === '__ROOT__') ? 'linear-gradient(135deg, #6366f1, #818cf8)' : 'rgba(255,255,255,0.06)',
                       border: 'none',
                       color: '#ffffff',
-                      boxShadow: !activeLockedCategory ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
+                      boxShadow: (!activeLockedCategory && currentTab === '__ROOT__') ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
                     }}
                   >
-                    Foto Utama ({allPhotos.filter(p => !p.category && !p._isLocked).length})
+                    Foto Utama ({allPhotos.filter(p => (!p.category || p.category === '') && !p._isLocked).length})
                   </button>
                 )}
 
                 {/* Render Subfolder Tabs */}
-                {categories.map((cat, idx) => {
-                  const isUnlocked = !hasRootPhotos && idx === 0;
-                  // Get marker entry for locked tabs to read _count
+                {categories.map((cat) => {
+                  const isUnlocked = allPhotos.some(p => p.category === cat && !p._isLocked);
                   const markerEntry = allPhotos.find(p => p.category === cat && p._isLocked);
                   const photoCount = markerEntry
                     ? markerEntry._count
                     : allPhotos.filter(p => p.category === cat && !p._isLocked).length;
 
                   if (isUnlocked) {
+                    const isTabActive = !activeLockedCategory && currentTab === cat;
                     return (
                       <button
                         key={cat}
                         type="button"
                         className="trial-cat-btn"
-                        onClick={() => setActiveLockedCategory(null)}
+                        onClick={() => { setActiveCategoryTab(cat); setActiveLockedCategory(null); }}
                         style={{
-                          background: !activeLockedCategory ? 'linear-gradient(135deg, #6366f1, #818cf8)' : 'rgba(255,255,255,0.06)',
+                          background: isTabActive ? 'linear-gradient(135deg, #6366f1, #818cf8)' : 'rgba(255,255,255,0.06)',
                           border: 'none',
                           color: '#ffffff',
-                          boxShadow: !activeLockedCategory ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
+                          boxShadow: isTabActive ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
                         }}
                       >
                         📁 {cat} ({photoCount})
@@ -458,7 +464,7 @@ export default function TrialGalleryPage({ params }) {
             <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(245,158,11,0.15)', color: '#fbbf24', fontSize: '24px', marginBottom: '12px' }}>🔒</div>
             <h3 style={{ fontSize: '19px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 8px 0' }}>Fitur Sub-Folder "{activeLockedCategory}" Khusus Paket Berlangganan</h3>
             <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6', margin: '0 0 20px 0' }}>
-              Sistem kami berhasil mendeteksi sub-folder <strong>"{activeLockedCategory}"</strong> dari Google Drive Anda. Pada mode Trial, hanya 1 sub-folder pertama yang dapat diakses. Berlangganan <strong>Starter atau Pro Studio Plan</strong> untuk membuka seluruh kategorisasi otomatis sub-folder galeri bagi klien Anda!
+              Sistem kami berhasil mendeteksi sub-folder <strong>"{activeLockedCategory}"</strong> dari Google Drive Anda. Akses ke sub-folder ini khusus untuk pengguna berlangganan. Berlangganan <strong>Starter atau Pro Studio Plan</strong> untuk membuka seluruh kategorisasi otomatis sub-folder galeri bagi klien Anda!
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={() => setActiveLockedCategory(null)} style={{ padding: '10px 18px', borderRadius: '20px', background: 'rgba(255,255,255,0.08)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.15)', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
@@ -505,7 +511,13 @@ export default function TrialGalleryPage({ params }) {
                 const allPhotos = data.photos || [];
                 const hasRootPhotos = allPhotos.some(p => !p.category || p.category === '');
                 const categories = Array.from(new Set(allPhotos.map(p => p.category).filter(Boolean)));
-                const defaultUnlockedCategory = !hasRootPhotos ? categories[0] : null;
+
+                let currentTab = activeCategoryTab;
+                if (!currentTab) {
+                  if (hasRootPhotos) currentTab = '__ROOT__';
+                  else if (categories.length > 0) currentTab = categories[0];
+                }
+
                 const previewLimit = data.previewLimit || 12;
 
                 const visiblePhotos = allPhotos
@@ -515,9 +527,8 @@ export default function TrialGalleryPage({ params }) {
                       const fn = f.name || f.filename;
                       return selectedPhotos.includes(fn);
                     }
-                    if (!hasRootPhotos && defaultUnlockedCategory) return f.category === defaultUnlockedCategory;
-                    if (hasRootPhotos) return !f.category || f.category === '';
-                    return true;
+                    if (currentTab === '__ROOT__') return !f.category || f.category === '';
+                    return f.category === currentTab;
                   });
 
                 const unlockedPhotos = filterMode === 'selected' ? visiblePhotos : visiblePhotos.slice(0, previewLimit);
@@ -576,15 +587,20 @@ export default function TrialGalleryPage({ params }) {
               const allPhotos = data.photos || [];
               const hasRootPhotos = allPhotos.some(p => !p.category || p.category === '');
               const categories = Array.from(new Set(allPhotos.map(p => p.category).filter(Boolean)));
-              const defaultUnlockedCategory = !hasRootPhotos ? categories[0] : null;
+              
+              let currentTab = activeCategoryTab;
+              if (!currentTab) {
+                if (hasRootPhotos) currentTab = '__ROOT__';
+                else if (categories.length > 0) currentTab = categories[0];
+              }
+
               const previewLimit = data.previewLimit || 12;
 
               const visiblePhotos = allPhotos
                 .filter(f => !f._isLocked)
                 .filter(f => {
-                  if (!hasRootPhotos && defaultUnlockedCategory) return f.category === defaultUnlockedCategory;
-                  if (hasRootPhotos) return !f.category || f.category === '';
-                  return true;
+                  if (currentTab === '__ROOT__') return !f.category || f.category === '';
+                  return f.category === currentTab;
                 });
 
               const lockedPhotos = visiblePhotos.slice(previewLimit);

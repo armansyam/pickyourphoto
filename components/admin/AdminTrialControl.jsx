@@ -321,7 +321,7 @@ export default function AdminTrialControl({ addToast }) {
                             📁 Limit RAW Sorter (file/sesi)
                         </label>
                         <input
-                            type="number" min="1" max="100"
+                            type="number" min="1" max="10000"
                             value={sorterLimit}
                             onChange={e => setSorterLimit(Math.max(1, parseInt(e.target.value) || 5))}
                             style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
@@ -348,7 +348,7 @@ export default function AdminTrialControl({ addToast }) {
                             ✅ Max Foto Dipilih Klien (seleksi)
                         </label>
                         <input
-                            type="number" min="1" max="200"
+                            type="number" min="1" max="10000"
                             value={maxSelection}
                             onChange={e => setMaxSelection(Math.max(1, parseInt(e.target.value) || 10))}
                             style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
@@ -369,13 +369,13 @@ export default function AdminTrialControl({ addToast }) {
                         </div>
                     </div>
 
-                    {/* Max Foto Ditampilkan */}
+                    {/* Total Shared Quota Foto Trial (Pool) */}
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#a1a1aa', marginBottom: '8px' }}>
-                            🖼️ Max Foto Ditampilkan (per galeri)
+                            🖼️ Total Shared Quota Foto Trial (Pool)
                         </label>
                         <input
-                            type="number" min="1" max="200"
+                            type="number" min="1" max="10000"
                             value={maxPhotos}
                             onChange={e => setMaxPhotos(Math.max(1, parseInt(e.target.value) || 50))}
                             style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
@@ -392,7 +392,7 @@ export default function AdminTrialControl({ addToast }) {
                             ))}
                         </div>
                         <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
-                            Hanya {maxPhotos} foto pertama dari Google Drive yang ditampilkan saat trial.
+                            Total pool kuota foto yang di-load dan dibagi ke seluruh tab subfolder terbuka.
                         </div>
                     </div>
 
@@ -402,7 +402,7 @@ export default function AdminTrialControl({ addToast }) {
                             📂 Max Tab Subfolder Dibuka (trial)
                         </label>
                         <input
-                            type="number" min="1" max="20"
+                            type="number" min="1" max="100"
                             value={maxSubfolders}
                             onChange={e => setMaxSubfolders(Math.max(1, parseInt(e.target.value) || 1))}
                             style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
@@ -429,10 +429,10 @@ export default function AdminTrialControl({ addToast }) {
                     {/* Foto Ditampilkan Sebelum Blur (Preview Limit) */}
                     <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#a1a1aa', marginBottom: '8px' }}>
-                            👁️ Foto Preview Sebelum Blur (upsell paywall)
+                            👁️ Limit Foto per Tab (sebelum Blur)
                         </label>
                         <input
-                            type="number" min="1" max="200"
+                            type="number" min="1" max="10000"
                             value={previewPhotos}
                             onChange={e => setPreviewPhotos(Math.max(1, parseInt(e.target.value) || 12))}
                             style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
@@ -449,7 +449,7 @@ export default function AdminTrialControl({ addToast }) {
                             ))}
                         </div>
                         <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
-                            Foto ke-{previewPhotos + 1} dst akan diblur + tampilkan upsell card upgrade.
+                            Maks foto yang diambil per tab dari shared pool. Sisa pool mengalir ke tab berikutnya.
                         </div>
                     </div>
 
