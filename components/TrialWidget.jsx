@@ -298,7 +298,7 @@ export default function TrialWidget() {
                 />
                 {logoPreview && (
                   <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <img src={logoPreview} alt="Preview Logo" style={{ height: '40px', width: 'auto', maxHeight: '40px', borderRadius: '6px', border: '1px solid #6366f1', background: '#fff', padding: '2px' }} />
+                    <img src={logoPreview} alt="Preview Logo" style={{ height: '40px', width: 'auto', maxHeight: '40px', borderRadius: '6px', border: '1px solid rgba(129, 140, 248, 0.5)', background: 'rgba(19, 16, 36, 0.8)', padding: '4px', objectFit: 'contain' }} />
                     <button
                       type="button"
                       onClick={() => { setLogoUrl(''); setLogoPreview(''); }}
