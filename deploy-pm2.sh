@@ -37,15 +37,7 @@ if grep -q "JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman" .env.local; then
     echo "✅ JWT_SECRET aman berhasil di-generate dan disimpan ke .env.local!"
 fi
 
-# Jika berkas baru dibuat, hentikan sementara agar pengguna bisa mengisi GOOGLE_API_KEY
-if [ $ENV_CREATED -eq 1 ]; then
-    echo ""
-    echo "⚠️  [PENTING] Berkas .env.local baru saja dibuat otomatis dengan JWT_SECRET yang aman."
-    echo "👉 Silakan edit berkas tersebut sekarang dengan perintah: nano .env.local"
-    echo "👉 Masukkan GOOGLE_API_KEY Anda, lalu jalankan kembali script ./deploy-pm2.sh ini."
-    echo ""
-    exit 0
-fi
+
 
 # 3. Install all dependencies (including devDependencies needed for build, like ESLint)
 echo "📦 3. Menginstal semua dependensi (termasuk devDependencies)..."

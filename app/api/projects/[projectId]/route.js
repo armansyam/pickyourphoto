@@ -94,8 +94,7 @@ export async function GET(request, { params }) {
         
         let filesDeleted = project.filesDeleted || 0;
         if (isProjectExpired && filesDeleted === 0) {
-            const { deleteProjectFiles } = require('@/lib/storage-cleaner');
-            deleteProjectFiles(projectId);
+            db.prepare('UPDATE projects SET filesDeleted = 1 WHERE id = ?').run(projectId);
             filesDeleted = 1;
         }
 
@@ -229,15 +228,14 @@ export async function PUT(request, { params }) {
             fields.push('status = ?');
             values.push(status);
 
-            // Trigger file cleanup automatically when project is archived by the vendor
+            // Update project status to archived
             if (status === 'archived') {
-                const { deleteProjectFiles } = require('@/lib/storage-cleaner');
-                deleteProjectFiles(projectId);
+                db.prepare('UPDATE projects SET filesDeleted = 1 WHERE id = ?').run(projectId);
             }
         }
  
         if (galleryTheme !== undefined) {
-            const allowedThemes = ['default', 'contactSheet', 'galleryWall', 'editorsMark', 'polaroid'];
+            const allowedThemes = ['default', 'midnightSlate', 'contactSheet', 'galleryWall', 'editorsMark', 'polaroid'];
             if (!allowedThemes.includes(galleryTheme)) {
                 return NextResponse.json({ message: 'Invalid gallery theme.' }, { status: 400 });
             }

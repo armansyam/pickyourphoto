@@ -3,7 +3,6 @@ import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
-import sharp from 'sharp';
 
 // GET: Retrieve current vendor profile & branding
 export async function GET() {
@@ -13,7 +12,7 @@ export async function GET() {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        const freshVendor = db.prepare('SELECT id, name, email, brandName, brandLogo FROM vendors WHERE id = ?').get(vendor.id);
+        const freshVendor = db.prepare('SELECT id, name, email, brandName, brandLogo, copyDelimiter, copyIncludeExt, copySortOrder FROM vendors WHERE id = ?').get(vendor.id);
         return NextResponse.json(freshVendor);
     } catch (error) {
         console.error('Failed to get vendor profile:', error);
@@ -32,6 +31,9 @@ export async function PUT(request) {
         const formData = await request.formData();
         const name = formData.get('name')?.toString();
         const brandName = formData.get('brandName')?.toString();
+        const copyDelimiter = formData.get('copyDelimiter')?.toString() || ', ';
+        const copyIncludeExt = parseInt(formData.get('copyIncludeExt')?.toString() || '0') || 0;
+        const copySortOrder = formData.get('copySortOrder')?.toString() || 'name_asc';
         const logoFile = formData.get('logo'); // File object or null
 
         if (!name) {
@@ -60,23 +62,11 @@ export async function PUT(request) {
             const arrayBuffer = await logoFile.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             
-            // Resize and compress logo using Sharp (preserving WebP transparency & auto-rotate EXIF)
-            let compressedBuffer;
-            try {
-                compressedBuffer = await sharp(buffer)
-                    .rotate()
-                    .resize({ width: 500, height: 500, fit: 'inside', withoutEnlargement: true })
-                    .webp({ quality: 85, effort: 4 })
-                    .toBuffer();
-            } catch (err) {
-                console.error('Failed to compress brand logo:', err);
-                return NextResponse.json({ message: 'Gagal memproses gambar logo.' }, { status: 400 });
-            }
-
-            const fileName = `${vendor.id}_${Date.now()}_brandlogo.webp`;
+            const ext = logoFile.name ? path.extname(logoFile.name) || '.png' : '.png';
+            const fileName = `${vendor.id}_${Date.now()}_brandlogo${ext}`;
             const filePath = path.join(logoDir, fileName);
             
-            fs.writeFileSync(filePath, compressedBuffer);
+            fs.writeFileSync(filePath, buffer);
             brandLogoPath = `/vendor_logos/${fileName}`;
 
             // Optional: delete old logo if exists
@@ -95,15 +85,15 @@ export async function PUT(request) {
 
         // Update database
         if (brandLogoPath) {
-            db.prepare('UPDATE vendors SET name = ?, brandName = ?, brandLogo = ? WHERE id = ?')
-              .run(name, brandName || null, brandLogoPath, vendor.id);
+            db.prepare('UPDATE vendors SET name = ?, brandName = ?, brandLogo = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ? WHERE id = ?')
+              .run(name, brandName || null, brandLogoPath, copyDelimiter, copyIncludeExt, copySortOrder, vendor.id);
         } else {
-            db.prepare('UPDATE vendors SET name = ?, brandName = ? WHERE id = ?')
-              .run(name, brandName || null, vendor.id);
+            db.prepare('UPDATE vendors SET name = ?, brandName = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ? WHERE id = ?')
+              .run(name, brandName || null, copyDelimiter, copyIncludeExt, copySortOrder, vendor.id);
         }
 
         // Get updated details
-        const updated = db.prepare('SELECT id, name, email, brandName, brandLogo FROM vendors WHERE id = ?').get(vendor.id);
+        const updated = db.prepare('SELECT id, name, email, brandName, brandLogo, copyDelimiter, copyIncludeExt, copySortOrder FROM vendors WHERE id = ?').get(vendor.id);
 
         return NextResponse.json({
             message: 'Profile branding updated successfully.',

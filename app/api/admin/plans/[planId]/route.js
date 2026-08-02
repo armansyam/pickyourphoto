@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
 
-// PUT: Update plan details (Admin only)
-export async function PUT(request, { params }) {
+async function handleUpdatePlan(request, params) {
     try {
         const currentUser = getAuthVendor();
         if (!currentUser || currentUser.role !== 'admin') {
@@ -11,28 +10,26 @@ export async function PUT(request, { params }) {
         }
 
         const { planId } = params;
-        const { name, maxProjects, price, projectExpireDays, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB } = await request.json();
+        const body = await request.json();
+        const { name, maxProjects, price, projectExpireDays, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo } = body;
 
         if (!name || maxProjects === undefined || price === undefined) {
             return NextResponse.json({ message: 'Name, max projects, and price are required.' }, { status: 400 });
         }
 
-        // Verify plan exists
         const plan = db.prepare('SELECT id FROM plans WHERE id = ?').get(planId);
         if (!plan) {
             return NextResponse.json({ message: 'Plan not found.' }, { status: 404 });
         }
 
-        // Check name uniqueness if changed
         const nameConflict = db.prepare('SELECT id FROM plans WHERE name = ? AND id != ?').get(name, planId);
         if (nameConflict) {
             return NextResponse.json({ message: 'A plan with this name already exists.' }, { status: 409 });
         }
 
-        const updateStmt = db.prepare('UPDATE plans SET name = ?, maxProjects = ?, price = ?, projectExpireDays = ?, maxPhotosPerProject = ?, activePeriodDays = ?, status = ?, planType = ?, maxStorageMB = ? WHERE id = ?');
-        updateStmt.run(name, maxProjects, price, projectExpireDays || 0, maxPhotosPerProject || 0, activePeriodDays !== undefined ? activePeriodDays : 30, status || 'active', planType || 'limit', maxStorageMB || 0, planId);
+        const updateStmt = db.prepare('UPDATE plans SET name = ?, maxProjects = ?, price = ?, projectExpireDays = ?, maxPhotosPerProject = ?, activePeriodDays = ?, status = ?, planType = ?, maxStorageMB = ?, allowCustomLogo = ? WHERE id = ?');
+        updateStmt.run(name, maxProjects, price, projectExpireDays || 180, maxPhotosPerProject || 0, activePeriodDays !== undefined ? activePeriodDays : 30, status || 'active', planType || 'limit', maxStorageMB || 51200, allowCustomLogo ? 1 : 0, planId);
 
-        // Cascade updates to all vendors linked to this plan to update their maxProjects limit
         const updateVendorsStmt = db.prepare('UPDATE vendors SET maxProjects = ? WHERE planId = ? AND role != ?');
         updateVendorsStmt.run(maxProjects, planId, 'admin');
 
@@ -43,7 +40,14 @@ export async function PUT(request, { params }) {
     }
 }
 
-// DELETE: Delete plan (Admin only)
+export async function PUT(request, { params }) {
+    return handleUpdatePlan(request, params);
+}
+
+export async function PATCH(request, { params }) {
+    return handleUpdatePlan(request, params);
+}
+
 export async function DELETE(request, { params }) {
     try {
         const currentUser = getAuthVendor();
@@ -53,13 +57,11 @@ export async function DELETE(request, { params }) {
 
         const { planId } = params;
 
-        // Verify plan exists
         const plan = db.prepare('SELECT id FROM plans WHERE id = ?').get(planId);
         if (!plan) {
             return NextResponse.json({ message: 'Plan not found.' }, { status: 404 });
         }
 
-        // Check if there are vendors linked to this plan
         const hasVendors = db.prepare('SELECT id FROM vendors WHERE planId = ? LIMIT 1').get(planId);
         if (hasVendors) {
             return NextResponse.json({ 

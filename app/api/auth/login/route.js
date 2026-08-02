@@ -33,10 +33,11 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' }, { status: 401 });
         }
 
+        const secret = process.env.JWT_SECRET || 'pick-your-photo-super-secret-key-2026';
         const token = jwt.sign(
             { id: vendor.id, name: vendor.name, email: vendor.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '1d' }
+            secret,
+            { expiresIn: '7d' }
         );
 
         const response = NextResponse.json({ message: 'Login successful.', role: vendor.role });

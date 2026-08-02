@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
 import { parseFolderId, fetchFolderFiles } from '@/lib/gdrive-importer';
-import { deleteProjectFiles } from '@/lib/storage-cleaner';
 import { processImagesInBackground } from '../../route';
 import fs from 'fs';
 import path from 'path';
@@ -66,14 +65,8 @@ export async function POST(request, { params }) {
         // 1. Reset project status to 'importing', filesDeleted = 0, and expiresAt = NULL
         db.prepare('UPDATE projects SET status = ?, filesDeleted = 0, expiresAt = NULL WHERE id = ?').run('importing', projectId);
 
-        // 3. Re-create public upload directory using structured paths
-        const uploadDir = path.join(process.cwd(), 'public', 'staging_uploads', `vendor_${project.vendorId}`, `project_${project.id}_${project.slug}`);
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
-        // 4. Start background processing (un-awaited)
-        processImagesInBackground(projectId, files, uploadDir).catch(err => {
+        // 2. Start background processing (un-awaited)
+        processImagesInBackground(projectId, project.folderUrl ? parseFolderId(project.folderUrl) : '').catch(err => {
             console.error(`Background processing failed for project ${projectId} on retry:`, err);
         });
 

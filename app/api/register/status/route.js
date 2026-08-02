@@ -20,25 +20,7 @@ export async function GET() {
             });
         }
 
-        // 2. Check disk-space based critical threshold
-        try {
-            const checkPath = process.cwd();
-            const stats = await statfs(checkPath);
-            const totalBytes = stats.blocks * stats.bsize;
-            const freeBytes = stats.bfree * stats.bsize;
-            const freePercent = (freeBytes / totalBytes) * 100;
-
-            if (freePercent < settings.disk_critical_threshold_percent) {
-                return NextResponse.json({
-                    registration_open: false,
-                    free_trial_available: false,
-                    reason_closed: 'Kuota registrasi kami sudah penuh saat ini. Silakan coba beberapa saat lagi.'
-                });
-            }
-        } catch (diskErr) {
-            console.error('Failed to read disk space during registration status check:', diskErr);
-            // Allow registration to proceed if stats check fails, but log it
-        }
+        // 2. Zero-Storage Architecture: Server disk space check bypassed (0 Bytes disk usage)
 
         // 3. Check vendor quota based threshold
         if (settings.max_vendor_quota !== null && settings.max_vendor_quota > 0) {

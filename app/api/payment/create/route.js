@@ -1,0 +1,67 @@
+import { NextResponse } from 'next/server';
+import db from '@/lib/db';
+import { createPayment, getPaymentGatewayConfig } from '@/lib/payment-gateway';
+
+export async function POST(request) {
+  try {
+    const config = getPaymentGatewayConfig();
+    if (!config.enabled) {
+      return NextResponse.json({ message: 'Payment Gateway saat ini dinonaktifkan.' }, { status: 400 });
+    }
+
+    const { vendorId, planId } = await request.json();
+
+    if (!vendorId || !planId) {
+      return NextResponse.json({ message: 'vendorId dan planId wajib diisi.' }, { status: 400 });
+    }
+
+    const vendor = db.prepare('SELECT id, name, email, whatsapp FROM vendors WHERE id = ?').get(vendorId);
+    if (!vendor) {
+      return NextResponse.json({ message: 'Vendor tidak ditemukan.' }, { status: 404 });
+    }
+
+    const plan = db.prepare('SELECT id, name, price FROM plans WHERE id = ?').get(planId);
+    if (!plan) {
+      return NextResponse.json({ message: 'Paket berlangganan tidak ditemukan.' }, { status: 404 });
+    }
+
+    // Generate unique orderId
+    const orderId = `ORDER-${Date.now()}-${vendor.id}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const amount = plan.price;
+
+    const paymentResult = await createPayment({
+      orderId,
+      amount,
+      vendorName: vendor.name,
+      vendorEmail: vendor.email,
+      vendorPhone: vendor.whatsapp,
+      planName: plan.name,
+    });
+
+    // Save payment transaction log in DB
+    db.prepare(`
+      INSERT INTO payment_transactions (orderId, vendorId, planId, amount, provider, status, paymentUrl, rawResponse)
+      VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
+    `).run(
+      orderId,
+      vendor.id,
+      plan.id,
+      amount,
+      config.provider,
+      paymentResult.redirectUrl || '',
+      JSON.stringify(paymentResult.raw || {})
+    );
+
+    return NextResponse.json({
+      success: true,
+      orderId,
+      provider: config.provider,
+      token: paymentResult.token,
+      redirectUrl: paymentResult.redirectUrl,
+    });
+
+  } catch (error) {
+    console.error('[Payment Create Error]:', error);
+    return NextResponse.json({ message: error.message || 'Gagal memproses pembayaran' }, { status: 500 });
+  }
+}

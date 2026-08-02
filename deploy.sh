@@ -37,15 +37,7 @@ if grep -q "JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman" .env; then
     echo "✅ JWT_SECRET aman berhasil di-generate dan disimpan ke .env!"
 fi
 
-# Jika berkas baru dibuat, hentikan sementara agar pengguna bisa mengisi GOOGLE_API_KEY
-if [ $ENV_CREATED -eq 1 ]; then
-    echo ""
-    echo "⚠️  [PENTING] Berkas .env baru saja dibuat otomatis dengan JWT_SECRET yang aman."
-    echo "👉 Silakan edit berkas tersebut sekarang dengan perintah: nano .env"
-    echo "👉 Masukkan GOOGLE_API_KEY Anda, lalu jalankan kembali script ./deploy.sh ini."
-    echo ""
-    exit 0
-fi
+
 
 # 3. Rebuild & Jalankan Container baru
 echo "📦 3. Membangun ulang dan me-restart container Docker..."

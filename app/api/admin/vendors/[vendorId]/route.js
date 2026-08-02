@@ -4,9 +4,18 @@ import db from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
+import { sendVendorApprovalEmail } from '@/lib/mailer';
 
-// PUT: Update vendor account settings, status, and reset password (Superadmin only)
+// PUT & PATCH: Update vendor account settings, status, and reset password (Superadmin only)
+export async function PATCH(request, { params }) {
+    return handleUpdateVendor(request, params);
+}
+
 export async function PUT(request, { params }) {
+    return handleUpdateVendor(request, params);
+}
+
+async function handleUpdateVendor(request, params) {
     try {
         const currentUser = getAuthVendor();
         if (!currentUser || currentUser.role !== 'admin') {
@@ -14,29 +23,50 @@ export async function PUT(request, { params }) {
         }
 
         const { vendorId } = params;
-        const { planId, expiresAt, status, password, additionalProjects, additionalProjectsExpiresAt, additionalPhotosPerProject } = await request.json();
-
-        if (!planId || !status) {
-            return NextResponse.json({ message: 'Missing plan ID or status parameter.' }, { status: 400 });
-        }
-
-        // Fetch plan details
-        const plan = db.prepare('SELECT maxProjects FROM plans WHERE id = ?').get(planId);
-        if (!plan) {
-            return NextResponse.json({ message: 'Selected plan not found.' }, { status: 404 });
-        }
+        const body = await request.json();
+        const { planId, expiresAt, status, password, additionalProjects, additionalProjectsExpiresAt, additionalPhotosPerProject, action } = body;
 
         // Verify vendor exists
-        const getVendor = db.prepare('SELECT id FROM vendors WHERE id = ? AND role != ?');
-        const targetVendor = getVendor.get(vendorId, 'admin');
-
+        const targetVendor = db.prepare('SELECT * FROM vendors WHERE id = ? AND role != ?').get(vendorId, 'admin');
         if (!targetVendor) {
             return NextResponse.json({ message: 'Vendor not found.' }, { status: 404 });
         }
 
-        // Update details: planId, expiresAt, maxProjects, status, additionalProjects, additionalProjectsExpiresAt, additionalPhotosPerProject
+        // If simple status update / approval action
+        const finalStatus = status || targetVendor.status;
+        const finalPlanId = planId || targetVendor.planId;
+
+        // Fetch plan details
+        const fullPlan = db.prepare('SELECT * FROM plans WHERE id = ?').get(finalPlanId);
+        const maxProjects = fullPlan ? fullPlan.maxProjects : targetVendor.maxProjects;
+
+        // Auto-calculate expiration date if approving vendor and no date is set
+        let finalExpiresAt = expiresAt !== undefined ? expiresAt : targetVendor.expiresAt;
+        if (finalStatus === 'active' && !finalExpiresAt && fullPlan && fullPlan.activePeriodDays) {
+            const expDate = new Date();
+            expDate.setDate(expDate.getDate() + fullPlan.activePeriodDays);
+            finalExpiresAt = expDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+        }
+
+        // Update details
         const updateStmt = db.prepare('UPDATE vendors SET planId = ?, expiresAt = ?, maxProjects = ?, status = ?, additionalProjects = ?, additionalProjectsExpiresAt = ?, additionalPhotosPerProject = ? WHERE id = ?');
-        updateStmt.run(planId, expiresAt || null, plan.maxProjects, status, parseInt(additionalProjects) || 0, additionalProjectsExpiresAt || null, parseInt(additionalPhotosPerProject) || 0, vendorId);
+        updateStmt.run(
+            finalPlanId, 
+            finalExpiresAt, 
+            maxProjects, 
+            finalStatus, 
+            additionalProjects !== undefined ? (parseInt(additionalProjects) || 0) : targetVendor.additionalProjects, 
+            additionalProjectsExpiresAt !== undefined ? additionalProjectsExpiresAt : targetVendor.additionalProjectsExpiresAt, 
+            additionalPhotosPerProject !== undefined ? (parseInt(additionalPhotosPerProject) || 0) : targetVendor.additionalPhotosPerProject, 
+            vendorId
+        );
+
+        // Send automated approval email notification in background if vendor was just activated
+        if (finalStatus === 'active' && targetVendor.status !== 'active') {
+            sendVendorApprovalEmail(targetVendor, fullPlan).catch(err => {
+                console.error('Failed to trigger background approval email:', err);
+            });
+        }
 
         // Reset password if provided
         if (password && password.trim() !== '') {
@@ -47,7 +77,7 @@ export async function PUT(request, { params }) {
             db.prepare('UPDATE vendors SET password = ?, resetRequested = 0 WHERE id = ?').run(hashedPassword, vendorId);
         }
 
-        return NextResponse.json({ message: 'Vendor settings and password updated successfully.' });
+        return NextResponse.json({ success: true, message: `Status vendor ${targetVendor.name} berhasil diperbarui.` });
 
     } catch (error) {
         console.error('Failed to update vendor settings:', error);

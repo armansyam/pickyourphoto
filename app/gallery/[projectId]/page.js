@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 /**
@@ -24,7 +24,26 @@ const THEMES = {
         fontBody: "system-ui, -apple-system, sans-serif",
         fontMono: "ui-monospace, monospace",
         cardBorder: 'rgba(255,255,255,0.08)',
-        grid: 'wall',
+        grid: 'masonry',
+    },
+    midnightSlate: {
+        label: 'Midnight Slate (Trial Dark)',
+        blurb: 'Gelap modern, aksen slate & neon indigo ala Galeri Trial',
+        bg: '#0f172a',
+        surface: 'rgba(255,255,255,0.03)',
+        surfaceSolid: '#1e293b',
+        text: '#f8fafc',
+        textMuted: '#94a3b8',
+        accent: '#6366f1',
+        accentContrast: '#ffffff',
+        accent2: '#818cf8',
+        danger: '#ef4444',
+        radius: '14px',
+        fontDisplay: "system-ui, -apple-system, sans-serif",
+        fontBody: "system-ui, -apple-system, sans-serif",
+        fontMono: "ui-monospace, monospace",
+        cardBorder: 'rgba(255,255,255,0.1)',
+        grid: 'masonry',
     },
     contactSheet: {
         label: 'Kontak Studio',
@@ -62,7 +81,7 @@ const THEMES = {
         fontBody: "'Helvetica Neue', Arial, sans-serif",
         fontMono: "Georgia, serif",
         cardBorder: 'rgba(0,0,0,0.12)',
-        grid: 'wall',
+        grid: 'masonry',
     },
     editorsMark: {
         label: 'Tanda Editor',
@@ -100,7 +119,7 @@ const THEMES = {
         fontBody: "'Segoe UI', sans-serif",
         fontMono: "'Bradley Hand', cursive",
         cardBorder: 'rgba(0,0,0,0.08)',
-        grid: 'scatter',
+        grid: 'masonry',
     },
 };
 
@@ -122,12 +141,34 @@ export default function ClientGalleryPage({ params }) {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
     const [showSubmittedPreview, setShowSubmittedPreview] = useState(false);
+    const [viewFilter, setViewFilter] = useState('all'); // 'all' or 'selected'
+    const [selectedCategory, setSelectedCategory] = useState('all'); // 'all' or specific folder category
+    const [visibleLimit, setVisibleLimit] = useState(100);
+
+    useEffect(() => {
+        setVisibleLimit(100);
+    }, [viewFilter, selectedCategory]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if ((window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 800)) {
+                setVisibleLimit(prev => prev + 100);
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const [toasts, setToasts] = useState([]);
-    const addToast = useCallback((message, type = 'info', duration = 10000) => {
-        const id = Date.now() + Math.random();
-        setToasts(prev => [...prev, { id, message, type, duration }]);
-        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
+    const toastTimerRef = useRef(null);
+    const addToast = useCallback((message, type = 'info', duration = 3000) => {
+        const id = Date.now();
+        // Replace previous toast to prevent stacking/cluttering
+        setToasts([{ id, message, type, duration }]);
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = setTimeout(() => {
+            setToasts([]);
+        }, duration);
     }, []);
 
     const [themeKey, setThemeKey] = useState('default');
@@ -147,6 +188,18 @@ export default function ClientGalleryPage({ params }) {
             setProject(data.project);
             setBranding(data.vendorBranding || null);
             setPhotos(data.photos || []);
+            
+            const fetchedPhotos = data.photos || [];
+            const hasSubfolders = fetchedPhotos.some(p => p.category && p.category !== 'Folder Utama');
+            if (hasSubfolders) {
+                const hasRootPhotos = fetchedPhotos.some(p => !p.category || p.category === 'Folder Utama');
+                if (hasRootPhotos) {
+                    setSelectedCategory('Folder Utama');
+                } else {
+                    const firstSub = fetchedPhotos.find(p => p.category && p.category !== 'Folder Utama')?.category;
+                    if (firstSub) setSelectedCategory(firstSub);
+                }
+            }
             
             // Set dynamic theme based on project settings from database
             if (data.project && data.project.galleryTheme) {
@@ -171,15 +224,18 @@ export default function ClientGalleryPage({ params }) {
 
     const handleToggleSelect = (photoId) => {
         if (submitted || project?.isProjectExpired) return;
+        
+        // Prevent duplicate toasts by checking limit before state update
+        if (!selectedIds.has(photoId) && maxSelection > 0 && selectedIds.size >= maxSelection) {
+            addToast(`⚠️ Batas maksimal pilihan foto adalah ${maxSelection}. Silakan hapus pilihan lainnya terlebih dahulu.`, 'warning', 3500);
+            return;
+        }
+
         setSelectedIds(prev => {
             const next = new Set(prev);
             if (next.has(photoId)) {
                 next.delete(photoId);
             } else {
-                if (maxSelection > 0 && next.size >= maxSelection) {
-                    addToast(`⚠️ Batas maksimal pilihan foto adalah ${maxSelection}. Silakan hapus pilihan lainnya terlebih dahulu.`, 'warning', 12000);
-                    return prev;
-                }
                 next.add(photoId);
             }
             return next;
@@ -189,8 +245,8 @@ export default function ClientGalleryPage({ params }) {
     const isAtLimit = maxSelection > 0 && selectedIds.size >= maxSelection;
 
     const handleSubmitSelection = () => {
-        if (project?.isProjectExpired) { addToast('🔒 Project ini telah kedaluwarsa dan terkunci.', 'error', 12000); return; }
-        if (selectedIds.size === 0) { addToast('📸 Silakan pilih minimal satu foto sebelum mengirim.', 'warning', 10000); return; }
+        if (project?.isProjectExpired) { addToast('🔒 Project ini telah kedaluwarsa dan terkunci.', 'error', 3500); return; }
+        if (selectedIds.size === 0) { addToast('📸 Silakan pilih minimal satu foto sebelum mengirim.', 'warning', 3500); return; }
         setShowConfirmModal(true);
     };
 
@@ -207,9 +263,9 @@ export default function ClientGalleryPage({ params }) {
             if (!res.ok) throw new Error(data.message || 'Gagal mengirim pilihan.');
             setSubmitted(true);
             setShowSuccessOverlay(true);
-            addToast('✅ Pilihan foto berhasil dikirim dan terkunci!', 'success', 15000);
+            addToast('✅ Pilihan foto berhasil dikirim dan terkunci!', 'success', 5000);
         } catch (err) {
-            addToast(`❌ ${err.message}`, 'error', 15000);
+            addToast(`❌ ${err.message}`, 'error', 4000);
         } finally {
             setSubmitting(false);
         }
@@ -273,12 +329,62 @@ export default function ClientGalleryPage({ params }) {
                 </div>
             )}
 
-            <div style={{ textAlign: 'center', marginTop: branding ? '12px' : '64px', marginBottom: '32px' }}>
+            <div style={{ textAlign: 'center', marginTop: branding ? '12px' : '64px', marginBottom: '24px' }}>
                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '38px', margin: '0 0 8px 0', fontWeight: themeKey === 'polaroid' ? 400 : 700, color: 'var(--text)' }}>{project.name}</h1>
                 <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '14px' }}>
-                    {submitted ? '✓ Selection completed' : project.isProjectExpired ? 'Galeri ini sudah kedaluwarsa (Locked)' : maxSelection > 0 ? `Pilih maksimal ${maxSelection} foto favorit Anda` : 'Pilih foto favorit Anda lalu kirim di bawah'}
+                    {submitted ? 'Selection completed' : project.isProjectExpired ? 'Galeri ini sudah kedaluwarsa (Locked)' : maxSelection > 0 ? `Pilih maksimal ${maxSelection} foto favorit Anda` : 'Pilih foto favorit Anda lalu kirim di bawah'}
                 </p>
             </div>
+
+            {/* Sub-Folder Category Tabs (If photos are categorized into sub-folders) */}
+            {(() => {
+                const subfolders = Array.from(new Set(photos.map(p => p.category).filter(c => c && c !== 'Folder Utama')));
+                if (subfolders.length === 0) return null;
+
+                const rootPhotosCount = photos.filter(p => !p.category || p.category === 'Folder Utama').length;
+
+                return (
+                    <div className="category-tabs-container">
+                        <div className="category-tabs-scroll">
+                            {rootPhotosCount > 0 && (
+                                <button
+                                    type="button"
+                                    className={`category-tab ${selectedCategory === 'Folder Utama' ? 'is-active' : ''}`}
+                                    onClick={() => setSelectedCategory('Folder Utama')}
+                                >
+                                    <span className="category-tab-label">Folder Utama</span>
+                                    <span className="category-tab-count">{rootPhotosCount}</span>
+                                </button>
+                            )}
+
+                            {subfolders.map(cat => {
+                                const catCount = photos.filter(p => p.category === cat).length;
+                                const displayCat = cat.replace(/\\u0026/g, '&').replace(/\\u([0-9a-fA-F]{4})/g, (m, hex) => String.fromCharCode(parseInt(hex, 16))).replace(/\\+$/g, '').replace(/\\+/g, '').trim();
+                                return (
+                                    <button
+                                        key={cat}
+                                        type="button"
+                                        className={`category-tab ${selectedCategory === cat ? 'is-active' : ''}`}
+                                        onClick={() => setSelectedCategory(cat)}
+                                    >
+                                        <span className="category-tab-label">{displayCat}</span>
+                                        <span className="category-tab-count">{catCount}</span>
+                                    </button>
+                                );
+                            })}
+
+                            <button
+                                type="button"
+                                className={`category-tab ${selectedCategory === 'all' ? 'is-active' : ''}`}
+                                onClick={() => setSelectedCategory('all')}
+                            >
+                                <span className="category-tab-label">Semua Foto</span>
+                                <span className="category-tab-count">{photos.length}</span>
+                            </button>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {project.isProjectExpired && (
                 <div style={{ background: 'color-mix(in srgb, var(--danger) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)', color: 'var(--danger)', padding: '14px 20px', borderRadius: 'var(--radius)', marginBottom: '32px', fontSize: '14px', maxWidth: '600px', margin: '0 auto 32px auto', lineHeight: '1.5' }}>
@@ -296,72 +402,123 @@ export default function ClientGalleryPage({ params }) {
                 </div>
             ) : (
                 <>
-                    <div className={`photo-grid grid-${theme.grid}`}>
-                        {photos.map((photo, index) => {
-                            const isSelected = selectedIds.has(photo.id);
-                            const pickNumber = isSelected ? getPickNumber(photo.id) : null;
-                            const num = (index + 1).toString().padStart(3, '0');
-
+                    {(() => {
+                        let displayedPhotos = viewFilter === 'selected' ? photos.filter(p => selectedIds.has(p.id)) : photos;
+                        if (selectedCategory !== 'all') {
+                            if (selectedCategory === 'Folder Utama') {
+                                displayedPhotos = displayedPhotos.filter(p => !p.category || p.category === 'Folder Utama');
+                            } else {
+                                displayedPhotos = displayedPhotos.filter(p => p.category === selectedCategory);
+                            }
+                        }
+                        
+                        if (displayedPhotos.length === 0) {
                             return (
-                                <div key={photo.id} className={`photo-card ${isSelected ? 'is-selected' : ''}`} onClick={() => handleToggleSelect(photo.id)}>
-                                    <div className="photo-card-frame">
-                                        <img src={photo.thumbnailPath} alt={`Frame ${index + 1}`} loading="lazy" />
-
-                                        {themeKey === 'contactSheet' && (
-                                            <>
-                                                <span className="corner corner-tl" /><span className="corner corner-tr" />
-                                                <span className="corner corner-bl" /><span className="corner corner-br" />
-                                                <span className="cs-frame-number">N°{num}</span>
-                                                {isSelected && <span className="cs-pick-badge">{pickNumber}</span>}
-                                            </>
-                                        )}
-
-                                        {themeKey === 'editorsMark' && (
-                                            <>
-                                                <span className="em-number">{num}</span>
-                                                {isSelected && <span className="em-circle" />}
-                                                {isSelected && <span className="em-stamp">PILIH</span>}
-                                            </>
-                                        )}
-
-                                        {themeKey === 'galleryWall' && isSelected && <span className="gw-seal">✓</span>}
-                                        {themeKey === 'default' && isSelected && <span className="default-seal">✓</span>}
-
-                                        {themeKey === 'polaroid' && <span className="pl-pin" />}
-
-                                        <button className="preview-btn" onClick={(e) => { e.stopPropagation(); setActiveLightboxIndex(index); }} aria-label="Perbesar foto" title="Perbesar">⤢</button>
-                                    </div>
-
-                                    {themeKey === 'galleryWall' && (
-                                        <div className="gw-caption">No. {num}{isSelected ? ` · Dipilih #${pickNumber}` : ''}</div>
-                                    )}
-                                    {themeKey === 'polaroid' && (
-                                        <div className="pl-caption">{isSelected ? `dipilih ♡ #${pickNumber}` : `foto ${num}`}</div>
-                                    )}
+                                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '48px 20px', background: 'var(--surface-solid)', borderRadius: 'var(--radius)', border: '1px solid var(--card-border)', maxWidth: '480px', margin: '20px auto' }}>
+                                    <p style={{ fontSize: '15px', fontWeight: 'bold', margin: '0 0 6px 0', color: 'var(--text)' }}>{viewFilter === 'selected' ? 'Belum Ada Foto Dipilih' : 'Tidak Ada Foto'}</p>
+                                    <p style={{ fontSize: '13px', margin: 0 }}>{viewFilter === 'selected' ? 'Klik foto di galeri untuk memilih foto favorit Anda.' : 'Tidak ada foto dalam kategori ini.'}</p>
+                                    <button className="btn-secondary-t" style={{ marginTop: '16px', fontSize: '12px', padding: '8px 16px' }} onClick={() => { setViewFilter('all'); setSelectedCategory('all'); }}>Lihat Semua Foto</button>
                                 </div>
                             );
-                        })}
-                    </div>
+                        }
+
+                        const sliceToRender = displayedPhotos.slice(0, visibleLimit);
+
+                        return (
+                            <>
+                                <div className={`photo-grid grid-${theme.grid}`}>
+                                    {sliceToRender.map((photo, index) => {
+                                        const originalIndex = photos.findIndex(p => p.id === photo.id);
+                                        const isSelected = selectedIds.has(photo.id);
+                                        const pickNumber = isSelected ? getPickNumber(photo.id) : null;
+                                        const num = ((originalIndex >= 0 ? originalIndex : index) + 1).toString().padStart(3, '0');
+
+                                        return (
+                                            <div key={photo.id} className={`photo-card ${isSelected ? 'is-selected' : ''}`} onClick={() => handleToggleSelect(photo.id)}>
+                                                <div className="photo-card-frame">
+                                                    <img src={photo.thumbnailPath} alt={`Frame ${index + 1}`} loading="lazy" />
+
+                                                    {themeKey === 'contactSheet' && (
+                                                        <>
+                                                            <span className="corner corner-tl" /><span className="corner corner-tr" />
+                                                            <span className="corner corner-bl" /><span className="corner corner-br" />
+                                                            <span className="cs-frame-number">N°{num}</span>
+                                                            {isSelected && <span className="cs-pick-badge">{pickNumber}</span>}
+                                                        </>
+                                                    )}
+
+                                                    {themeKey === 'editorsMark' && (
+                                                        <>
+                                                            <span className="em-number">{num}</span>
+                                                            {isSelected && <span className="em-circle" />}
+                                                            {isSelected && <span className="em-stamp">PILIH</span>}
+                                                        </>
+                                                    )}
+
+                                                    {themeKey === 'galleryWall' && isSelected && <span className="gw-seal">✓</span>}
+                                                    {themeKey === 'default' && isSelected && <span className="default-seal">✓</span>}
+
+                                                    {themeKey === 'polaroid' && <span className="pl-pin" />}
+
+                                                    <button className="preview-btn" onClick={(e) => { e.stopPropagation(); setActiveLightboxIndex(originalIndex >= 0 ? originalIndex : index); }} aria-label="Perbesar foto" title="Perbesar">⤢</button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {displayedPhotos.length > visibleLimit && (
+                                    <div style={{ textAlign: 'center', margin: '32px 0 16px 0' }}>
+                                        <button 
+                                            className="btn-secondary-t" 
+                                            style={{ padding: '10px 24px', fontSize: '13px', borderRadius: '20px', background: 'var(--surface-solid)', color: 'var(--text)', border: '1px solid var(--card-border)', cursor: 'pointer' }}
+                                            onClick={() => setVisibleLimit(prev => prev + 60)}
+                                        >
+                                            Muat Lebih Banyak Foto ({visibleLimit} dari {displayedPhotos.length})
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        );
+                    })()}
 
                     <div className="action-tray">
                         <div className="action-tray-inner">
                             <div className="action-tray-head">
-                                <div>
-                                    <h4>{selectedIds.size}{maxSelection > 0 ? ` / ${maxSelection}` : ''} Foto Dipilih</h4>
-                                    <p>{submitted ? 'Pilihan terkunci' : project.isProjectExpired ? 'Project kedaluwarsa & terkunci' : isAtLimit ? 'Batas maksimal tercapai!' : 'Klik foto untuk menandai pilihan'}</p>
-                                </div>
-                                {submitted ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <span style={{ color: 'var(--accent)', fontWeight: 'bold', fontSize: '14px' }}>✓ Finalized</span>
-                                        <button className="btn-secondary-t" onClick={() => setShowSubmittedPreview(true)}>Lihat Pilihan</button>
+                                <div className="action-tray-info">
+                                    <div className="action-tray-counter">
+                                        <span className="counter-current">{selectedIds.size}</span>
+                                        {maxSelection > 0 && <span className="counter-separator">/</span>}
+                                        {maxSelection > 0 && <span className="counter-max">{maxSelection}</span>}
                                     </div>
-                                ) : project.isProjectExpired ? (
-                                    <span style={{ color: 'var(--danger)', fontWeight: 'bold', fontSize: '14px' }}>🔒 Locked</span>
-                                ) : (
-                                    <button className="btn-primary-t" onClick={handleSubmitSelection} disabled={submitting || selectedIds.size === 0}>
-                                        {submitting ? 'Mengirim...' : 'Kirim Pilihan'}
-                                    </button>
-                                )}
+                                    <div className="action-tray-meta">
+                                        <span className="action-tray-label">Foto Dipilih</span>
+                                        <span className="action-tray-hint">{submitted ? 'Pilihan terkunci' : project.isProjectExpired ? 'Kedaluwarsa' : isAtLimit ? 'Batas tercapai!' : 'Klik foto untuk memilih'}</span>
+                                    </div>
+                                </div>
+                                <div className="action-tray-actions">
+                                    {selectedIds.size > 0 && (
+                                        <button
+                                            type="button"
+                                            className="tray-btn tray-btn-ghost"
+                                            onClick={() => setViewFilter(viewFilter === 'selected' ? 'all' : 'selected')}
+                                        >
+                                            {viewFilter === 'selected' ? 'Semua' : `Pilihan (${selectedIds.size})`}
+                                        </button>
+                                    )}
+                                    
+                                    {submitted ? (
+                                        <div className="tray-status tray-status-done">✓ Final</div>
+                                    ) : project.isProjectExpired ? (
+                                        <div className="tray-status tray-status-locked">🔒</div>
+                                    ) : (
+                                        <button className="tray-btn tray-btn-submit" onClick={handleSubmitSelection} disabled={submitting || selectedIds.size === 0}>
+                                            {submitting ? (
+                                                <><span className="tray-spinner" /> Kirim...</>
+                                            ) : 'Kirim'}
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             {selectedPhotosList.length > 0 && (
@@ -403,7 +560,34 @@ export default function ClientGalleryPage({ params }) {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', position: 'relative' }}>
                         <button onClick={handlePrevImage} className="lightbox-nav lightbox-nav-left">&#10094;</button>
-                        <img src={photos[activeLightboxIndex].originalPath} alt="Preview" style={{ maxHeight: '74vh', maxWidth: '85vw', objectFit: 'contain', userSelect: 'none' }} onClick={e => e.stopPropagation()} />
+                        <div style={{ position: 'relative', display: 'inline-flex', overflow: 'hidden', borderRadius: '12px' }} onClick={e => e.stopPropagation()}>
+                            <img src={photos[activeLightboxIndex].originalPath} alt="Preview" style={{ maxHeight: '74vh', maxWidth: '85vw', objectFit: 'contain', userSelect: 'none', display: 'block' }} />
+                            
+                            {/* SLEEK SMOOTH BLACK GRADIENT BRANDING OVERLAY (NO HEAVY BLUR) */}
+                            <div style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: '76px',
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.15) 82%, transparent 100%)',
+                                pointerEvents: 'none',
+                                display: 'flex',
+                                alignItems: 'flex-end',
+                                justifyContent: 'center',
+                                gap: '12px',
+                                padding: '0 20px 14px 20px',
+                                borderBottomLeftRadius: '12px',
+                                borderBottomRightRadius: '12px'
+                            }}>
+                                {branding?.brandLogo ? (
+                                    <img src={branding.brandLogo} alt={branding.brandName || 'Studio Logo'} style={{ height: '32px', maxWidth: '130px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }} />
+                                ) : null}
+                                <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '700', letterSpacing: '1.5px', textTransform: 'uppercase', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>
+                                    {branding?.brandName || project?.name || 'STUDIO PHOTOGRAPHY'}
+                                </span>
+                            </div>
+                        </div>
                         <button onClick={handleNextImage} className="lightbox-nav lightbox-nav-right">&#10095;</button>
                     </div>
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)', zIndex: 10 }} onClick={e => e.stopPropagation()}>
@@ -431,7 +615,7 @@ export default function ClientGalleryPage({ params }) {
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', margin: '0 0 8px 0' }}>Konfirmasi Pilihan Anda</h3>
                             <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '13px', lineHeight: '1.5' }}>
-                                Periksa kembali foto pilihan Anda.<br /><strong style={{ color: 'var(--accent)' }}>Setelah dikunci, pilihan tidak dapat diubah lagi.</strong>
+                                Periksa kembali foto pilihan Anda. <strong style={{ color: 'var(--accent)' }}>Setelah dikirim, pilihan tidak dapat diubah lagi.</strong>
                             </p>
                         </div>
                         <div className="confirm-thumb-grid">
@@ -446,7 +630,7 @@ export default function ClientGalleryPage({ params }) {
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <button className="btn-secondary-t" style={{ flex: 1 }} onClick={() => setShowConfirmModal(false)}>← Kembali Memilih</button>
                             <button className="btn-primary-t" style={{ flex: 1.5 }} disabled={selectedIds.size === 0 || submitting} onClick={handleConfirmAndSubmit}>
-                                {submitting ? 'Mengirim...' : '🔒 Kunci & Kirim ke Vendor'}
+                                {submitting ? 'Mengirim...' : 'Kirim ke Vendor'}
                             </button>
                         </div>
                     </div>
@@ -510,32 +694,53 @@ export default function ClientGalleryPage({ params }) {
             </div>
 
             <style jsx>{`
-                /* ── Grid layouts ── */
-                .photo-grid { padding: 0 20px 20px; }
-                .grid-masonry { column-count: 4; column-gap: 14px; }
-                @media (max-width: 1100px) { .grid-masonry { column-count: 3; } }
-                @media (max-width: 720px) { .grid-masonry { column-count: 2; } }
-                @media (max-width: 420px) { .grid-masonry { column-count: 1; } }
+                /* ── Highly Responsive Compact Grid Layouts ── */
+                .photo-grid { padding: 0 16px 20px; }
 
-                .grid-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 36px 28px; max-width: 1200px; margin: 0 auto; }
+                .grid-wall { 
+                    display: grid; 
+                    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
+                    gap: 12px 10px; 
+                    max-width: 1400px; 
+                    margin: 0 auto; 
+                }
 
-                .grid-scatter { display: flex; flex-wrap: wrap; gap: 26px 18px; justify-content: center; max-width: 1200px; margin: 0 auto; }
+                .grid-masonry { column-count: 6; column-gap: 12px; max-width: 1400px; margin: 0 auto; }
+                @media (max-width: 1200px) { .grid-masonry { column-count: 5; } }
+                @media (max-width: 900px) { .grid-masonry { column-count: 4; } }
+
+                /* 📱 MOBILE VIEW (< 640px): 3 PHOTOS PER ROW */
+                @media (max-width: 640px) {
+                    .photo-grid { padding: 0 6px 16px; }
+                    .grid-wall { 
+                        grid-template-columns: repeat(3, 1fr) !important; 
+                        gap: 6px !important; 
+                    }
+                    .grid-masonry { 
+                        column-count: 3 !important; 
+                        column-gap: 6px !important; 
+                    }
+                    .grid-masonry .photo-card { margin-bottom: 6px !important; }
+                    .grid-wall .photo-card-frame { padding: 4px !important; border-radius: 6px !important; }
+                }
+
+                .grid-scatter { display: flex; flex-wrap: wrap; gap: 16px 12px; justify-content: center; max-width: 1400px; margin: 0 auto; }
 
                 .photo-card { cursor: pointer; }
-                .grid-masonry .photo-card { break-inside: avoid; margin-bottom: 14px; }
-                .grid-scatter .photo-card { width: 170px; }
-                .grid-scatter .photo-card:nth-child(odd) { transform: rotate(-2.5deg); }
-                .grid-scatter .photo-card:nth-child(even) { transform: rotate(2deg); }
+                .grid-masonry .photo-card { break-inside: avoid; margin-bottom: 12px; }
+                .grid-scatter .photo-card { width: 130px; }
+                .grid-scatter .photo-card:nth-child(odd) { transform: rotate(-2deg); }
+                .grid-scatter .photo-card:nth-child(even) { transform: rotate(1.5deg); }
                 .grid-scatter .photo-card:hover { transform: rotate(0deg) scale(1.03); }
 
                 .photo-card-frame { position: relative; overflow: hidden; }
-                .grid-masonry .photo-card-frame { border-radius: var(--radius); border: 1px solid var(--card-border); background: var(--surface-solid); transition: transform 0.25s ease, box-shadow 0.25s ease; }
-                .grid-masonry .photo-card:hover .photo-card-frame { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
+                .grid-masonry .photo-card-frame { border-radius: 8px; border: 1px solid var(--card-border); background: var(--surface-solid); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+                .grid-masonry .photo-card:hover .photo-card-frame { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
                 .grid-masonry .photo-card.is-selected .photo-card-frame { box-shadow: 0 0 0 2px var(--accent); }
                 .photo-card-frame img { display: block; width: 100%; height: auto; }
 
-                .grid-wall .photo-card-frame { background: var(--surface); padding: 10px 10px 10px; border: 1px solid var(--card-border); box-shadow: 0 6px 18px rgba(0,0,0,0.08); transition: box-shadow 0.2s ease, transform 0.2s ease; }
-                .grid-wall .photo-card:hover .photo-card-frame { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0,0,0,0.12); }
+                .grid-wall .photo-card-frame { background: var(--surface); padding: 5px; border-radius: 8px; border: 1px solid var(--card-border); box-shadow: 0 4px 12px rgba(0,0,0,0.06); transition: box-shadow 0.2s ease, transform 0.2s ease; }
+                .grid-wall .photo-card:hover .photo-card-frame { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,0.1); }
                 .grid-wall .photo-card.is-selected .photo-card-frame { box-shadow: 0 0 0 2px var(--accent); }
 
                 .grid-scatter .photo-card-frame { background: var(--surface); padding: 10px 10px 0; box-shadow: 0 6px 16px rgba(0,0,0,0.15); transition: box-shadow 0.2s ease; }
@@ -569,22 +774,270 @@ export default function ClientGalleryPage({ params }) {
                 .preview-btn { position: absolute; bottom: 8px; right: 8px; width: 26px; height: 26px; border-radius: 50%; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.15); font-size: 12px; cursor: pointer; opacity: 0; transition: opacity 0.2s ease; display: flex; align-items: center; justify-content: center; }
                 .photo-card:hover .preview-btn { opacity: 1; }
 
+                /* ── Category Tabs ── */
+                .category-tabs-container {
+                    display: flex;
+                    justify-content: center;
+                    margin: 0 auto 28px auto;
+                    max-width: 900px;
+                    padding: 0 16px;
+                }
+                .category-tabs-scroll {
+                    display: flex;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    padding: 6px;
+                    background: rgba(255,255,255,0.04);
+                    border-radius: 16px;
+                    border: 1px solid rgba(255,255,255,0.06);
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                }
+                .category-tab {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 7px;
+                    padding: 8px 16px;
+                    border-radius: 12px;
+                    border: 1px solid transparent;
+                    background: transparent;
+                    color: var(--text-muted);
+                    font-size: 13px;
+                    font-weight: 500;
+                    font-family: var(--font-body);
+                    cursor: pointer;
+                    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                    white-space: nowrap;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .category-tab::before {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    border-radius: 12px;
+                    opacity: 0;
+                    background: radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 70%);
+                    transition: opacity 0.25s ease;
+                }
+                .category-tab:hover {
+                    color: var(--text);
+                    background: rgba(255,255,255,0.06);
+                    border-color: rgba(255,255,255,0.08);
+                }
+                .category-tab:hover::before {
+                    opacity: 1;
+                }
+                .category-tab.is-active {
+                    background: var(--accent);
+                    color: var(--accent-contrast);
+                    border-color: transparent;
+                    font-weight: 700;
+                    box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 35%, transparent),
+                                0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent);
+                    transform: scale(1.02);
+                }
+                .category-tab.is-active::before { opacity: 0; }
+                .category-tab:active {
+                    transform: scale(0.97);
+                }
+                .category-tab-label {
+                    line-height: 1;
+                }
+                .category-tab-count {
+                    font-size: 11px;
+                    font-weight: 700;
+                    min-width: 20px;
+                    height: 20px;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 10px;
+                    padding: 0 6px;
+                    background: rgba(255,255,255,0.1);
+                    line-height: 1;
+                }
+                .category-tab.is-active .category-tab-count {
+                    background: rgba(255,255,255,0.2);
+                }
+
                 /* ── Buttons ── */
-                :global(.btn-primary-t) { font-family: var(--font-body); background: var(--accent); color: var(--accent-contrast); border: none; padding: 10px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 700; cursor: pointer; }
-                :global(.btn-primary-t:disabled) { opacity: 0.5; cursor: not-allowed; }
-                :global(.btn-secondary-t) { font-family: var(--font-body); background: transparent; color: var(--text); border: 1px solid var(--card-border); padding: 10px 20px; border-radius: var(--radius); font-size: 14px; cursor: pointer; }
+                :global(.btn-primary-t) { font-family: var(--font-body); background: var(--accent); color: var(--accent-contrast); border: none; padding: 10px 20px; border-radius: var(--radius); font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+                :global(.btn-primary-t:hover) { filter: brightness(1.1); transform: translateY(-1px); }
+                :global(.btn-primary-t:active) { transform: translateY(0) scale(0.98); }
+                :global(.btn-primary-t:disabled) { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+                :global(.btn-secondary-t) { font-family: var(--font-body); background: transparent; color: var(--text); border: 1px solid var(--card-border); padding: 10px 20px; border-radius: var(--radius); font-size: 14px; cursor: pointer; transition: all 0.2s ease; }
+                :global(.btn-secondary-t:hover) { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
 
                 /* ── Action tray ── */
-                .action-tray { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 640px; z-index: 900; }
-                .action-tray-inner { background: var(--surface-solid); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 14px 18px; box-shadow: 0 10px 40px rgba(0,0,0,0.25); }
-                .action-tray-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-                .action-tray-head h4 { margin: 0; font-size: 16px; font-weight: bold; font-family: var(--font-display); }
-                .action-tray-head p { margin: 2px 0 0 0; font-size: 12px; color: var(--text-muted); }
-                .filmstrip { display: flex; gap: 8px; overflow-x: auto; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--card-border); }
-                .filmstrip-thumb { position: relative; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 6px; overflow: hidden; border: 1px solid var(--accent); }
+                .action-tray { 
+                    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); 
+                    width: 92%; max-width: 540px; z-index: 900; 
+                }
+                .action-tray-inner { 
+                    background: color-mix(in srgb, var(--surface-solid) 85%, transparent); 
+                    backdrop-filter: blur(20px) saturate(1.4); 
+                    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+                    border: 1px solid rgba(255,255,255,0.1); 
+                    border-radius: 18px; 
+                    padding: 12px 16px; 
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2);
+                    transition: box-shadow 0.3s ease;
+                }
+                .action-tray-inner:hover {
+                    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25);
+                }
+                .action-tray-head { 
+                    display: flex; justify-content: space-between; align-items: center; gap: 12px; 
+                }
+                .action-tray-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .action-tray-counter {
+                    display: flex;
+                    align-items: baseline;
+                    gap: 2px;
+                    font-family: var(--font-display);
+                    line-height: 1;
+                }
+                .counter-current {
+                    font-size: 24px;
+                    font-weight: 800;
+                    color: var(--accent);
+                    letter-spacing: -0.02em;
+                    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                }
+                .counter-separator {
+                    font-size: 16px;
+                    font-weight: 400;
+                    color: var(--text-muted);
+                    margin: 0 1px;
+                    opacity: 0.5;
+                }
+                .counter-max {
+                    font-size: 16px;
+                    font-weight: 600;
+                    color: var(--text-muted);
+                }
+                .action-tray-meta {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1px;
+                }
+                .action-tray-label {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--text);
+                    line-height: 1.2;
+                }
+                .action-tray-hint {
+                    font-size: 11px;
+                    color: var(--text-muted);
+                    line-height: 1.2;
+                }
+                .action-tray-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+                .tray-btn {
+                    font-family: var(--font-body);
+                    border: none;
+                    border-radius: 10px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    white-space: nowrap;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .tray-btn-ghost {
+                    padding: 7px 14px;
+                    background: rgba(255,255,255,0.06);
+                    color: var(--text-muted);
+                    border: 1px solid rgba(255,255,255,0.08);
+                }
+                .tray-btn-ghost:hover {
+                    background: rgba(255,255,255,0.1);
+                    color: var(--text);
+                    border-color: rgba(255,255,255,0.15);
+                }
+                .tray-btn-submit {
+                    padding: 8px 20px;
+                    background: var(--accent);
+                    color: var(--accent-contrast);
+                    box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 30%, transparent);
+                }
+                .tray-btn-submit:hover {
+                    filter: brightness(1.1);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 40%, transparent);
+                }
+                .tray-btn-submit:active {
+                    transform: translateY(0) scale(0.97);
+                }
+                .tray-btn-submit:disabled {
+                    opacity: 0.4;
+                    cursor: not-allowed;
+                    transform: none;
+                    filter: none;
+                    box-shadow: none;
+                }
+                .tray-status {
+                    font-size: 13px;
+                    font-weight: 700;
+                    padding: 6px 14px;
+                    border-radius: 10px;
+                }
+                .tray-status-done {
+                    color: var(--accent);
+                    background: color-mix(in srgb, var(--accent) 12%, transparent);
+                    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+                }
+                .tray-status-locked {
+                    color: var(--danger);
+                    background: color-mix(in srgb, var(--danger) 12%, transparent);
+                }
+                .tray-spinner {
+                    display: inline-block;
+                    width: 14px;
+                    height: 14px;
+                    border: 2px solid rgba(255,255,255,0.3);
+                    border-top-color: var(--accent-contrast);
+                    border-radius: 50%;
+                    animation: tray-spin 0.6s linear infinite;
+                }
+                @keyframes tray-spin {
+                    to { transform: rotate(360deg); }
+                }
+
+                .filmstrip { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+                .filmstrip-thumb { position: relative; flex: 0 0 auto; width: 40px; height: 40px; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--accent); transition: transform 0.2s ease; }
+                .filmstrip-thumb:hover { transform: scale(1.08); }
                 .filmstrip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-                .filmstrip-index { position: absolute; top: 2px; left: 2px; font-size: 9px; font-weight: 700; background: rgba(0,0,0,0.6); color: var(--accent); padding: 0 4px; border-radius: 3px; }
-                .filmstrip-remove { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%; background: var(--danger); color: white; border: none; font-size: 11px; cursor: pointer; }
+                .filmstrip-index { position: absolute; top: 2px; left: 2px; font-size: 9px; font-weight: 700; background: rgba(0,0,0,0.65); color: var(--accent); padding: 0 4px; border-radius: 4px; }
+                .filmstrip-remove { position: absolute; top: -3px; right: -3px; width: 15px; height: 15px; border-radius: 50%; background: var(--danger); color: white; border: none; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.15s ease; }
+                .filmstrip-remove:hover { transform: scale(1.2); }
+
+                @media (max-width: 640px) {
+                    .category-tabs-scroll { gap: 4px; padding: 4px; }
+                    .category-tab { padding: 6px 12px; font-size: 12px; border-radius: 10px; }
+                    .category-tab-count { font-size: 10px; min-width: 18px; height: 18px; }
+                    .action-tray { width: 96%; bottom: 12px; }
+                    .action-tray-inner { padding: 10px 12px; border-radius: 14px; }
+                    .counter-current { font-size: 20px; }
+                    .counter-max { font-size: 14px; }
+                    .action-tray-label { font-size: 12px; }
+                    .action-tray-hint { font-size: 10px; }
+                    .tray-btn { font-size: 12px; }
+                    .tray-btn-ghost { padding: 6px 10px; }
+                    .tray-btn-submit { padding: 7px 14px; }
+                }
 
                 /* ── Modals ── */
                 :global(.modal-overlay-t) { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; padding: 20px; }

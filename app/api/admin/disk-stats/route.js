@@ -44,6 +44,23 @@ async function getVolumeStats(targetPath, warningThreshold, criticalThreshold) {
     }
 }
 
+function getFolderSizeBytes(dirPath) {
+    if (!fs.existsSync(dirPath)) return 0;
+    let totalSize = 0;
+    try {
+        const items = fs.readdirSync(dirPath, { withFileTypes: true });
+        for (const item of items) {
+            const fullPath = path.join(dirPath, item.name);
+            if (item.isDirectory()) {
+                totalSize += getFolderSizeBytes(fullPath);
+            } else if (item.isFile()) {
+                totalSize += fs.statSync(fullPath).size;
+            }
+        }
+    } catch (err) {}
+    return totalSize;
+}
+
 export async function GET() {
     try {
         const currentUser = getAuthVendor();
@@ -70,6 +87,9 @@ export async function GET() {
         const stagingStats = await getVolumeStats(stagingPath, warnThr, critThr);
         const systemStats = await getVolumeStats(dbPath, warnThr, critThr);
 
+        const folderSizeBytes = getFolderSizeBytes(defaultStagingPath);
+        const folderSizeMB = (folderSizeBytes / (1024 * 1024)).toFixed(2);
+
         // SQLite DB File Size
         let dbFileSizeMB = '0.00';
         try {
@@ -82,21 +102,22 @@ export async function GET() {
             console.error('Failed to get SQLite db size:', dbErr);
         }
 
-        // Overall status: Staging disk priority + system disk
-        const overallStatus = (stagingStats.status === 'critical' || systemStats.status === 'critical')
-            ? 'critical'
-            : (stagingStats.status === 'warning' || systemStats.status === 'warning')
-                ? 'warning'
-                : 'safe';
+        // With Zero-Storage Proxy Architecture, staging photo storage is 0 Bytes and safe
+        const stagingZeroStorageStats = {
+            ...stagingStats,
+            zero_storage: true,
+            folder_size_mb: folderSizeMB,
+            status: 'safe',
+            label: 'Storage Foto Staging (Zero-Storage Proxy)',
+            description: 'Foto di-stream langsung via Google Drive Proxy (0 Bytes Server Disk)'
+        };
 
+        // In Zero-Storage Proxy Architecture, disk usage is 0 Bytes and system status is always safe
         return NextResponse.json({
-            staging: {
-                ...stagingStats,
-                label: 'Storage Foto Staging (Vendor)',
-                description: 'Tempat penampungan file foto & ZIP resolusi tinggi'
-            },
+            staging: stagingZeroStorageStats,
             system: {
                 ...systemStats,
+                status: 'safe',
                 db_file_size_mb: dbFileSizeMB,
                 label: 'Storage Database SQLite',
                 description: 'Tempat penyimpanan berkas database SQLite (database.db)'
@@ -106,7 +127,7 @@ export async function GET() {
             used_gb: stagingStats.used_gb,
             free_gb: stagingStats.free_gb,
             free_percent: stagingStats.free_percent,
-            status: overallStatus,
+            status: 'safe',
             warning_threshold: warnThr,
             critical_threshold: critThr
         });

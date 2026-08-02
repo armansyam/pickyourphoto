@@ -68,6 +68,18 @@ export default function RegisterPage() {
         checkRegStatus();
         fetchPlans();
         fetchSettings();
+
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('status') === 'pending') {
+                setSuccess(true);
+            }
+            if (urlParams.get('step') === 'select-plan') {
+                const userEmail = urlParams.get('email');
+                if (userEmail) setEmail(userEmail);
+                setStep(2);
+            }
+        }
     }, []);
 
     const handleNextStep = (e) => {
@@ -118,6 +130,12 @@ export default function RegisterPage() {
         const selectedPlan = plans.find(p => p.id === parseInt(plan));
         if (!selectedPlan) {
             setError('Paket yang dipilih tidak valid.');
+            setLoading(false);
+            return;
+        }
+
+        if (!whatsapp || whatsapp.trim() === '') {
+            setError('Nomor WhatsApp (WA) wajib diisi untuk pengiriman notifikasi otomatis.');
             setLoading(false);
             return;
         }
@@ -328,62 +346,45 @@ export default function RegisterPage() {
 
                         <form onSubmit={handleSubmit}>
                             {step === 1 ? (
-                                <div className="fade-in-up" key="step1">
-                                    <div className="form-group">
-                                        <label className="form-label">Full Name</label>
-                                        <input
-                                            type="text"
-                                            className="input-text"
-                                            required
-                                            placeholder="John Doe"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
-                                            disabled={loading}
-                                        />
-                                    </div>
+                                <div className="fade-in-up" key="step1" style={{ textAlign: 'center', padding: '10px 0' }}>
+                                    <p style={{ color: '#cbd5e1', fontSize: '14px', marginBottom: '24px', lineHeight: '1.6' }}>
+                                        Daftar instan dalam 1 klik dengan akun Google Anda untuk mulai mengelola galeri foto seleksi klien.
+                                    </p>
 
-                                    <div className="form-group">
-                                        <label className="form-label">Email Address</label>
-                                        <input
-                                            type="email"
-                                            className="input-text"
-                                            required
-                                            placeholder="vendor@example.com"
-                                            value={email}
-                                            onChange={(e) => setEmail(e.target.value)}
-                                            disabled={loading}
-                                        />
-                                    </div>
+                                    <a
+                                        href="/api/auth/google?action=register"
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '12px',
+                                            width: '100%',
+                                            padding: '14px',
+                                            borderRadius: '12px',
+                                            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                            border: 'none',
+                                            color: '#ffffff',
+                                            fontSize: '15px',
+                                            fontWeight: 'bold',
+                                            textDecoration: 'none',
+                                            marginBottom: '20px',
+                                            boxShadow: '0 4px 20px rgba(99, 102, 241, 0.4)',
+                                            transition: 'all 0.2s ease',
+                                            boxSizing: 'border-box'
+                                        }}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 24 24">
+                                            <path fill="#ffffff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                            <path fill="#ffffff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                            <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                            <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                                        </svg>
+                                        🚀 Daftar Cepat dengan Google
+                                    </a>
 
-                                    <div className="form-group">
-                                        <label className="form-label">WhatsApp Number (WA)</label>
-                                        <input
-                                            type="text"
-                                            className="input-text"
-                                            required
-                                            placeholder="Contoh: 6281234567890"
-                                            value={whatsapp}
-                                            onChange={(e) => setWhatsapp(e.target.value)}
-                                            disabled={loading}
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label className="form-label">Password</label>
-                                        <input
-                                            type="password"
-                                            className="input-text"
-                                            required
-                                            placeholder="Min 6 characters"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            disabled={loading}
-                                        />
-                                    </div>
-
-                                    <button type="button" onClick={handleNextStep} className="btn-primary" style={{ width: '100%', marginTop: '12px' }}>
-                                        Lanjutkan Pilih Paket →
-                                    </button>
+                                    <p style={{ fontSize: '12px', color: '#71717a', margin: 0 }}>
+                                        Aman, praktis & tanpa perlu membuat password baru.
+                                    </p>
                                 </div>
                             ) : (
                                 <div className="fade-in-up" key="step2">
@@ -445,70 +446,15 @@ export default function RegisterPage() {
                                     )}
 
                                     <div className="form-group" style={{ marginBottom: '24px' }}>
-                                        <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontWeight: '600', color: '#e4e4e7' }}>Pilih Paket Langganan</label>
-                                        
-                                        {/* Tab Switcher */}
-                                        <div style={{ 
-                                            display: 'flex', 
-                                            background: 'rgba(0, 0, 0, 0.25)', 
-                                            padding: '4px', 
-                                            borderRadius: '10px', 
-                                            border: '1px solid rgba(255, 255, 255, 0.08)', 
-                                            marginBottom: '16px' 
-                                        }}>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedTab('limit');
-                                                    setPlan('');
-                                                }}
-                                                style={{
-                                                    flex: 1,
-                                                    background: selectedTab === 'limit' ? '#6366f1' : 'transparent',
-                                                    color: selectedTab === 'limit' ? '#ffffff' : '#a1a1aa',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    padding: '8px 12px',
-                                                    fontSize: '13px',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s ease',
-                                                    outline: 'none'
-                                                }}
-                                            >
-                                                📁 Limit-Based
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setSelectedTab('storage');
-                                                    setPlan('');
-                                                }}
-                                                style={{
-                                                    flex: 1,
-                                                    background: selectedTab === 'storage' ? '#6366f1' : 'transparent',
-                                                    color: selectedTab === 'storage' ? '#ffffff' : '#a1a1aa',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    padding: '8px 12px',
-                                                    fontSize: '13px',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    transition: 'all 0.2s ease',
-                                                    outline: 'none'
-                                                }}
-                                            >
-                                                📦 Storage-Based
-                                            </button>
-                                        </div>
+                                        <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontWeight: '600', color: '#e4e4e7' }}>Pilih Paket Langganan SaaS</label>
 
-                                        {/* Grid of Plans */}
+                                        {/* Grid of 3 Clean Plans */}
                                         <style>{`
                                             .plans-swipe-container {
                                                 display: grid;
-                                                grid-template-columns: repeat(3, minmax(0, 1fr));
+                                                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
                                                 gap: 20px;
-                                                margin-top: 24px;
+                                                margin-top: 16px;
                                                 margin-bottom: 20px;
                                                 padding: 10px 4px 20px 4px;
                                             }
@@ -516,134 +462,83 @@ export default function RegisterPage() {
                                                 width: 100%;
                                                 box-sizing: border-box;
                                             }
-                                            @media (max-width: 768px) {
-                                                .plans-swipe-container {
-                                                    display: flex;
-                                                    flex-flow: row nowrap;
-                                                    overflow-x: auto;
-                                                    scroll-snap-type: x mandatory;
-                                                    gap: 16px;
-                                                    justify-content: flex-start;
-                                                    padding: 12px 8% 24px 8%;
-                                                    scroll-padding-inline: 8%;
-                                                    scrollbar-width: none;
-                                                    -ms-overflow-style: none;
-                                                }
-                                                .plans-swipe-container::-webkit-scrollbar {
-                                                    display: none;
-                                                }
-                                                .plan-card-item {
-                                                    scroll-snap-align: center;
-                                                    flex: 0 0 84%;
-                                                    max-width: 290px;
-                                                }
-                                            }
                                         `}</style>
-                                        <div className="plans-swipe-container fade-in-up" key={selectedTab}>
-                                            {plans.filter(p => p.price > 0 && p.planType === selectedTab).map(p => {
+                                        <div className="plans-swipe-container fade-in-up">
+                                            {plans.map(p => {
                                                 const isSelected = parseInt(plan) === p.id;
-                                                const isFree = p.price === 0;
+                                                const isBestSeller = p.name.includes('Pro');
                                                 return (
                                                     <div 
                                                         key={p.id}
                                                         className="plan-card-item"
-                                                        onClick={(e) => {
-                                                            if (!loading) {
-                                                                setPlan(p.id.toString());
-                                                                e.currentTarget.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                                                            }
-                                                        }}
+                                                        onClick={() => !loading && setPlan(p.id.toString())}
                                                         style={{
                                                             position: 'relative',
                                                             background: isSelected 
-                                                                ? 'rgba(255, 255, 255, 0.05)' 
-                                                                : 'rgba(255, 255, 255, 0.01)',
-                                                            backgroundImage: 'linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px)',
-                                                            backgroundSize: '14px 14px',
+                                                                ? 'rgba(99, 102, 241, 0.12)' 
+                                                                : 'rgba(255, 255, 255, 0.02)',
                                                             border: isSelected 
                                                                 ? '2px solid #818cf8' 
-                                                                : '1px solid rgba(255, 255, 255, 0.08)',
+                                                                : isBestSeller
+                                                                    ? '1px solid rgba(99, 102, 241, 0.4)'
+                                                                    : '1px solid rgba(255, 255, 255, 0.08)',
                                                             borderRadius: '16px',
                                                             padding: '36px 20px 24px 20px',
                                                             cursor: loading ? 'not-allowed' : 'pointer',
                                                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                            boxShadow: isSelected 
-                                                                ? '0 12px 28px rgba(168, 85, 247, 0.25)' 
-                                                                : 'none',
-                                                            transform: isSelected 
-                                                                ? 'translateY(-4px) scale(1.02)' 
-                                                                : 'translateY(0) scale(1)',
+                                                            boxShadow: isSelected ? '0 12px 28px rgba(99, 102, 241, 0.25)' : 'none',
+                                                            transform: isSelected ? 'translateY(-4px)' : 'none',
                                                             boxSizing: 'border-box',
                                                             display: 'flex',
                                                             flexDirection: 'column',
-                                                            justifyContent: 'space-between',
-                                                            alignItems: 'stretch',
-                                                            minHeight: '340px'
+                                                            justify: 'space-between',
+                                                            minHeight: '320px'
                                                         }}
                                                     >
-                                                        {/* Speech Bubble Header Badge */}
-                                                        <div style={{
-                                                            position: 'absolute',
-                                                            top: '0',
-                                                            left: '50%',
-                                                            transform: 'translate(-50%, -50%)',
-                                                            background: 'linear-gradient(135deg, #a855f7, #3b82f6)',
-                                                            color: '#ffffff',
-                                                            padding: '6px 20px',
-                                                            borderRadius: '20px',
-                                                            fontSize: '11px',
-                                                            fontWeight: '800',
-                                                            textTransform: 'uppercase',
-                                                            letterSpacing: '0.08em',
-                                                            boxShadow: isSelected ? '0 0 15px rgba(168, 85, 247, 0.4)' : '0 4px 10px rgba(0, 0, 0, 0.3)',
-                                                            whiteSpace: 'nowrap',
-                                                            border: '1px solid rgba(255, 255, 255, 0.15)'
-                                                        }}>
-                                                            {p.name.toUpperCase()}
-                                                        </div>
-
-                                                        {/* Price Block */}
-                                                        <div style={{ textAlign: 'center', marginTop: '10px' }}>
-                                                            <div style={{ fontSize: '26px', fontWeight: '850', color: '#ffffff', marginBottom: '2px' }}>
-                                                                {isFree ? 'Rp 0' : `Rp ${p.price.toLocaleString()}`}
-                                                                {!isFree && <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}>/bln</span>}
-                                                            </div>
+                                                        {isBestSeller && (
                                                             <div style={{
+                                                                position: 'absolute',
+                                                                top: '-12px',
+                                                                right: '20px',
+                                                                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                                                color: '#ffffff',
+                                                                padding: '4px 12px',
+                                                                borderRadius: '20px',
                                                                 fontSize: '10px',
-                                                                fontWeight: '700',
-                                                                color: isSelected ? '#a5b4fc' : '#71717a',
-                                                                textTransform: 'uppercase',
-                                                                letterSpacing: '0.08em'
+                                                                fontWeight: 'bold',
+                                                                letterSpacing: '0.05em'
                                                             }}>
-                                                                {p.planType === 'storage' ? 'STORAGE-BASED PLAN' : 'LIMIT-BASED PLAN'}
+                                                                BEST SELLER
+                                                            </div>
+                                                        )}
+
+                                                        <div style={{ textAlign: 'center' }}>
+                                                            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>{p.name}</h3>
+                                                            <div style={{ fontSize: '26px', fontWeight: '850', color: '#fbbf24', marginBottom: '4px' }}>
+                                                                Rp {p.price ? p.price.toLocaleString('id-ID') : '0'}
+                                                                <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}> / {p.activePeriodDays} hari</span>
                                                             </div>
                                                         </div>
 
-                                                        {/* Separator Line */}
                                                         <div style={{
                                                             width: '100%',
                                                             height: '1px',
                                                             background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
-                                                            margin: '18px 0'
+                                                            margin: '16px 0'
                                                         }} />
 
-                                                        {/* Features list */}
-                                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', margin: '6px 0' }}>
-                                                            {getFeatures(p).map((feat, idx) => (
-                                                                <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', color: '#d4d4d8' }}>
-                                                                    <span style={{ 
-                                                                        width: '6px', 
-                                                                        height: '6px', 
-                                                                        borderRadius: '50%', 
-                                                                        background: '#34d399',
-                                                                        boxShadow: '0 0 6px #34d399'
-                                                                    }} />
-                                                                    <span>{feat}</span>
-                                                                </div>
-                                                            ))}
+                                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#d4d4d8' }}>
+                                                            <div>✓ Maksimal <strong>{p.maxProjects} Proyek Aktif</strong></div>
+                                                            <div>✓ Foto <strong>{(!p.maxPhotosPerProject || p.maxPhotosPerProject === 0) ? 'Tanpa Batas (Unlimited)' : `${p.maxPhotosPerProject} Foto`}</strong> per Proyek</div>
+                                                            <div>✓ Galeri <strong>{(!p.projectExpireDays || p.projectExpireDays >= 99999) ? 'Aktif Selama Project Ada (Permanen)' : `Masa Simpan ${p.projectExpireDays} Hari`}</strong></div>
+                                                            <div>✓ Zero-Storage Drive Streaming</div>
+                                                            {p.allowCustomLogo === 1 || p.name.includes('Pro') || p.name.includes('Business') ? (
+                                                                <div style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Custom Logo Studio (White-Label)</div>
+                                                            ) : (
+                                                                <div style={{ color: '#71717a' }}>• Logo Default SaaS Standard</div>
+                                                            )}
                                                         </div>
 
-                                                        {/* Select Button */}
                                                         <button
                                                             type="button"
                                                             style={{
@@ -651,26 +546,54 @@ export default function RegisterPage() {
                                                                 padding: '12px 16px',
                                                                 borderRadius: '10px',
                                                                 fontWeight: '800',
-                                                                fontSize: '11px',
-                                                                letterSpacing: '0.05em',
+                                                                fontSize: '12px',
                                                                 cursor: loading ? 'not-allowed' : 'pointer',
                                                                 transition: 'all 0.3s ease',
                                                                 background: isSelected 
-                                                                    ? 'linear-gradient(135deg, #a855f7, #3b82f6)' 
+                                                                    ? 'linear-gradient(135deg, #6366f1, #4f46e5)' 
                                                                     : 'rgba(255, 255, 255, 0.04)',
                                                                 color: '#ffffff',
                                                                 border: isSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.12)',
-                                                                boxShadow: isSelected ? '0 4px 15px rgba(168, 85, 247, 0.35)' : 'none',
-                                                                marginTop: '20px'
+                                                                marginTop: '16px'
                                                             }}
                                                         >
-                                                            {isSelected ? 'TERPILIH' : 'PILIH PAKET'}
+                                                            {isSelected ? '✓ TERPILIH' : 'PILIH PAKET'}
                                                         </button>
                                                     </div>
                                                 );
                                             })}
                                         </div>
                                     </div>
+                                     {/* WHATSAPP MANDATORY INPUT WITH AUTOMATIC +62 COUNTRY CODE PREFIX */}
+                                     <div style={{ background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
+                                         <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#a5b4fc', marginBottom: '8px' }}>
+                                             📱 Nomor WhatsApp (WA) — Wajib Diisi untuk Notifikasi Otomatis
+                                         </label>
+                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                             <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '12px 14px', fontSize: '14px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px', userSelect: 'none' }}>
+                                                 <span>🇮🇩</span>
+                                                 <span>+62</span>
+                                             </div>
+                                             <input
+                                                 type="text"
+                                                 required
+                                                 placeholder="81234567890"
+                                                 value={whatsapp.startsWith('62') ? whatsapp.slice(2) : whatsapp.startsWith('0') ? whatsapp.slice(1) : whatsapp}
+                                                 onChange={(e) => {
+                                                     let raw = e.target.value.replace(/\D/g, '');
+                                                     if (raw.startsWith('0')) {
+                                                         raw = raw.slice(1);
+                                                     }
+                                                     setWhatsapp(raw ? `62${raw}` : '');
+                                                 }}
+                                                 disabled={loading}
+                                                 style={{ flex: 1, padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#ffffff', fontSize: '14px', outline: 'none' }}
+                                             />
+                                         </div>
+                                         <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '6px' }}>
+                                             Otomatis diformat internasional: <strong style={{ color: '#38bdf8' }}>+{whatsapp || '6281234567890'}</strong>
+                                         </span>
+                                     </div>
 
                                     {(() => {
                                         const selectedPlanObj = plans.find(p => p.id === parseInt(plan)) || plans[0];

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
+import RawSorterDrawer from '@/components/RawSorterDrawer';
 
 // Live countdown component — ticks every second
 function CountdownTimer({ expiresAt }) {
@@ -74,12 +75,15 @@ export default function DashboardPage() {
     const [newProjectName, setNewProjectName] = useState('');
     const [newFolderUrl, setNewFolderUrl] = useState('');
     const [maxSelection, setMaxSelection] = useState('');
+    const [clientPhone, setClientPhone] = useState('');
     const [galleryTheme, setGalleryTheme] = useState('default');
- 
+    const [showCreateThemePicker, setShowCreateThemePicker] = useState(false);
+
     // Edit project settings states
     const [editingProject, setEditingProject] = useState(null);
     const [editProjectName, setEditProjectName] = useState('');
-    const [editProjectGalleryTheme, setEditProjectGalleryTheme] = useState('contactSheet');
+    const [editProjectGalleryTheme, setEditProjectGalleryTheme] = useState('default');
+    const [showEditThemePicker, setShowEditThemePicker] = useState(false);
     const [savingProjectSettings, setSavingProjectSettings] = useState(false);
     const [importing, setImporting] = useState(false);
     const [importError, setImportError] = useState('');
@@ -92,16 +96,21 @@ export default function DashboardPage() {
     const [detailPhotos, setDetailPhotos] = useState([]);
     const [loadingDetails, setLoadingDetails] = useState(false);
 
-    // Archived and Tab states
-    const [archivedProjects, setArchivedProjects] = useState([]);
-    const [activeTab, setActiveTab] = useState('active'); // 'active' | 'archived'
+    // Tab & View Control states
+    const [activeTab, setActiveTab] = useState('ongoing'); // 'ongoing' | 'completed' | 'failed'
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState('newest'); // 'newest' | 'oldest' | 'name_asc' | 'name_desc' | 'progress_desc' | 'progress_asc'
 
-    // Branding modal states
+    // Branding & Copy Preference modal states
     const [showBrandingModal, setShowBrandingModal] = useState(false);
     const [vendorName, setVendorName] = useState('');
     const [brandName, setBrandName] = useState('');
     const [brandLogoFile, setBrandLogoFile] = useState(null);
     const [brandLogoPreview, setBrandLogoPreview] = useState('');
+    const [copyDelimiter, setCopyDelimiter] = useState(', ');
+    const [copyIncludeExt, setCopyIncludeExt] = useState(0);
+    const [copySortOrder, setCopySortOrder] = useState('name_asc');
     const [savingBranding, setSavingBranding] = useState(false);
 
     // Upgrade plan & WA admin states
@@ -122,6 +131,10 @@ export default function DashboardPage() {
     // Project archive confirmation states
     const [projectToArchive, setProjectToArchive] = useState(null);
     const [archivingProject, setArchivingProject] = useState(false);
+
+    // RAW Sorter drawer states
+    const [showSorter, setShowSorter] = useState(false);
+    const [sorterProject, setSorterProject] = useState(null);
 
     // Add limit states
     const [addLimitProject, setAddLimitProject] = useState(null);
@@ -189,12 +202,14 @@ export default function DashboardPage() {
                 const data = await res.json();
                 console.log("--> [Client] fetchProjects() data:", data);
                 setProjects(data.projects || []);
-                setArchivedProjects(data.archivedProjects || []);
                 if (data.vendor) {
                     setVendorDetails(data.vendor);
                     setVendorName(data.vendor.name || '');
                     setBrandName(data.vendor.brandName || '');
                     setBrandLogoPreview(data.vendor.brandLogo || '');
+                    if (data.vendor.copyDelimiter !== undefined) setCopyDelimiter(data.vendor.copyDelimiter);
+                    if (data.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(data.vendor.copyIncludeExt);
+                    if (data.vendor.copySortOrder !== undefined) setCopySortOrder(data.vendor.copySortOrder);
                 }
             } else {
                 console.warn("--> [Client] fetchProjects() res not OK:", res.status);
@@ -223,7 +238,7 @@ export default function DashboardPage() {
 
     // Polling effect if any project has "importing" status
     useEffect(() => {
-        const hasImporting = projects.some(p => p.status === 'importing') || archivedProjects.some(p => p.status === 'importing');
+        const hasImporting = projects.some(p => p.status === 'importing');
         if (!hasImporting) return;
 
         const interval = setInterval(() => {
@@ -231,7 +246,26 @@ export default function DashboardPage() {
         }, 4000); // Poll every 4 seconds
 
         return () => clearInterval(interval);
-    }, [projects, archivedProjects]);
+    }, [projects]);
+
+    // Listen for openUpgradeModal event from RAW Sorter drawer
+    useEffect(() => {
+        const handler = () => setShowUpgradeModal(true);
+        window.addEventListener('openUpgradeModal', handler);
+        return () => window.removeEventListener('openUpgradeModal', handler);
+    }, []);
+
+    // Auto-polling background status check for importing projects
+    useEffect(() => {
+        const hasImporting = projects.some(p => p.status === 'importing');
+        if (!hasImporting) return;
+
+        const interval = setInterval(() => {
+            fetchProjects();
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [projects]);
 
     // Create Project
     const handleCreateProject = async (e) => {
@@ -243,14 +277,14 @@ export default function DashboardPage() {
             const res = await fetch('/api/projects', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newProjectName, folderUrl: newFolderUrl, maxSelection: parseInt(maxSelection) || 0, galleryTheme })
+                body: JSON.stringify({ name: newProjectName, folderUrl: newFolderUrl, maxSelection: parseInt(maxSelection) || 0, galleryTheme, clientPhone: clientPhone.trim() })
             });
  
             const data = await res.json();
  
             if (!res.ok) {
                 if (data.limitExceeded) {
-                    setPendingProjectParams({ name: newProjectName, folderUrl: newFolderUrl, maxSelection: parseInt(maxSelection) || 0, galleryTheme });
+                    setPendingProjectParams({ name: newProjectName, folderUrl: newFolderUrl, maxSelection: parseInt(maxSelection) || 0, galleryTheme, clientPhone: clientPhone.trim() });
                     setLimitExceededInfo({ limit: data.limit, totalFiles: data.totalFiles });
                     setShowLimitConfirmModal(true);
                     return;
@@ -258,12 +292,14 @@ export default function DashboardPage() {
                 throw new Error(data.message || 'Failed to create project.');
             }
  
-            // Reset
+            // Reset & Close Modal Immediately!
             setNewProjectName('');
             setNewFolderUrl('');
             setMaxSelection(0);
+            setClientPhone('');
             setGalleryTheme('contactSheet');
             setShowCreateModal(false);
+            addToast('⚡ Project berhasil dibuat! Foto sedang diimpor di background.', 'success');
             fetchProjects();
         } catch (err) {
             setImportError(err.message);
@@ -298,6 +334,7 @@ export default function DashboardPage() {
             setNewProjectName('');
             setNewFolderUrl('');
             setMaxSelection(0);
+            setClientPhone('');
             setGalleryTheme('contactSheet');
             setShowCreateModal(false);
             setPendingProjectParams(null);
@@ -445,7 +482,7 @@ export default function DashboardPage() {
 
     const handleUpdateProjectStatus = async (projectId, status, actionLabel) => {
         if (status === 'archived') {
-            const proj = projects.find(p => p.id === projectId) || archivedProjects.find(p => p.id === projectId);
+            const proj = projects.find(p => p.id === projectId);
             setProjectToArchive({ ...proj, actionLabel });
             return;
         }
@@ -512,6 +549,26 @@ export default function DashboardPage() {
         }
     };
 
+    // Open Gallery Page in New Tab
+    const handleOpenGallery = (project) => {
+        if (!project || !project.clientAccessKey) {
+            addToast('Link galeri tidak ditemukan.', 'warning');
+            return;
+        }
+        window.open(`/gallery/${project.id}?key=${project.clientAccessKey}`, '_blank');
+    };
+
+    // Send Gallery Link via WhatsApp
+    const handleSendWhatsApp = (project) => {
+        const link = `${window.location.origin}/gallery/${project.id}?key=${project.clientAccessKey}`;
+        const phone = (project.clientPhone || '').replace(/\D/g, '');
+        const message = `Halo! Berikut link galeri foto *${project.name}* untuk Anda:\n\n${link}\n\nSilakan pilih foto favorit Anda melalui link di atas. Terima kasih! 📸`;
+        const waUrl = phone 
+            ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+            : `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(waUrl, '_blank');
+    };
+
     // Fallback clipboard copy using textarea
     const fallbackCopyToClipboard = (text) => {
         const textarea = document.createElement('textarea');
@@ -522,6 +579,7 @@ export default function DashboardPage() {
         textarea.focus();
         textarea.select();
         try {
+            document.execCommand('copy');
             addToast('✅ Link klien berhasil disalin!', 'success');
         } catch {
             prompt('Salin link ini secara manual:', text);
@@ -539,7 +597,10 @@ export default function DashboardPage() {
             const res = await fetch(`/api/projects/${project.id}`);
             if (res.ok) {
                 const data = await res.json();
-                setDetailPhotos(data.photos || []);
+                const allPhotos = data.photos || [];
+                // Only show photos that the client has actually selected
+                const selectedOnly = allPhotos.filter(p => p.isSelected > 0);
+                setDetailPhotos(selectedOnly);
                 // Update project with latest filesDeleted flag from API
                 if (data.project) {
                     setSelectedProjectDetails(prev => ({ ...prev, filesDeleted: data.project.filesDeleted }));
@@ -560,6 +621,9 @@ export default function DashboardPage() {
             const fd = new FormData();
             fd.append('name', vendorName);
             fd.append('brandName', brandName);
+            fd.append('copyDelimiter', copyDelimiter);
+            fd.append('copyIncludeExt', copyIncludeExt.toString());
+            fd.append('copySortOrder', copySortOrder);
             if (brandLogoFile) {
                 fd.append('logo', brandLogoFile);
             }
@@ -579,47 +643,81 @@ export default function DashboardPage() {
         }
     };
 
-    // Copy Selected Filenames to Clipboard (auto-fetches from API)
-    const handleCopyFilenames = async (projectId) => {
+    // Helper to copy text to clipboard
+    const copyToClipboard = (text, successMsg) => {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text)
+                .then(() => addToast(successMsg, 'success'))
+                .catch(() => {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.left = '-9999px';
+                    document.body.appendChild(textarea);
+                    textarea.focus();
+                    textarea.select();
+                    try { document.execCommand('copy'); addToast(successMsg, 'success'); } catch { prompt('Salin secara manual:', text); }
+                    document.body.removeChild(textarea);
+                });
+        } else {
+            prompt('Salin nama file berikut secara manual:', text);
+        }
+    };
+
+    // Copy filenames with custom or default vendor preferences
+    const handleCopyFilenames = async (projectId, customConfig = null) => {
         try {
             const res = await fetch(`/api/projects/${projectId}`);
             if (!res.ok) throw new Error('Gagal mengambil data project.');
             const data = await res.json();
             const photos = data.photos || [];
 
-            const selected = photos.filter(p => p.isSelected > 0);
+            let selected = photos.filter(p => p.isSelected > 0);
             if (selected.length === 0) {
                 addToast('Klien belum memilih foto.', 'warning');
                 return;
             }
 
-            // Extract base filename without path and extension
+            // Determine settings to use (customConfig > vendor preferences)
+            let delimiter = copyDelimiter;
+            let includeExt = copyIncludeExt;
+            let sortOrder = copySortOrder;
+
+            if (typeof customConfig === 'string') {
+                if (customConfig === 'finder') {
+                    delimiter = '\n';
+                    includeExt = 1;
+                    sortOrder = 'name_asc';
+                } else {
+                    delimiter = ', ';
+                    includeExt = 0;
+                    sortOrder = 'name_asc';
+                }
+            } else if (customConfig && typeof customConfig === 'object') {
+                if (customConfig.delimiter !== undefined) delimiter = customConfig.delimiter;
+                if (customConfig.includeExt !== undefined) includeExt = customConfig.includeExt;
+                if (customConfig.sortOrder !== undefined) sortOrder = customConfig.sortOrder;
+            }
+
+            // Sort items
+            if (sortOrder === 'name_asc') {
+                selected.sort((a, b) => {
+                    const nameA = decodeURIComponent(a.originalPath.split('/').pop().split('?')[0]);
+                    const nameB = decodeURIComponent(b.originalPath.split('/').pop().split('?')[0]);
+                    return nameA.localeCompare(nameB);
+                });
+            }
+
+            // Extract filenames based on extension setting
             const filenames = selected.map(p => {
-                const basename = p.originalPath.split('/').pop();
-                const dotIdx = basename.lastIndexOf('.');
-                return dotIdx !== -1 ? basename.substring(0, dotIdx) : basename;
+                const fullname = decodeURIComponent(p.originalPath.split('/').pop().split('?')[0]);
+                if (includeExt === 1) return fullname;
+                const dotIdx = fullname.lastIndexOf('.');
+                return dotIdx !== -1 ? fullname.substring(0, dotIdx) : fullname;
             });
 
-            const listString = filenames.join(', ');
-
-            // Copy using clipboard API with fallback
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(listString)
-                    .then(() => addToast(`✅ Berhasil menyalin ${selected.length} nama file ke clipboard!`, 'success'))
-                    .catch(() => {
-                        const textarea = document.createElement('textarea');
-                        textarea.value = listString;
-                        textarea.style.position = 'fixed';
-                        textarea.style.left = '-9999px';
-                        document.body.appendChild(textarea);
-                        textarea.focus();
-                        textarea.select();
-                        try { document.execCommand('copy'); addToast(`✅ Berhasil menyalin ${selected.length} nama file!`, 'success'); } catch { prompt('Salin secara manual:', listString); }
-                        document.body.removeChild(textarea);
-                    });
-            } else {
-                prompt('Salin nama file berikut secara manual:', listString);
-            }
+            const listString = filenames.join(delimiter);
+            copyToClipboard(listString, `✅ ${selected.length} nama file berhasil disalin ke clipboard!`);
         } catch (err) {
             addToast('❌ ' + err.message, 'error');
         }
@@ -781,251 +879,556 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* Tabs + Create Project */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', marginBottom: '24px', paddingBottom: '0px' }}>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                        onClick={() => setActiveTab('active')}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: activeTab === 'active' ? '#6366f1' : '#a1a1aa',
-                            borderBottom: activeTab === 'active' ? '2px solid #6366f1' : 'none',
-                            padding: '10px 16px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            fontSize: '14px',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        Project Aktif ({projects.length})
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('archived')}
-                        style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: activeTab === 'archived' ? '#6366f1' : '#a1a1aa',
-                            borderBottom: activeTab === 'archived' ? '2px solid #6366f1' : 'none',
-                            padding: '10px 16px',
-                            cursor: 'pointer',
-                            fontWeight: 'bold',
-                            fontSize: '14px',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        Arsip / Kedaluwarsa ({archivedProjects.length})
-                    </button>
-                </div>
-                
-                {/* Create Project Button on the right of tabs */}
-                <button
-                    onClick={() => {
-                        if (vendorDetails?.isExpired) {
-                            addToast('Masa aktif paket berlangganan Anda telah habis. Silakan hubungi admin untuk melakukan perpanjangan.', 'warning', 10000);
-                            return;
-                        }
-                        setShowCreateModal(true);
-                    }}
-                    className="btn-primary"
-                    style={{
-                        padding: '6px 14px',
-                        fontSize: '12px',
-                        fontWeight: '600',
-                        background: vendorDetails?.isExpired ? '#4b5563' : '',
-                        color: vendorDetails?.isExpired ? '#9ca3af' : '',
-                        cursor: vendorDetails?.isExpired ? 'not-allowed' : 'pointer',
-                        boxShadow: vendorDetails?.isExpired ? 'none' : '',
-                        borderRadius: '8px',
-                        marginBottom: '6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                    }}
-                >
-                    <span>➕</span> Buat Project
-                </button>
-            </div>
+            {/* ── PROJECT CATEGORY TABS & ACTION BAR ── */}
+            {(() => {
+                const ongoingProjects = projects.filter(p => p.status !== 'completed' && p.status !== 'failed');
+                const completedProjects = projects.filter(p => p.status === 'completed');
+                const failedProjects = projects.filter(p => p.status === 'failed');
 
-            {loading ? (
-                <div style={{ textAlign: 'center', marginTop: '64px', color: '#a1a1aa' }}>
-                    <p>Memuat project...</p>
-                </div>
-            ) : (activeTab === 'active' ? projects.length : archivedProjects.length) === 0 ? (
-                <div className="glass-card" style={{ textAlign: 'center', marginTop: '48px', padding: '64px 32px' }}>
-                    <h3 style={{ fontSize: '20px', margin: '0 0 8px 0' }}>Project Tidak Ditemukan</h3>
-                    <p style={{ color: '#a1a1aa', margin: '0 0 24px 0', fontSize: '14px' }}>
-                        {activeTab === 'active' ? 'Mulai dengan membuat project seleksi baru dari Google Drive' : 'Belum ada project yang diarsipkan atau diselesaikan'}
-                    </p>
-                    {activeTab === 'active' && (
-                        <button 
-                            onClick={() => {
-                                if (vendorDetails?.isExpired) {
-                                    addToast('Masa aktif paket berlangganan Anda telah habis. Silakan hubungi admin untuk melakukan perpanjangan.', 'warning', 10000);
-                                    return;
-                                }
-                                setShowCreateModal(true);
-                            }} 
-                            className="btn-primary"
-                        >
-                            Buat Project
-                        </button>
-                    )}
-                </div>
-            ) : (
-                <div className="project-grid">
-                    {(activeTab === 'active' ? projects : archivedProjects).map((project) => (
-                        <div key={project.id} className="project-card">
+                const currentTabProjects = activeTab === 'completed' ? completedProjects :
+                                          activeTab === 'failed' ? failedProjects :
+                                          ongoingProjects;
+
+                // Apply Search Filter
+                const searchFilteredProjects = currentTabProjects.filter(p =>
+                    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+
+                // Apply Sorting
+                const sortedProjects = [...searchFilteredProjects].sort((a, b) => {
+                    if (sortBy === 'oldest') {
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    } else if (sortBy === 'name_asc') {
+                        return a.name.localeCompare(b.name);
+                    } else if (sortBy === 'name_desc') {
+                        return b.name.localeCompare(a.name);
+                    } else if (sortBy === 'progress_desc') {
+                        return (b.selectedPhotosCount || 0) - (a.selectedPhotosCount || 0);
+                    } else if (sortBy === 'progress_asc') {
+                        return (a.selectedPhotosCount || 0) - (b.selectedPhotosCount || 0);
+                    }
+                    // Default 'newest'
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                });
+
+                const isProjectLimitReached = vendorDetails?.maxProjects > 0 && projects.length >= vendorDetails.maxProjects;
+
+                return (
+                    <>
+                        {/* ── UNIFIED ULTRA-MINIMALIST CONTROL BAR ── */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                            {/* Left: Sleek Segmented Pill Tabs */}
+                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', gap: '4px' }}>
+                                <button
+                                    onClick={() => setActiveTab('ongoing')}
+                                    style={{
+                                        padding: '7px 14px',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        background: activeTab === 'ongoing' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                        color: activeTab === 'ongoing' ? '#ffffff' : '#a1a1aa',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        boxShadow: activeTab === 'ongoing' ? '0 2px 8px rgba(99,102,241,0.3)' : 'none'
+                                    }}
+                                >
+                                    <span>📂 Berlangsung</span>
+                                    <span style={{ background: activeTab === 'ongoing' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '10px' }}>
+                                        {ongoingProjects.length}
+                                    </span>
+                                </button>
+
+                                <button
+                                    onClick={() => setActiveTab('completed')}
+                                    style={{
+                                        padding: '7px 14px',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        background: activeTab === 'completed' ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent',
+                                        color: activeTab === 'completed' ? '#ffffff' : '#a1a1aa',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        boxShadow: activeTab === 'completed' ? '0 2px 8px rgba(16,185,129,0.3)' : 'none'
+                                    }}
+                                >
+                                    <span>✅ Selesai</span>
+                                    <span style={{ background: activeTab === 'completed' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '10px' }}>
+                                        {completedProjects.length}
+                                    </span>
+                                </button>
+
+                                {failedProjects.length > 0 && (
+                                    <button
+                                        onClick={() => setActiveTab('failed')}
+                                        style={{
+                                            padding: '7px 14px',
+                                            fontSize: '12px',
+                                            fontWeight: '600',
+                                            background: activeTab === 'failed' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'transparent',
+                                            color: activeTab === 'failed' ? '#ffffff' : '#a1a1aa',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px'
+                                        }}
+                                    >
+                                        <span>❌ Gagal</span>
+                                        <span style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontSize: '10px' }}>
+                                            {failedProjects.length}
+                                        </span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Right Controls: Search, Sort, View Mode & Create Button */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                {/* Search Box */}
+                                <div style={{ position: 'relative', width: '180px' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="🔍 Cari..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        style={{
+                                            width: '100%',
+                                            padding: '7px 24px 7px 10px',
+                                            fontSize: '12px',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            borderRadius: '8px',
+                                            color: '#f4f4f5',
+                                            outline: 'none'
+                                        }}
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => setSearchQuery('')}
+                                            style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', fontSize: '11px' }}
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Sort Dropdown */}
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    style={{
+                                        padding: '7px 10px',
+                                        fontSize: '12px',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        borderRadius: '8px',
+                                        color: '#e4e4e7',
+                                        cursor: 'pointer',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <option value="newest">🗓️ Terbaru</option>
+                                    <option value="oldest">🗓️ Terlama</option>
+                                    <option value="name_asc">🔤 Nama A-Z</option>
+                                    <option value="name_desc">🔤 Nama Z-A</option>
+                                    <option value="progress_desc">📊 Seleksi Terbanyak</option>
+                                    <option value="progress_asc">⏳ Menunggu Seleksi</option>
+                                </select>
+
+                                {/* View Mode Toggle */}
+                                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '2px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        title="Grid View"
+                                        style={{
+                                            padding: '4px 8px',
+                                            fontSize: '11px',
+                                            background: viewMode === 'grid' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                            color: viewMode === 'grid' ? '#ffffff' : '#a1a1aa',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        🔲
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        title="List View"
+                                        style={{
+                                            padding: '4px 8px',
+                                            fontSize: '11px',
+                                            background: viewMode === 'list' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                            color: viewMode === 'list' ? '#ffffff' : '#a1a1aa',
+                                            border: 'none',
+                                            borderRadius: '6px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        ☰
+                                    </button>
+                                </div>
+
+                                {/* Create Project Button */}
+                                <button
+                                    onClick={() => {
+                                        if (vendorDetails?.isExpired) {
+                                            addToast('Masa aktif paket berlangganan Anda telah habis.', 'warning', 6000);
+                                            return;
+                                        }
+                                        if (isProjectLimitReached) {
+                                            addToast(`⚠️ Batas kuota (${projects.length}/${vendorDetails.maxProjects}) project tercapai. Hapus project selesai untuk membuat baru.`, 'warning', 6000);
+                                            return;
+                                        }
+                                        setShowCreateModal(true);
+                                    }}
+                                    className="btn-primary"
+                                    style={{
+                                        padding: '7px 14px',
+                                        fontSize: '12px',
+                                        fontWeight: '600',
+                                        background: vendorDetails?.isExpired ? '#4b5563' : isProjectLimitReached ? 'rgba(239,68,68,0.15)' : '',
+                                        color: vendorDetails?.isExpired ? '#9ca3af' : isProjectLimitReached ? '#f87171' : '',
+                                        border: isProjectLimitReached ? '1px solid rgba(239,68,68,0.4)' : '',
+                                        cursor: vendorDetails?.isExpired ? 'not-allowed' : 'pointer',
+                                        borderRadius: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
+                                    }}
+                                >
+                                    <span>{isProjectLimitReached ? '🔒 Kuota Penuh' : '➕ Buat Project'}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        {loading ? (
+                            <div style={{ textAlign: 'center', marginTop: '64px', color: '#a1a1aa' }}>
+                                <p>Memuat project...</p>
+                            </div>
+                        ) : sortedProjects.length === 0 ? (
+                            <div className="glass-card" style={{ textAlign: 'center', marginTop: '32px', padding: '56px 32px' }}>
+                                <h3 style={{ fontSize: '18px', margin: '0 0 8px 0', color: '#e4e4e7' }}>
+                                    {searchQuery ? 'Project Tidak Ditemukan' :
+                                     activeTab === 'completed' ? 'Belum Ada Project Selesai' :
+                                     activeTab === 'failed' ? 'Tidak Ada Project Gagal' :
+                                     'Belum Ada Project Berlangsung'}
+                                </h3>
+                                <p style={{ color: '#a1a1aa', margin: '0 0 20px 0', fontSize: '13px' }}>
+                                    {searchQuery ? `Tidak ada project dengan kata kunci "${searchQuery}".` :
+                                     activeTab === 'completed' ? 'Project akan muncul di sini setelah klien mengirimkan pilihan foto mereka.' :
+                                     activeTab === 'failed' ? 'Semua proses impor project berjalan dengan lancar.' :
+                                     'Buat project baru untuk membagikan galeri foto ke klien Anda.'}
+                                </p>
+                                {activeTab === 'ongoing' && !searchQuery && (
+                                    <button 
+                                        onClick={() => {
+                                            if (vendorDetails?.isExpired) {
+                                                addToast('Masa aktif paket berlangganan Anda telah habis.', 'warning');
+                                                return;
+                                            }
+                                            if (isProjectLimitReached) {
+                                                addToast(`Batas kuota (${projects.length}/${vendorDetails.maxProjects}) project tercapai. Silakan hapus sebagian project selesai.`, 'warning');
+                                                return;
+                                            }
+                                            setShowCreateModal(true);
+                                        }} 
+                                        className="btn-primary"
+                                        style={{ fontSize: '12px', padding: '8px 16px' }}
+                                    >
+                                        ➕ Buat Project Baru
+                                    </button>
+                                )}
+                            </div>
+                        ) : viewMode === 'list' ? (
+                            /* ── COMPACT LIST VIEW ── */
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {sortedProjects.map((project) => (
+                                    <div key={project.id} className="glass-card" style={{ padding: '14px 18px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(18,18,20,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                                        {/* Left: Info */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: '2', minWidth: '220px' }}>
+                                            <span className={`status-badge ${project.status === 'completed' ? 'status-completed' : project.status === 'importing' ? 'status-pending' : project.status === 'failed' ? 'status-failed' : 'status-pending'}`} style={{ fontSize: '11px', padding: '3px 8px', background: project.status === 'importing' ? 'rgba(99,102,241,0.15)' : '', color: project.status === 'importing' ? '#818cf8' : '', borderColor: project.status === 'importing' ? 'rgba(99,102,241,0.3)' : '' }}>
+                                                {project.status === 'completed' ? '✓ Selesai' : project.status === 'importing' ? '⏳ Sedang Mengindeks...' : project.status === 'failed' ? '✕ Gagal' : 'Menunggu'}
+                                            </span>
+                                            <div>
+                                                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#f4f4f5' }}>{project.name}</h4>
+                                                <span style={{ fontSize: '11px', color: '#71717a' }}>Dibuat: {new Date(project.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Middle: Selection Progress or Importing Info */}
+                                        <div style={{ flex: '1.5', minWidth: '160px' }}>
+                                            {project.status === 'importing' ? (
+                                                <span style={{ fontSize: '12px', color: '#a5b4fc', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span className="dev-watermark-dot" style={{ width: '6px', height: '6px' }} />
+                                                    ⚡ Sedang mengindeks foto & subfolder...
+                                                </span>
+                                            ) : (
+                                                <>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '4px' }}>
+                                                        <span style={{ color: '#a1a1aa' }}>Pilihan Klien:</span>
+                                                        <strong style={{ color: '#818cf8' }}>{project.selectedPhotosCount} {project.maxSelection > 0 ? `/ ${project.maxSelection}` : 'foto'}</strong>
+                                                    </div>
+                                                    {project.maxSelection > 0 && (
+                                                        <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                            <div style={{ width: `${Math.min(100, Math.round((project.selectedPhotosCount / project.maxSelection) * 100))}%`, height: '100%', background: project.selectedPhotosCount >= project.maxSelection ? '#10b981' : '#6366f1', borderRadius: '4px' }} />
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* Right: Quick Action Buttons (Hidden when importing for minimalist look) */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                            {project.status === 'importing' ? (
+                                                <span style={{ fontSize: '11px', color: '#71717a', fontStyle: 'italic' }}>Proses background...</span>
+                                            ) : (
+                                                <>
+                                                    <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '11px', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => handleOpenGallery(project)} title="Buka Galeri Klien">
+                                                        🖼️ Galeri
+                                                    </button>
+                                                    <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => handleSendWhatsApp(project)} title="Kirim WA">
+                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25d366' }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                                        WA
+                                                    </button>
+                                                    <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '11px' }} onClick={() => handleViewDetails(project)} title="Detail Seleksi">
+                                                        👁️ Detail
+                                                    </button>
+                                                    {project.selectedPhotosCount > 0 && (
+                                                        <button className="btn-primary" style={{ padding: '6px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }} onClick={() => handleCopyFilenames(project.id, 'lightroom')} title="Salin Nama File">
+                                                            📋 Salin ({project.selectedPhotosCount})
+                                                        </button>
+                                                    )}
+                                                    <button onClick={() => handleOpenEditSettings(project)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#a1a1aa', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer' }} title="Pengaturan">
+                                                        ⚙️
+                                                    </button>
+                                                    <button onClick={() => setProjectToDelete(project)} style={{ background: 'none', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer' }} title="Hapus">
+                                                        🗑️
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            /* ── GRID CARD VIEW ── */
+                            <div className="project-grid">
+                                {sortedProjects.map((project) => (
+                        <div key={project.id} className="project-card glass-card" style={{ padding: '22px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(18,18,20,0.7)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', transition: 'transform 0.2s, border-color 0.2s' }}>
                             <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                {/* Header: Status Badge + Actions (Settings & Delete) */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                     <span className={`status-badge ${project.status === 'completed' ? 'status-completed' :
                                             project.status === 'importing' ? 'status-pending' :
                                                 project.status === 'failed' ? 'status-failed' : 'status-pending'
                                         }`} style={{
-                                            background: project.status === 'importing' ? 'rgba(251,191,36,0.15)' :
+                                            background: project.status === 'importing' ? 'rgba(99,102,241,0.15)' :
                                                 project.status === 'failed' ? 'rgba(239,68,68,0.15)' : '',
-                                            color: project.status === 'importing' ? '#fbbf24' :
+                                            color: project.status === 'importing' ? '#818cf8' :
                                                 project.status === 'failed' ? '#f87171' : '',
-                                            borderColor: project.status === 'importing' ? 'rgba(251,191,36,0.25)' :
+                                            borderColor: project.status === 'importing' ? 'rgba(99,102,241,0.3)' :
                                                 project.status === 'failed' ? 'rgba(239,68,68,0.25)' : ''
                                         }}>
                                         {project.status === 'completed' ? '✓ Selesai Dipilih' :
-                                            project.status === 'importing' ? '⏳ Sedang Mengimpor...' :
+                                            project.status === 'importing' ? '⏳ Sedang Mengindeks...' :
                                                 project.status === 'failed' ? '❌ Impor Gagal' : '● Menunggu Seleksi'}
                                     </span>
-                                    <span style={{ fontSize: '11.5px', color: '#71717a', background: 'rgba(255,255,255,0.03)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                        Dibuat: {new Date(project.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
-                                    </span>
-                                </div>
-                                <h3 style={{ fontSize: '20px', margin: '0 0 8px 0', fontWeight: '600' }}>{project.name}</h3>
-                                <p style={{ fontSize: '14px', color: '#a1a1aa', margin: '0 0 16px 0' }}>
-                                    Pilihan: <strong>{project.selectedPhotosCount}</strong> dari <strong>{project.maxSelection > 0 ? project.maxSelection : 'Bebas'}</strong> foto terpilih (Total: {project.totalPhotos} foto)
-                                </p>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {project.status === 'failed' && (
-                                    <button
-                                        onClick={() => handleRetryImport(project.id)}
-                                        className="btn-primary"
-                                        style={{ 
-                                            width: '100%', 
-                                            padding: '10px', 
-                                            background: 'linear-gradient(135deg, #fbbf24, #d97706)', 
-                                            color: '#000', 
-                                            fontWeight: '700', 
-                                            fontSize: '13px', 
-                                            borderRadius: '10px', 
-                                            cursor: 'pointer', 
-                                            border: 'none',
-                                            boxShadow: '0 4px 12px rgba(251,191,36,0.15)',
-                                            transition: 'transform 0.1s'
-                                        }}
-                                        onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                                        onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                                    >
-                                        🔄 Coba Impor Lagi
-                                    </button>
-                                )}
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                        className="btn-secondary"
-                                        style={{ flex: 1, padding: '8px 12px', fontSize: '13px', opacity: (project.status === 'importing' || project.status === 'failed') ? 0.5 : 1, cursor: (project.status === 'importing' || project.status === 'failed') ? 'not-allowed' : 'pointer' }}
-                                        onClick={() => handleCopyLink(project.id, project.clientAccessKey)}
-                                        disabled={project.status === 'importing' || project.status === 'failed'}
-                                    >
-                                        Salin Link Klien
-                                    </button>
-                                    <button
-                                        className="btn-secondary"
-                                        style={{ flex: 1, padding: '8px 12px', fontSize: '13px', opacity: (project.status === 'importing' || project.status === 'failed') ? 0.5 : 1, cursor: (project.status === 'importing' || project.status === 'failed') ? 'not-allowed' : 'pointer' }}
-                                        onClick={() => handleViewDetails(project)}
-                                        disabled={project.status === 'importing' || project.status === 'failed'}
-                                    >
-                                        Detail Seleksi
-                                    </button>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                        className="btn-primary"
-                                        style={{ flex: 2.2, padding: '8px 12px', fontSize: '13px', background: project.status === 'completed' ? '' : 'rgba(99,102,241,0.2)', border: project.status === 'completed' ? '' : '1px solid rgba(255,255,255,0.05)', boxShadow: project.status === 'completed' ? '' : 'none', color: project.status === 'completed' ? '' : '#a1a1aa', opacity: (project.status === 'importing' || project.status === 'failed') ? 0.5 : 1, cursor: (project.status === 'importing' || project.status === 'failed') ? 'not-allowed' : 'pointer' }}
-                                        onClick={() => handleCopyFilenames(project.id)}
-                                        disabled={project.selectedPhotosCount === 0 || project.status === 'importing' || project.status === 'failed'}
-                                    >
-                                        Salin Nama File
-                                    </button>
-                                    <button
-                                        className="btn-secondary"
-                                        style={{ width: '42px', padding: '8px 0', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: (project.status === 'importing' || project.status === 'failed') ? 0.5 : 1, cursor: (project.status === 'importing' || project.status === 'failed') ? 'not-allowed' : 'pointer' }}
-                                        onClick={() => handleOpenEditProject(project)}
-                                        disabled={project.status === 'importing' || project.status === 'failed'}
-                                        title="Pengaturan Project"
-                                    >
-                                        ⚙️
-                                    </button>
-                                    <button
-                                        className="btn-danger"
-                                        style={{ flex: 1, padding: '8px 12px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'none' }}
-                                        onClick={() => handleDeleteProject(project.id, project.name)}
-                                    >
-                                        Hapus
-                                    </button>
-                                </div>
-                                {project.selectedPhotosCount > 0 && (
-                                    <div style={{ marginTop: '8px', textAlign: 'center' }}>
-                                        <a 
-                                            href="/guide.html" 
-                                            target="_blank" 
-                                            rel="noopener noreferrer" 
-                                            style={{ fontSize: '11.5px', color: '#a1a1aa', textDecoration: 'underline' }}
-                                        >
-                                            📖 Panduan mencari file hasil seleksi
-                                        </a>
-                                    </div>
-                                )}
-                                {(project.status === 'completed' || (project.status === 'pending_selection' && project.maxSelection > 0 && project.selectedPhotosCount >= project.maxSelection)) && (
-                                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                                        <button
-                                            className="btn-secondary"
-                                            style={{ flex: 1.2, padding: '8px 12px', fontSize: '12px', border: '1px dashed rgba(129,140,248,0.3)', color: '#818cf8' }}
-                                            onClick={() => handleOpenAddLimit(project)}
-                                        >
-                                            ➕ Tambah Limit
-                                        </button>
-                                        {project.status === 'completed' ? (
+                                    
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '11px', color: '#71717a', background: 'rgba(255,255,255,0.03)', padding: '2px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                            {new Date(project.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                        </span>
+                                        {project.status !== 'importing' && (
                                             <>
                                                 <button
                                                     className="btn-secondary"
-                                                    style={{ flex: 1, padding: '8px 12px', fontSize: '12px', border: '1px dashed rgba(251,191,36,0.3)', color: '#fbbf24' }}
-                                                    onClick={() => handleUpdateProjectStatus(project.id, 'pending_selection', 'dibuka kuncinya')}
+                                                    style={{ padding: '4px 8px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px' }}
+                                                    onClick={() => handleOpenEditProject(project)}
+                                                    disabled={project.status === 'failed'}
+                                                    title="Pengaturan Proyek"
                                                 >
-                                                    🔓 Buka Kunci
+                                                    ⚙️
                                                 </button>
                                                 <button
-                                                    className="btn-secondary"
-                                                    style={{ flex: 1, padding: '8px 12px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.05)', color: '#a1a1aa' }}
-                                                    onClick={() => handleUpdateProjectStatus(project.id, 'archived', 'diarsipkan')}
+                                                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: '6px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}
+                                                    onClick={() => handleDeleteProject(project.id, project.name)}
+                                                    title="Hapus Proyek"
                                                 >
-                                                    🗄️ Arsipkan
+                                                    🗑️
                                                 </button>
                                             </>
-                                        ) : (
-                                            <button
-                                                className="btn-secondary"
-                                                style={{ flex: 1, padding: '8px 12px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.05)', color: '#a1a1aa' }}
-                                                onClick={() => handleUpdateProjectStatus(project.id, 'archived', 'diarsipkan')}
-                                            >
-                                                🗄️ Arsipkan
-                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Project Name */}
+                                <h3 style={{ fontSize: '20px', margin: '0 0 12px 0', fontWeight: '700', color: '#ffffff', wordBreak: 'break-word' }}>{project.name}</h3>
+
+                                {/* Progress Box / Importing Status Box */}
+                                {project.status === 'importing' ? (
+                                    <div style={{ background: 'rgba(99,102,241,0.06)', borderRadius: '12px', padding: '16px', marginBottom: '18px', border: '1px solid rgba(99,102,241,0.2)', textAlign: 'center' }}>
+                                        <div className="dev-watermark-dot" style={{ margin: '0 auto 10px auto', width: '8px', height: '8px' }} />
+                                        <p style={{ margin: 0, fontSize: '13px', color: '#a5b4fc', fontWeight: '600' }}>⚡ Sedang mengindeks foto & subfolder...</p>
+                                        <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#71717a' }}>Proses background berjalan. Kartu akan aktif otomatis.</p>
+                                    </div>
+                                ) : (
+                                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '12px 14px', marginBottom: '18px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#a1a1aa', marginBottom: '6px' }}>
+                                            <span>Pilihan Klien:</span>
+                                            <span style={{ fontWeight: '600', color: '#e4e4e7' }}>
+                                                <strong style={{ color: '#818cf8', fontSize: '14px' }}>{project.selectedPhotosCount}</strong> {project.maxSelection > 0 ? `/ ${project.maxSelection}` : 'foto'} <span style={{ fontSize: '11px', color: '#71717a' }}>(Total: {project.totalPhotos} foto)</span>
+                                            </span>
+                                        </div>
+                                        {project.maxSelection > 0 && (
+                                            <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${Math.min(100, Math.round((project.selectedPhotosCount / project.maxSelection) * 100))}%`, height: '100%', background: project.selectedPhotosCount >= project.maxSelection ? 'linear-gradient(90deg, #10b981, #059669)' : 'linear-gradient(90deg, #6366f1, #818cf8)', borderRadius: '4px', transition: 'width 0.3s ease' }} />
+                                            </div>
                                         )}
                                     </div>
                                 )}
                             </div>
+
+                            {/* Clean Action Buttons (Only shown when not importing) */}
+                            {project.status !== 'importing' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {project.status === 'failed' && (
+                                        <button
+                                            onClick={() => handleRetryImport(project.id)}
+                                            className="btn-primary"
+                                            style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: '#000', fontWeight: '700', fontSize: '12px', borderRadius: '8px' }}
+                                        >
+                                            🔄 Coba Impor Lagi
+                                        </button>
+                                    )}
+
+                                    {/* Main Row: Open Gallery, WA Send & Detail */}
+                                    <button
+                                        className="btn-secondary"
+                                        style={{
+                                            width: '100%',
+                                            padding: '9px 12px',
+                                            fontSize: '12px',
+                                            fontWeight: '600',
+                                            color: '#a5b4fc',
+                                            background: 'rgba(99,102,241,0.08)',
+                                            border: '1px solid rgba(99,102,241,0.25)',
+                                            borderRadius: '8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px'
+                                        }}
+                                        onClick={() => handleOpenGallery(project)}
+                                        title="Buka / Cek Tampilan Halaman Galeri Klien"
+                                    >
+                                        <span>🖼️ Lihat Galeri Klien</span>
+                                    </button>
+
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            className="btn-secondary"
+                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                            onClick={() => handleSendWhatsApp(project)}
+                                            title={project.clientPhone ? `Kirim ke ${project.clientPhone}` : 'Kirim via WhatsApp'}
+                                        >
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25d366', flexShrink: 0 }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                            Kirim via WA
+                                        </button>
+                                        <button
+                                            className="btn-secondary"
+                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px' }}
+                                            onClick={() => handleViewDetails(project)}
+                                        >
+                                            👁️ Detail Seleksi
+                                        </button>
+                                    </div>
+
+                                    {/* Featured Action: Copy Lightroom Filenames (default) */}
+                                    {project.selectedPhotosCount > 0 && (
+                                        <button
+                                            className="btn-primary"
+                                            style={{ width: '100%', padding: '9px 12px', fontSize: '12px', fontWeight: '700', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', boxShadow: '0 4px 12px rgba(99,102,241,0.25)', borderRadius: '8px' }}
+                                            onClick={() => handleCopyFilenames(project.id, 'lightroom')}
+                                        >
+                                            📋 Salin Nama File ({project.selectedPhotosCount} Foto)
+                                        </button>
+                                    )}
+
+                                    {/* RAW Sorter Button — only for completed projects with selections */}
+                                    {project.status === 'completed' && project.selectedPhotosCount > 0 && (
+                                        <button
+                                            className="btn-secondary"
+                                            style={{
+                                                width: '100%',
+                                                padding: '9px 12px',
+                                                fontSize: '12px',
+                                                fontWeight: '600',
+                                                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))',
+                                                border: '1px solid rgba(139, 92, 246, 0.25)',
+                                                color: '#c4b5fd',
+                                                borderRadius: '8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px',
+                                                transition: 'all 0.2s',
+                                            }}
+                                            onClick={() => {
+                                                setSorterProject(project);
+                                                setShowSorter(true);
+                                            }}
+                                            onMouseEnter={e => {
+                                                e.target.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.18))';
+                                                e.target.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+                                            }}
+                                            onMouseLeave={e => {
+                                                e.target.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))';
+                                                e.target.style.borderColor = 'rgba(139, 92, 246, 0.25)';
+                                            }}
+                                        >
+                                            📁 Sortir RAW
+                                        </button>
+                                    )}
+
+                                    {/* Secondary Action (Lock Unlock / Limit) */}
+                                    {project.status === 'completed' ? (
+                                        <button
+                                            className="btn-secondary"
+                                            style={{ width: '100%', padding: '7px 10px', fontSize: '11px', border: '1px dashed rgba(251,191,36,0.4)', color: '#fbbf24', borderRadius: '8px' }}
+                                            onClick={() => handleUpdateProjectStatus(project.id, 'pending_selection', 'dibuka kuncinya')}
+                                        >
+                                            🔓 Buka Kunci Seleksi
+                                        </button>
+                                    ) : (project.maxSelection > 0 && project.selectedPhotosCount >= project.maxSelection) ? (
+                                        <button
+                                            className="btn-secondary"
+                                            style={{ width: '100%', padding: '7px 10px', fontSize: '11px', border: '1px dashed rgba(129,140,248,0.4)', color: '#818cf8', borderRadius: '8px' }}
+                                            onClick={() => handleOpenAddLimit(project)}
+                                        >
+                                            ➕ Tambah Limit Pilihan
+                                        </button>
+                                    ) : null}
+                                </div>
+                            )}
                         </div>
                     ))}
                 </div>
             )}
+        </>
+    );
+})()}
 
             {/* ── CREATE PROJECT MODAL ── */}
             {showCreateModal && (
@@ -1085,54 +1488,125 @@ export default function DashboardPage() {
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">Tema Galeri Klien</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginTop: '6px' }}>
-                                    {[
-                                        { key: 'default', name: 'Tema Default Gallery', desc: 'Gelap bawaan asli, aksen indigo & rapi' },
-                                        { key: 'contactSheet', name: 'Kontak Studio', desc: 'Gelap retro, ala lembar kontak film' },
-                                        { key: 'galleryWall', name: 'Galeri Putih', desc: 'Terang bersih, tenang' },
-                                        { key: 'editorsMark', name: 'Tanda Editor', desc: 'Spidol merah, tegas' },
-                                        { key: 'polaroid', name: 'Polaroid Kenangan', desc: 'Seni polaroid, miring hangat' },
-                                    ].map(t => (
-                                        <div 
-                                            key={t.key}
-                                            onClick={() => !importing && setGalleryTheme(t.key)}
-                                            style={{
-                                                background: galleryTheme === t.key ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.02)',
-                                                border: galleryTheme === t.key ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px',
-                                                padding: '12px',
-                                                cursor: importing ? 'not-allowed' : 'pointer',
-                                                transition: 'all 0.2s',
-                                                boxShadow: galleryTheme === t.key ? '0 0 12px rgba(99,102,241,0.2)' : 'none'
-                                            }}
-                                        >
-                                            <div style={{ fontWeight: 'bold', fontSize: '13px', color: galleryTheme === t.key ? '#818cf8' : '#e4e4e7', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                {galleryTheme === t.key && <span style={{ color: '#818cf8' }}>●</span>} {t.name}
-                                            </div>
-                                            <div style={{ fontSize: '11px', color: '#71717a', marginTop: '4px', lineHeight: '1.3' }}>
-                                                {t.desc}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                <label className="form-label">No. WhatsApp Klien <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}>(Opsional)</span></label>
+                                <input
+                                    type="tel"
+                                    className="input-text"
+                                    placeholder="Contoh: 6281234567890"
+                                    value={clientPhone}
+                                    onChange={(e) => setClientPhone(e.target.value)}
+                                    disabled={importing}
+                                />
+                                <span style={{ fontSize: '11px', color: '#71717a' }}>Format internasional tanpa + (contoh: 6281234567890). Digunakan untuk mengirim link galeri via WhatsApp langsung.</span>
                             </div>
+
+                             {/* COLLAPSIBLE THEME SELECTOR WITH LIVE VISUAL PREVIEWS */}
+                             <div className="form-group" style={{ marginTop: '16px' }}>
+                                 <button
+                                     type="button"
+                                     onClick={() => setShowCreateThemePicker(!showCreateThemePicker)}
+                                     style={{
+                                         width: '100%',
+                                         display: 'flex',
+                                         alignItems: 'center',
+                                         justifyContent: 'space-between',
+                                         background: 'rgba(255, 255, 255, 0.03)',
+                                         border: '1px solid rgba(255, 255, 255, 0.08)',
+                                         borderRadius: '10px',
+                                         padding: '12px 16px',
+                                         color: '#e4e4e7',
+                                         fontSize: '13px',
+                                         fontWeight: '600',
+                                         cursor: 'pointer',
+                                         transition: 'all 0.2s ease'
+                                     }}
+                                 >
+                                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                         <span>🎨</span>
+                                         <span>Pilih Tema Galeri Klien <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal' }}>(Opsional)</span></span>
+                                     </span>
+                                     <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold' }}>
+                                         {showCreateThemePicker ? '▲ Sembunyikan' : '▼ Ubah Tema (Default Dark)'}
+                                     </span>
+                                 </button>
+
+                                 {showCreateThemePicker && (
+                                     <div className="fade-in-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '12px' }}>
+                                         {[
+                                             { key: 'default', name: 'Tema Default (Dark)', desc: 'Gelap modern bawaan asli, aksen indigo & rapi', bg: '#09090b', accent: '#818cf8', tag: '🌙 Dark' },
+                                             { key: 'midnightSlate', name: 'Midnight Slate (Trial Dark)', desc: 'Gelap modern, aksen slate & neon indigo ala Galeri Trial', bg: '#0f172a', accent: '#6366f1', tag: '⚡ Trial Dark' },
+                                             { key: 'contactSheet', name: 'Kontak Studio (Retro)', desc: 'Gelap retro, ala lembar kontak cetak film', bg: '#121212', accent: '#eab308', tag: '🎞️ Retro Film' },
+                                             { key: 'galleryWall', name: 'Galeri Putih (Clean)', desc: 'Terang bersih, tenang, minimalis mewah', bg: '#ffffff', accent: '#2563eb', tag: '☀️ Clean Light' },
+                                             { key: 'editorsMark', name: 'Tanda Editor (Spidol)', desc: 'Spidol merah tegas ala ruang redaksi', bg: '#1c1917', accent: '#ef4444', tag: '✏️ Red Mark' },
+                                             { key: 'polaroid', name: 'Polaroid Kenangan', desc: 'Seni bingkai foto polaroid miring hangat', bg: '#262626', accent: '#f59e0b', tag: '📷 Vintage' }
+                                         ].map(t => {
+                                             const isSel = galleryTheme === t.key;
+                                             return (
+                                                 <div 
+                                                     key={t.key}
+                                                     onClick={() => !importing && setGalleryTheme(t.key)}
+                                                     style={{
+                                                         background: isSel ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.02)',
+                                                         border: isSel ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.08)',
+                                                         borderRadius: '10px',
+                                                         padding: '12px',
+                                                         cursor: importing ? 'not-allowed' : 'pointer',
+                                                         transition: 'all 0.2s',
+                                                         position: 'relative',
+                                                         overflow: 'hidden'
+                                                     }}
+                                                 >
+                                                     {/* Mini Live Preview Swatch */}
+                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                             <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: t.bg, border: '1px solid rgba(255,255,255,0.3)', boxShadow: `0 0 6px ${t.accent}` }} />
+                                                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: t.accent }} />
+                                                         </div>
+                                                         <span style={{ fontSize: '9px', fontWeight: 'bold', background: 'rgba(255,255,255,0.06)', color: isSel ? '#818cf8' : '#a1a1aa', padding: '2px 6px', borderRadius: '6px' }}>
+                                                             {t.tag}
+                                                         </span>
+                                                     </div>
+
+                                                     <div style={{ fontWeight: 'bold', fontSize: '12px', color: isSel ? '#818cf8' : '#e4e4e7', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                         {isSel && <span style={{ color: '#818cf8' }}>✓</span>} {t.name}
+                                                     </div>
+                                                     <div style={{ fontSize: '10px', color: '#71717a', marginTop: '4px', lineHeight: '1.3' }}>
+                                                         {t.desc}
+                                                     </div>
+                                                 </div>
+                                             );
+                                         })}
+                                     </div>
+                                 )}
+                             </div>
  
                             <div style={{ display: 'flex', gap: '12px', marginTop: '28px', justifyContent: 'flex-end' }}>
-                                <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)} disabled={importing}>
+                                <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)} disabled={importing} style={{ transition: 'all 0.2s', opacity: importing ? 0.4 : 1 }}>
                                     Batal
                                 </button>
-                                <button type="submit" className="btn-primary" disabled={importing}>
-                                    {importing ? 'Mengimpor Folder...' : 'Impor & Buat'}
+                                <button type="submit" className="btn-primary" disabled={importing} style={{ minWidth: '160px', gap: '10px' }}>
+                                    {importing ? (
+                                        <>
+                                            <span className="btn-spinner" />
+                                            Mengimpor...
+                                        </>
+                                    ) : (
+                                        <>⚡ Impor &amp; Buat</>
+                                    )}
                                 </button>
                             </div>
                         </form>
  
                         {importing && (
-                            <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '16px' }}>
-                                <div className="dev-watermark-dot" style={{ margin: '0 auto 12px auto', width: '8px', height: '8px' }} />
-                                <p style={{ fontSize: '13px', color: '#818cf8', margin: 0, fontWeight: 'bold' }}>Sedang mengimpor isi folder...</p>
-                                <p style={{ fontSize: '12px', color: '#71717a', margin: '4px 0 0 0' }}>Kami sedang mengunduh, mengompres, dan mengoptimalkan file JPG Anda untuk web. Ini mungkin memakan waktu 10-30 detik tergantung pada ukuran folder.</p>
+                            <div className="import-progress-bar-wrap">
+                                <div className="import-progress-track">
+                                    <div className="import-progress-fill" />
+                                </div>
+                                <p style={{ fontSize: '13px', color: '#818cf8', margin: 0, fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span className="btn-spinner" style={{ borderTopColor: '#818cf8', borderColor: 'rgba(129,140,248,0.25)' }} />
+                                    Mengindeks folder Google Drive...
+                                </p>
+                                <p style={{ fontSize: '12px', color: '#52525b', margin: '6px 0 0 0', lineHeight: '1.5' }}>Foto distream langsung dari Drive — tidak disimpan ke disk server.</p>
                             </div>
                         )}
                     </div>
@@ -1212,8 +1686,8 @@ export default function DashboardPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '16px', marginBottom: '16px' }}>
                             <div>
                                 <h3 style={{ margin: 0, fontSize: '22px', fontWeight: 'bold' }}>{selectedProjectDetails.name}</h3>
-                                <p style={{ color: '#a1a1aa', margin: '4px 0 0 0', fontSize: '13px' }}>
-                                    Showing selection results ({detailPhotos.filter(p => p.isSelected > 0).length} of {detailPhotos.length} selected)
+                                <p style={{ color: '#818cf8', margin: '4px 0 0 0', fontSize: '13px', fontWeight: '500' }}>
+                                    ✨ Menampilkan {detailPhotos.length} foto pilihan klien
                                 </p>
                             </div>
                             <button onClick={() => setSelectedProjectDetails(null)} className="btn-secondary" style={{ padding: '6px 12px', fontSize: '13px' }}>
@@ -1249,46 +1723,87 @@ export default function DashboardPage() {
                                     )}
                                 </div>
                             ) : detailPhotos.length === 0 ? (
-                                <p style={{ textAlign: 'center', color: '#a1a1aa', margin: '40px 0' }}>No photos found in this project.</p>
+                                <div style={{ textAlign: 'center', color: '#a1a1aa', padding: '48px 20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)' }}>
+                                    <p style={{ fontSize: '15px', fontWeight: '600', color: '#e4e4e7', margin: '0 0 6px 0' }}>Belum ada foto yang dipilih oleh klien</p>
+                                    <p style={{ fontSize: '13px', margin: 0 }}>Klien belum menandai foto pilihan mereka di galeri ini.</p>
+                                </div>
                             ) : (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
-                                    {detailPhotos.map((photo) => (
-                                        <div key={photo.id} style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: photo.isSelected > 0 ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.05)', aspectRatio: '3/2' }}>
-                                            <img src={photo.thumbnailPath} alt="Photo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            {photo.isSelected > 0 && (
-                                                <div style={{ position: 'absolute', top: '8px', right: '8px', background: '#6366f1', color: 'white', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
+                                    {detailPhotos.map((photo, pIdx) => {
+                                        const filename = photo.originalPath.split('/').pop();
+                                        return (
+                                            <div
+                                                key={photo.id}
+                                                title={`#${pIdx + 1} - ${filename}`}
+                                                style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '2px solid #6366f1', aspectRatio: '3/2', boxShadow: '0 4px 12px rgba(99,102,241,0.2)', cursor: 'pointer' }}
+                                            >
+                                                <img src={photo.thumbnailPath} alt={filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <div style={{ position: 'absolute', top: '6px', right: '6px', background: '#6366f1', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>
                                                     ✓
                                                 </div>
-                                            )}
-                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.6)', padding: '4px 8px', fontSize: '10px', color: '#e4e4e7', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={photo.originalPath.split('/').pop()}>
-                                                {photo.originalPath.split('/').pop()}
+                                                <div style={{ position: 'absolute', bottom: '6px', left: '6px', background: 'rgba(0,0,0,0.65)', color: '#34d399', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                                                    #{pIdx + 1}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px', flexWrap: 'wrap', gap: '12px', width: '100%' }}>
-                            <a 
-                                class="guide-link"
-                                href="/guide.html" 
-                                target="_blank" 
-                                rel="noopener noreferrer" 
-                                style={{ fontSize: '13px', color: '#818cf8', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '6px' }}
-                            >
-                                📖 Cara pakai daftar nama file di Finder/Lightroom
-                            </a>
-                            <div style={{ display: 'flex', gap: '12px' }}>
-                                <button className="btn-secondary" onClick={() => setSelectedProjectDetails(null)}>
-                                    Close
-                                </button>
-                                <button
-                                    className="btn-primary"
-                                    disabled={detailPhotos.filter(p => p.isSelected > 0).length === 0}
-                                    onClick={() => handleCopyFilenames(selectedProjectDetails.id)}
+                        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px', width: '100%' }}>
+                            {/* Quick Format Selector & Action Buttons */}
+                            {detailPhotos.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                        <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold' }}>⚙️ Format Pemisah Instan:</span>
+                                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                            <select
+                                                value={copyDelimiter}
+                                                onChange={(e) => setCopyDelimiter(e.target.value)}
+                                                style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#e4e4e7', cursor: 'pointer' }}
+                                            >
+                                                <option value=", ">, (Koma)</option>
+                                                <option value="; ">; (Titik Koma)</option>
+                                                <option value=" OR ">OR (Search Keyword)</option>
+                                                <option value=" ">[spasi] (Finder)</option>
+                                                <option value={'\n'}>\n (Baris Baru)</option>
+                                            </select>
+
+                                            <select
+                                                value={copyIncludeExt}
+                                                onChange={(e) => setCopyIncludeExt(parseInt(e.target.value))}
+                                                style={{ padding: '4px 8px', fontSize: '11px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: '#e4e4e7', cursor: 'pointer' }}
+                                            >
+                                                <option value={0}>Tanpa Ext (.JPG)</option>
+                                                <option value={1}>Dengan Ext (.JPG)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <button
+                                            className="btn-primary"
+                                            style={{ flex: 1, padding: '10px 14px', fontSize: '12px', fontWeight: '700', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                            onClick={() => handleCopyFilenames(selectedProjectDetails.id)}
+                                        >
+                                            📋 Salin {detailPhotos.length} Nama File ke Clipboard
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                <a 
+                                    className="guide-link"
+                                    href="/guide.html" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    style={{ fontSize: '12px', color: '#818cf8', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '5px' }}
                                 >
-                                    Copy Filenames to Clipboard
+                                    📖 Panduan penggunaan
+                                </a>
+                                <button className="btn-secondary" onClick={() => setSelectedProjectDetails(null)}>
+                                    Tutup
                                 </button>
                             </div>
                         </div>
@@ -1318,39 +1833,85 @@ export default function DashboardPage() {
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Tema Galeri Klien</label>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginTop: '6px' }}>
-                                    {[
-                                        { key: 'default', name: 'Tema Default Gallery', desc: 'Gelap bawaan asli, aksen indigo & rapi' },
-                                        { key: 'contactSheet', name: 'Kontak Studio', desc: 'Gelap retro, ala lembar kontak film' },
-                                        { key: 'galleryWall', name: 'Galeri Putih', desc: 'Terang bersih, tenang' },
-                                        { key: 'editorsMark', name: 'Tanda Editor', desc: 'Spidol merah, tegas' },
-                                        { key: 'polaroid', name: 'Polaroid Kenangan', desc: 'Seni polaroid, miring hangat' },
-                                    ].map(t => (
-                                        <div 
-                                            key={t.key}
-                                            onClick={() => !savingProjectSettings && setEditProjectGalleryTheme(t.key)}
-                                            style={{
-                                                background: editProjectGalleryTheme === t.key ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.02)',
-                                                border: editProjectGalleryTheme === t.key ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.08)',
-                                                borderRadius: '8px',
-                                                padding: '12px',
-                                                cursor: savingProjectSettings ? 'not-allowed' : 'pointer',
-                                                transition: 'all 0.2s',
-                                                boxShadow: editProjectGalleryTheme === t.key ? '0 0 12px rgba(99,102,241,0.2)' : 'none'
-                                            }}
-                                        >
-                                            <div style={{ fontWeight: 'bold', fontSize: '13px', color: editProjectGalleryTheme === t.key ? '#818cf8' : '#e4e4e7', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                {editProjectGalleryTheme === t.key && <span style={{ color: '#818cf8' }}>●</span>} {t.name}
-                                            </div>
-                                            <div style={{ fontSize: '11px', color: '#71717a', marginTop: '4px', lineHeight: '1.3' }}>
-                                                {t.desc}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
+                             {/* COLLAPSIBLE THEME SELECTOR IN EDIT MODAL */}
+                             <div className="form-group" style={{ marginTop: '16px' }}>
+                                 <button
+                                     type="button"
+                                     onClick={() => setShowEditThemePicker(!showEditThemePicker)}
+                                     style={{
+                                         width: '100%',
+                                         display: 'flex',
+                                         alignItems: 'center',
+                                         justifyContent: 'space-between',
+                                         background: 'rgba(255, 255, 255, 0.03)',
+                                         border: '1px solid rgba(255, 255, 255, 0.08)',
+                                         borderRadius: '10px',
+                                         padding: '12px 16px',
+                                         color: '#e4e4e7',
+                                         fontSize: '13px',
+                                         fontWeight: '600',
+                                         cursor: 'pointer',
+                                         transition: 'all 0.2s ease'
+                                     }}
+                                 >
+                                     <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                         <span>🎨</span>
+                                         <span>Ubah Tema Galeri Klien <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal' }}>(Opsional)</span></span>
+                                     </span>
+                                     <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold' }}>
+                                         {showEditThemePicker ? '▲ Sembunyikan' : '▼ Tampilkan Tema'}
+                                     </span>
+                                 </button>
+
+                                 {showEditThemePicker && (
+                                     <div className="fade-in-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '12px' }}>
+                                         {[
+                                             { key: 'default', name: 'Tema Default (Dark)', desc: 'Gelap modern bawaan asli, aksen indigo & rapi', bg: '#09090b', accent: '#818cf8', tag: '🌙 Dark' },
+                                             { key: 'midnightSlate', name: 'Midnight Slate (Trial Dark)', desc: 'Gelap modern, aksen slate & neon indigo ala Galeri Trial', bg: '#0f172a', accent: '#6366f1', tag: '⚡ Trial Dark' },
+                                             { key: 'contactSheet', name: 'Kontak Studio (Retro)', desc: 'Gelap retro, ala lembar kontak cetak film', bg: '#121212', accent: '#eab308', tag: '🎞️ Retro Film' },
+                                             { key: 'galleryWall', name: 'Galeri Putih (Clean)', desc: 'Terang bersih, tenang, minimalis mewah', bg: '#ffffff', accent: '#2563eb', tag: '☀️ Clean Light' },
+                                             { key: 'editorsMark', name: 'Tanda Editor (Spidol)', desc: 'Spidol merah tegas ala ruang redaksi', bg: '#1c1917', accent: '#ef4444', tag: '✏️ Red Mark' },
+                                             { key: 'polaroid', name: 'Polaroid Kenangan', desc: 'Seni bingkai foto polaroid miring hangat', bg: '#262626', accent: '#f59e0b', tag: '📷 Vintage' }
+                                         ].map(t => {
+                                             const isSel = editProjectGalleryTheme === t.key;
+                                             return (
+                                                 <div 
+                                                     key={t.key}
+                                                     onClick={() => !savingProjectSettings && setEditProjectGalleryTheme(t.key)}
+                                                     style={{
+                                                         background: isSel ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.02)',
+                                                         border: isSel ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.08)',
+                                                         borderRadius: '10px',
+                                                         padding: '12px',
+                                                         cursor: savingProjectSettings ? 'not-allowed' : 'pointer',
+                                                         transition: 'all 0.2s',
+                                                         position: 'relative',
+                                                         overflow: 'hidden'
+                                                     }}
+                                                 >
+                                                     {/* Mini Live Preview Swatch */}
+                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                             <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: t.bg, border: '1px solid rgba(255,255,255,0.3)', boxShadow: `0 0 6px ${t.accent}` }} />
+                                                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: t.accent }} />
+                                                         </div>
+                                                         <span style={{ fontSize: '9px', fontWeight: 'bold', background: 'rgba(255,255,255,0.06)', color: isSel ? '#818cf8' : '#a1a1aa', padding: '2px 6px', borderRadius: '6px' }}>
+                                                             {t.tag}
+                                                         </span>
+                                                     </div>
+
+                                                     <div style={{ fontWeight: 'bold', fontSize: '12px', color: isSel ? '#818cf8' : '#e4e4e7', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                         {isSel && <span style={{ color: '#818cf8' }}>✓</span>} {t.name}
+                                                     </div>
+                                                     <div style={{ fontSize: '10px', color: '#71717a', marginTop: '4px', lineHeight: '1.3' }}>
+                                                         {t.desc}
+                                                     </div>
+                                                 </div>
+                                             );
+                                         })}
+                                     </div>
+                                 )}
+                             </div>
 
                             <div style={{ display: 'flex', gap: '12px', marginTop: '28px', justifyContent: 'flex-end' }}>
                                 <button type="button" className="btn-secondary" onClick={() => setEditingProject(null)} disabled={savingProjectSettings}>
@@ -1370,62 +1931,143 @@ export default function DashboardPage() {
                 <div className="modal-overlay" onClick={() => {
                     if (!savingBranding) setShowBrandingModal(false);
                 }}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <h3 style={{ margin: '0 0 8px 0', fontSize: '22px', fontWeight: 'bold' }}>Brand Settings</h3>
-                        <p style={{ color: '#a1a1aa', margin: '0 0 24px 0', fontSize: '14px' }}>Customize branding on your client gallery pages</p>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', padding: '24px', borderRadius: '16px' }}>
+                        <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 'bold' }}>⚙️ Pengaturan Brand & Profil</h3>
+                        <p style={{ color: '#a1a1aa', margin: '0 0 16px 0', fontSize: '12px' }}>Atur informasi studio dan preferensi salin nama file</p>
 
                         <form onSubmit={handleSaveBranding}>
-                            <div className="form-group">
-                                <label className="form-label">Photographer Name</label>
-                                <input
-                                    type="text"
-                                    className="input-text"
-                                    required
-                                    value={vendorName}
-                                    onChange={(e) => setVendorName(e.target.value)}
-                                    disabled={savingBranding}
-                                />
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                <div className="form-group" style={{ marginBottom: '12px' }}>
+                                    <label className="form-label" style={{ fontSize: '12px' }}>Nama Pemilik</label>
+                                    <input
+                                        type="text"
+                                        className="input-text"
+                                        required
+                                        placeholder="Contoh: Arman Syam"
+                                        value={vendorName}
+                                        onChange={(e) => setVendorName(e.target.value)}
+                                        disabled={savingBranding}
+                                        style={{ padding: '8px 12px', fontSize: '13px' }}
+                                    />
+                                </div>
+
+                                <div className="form-group" style={{ marginBottom: '12px' }}>
+                                    <label className="form-label" style={{ fontSize: '12px' }}>Nama Brand Studio</label>
+                                    <input
+                                        type="text"
+                                        className="input-text"
+                                        placeholder="Contoh: AmsDev Studio"
+                                        value={brandName}
+                                        onChange={(e) => setBrandName(e.target.value)}
+                                        disabled={savingBranding}
+                                        style={{ padding: '8px 12px', fontSize: '13px' }}
+                                    />
+                                </div>
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Brand / Studio Name</label>
-                                <input
-                                    type="text"
-                                    className="input-text"
-                                    placeholder="e.g. AmsDev Photography"
-                                    value={brandName}
-                                    onChange={(e) => setBrandName(e.target.value)}
-                                    disabled={savingBranding}
-                                />
+                            <div className="form-group" style={{ marginBottom: '14px' }}>
+                                <label className="form-label" style={{ fontSize: '12px', marginBottom: '6px' }}>
+                                    Logo Studio <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}>(PNG, JPG, WebP)</span>
+                                </label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                setBrandLogoFile(file);
+                                                setBrandLogoPreview(URL.createObjectURL(file));
+                                            }
+                                        }}
+                                        disabled={savingBranding}
+                                        style={{ color: '#a1a1aa', fontSize: '12px', padding: '4px 0', flex: 1 }}
+                                    />
+                                    {brandLogoPreview && (
+                                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center' }}>
+                                            <img
+                                                src={brandLogoPreview}
+                                                alt="Preview Logo"
+                                                style={{ height: '32px', maxWidth: '90px', objectFit: 'contain' }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="form-group">
-                                <label className="form-label">Brand Logo (Image file)</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => setBrandLogoFile(e.target.files[0])}
-                                    disabled={savingBranding}
-                                    style={{ color: '#a1a1aa', padding: '6px 0' }}
-                                />
-                                {brandLogoPreview && (
-                                    <div style={{ marginTop: '12px' }}>
-                                        <p style={{ fontSize: '12px', color: '#71717a', margin: '0 0 6px 0' }}>Current Logo Preview:</p>
-                                        <img
-                                            src={brandLogoPreview}
-                                            alt="Brand Logo"
-                                            style={{ maxHeight: '60px', objectFit: 'contain', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', padding: '4px' }}
-                                        />
+                            {/* ── PREFERENSI SALIN NAMA FILE SECTION (MINIMALIST) ── */}
+                            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                <label className="form-label" style={{ fontSize: '12px', color: '#818cf8', fontWeight: 'bold', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    📋 Preferensi Salin Nama File
+                                </label>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '11px', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Pemisah (Delimiter)</label>
+                                        <select
+                                            className="input-text"
+                                            value={copyDelimiter}
+                                            onChange={(e) => setCopyDelimiter(e.target.value)}
+                                            disabled={savingBranding}
+                                            style={{ color: '#e4e4e7', cursor: 'pointer', padding: '7px 10px', fontSize: '12px' }}
+                                        >
+                                            <option value=", ">, (Koma & Spasi)</option>
+                                            <option value="; ">; (Titik Koma)</option>
+                                            <option value=" OR ">OR (Windows Search)</option>
+                                            <option value=" ">[spasi] (macOS Finder)</option>
+                                            <option value={'\n'}>\n (Baris Baru)</option>
+                                        </select>
                                     </div>
-                                )}
+
+                                    <div>
+                                        <label style={{ fontSize: '11px', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Ekstensi Berkas</label>
+                                        <select
+                                            className="input-text"
+                                            value={copyIncludeExt}
+                                            onChange={(e) => setCopyIncludeExt(parseInt(e.target.value))}
+                                            disabled={savingBranding}
+                                            style={{ color: '#e4e4e7', cursor: 'pointer', padding: '7px 10px', fontSize: '12px' }}
+                                        >
+                                            <option value={0}>Tanpa Ekstensi (DSC_0012)</option>
+                                            <option value={1}>Dengan Ekstensi (DSC_0012.JPG)</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '10px' }}>
+                                    <label style={{ fontSize: '11px', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Urutan Salin File</label>
+                                    <select
+                                        className="input-text"
+                                        value={copySortOrder}
+                                        onChange={(e) => setCopySortOrder(e.target.value)}
+                                        disabled={savingBranding}
+                                        style={{ color: '#e4e4e7', cursor: 'pointer', padding: '7px 10px', fontSize: '12px' }}
+                                    >
+                                        <option value="name_asc">🔤 Abjad Nama File (A - Z)</option>
+                                        <option value="selection_order">⏱️ Urutan Pilihan Klien (Kronologis)</option>
+                                    </select>
+                                </div>
+
+                                {/* Minimalist Live Preview Strip */}
+                                <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', padding: '8px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '10px', color: '#818cf8', fontWeight: 'bold', letterSpacing: '0.5px', whiteSpace: 'nowrap' }}>PREVIEW:</span>
+                                    <span style={{ fontSize: '11px', color: '#34d399', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {(() => {
+                                            const sampleExt = copyIncludeExt === 1 ? '.JPG' : '';
+                                            const samples = [`DSC_0012${sampleExt}`, `DSC_0015${sampleExt}`, `DSC_0018${sampleExt}`];
+                                            if (copySortOrder === 'name_asc') samples.sort();
+                                            return samples.join(copyDelimiter);
+                                        })()}
+                                    </span>
+                                </div>
                             </div>
 
-                            <div style={{ display: 'flex', gap: '12px', marginTop: '28px', justifyContent: 'flex-end' }}>
-                                <button type="button" className="btn-secondary" onClick={() => setShowBrandingModal(false)} disabled={savingBranding}>
-                                    Cancel
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '20px', justifyContent: 'flex-end' }}>
+                                <button type="button" className="btn-secondary" onClick={() => setShowBrandingModal(false)} disabled={savingBranding} style={{ padding: '8px 16px', fontSize: '13px' }}>
+                                    Batal
                                 </button>
-                                <button type="submit" className="btn-primary" disabled={savingBranding}>
-                                    {savingBranding ? 'Saving...' : 'Save Settings'}
+                                <button type="submit" className="btn-primary" disabled={savingBranding} style={{ padding: '8px 20px', fontSize: '13px' }}>
+                                    {savingBranding ? 'Menyimpan...' : '💾 Simpan Pengaturan'}
                                 </button>
                             </div>
                         </form>
@@ -1446,70 +2088,14 @@ export default function DashboardPage() {
                         
                         {!selectedUpgradePlan ? (
                             <>
-                                <p style={{ margin: '0 0 16px 0', color: '#a1a1aa', fontSize: '14px' }}>
-                                    Pilih paket berlangganan yang Anda inginkan. Sisa nilai paket lama Anda akan otomatis menjadi potongan hemat (*tukar-tambah*) untuk paket baru.
+                                <p style={{ margin: '0 0 20px 0', color: '#a1a1aa', fontSize: '13px', lineHeight: '1.5' }}>
+                                    Pilih paket berlangganan studio Anda. Sisa nilai paket lama Anda akan otomatis memotong harga paket baru secara proporsional (*tukar-tambah hemat*).
                                 </p>
 
-                                {/* Tab Switcher for Upgrade Modal */}
-                                <div style={{ 
-                                    display: 'flex', 
-                                    background: 'rgba(0, 0, 0, 0.25)', 
-                                    padding: '4px', 
-                                    borderRadius: '10px', 
-                                    border: '1px solid rgba(255, 255, 255, 0.08)', 
-                                    marginBottom: '20px' 
-                                }}>
-                                    <button
-                                        type="button"
-                                        onClick={() => setUpgradeTab('limit')}
-                                        style={{
-                                            flex: 1,
-                                            background: upgradeTab === 'limit' ? '#6366f1' : 'transparent',
-                                            color: upgradeTab === 'limit' ? '#ffffff' : '#a1a1aa',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            padding: '8px 12px',
-                                            fontSize: '13px',
-                                            fontWeight: '600',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            outline: 'none'
-                                        }}
-                                    >
-                                        📁 Limit-Based
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setUpgradeTab('storage')}
-                                        style={{
-                                            flex: 1,
-                                            background: upgradeTab === 'storage' ? '#6366f1' : 'transparent',
-                                            color: upgradeTab === 'storage' ? '#ffffff' : '#a1a1aa',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            padding: '8px 12px',
-                                            fontSize: '13px',
-                                            fontWeight: '600',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.2s ease',
-                                            outline: 'none'
-                                        }}
-                                    >
-                                        📦 Storage-Based
-                                    </button>
-                                </div>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: availablePlans.filter(p => (p.planType || 'limit') === upgradeTab).length > 2 ? 'repeat(auto-fit, minmax(210px, 1fr))' : 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                                    {availablePlans.filter(plan => {
+                                <div style={{ display: 'grid', gridTemplateColumns: availablePlans.length > 2 ? 'repeat(auto-fit, minmax(220px, 1fr))' : 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                                    {availablePlans.filter(plan => plan.price > 0 || vendorDetails?.planId === plan.id).map(plan => {
                                         const isCurrentPlan = vendorDetails?.planId === plan.id;
-                                        if (plan.price === 0 && !isCurrentPlan) {
-                                            return false;
-                                        }
-                                        const type = plan.planType || 'limit';
-                                        return type === upgradeTab;
-                                    }).map(plan => {
-                                        const isCurrentPlan = vendorDetails?.planId === plan.id;
-                                        const accentColor = isCurrentPlan ? '#6366f1' : '#71717a';
+                                        const accentColor = isCurrentPlan ? '#6366f1' : '#e4e4e7';
                                         
                                         // Calculate proration
                                         const { discount, total } = getProrationDetails(plan);
@@ -1517,81 +2103,87 @@ export default function DashboardPage() {
                                         return (
                                             <div key={plan.id} style={{
                                                 background: isCurrentPlan ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
-                                                border: `1.5px solid ${isCurrentPlan ? 'rgba(99,102,241,0.35)' : 'rgba(255,255,255,0.06)'}`,
-                                                borderRadius: '14px',
+                                                border: `1.5px solid ${isCurrentPlan ? '#6366f1' : 'rgba(255,255,255,0.08)'}`,
+                                                borderRadius: '16px',
                                                 padding: '22px 20px',
                                                 position: 'relative',
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                justifyContent: 'space-between'
+                                                justify: 'space-between',
+                                                boxShadow: isCurrentPlan ? '0 4px 20px rgba(99,102,241,0.2)' : 'none',
+                                                transition: 'all 0.2s ease'
                                             }}>
                                                 <div>
                                                     {isCurrentPlan && (
-                                                        <div style={{ position: 'absolute', top: '-10px', right: '14px', background: '#6366f1', color: 'white', fontSize: '10px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                                            Paket Anda
-                                                        </div>
-                                                    )}
-                                                    <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7' }}>{plan.name}</h3>
-                                                    <p style={{ margin: '0 0 16px 0', fontSize: '22px', fontWeight: '800', color: accentColor }}>
-                                                        {plan.price === 0 ? 'Gratis' : `Rp ${Number(plan.price).toLocaleString('id-ID')}`}
-                                                    </p>
-                                                    
-                                                    {!isCurrentPlan && discount > 0 && (
-                                                        <div style={{ background: 'rgba(52,211,153,0.08)', borderRadius: '8px', padding: '8px 12px', marginBottom: '14px', fontSize: '11px', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
-                                                            🏷️ <strong>Potongan Hemat Tukar-Tambah:</strong><br/>
-                                                            <strong style={{ fontSize: '12px' }}>- Rp {discount.toLocaleString('id-ID')}</strong> (Sisa {getProrationDetails(plan).daysRemaining} hari)
+                                                        <div style={{ position: 'absolute', top: '-11px', right: '14px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white', fontSize: '10px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: '0 2px 8px rgba(99,102,241,0.4)' }}>
+                                                            ✓ Paket Anda
                                                         </div>
                                                     )}
 
-                                                    {plan.planType === 'storage' ? (
-                                                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '2' }}>
-                                                            <li>📦 Storage: <strong style={{ color: '#e4e4e7' }}>{plan.maxStorageMB >= 1024 ? `${(plan.maxStorageMB / 1024).toFixed(0)} GB` : `${plan.maxStorageMB} MB`}</strong></li>
-                                                            <li>📁 Project: <strong style={{ color: '#34d399' }}>Tanpa Batas</strong></li>
-                                                            <li>📷 Foto: <strong style={{ color: '#34d399' }}>Tanpa Batas</strong></li>
-                                                            <li>⏳ Masa Aktif Akun: <strong style={{ color: '#e4e4e7' }}>{plan.activePeriodDays || '—'}</strong> hari</li>
-                                                        </ul>
-                                                    ) : (
-                                                        <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '2' }}>
-                                                            <li>📁 Maks <strong style={{ color: '#e4e4e7' }}>{plan.maxProjects}</strong> project</li>
-                                                            <li>📷 Maks <strong style={{ color: '#e4e4e7' }}>{plan.maxPhotosPerProject || '∞'}</strong> foto/project</li>
-                                                            <li>⏳ Masa Aktif Akun: <strong style={{ color: '#e4e4e7' }}>{plan.activePeriodDays || '—'}</strong> hari</li>
-                                                            <li>⏳ Masa Aktif Galeri: <strong style={{ color: '#e4e4e7' }}>{plan.projectExpireDays || '—'}</strong> hari</li>
-                                                        </ul>
+                                                    <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7' }}>{plan.name}</h3>
+                                                    <div style={{ margin: '0 0 16px 0' }}>
+                                                        <span style={{ fontSize: '24px', fontWeight: '800', color: isCurrentPlan ? '#818cf8' : '#ffffff' }}>
+                                                            {plan.price === 0 ? 'Gratis' : `Rp ${Number(plan.price).toLocaleString('id-ID')}`}
+                                                        </span>
+                                                        <span style={{ fontSize: '12px', color: '#a1a1aa', marginLeft: '4px' }}>
+                                                            / {plan.activePeriodDays || 30} hari
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {!isCurrentPlan && discount > 0 && (
+                                                        <div style={{ background: 'rgba(52,211,153,0.08)', borderRadius: '10px', padding: '10px 12px', marginBottom: '16px', fontSize: '11px', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
+                                                            🏷️ <strong>Tukar-Tambah Hemat:</strong><br/>
+                                                            <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>Rp {plan.price.toLocaleString('id-ID')}</span>{' '}
+                                                            <strong style={{ fontSize: '13px', color: '#34d399' }}>Rp {total.toLocaleString('id-ID')}</strong><br/>
+                                                            <span style={{ fontSize: '10px', color: '#a1a1aa' }}>(Hemat Rp {discount.toLocaleString('id-ID')} dari sisa {getProrationDetails(plan).daysRemaining} hari)</span>
+                                                        </div>
                                                     )}
+
+                                                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '12px', color: '#a1a1aa', lineHeight: '2.2' }}>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span>📁</span> Maksimal <strong style={{ color: '#f4f4f5' }}>{plan.maxProjects} project</strong>
+                                                        </li>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span>📷</span> Maksimal <strong style={{ color: '#f4f4f5' }}>{plan.maxPhotosPerProject || '∞'} foto</strong> / project
+                                                        </li>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span>⏳</span> Masa Aktif Akun: <strong style={{ color: '#f4f4f5' }}>{plan.activePeriodDays || 30} hari</strong>
+                                                        </li>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span>✨</span> Masa Simpan Galeri: <strong style={{ color: '#f4f4f5' }}>{(!plan.projectExpireDays || plan.projectExpireDays >= 99999) ? 'Permanen (Selama Project Ada)' : `${plan.projectExpireDays} hari`}</strong>
+                                                        </li>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span>🎨</span> Custom Logo & Brand Studio: <strong style={{ color: '#34d399' }}>Aktif</strong>
+                                                        </li>
+                                                    </ul>
                                                 </div>
 
                                                 {isCurrentPlan ? (
-                                                    plan.price > 0 ? (
-                                                        <button
-                                                            onClick={() => {
-                                                                if (vendorDetails?.upgradeRequest) {
-                                                                    addToast('Anda sudah memiliki permintaan perpanjangan plan yang sedang diproses.', 'warning');
-                                                                    return;
-                                                                }
-                                                                setSelectedUpgradePlan(plan);
-                                                            }}
-                                                            className="btn-primary"
-                                                            style={{
-                                                                width: '100%',
-                                                                padding: '10px',
-                                                                textAlign: 'center',
-                                                                background: '#fbbf24',
-                                                                color: '#000',
-                                                                borderRadius: '10px',
-                                                                fontWeight: '700',
-                                                                fontSize: '13px',
-                                                                cursor: 'pointer',
-                                                                boxShadow: 'none',
-                                                                border: 'none'
-                                                            }}
-                                                        >
-                                                            🔄 Perpanjang Paket
-                                                        </button>
-                                                    ) : (
-                                                        <div style={{ height: '38px', textAlign: 'center', color: '#a1a1aa', fontSize: '12px', padding: '10px 0', fontWeight: 'bold' }}>
-                                                            Trial tidak dapat diperpanjang
-                                                        </div>
-                                                    )
+                                                    <button
+                                                        onClick={() => {
+                                                            if (vendorDetails?.upgradeRequest) {
+                                                                addToast('Anda sudah memiliki permintaan perpanjangan plan yang sedang diproses.', 'warning');
+                                                                return;
+                                                            }
+                                                            setSelectedUpgradePlan(plan);
+                                                        }}
+                                                        className="btn-primary"
+                                                        style={{
+                                                            width: '100%',
+                                                            padding: '10px',
+                                                            textAlign: 'center',
+                                                            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                                                            color: '#000000',
+                                                            borderRadius: '10px',
+                                                            fontWeight: '700',
+                                                            fontSize: '12px',
+                                                            cursor: 'pointer',
+                                                            boxShadow: '0 4px 12px rgba(251,191,36,0.3)',
+                                                            border: 'none'
+                                                        }}
+                                                    >
+                                                        🔄 Perpanjang Paket Ini
+                                                    </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => {
@@ -1606,14 +2198,15 @@ export default function DashboardPage() {
                                                             width: '100%',
                                                             padding: '10px',
                                                             textAlign: 'center',
-                                                            background: '#6366f1',
+                                                            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                                                             borderRadius: '10px',
-                                                            fontWeight: '600',
-                                                            fontSize: '13px',
-                                                            cursor: 'pointer'
+                                                            fontWeight: '700',
+                                                            fontSize: '12px',
+                                                            cursor: 'pointer',
+                                                            boxShadow: '0 4px 12px rgba(99,102,241,0.25)'
                                                         }}
                                                     >
-                                                        Pilih {plan.name} {discount > 0 && `(Rp ${total.toLocaleString('id-ID')})`}
+                                                        🚀 Pilih {plan.name} {discount > 0 ? `(Rp ${total.toLocaleString('id-ID')})` : ''}
                                                     </button>
                                                 )}
                                             </div>
@@ -1621,7 +2214,7 @@ export default function DashboardPage() {
                                     })}
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
-                                    <button className="btn-secondary" onClick={() => setShowUpgradeModal(false)}>Batal</button>
+                                    <button className="btn-secondary" onClick={() => setShowUpgradeModal(false)}>Tutup</button>
                                 </div>
                             </>
                         ) : (
@@ -1972,6 +2565,14 @@ export default function DashboardPage() {
                     </div>
                 </div>
             )}
+
+            {/* ── RAW SORTER DRAWER ── */}
+            <RawSorterDrawer
+                isOpen={showSorter}
+                onClose={() => setShowSorter(false)}
+                project={sorterProject}
+                vendorPlan={vendorDetails?.planType || ''}
+            />
         </div>
     );
 }

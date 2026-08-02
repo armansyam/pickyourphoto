@@ -3,19 +3,22 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev",
-        "build": "next build",
+        "dev": "rm -rf .next && next dev",
+        "build": "rm -rf .next && next build",
         "start": "next start",
+        "fresh": "rm -rf .next && next build && next start",
+        "clean": "rm -rf .next",
         "lint": "next lint"
     },
     "dependencies": {
         "bcryptjs": "^3.0.3",
         "better-sqlite3": "^11.1.2",
+        "googleapis": "^140.0.0",
         "jsonwebtoken": "^9.0.3",
         "next": "14.2.3",
+        "nodemailer": "^9.0.3",
         "react": "^18",
-        "react-dom": "^18",
-        "sharp": "^0.33.4"
+        "react-dom": "^18"
     },
     "devDependencies": {
         "eslint": "^8",

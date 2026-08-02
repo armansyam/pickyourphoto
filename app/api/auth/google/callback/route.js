@@ -1,0 +1,121 @@
+import { NextResponse } from 'next/server';
+import db from '@/lib/db';
+import { generateToken, setAuthCookie } from '@/lib/auth';
+import bcrypt from 'bcryptjs';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const code = searchParams.get('code');
+        const error = searchParams.get('error');
+
+        const host = request.headers.get('host');
+        const protocol = host.includes('localhost') ? 'http' : 'https';
+        const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+
+        if (error || !code) {
+            return NextResponse.redirect(new URL('/login?error=Google authentication was cancelled.', request.url));
+        }
+
+        const clientIdStmt = db.prepare("SELECT value FROM saas_settings WHERE key = 'google_client_id'").get();
+        const clientSecretStmt = db.prepare("SELECT value FROM saas_settings WHERE key = 'google_client_secret'").get();
+
+        const clientId = clientIdStmt?.value || process.env.GOOGLE_CLIENT_ID;
+        const clientSecret = clientSecretStmt?.value || process.env.GOOGLE_CLIENT_SECRET;
+
+        if (!clientId || !clientSecret) {
+            return NextResponse.redirect(new URL('/login?error=Google OAuth settings incomplete in Admin Panel.', request.url));
+        }
+
+        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                code,
+                client_id: clientId,
+                client_secret: clientSecret,
+                redirect_uri: redirectUri,
+                grant_type: 'authorization_code'
+            })
+        });
+
+        const tokenData = await tokenRes.json();
+        if (!tokenRes.ok || !tokenData.access_token) {
+            console.error('Failed to exchange Google OAuth code:', tokenData);
+            return NextResponse.redirect(new URL('/login?error=Failed to exchange Google authentication code.', request.url));
+        }
+
+        const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        });
+        const googleUser = await userRes.json();
+
+        if (!googleUser.email) {
+            return NextResponse.redirect(new URL('/login?error=Email address not received from Google.', request.url));
+        }
+
+        const email = googleUser.email.toLowerCase().trim();
+        const name = googleUser.name || email.split('@')[0];
+
+        // Parse action state (login vs register)
+        let action = 'login';
+        try {
+            const stateParam = searchParams.get('state');
+            if (stateParam) {
+                const parsedState = JSON.parse(decodeURIComponent(stateParam));
+                if (parsedState.action) action = parsedState.action;
+            }
+        } catch (e) {}
+
+        let vendor = db.prepare("SELECT * FROM vendors WHERE email = ?").get(email);
+
+        if (vendor) {
+            const token = generateToken({
+                id: vendor.id,
+                email: vendor.email,
+                name: vendor.name,
+                role: vendor.role
+            });
+            setAuthCookie(token);
+
+            if (vendor.status === 'active') {
+                // Jika sudah terdaftar & aktif -> Masukkan ke Dashboard!
+                const redirectPath = action === 'register' ? '/dashboard?notice=already_registered' : '/dashboard';
+                return NextResponse.redirect(new URL(redirectPath, request.url));
+            } else {
+                // Jika pendaftaran belum selesai / pending -> Arahkan kembali ke Langkah Pilih Paket untuk melanjutkannya!
+                return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(vendor.email)}`, request.url));
+            }
+        }
+
+        // New Vendor Registration via Google (Action == 'register' or seamless onboarding for unregistered login)
+        const starterPlan = db.prepare("SELECT id, maxProjects FROM plans WHERE name LIKE '%Starter%' ORDER BY price ASC LIMIT 1").get();
+        const defaultPlanId = starterPlan ? starterPlan.id : 1;
+        const defaultMaxProjects = starterPlan ? starterPlan.maxProjects : 5;
+        const dummyPassword = await bcrypt.hash(Math.random().toString(36), 10);
+
+        const insertStmt = db.prepare(`
+            INSERT INTO vendors (name, email, password, role, status, planId, maxProjects, createdAt)
+            VALUES (?, ?, ?, 'vendor', 'pending', ?, ?, CURRENT_TIMESTAMP)
+        `);
+
+        const result = insertStmt.run(name, email, dummyPassword, defaultPlanId, defaultMaxProjects);
+
+        const newVendor = {
+            id: result.lastInsertRowid,
+            email,
+            name,
+            role: 'vendor'
+        };
+
+        const token = generateToken(newVendor);
+        setAuthCookie(token);
+
+        return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`, request.url));
+    } catch (error) {
+        console.error('Google OAuth callback error:', error);
+        return NextResponse.redirect(new URL('/login?error=Internal authentication failure.', request.url));
+    }
+}

@@ -4,7 +4,6 @@ import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import sharp from 'sharp';
 
 export async function POST(request) {
     try {
@@ -84,32 +83,18 @@ export async function POST(request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Compress and resize payment proof using Sharp (WebP format & auto-rotate EXIF)
-        let compressedBuffer;
-        try {
-            compressedBuffer = await sharp(buffer)
-                .rotate()
-                .resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true })
-                .webp({ quality: 75, effort: 4 })
-                .toBuffer();
-        } catch (err) {
-            console.error('Failed to compress transfer proof:', err);
-            return NextResponse.json({ message: 'Gagal memproses berkas bukti transfer.' }, { status: 400 });
-        }
-
         // Setup uploads folder
         const uploadDir = path.join(process.cwd(), 'public', 'staging_uploads', 'payment_proofs');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
 
-        // Generate safe unique filename
-        const uniqueName = `${crypto.randomBytes(16).toString('hex')}.webp`;
-        const filePath = path.join(uploadDir, uniqueName);
+        const ext = file.name ? path.extname(file.name) || '.png' : '.png';
+        const fileName = `proof_${vendor.id}_${Date.now()}${ext}`;
+        const filePath = path.join(uploadDir, fileName);
 
-        // Write file
-        fs.writeFileSync(filePath, compressedBuffer);
-        const webPath = `/staging_uploads/payment_proofs/${uniqueName}`;
+        fs.writeFileSync(filePath, buffer);
+        const webPath = `/staging_uploads/payment_proofs/${fileName}`;
 
         // Insert request
         const insertStmt = db.prepare(`

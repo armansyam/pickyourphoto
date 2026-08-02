@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
-import { parseFolderId, fetchFolderFiles, downloadFileToPath } from '@/lib/gdrive-importer';
+import { parseFolderId, fetchFolderFiles } from '@/lib/gdrive-importer';
 import fs from 'fs';
 import path from 'path';
-import sharp from 'sharp';
 import crypto from 'crypto';
 
 // GET: List all projects for authenticated vendor
@@ -16,15 +15,13 @@ export async function GET() {
         if (!vendor) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
-        // Trigger background cleanup of all expired projects
-        const { cleanupExpiredProjects } = require('@/lib/storage-cleaner');
-        cleanupExpiredProjects();
         // Get projects with image count and selection status
         const stmt = db.prepare(`
             SELECT 
                 p.*,
                 (SELECT COUNT(*) FROM photos WHERE projectId = p.id) as totalPhotos,
                 c.accessKey as clientAccessKey,
+                c.clientPhone as clientPhone,
                 (SELECT COUNT(DISTINCT s.photoId) FROM selections s JOIN clients cl ON s.clientId = cl.id WHERE cl.projectId = p.id) as selectedPhotosCount
             FROM projects p
             LEFT JOIN clients c ON c.projectId = p.id
@@ -39,9 +36,6 @@ export async function GET() {
             };
         });
 
-        const activeProjects = allProjects.filter(p => p.status !== 'archived' && !p.isProjectExpired);
-        const archivedProjects = allProjects.filter(p => p.status === 'archived' || p.isProjectExpired);
-
         const pendingRequest = db.prepare(`
             SELECT sr.*, p.name as planName 
             FROM subscription_requests sr 
@@ -49,10 +43,9 @@ export async function GET() {
             WHERE sr.vendorId = ? AND sr.status = 'pending'
         `).get(vendor.id);
 
-        console.log(`--> [API GET /api/projects] Returning ${activeProjects.length} active and ${archivedProjects.length} archived projects for vendor: ${vendor.name}`);
+        console.log(`--> [API GET /api/projects] Returning ${allProjects.length} total projects for vendor: ${vendor.name}`);
         return NextResponse.json({
-            projects: activeProjects,
-            archivedProjects,
+            projects: allProjects,
             vendor: {
                 id: vendor.id,
                 name: vendor.name,
@@ -68,6 +61,9 @@ export async function GET() {
                 isExpired: vendor.isExpired,
                 brandName: vendor.brandName || '',
                 brandLogo: vendor.brandLogo || '',
+                copyDelimiter: vendor.copyDelimiter || ', ',
+                copyIncludeExt: vendor.copyIncludeExt !== undefined ? vendor.copyIncludeExt : 0,
+                copySortOrder: vendor.copySortOrder || 'name_asc',
                 planType: vendor.planType || 'limit',
                 maxStorageMB: vendor.maxStorageMB || 0,
                 usedStorageBytes: vendor.usedStorageBytes || 0,
@@ -115,7 +111,7 @@ export async function POST(request) {
             }, { status: 403 });
         }
 
-        const { name, folderUrl, maxSelection, confirmLimitExceeded, galleryTheme } = await request.json();
+        const { name, folderUrl, maxSelection, confirmLimitExceeded, galleryTheme, clientPhone } = await request.json();
 
         if (!name || !folderUrl) {
             return NextResponse.json({ message: 'Project name and Google Drive URL are required.' }, { status: 400 });
@@ -124,35 +120,6 @@ export async function POST(request) {
         const folderId = parseFolderId(folderUrl);
         if (!folderId) {
             return NextResponse.json({ message: 'Invalid Google Drive URL.' }, { status: 400 });
-        }
-
-        // Fetch GDrive files list
-        let files;
-        try {
-            files = await fetchFolderFiles(folderId);
-        } catch (err) {
-            console.error('GDrive fetch error:', err);
-            return NextResponse.json({ message: `Failed to fetch Google Drive folder: ${err.message}` }, { status: 400 });
-        }
-
-        if (!files || files.length === 0) {
-            return NextResponse.json({ message: 'No image files found in the Google Drive folder.' }, { status: 400 });
-        }
-
-        // Enforce maxPhotosPerProject limit for Limit-based plans
-        if (planType === 'limit') {
-            const maxPhotos = vendor.maxPhotosPerProject || 0;
-            if (maxPhotos > 0 && files.length > maxPhotos) {
-                if (!confirmLimitExceeded) {
-                    return NextResponse.json({
-                        limitExceeded: true,
-                        limit: maxPhotos,
-                        totalFiles: files.length,
-                        message: `Jumlah foto di folder Google Drive Anda (${files.length} foto) melebihi batas tipe langganan Anda (maks. ${maxPhotos} foto per galeri).`
-                    }, { status: 400 });
-                }
-                files = files.slice(0, maxPhotos);
-            }
         }
 
         // Generate clean unique slug
@@ -167,29 +134,29 @@ export async function POST(request) {
             counter++;
         }
 
-        // 1. Insert project record with status 'importing', maxSelection, folderUrl, and galleryTheme (expiresAt will be set after import finishes)
+        // 1. Insert project record with status 'importing', maxSelection, folderUrl, and galleryTheme
         const insertProject = db.prepare('INSERT INTO projects (vendorId, name, slug, status, maxSelection, expiresAt, folderUrl, galleryTheme) VALUES (?, ?, ?, ?, ?, NULL, ?, ?)');
         const projectInfo = insertProject.run(vendor.id, name, slug, 'importing', maxSelection || 0, folderUrl, galleryTheme || 'default');
         const projectId = projectInfo.lastInsertRowid;
 
-        // 2. Generate client record
+        // 2. Generate client record with optional phone number
         const clientAccessKey = crypto.randomBytes(16).toString('hex');
-        const insertClient = db.prepare('INSERT INTO clients (email, projectId, accessKey) VALUES (?, ?, ?)');
-        insertClient.run('client@example.com', projectId, clientAccessKey);
+        const insertClient = db.prepare('INSERT INTO clients (email, projectId, accessKey, clientPhone) VALUES (?, ?, ?, ?)');
+        insertClient.run('client@example.com', projectId, clientAccessKey, clientPhone || '');
 
-        // 3. Create public upload directory for the project using structured paths (vendor_[vendorId]/project_[projectId]_[slug])
+        // 3. Create public upload directory for the project using structured paths
         const uploadDir = path.join(process.cwd(), 'public', 'staging_uploads', `vendor_${vendor.id}`, `project_${projectId}_${slug}`);
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
 
         // Start background processing (un-awaited)
-        processImagesInBackground(projectId, files, uploadDir).catch(err => {
+        processImagesInBackground(projectId, folderId).catch(err => {
             console.error(`Background processing failed for project ${projectId}:`, err);
         });
 
         return NextResponse.json({
-            message: 'Project berhasil dibuat! Foto-foto sedang diimpor di background. Anda dapat menutup popup ini.',
+            message: 'Project berhasil dibuat! Foto-foto sedang diimpor di background.',
             projectId,
             slug
         }, { status: 201 });
@@ -204,8 +171,8 @@ export async function POST(request) {
 const importQueue = [];
 let isProcessingQueue = false;
 
-async function addToImportQueue(projectId, files, uploadDir) {
-    importQueue.push({ projectId, files, uploadDir });
+async function addToImportQueue(projectId, folderId) {
+    importQueue.push({ projectId, folderId });
     console.log(`[Queue] Project ${projectId} added to import queue. Position: ${importQueue.length}`);
     triggerQueueProcessor();
 }
@@ -223,7 +190,7 @@ async function triggerQueueProcessor() {
         const currentTask = importQueue[0];
         console.log(`[Queue] Processing project: ${currentTask.projectId}. Queue left: ${importQueue.length}`);
         try {
-            await runImportTask(currentTask.projectId, currentTask.files, currentTask.uploadDir);
+            await runImportTask(currentTask.projectId, currentTask.folderId);
         } catch (err) {
             console.error(`[Queue Error] Uncaught fatal error in project ${currentTask.projectId}:`, err);
         } finally {
@@ -237,13 +204,13 @@ async function triggerQueueProcessor() {
 }
 
 // Background worker entry point (places task into concurrency queue)
-export async function processImagesInBackground(projectId, files, uploadDir) {
-    addToImportQueue(projectId, files, uploadDir);
+export async function processImagesInBackground(projectId, folderId) {
+    addToImportQueue(projectId, folderId);
 }
 
-// Actual task runner with Top-Level Error Boundary and Disk-based Streaming
-async function runImportTask(projectId, files, uploadDir) {
-    console.log(`--> [runImportTask] Started for project: ${projectId}`);
+// Zero-Storage Import Task using Google Drive Proxy Stream
+async function runImportTask(projectId, folderId) {
+    console.log(`--> [runImportTask Zero-Storage] Started for project: ${projectId} (folderId: ${folderId})`);
     
     try {
         const project = db.prepare('SELECT vendorId, slug FROM projects WHERE id = ?').get(projectId);
@@ -252,153 +219,44 @@ async function runImportTask(projectId, files, uploadDir) {
             return;
         }
 
-        const vendorFolder = `vendor_${project.vendorId}`;
-        const projectFolder = `project_${projectId}_${project.slug}`;
-
-        const insertPhoto = db.prepare('INSERT INTO photos (projectId, originalPath, thumbnailPath, watermarkedPath, fileSizeBytes) VALUES (?, ?, ?, ?, ?)');
-        let successCount = 0;
-        let failCount = 0;
-        let isStorageFull = false;
-
-        // Ensure temp directory inside uploadDir exists
-        const tempDir = path.join(uploadDir, 'temp');
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir, { recursive: true });
-        }
-
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-
-            // Base throttle delay (250ms) between file requests to prevent Google Drive rate limit burst
-            if (i > 0) {
-                await new Promise(r => setTimeout(r, 250));
-            }
-
-            // Define temp path for this specific file
-            const tempFilePath = path.join(tempDir, `temp_${file.id}.tmp`);
-
-            try {
-                // Sanitize file name for filesystem
-                const sanitizedName = file.name.replace(/[\/\\?%*:|"<>]/g, '_');
-                const ext = path.extname(sanitizedName) || '.jpg';
-                const baseName = path.basename(sanitizedName, ext);
-
-                const origFileName = `${baseName}.webp`;
-                const thumbFileName = `${baseName}_thumb.webp`;
-
-                // Save reference paths relative to public webserver root
-                const origPathDb = `/staging_uploads/${vendorFolder}/${projectFolder}/${origFileName}`;
-                const thumbPathDb = `/staging_uploads/${vendorFolder}/${projectFolder}/${thumbFileName}`;
-
-                // Check if photo is already imported (resumable import)
-                const existingPhoto = db.prepare('SELECT id FROM photos WHERE projectId = ? AND originalPath = ?').get(projectId, origPathDb);
-                if (existingPhoto) {
-                    successCount++;
-                    continue;
-                }
-
-                // Download file directly to path (stream to disk)
-                await downloadFileToPath(file.id, tempFilePath);
-
-                const origFilePath = path.join(uploadDir, origFileName);
-                const thumbFilePath = path.join(uploadDir, thumbFileName);
-
-                // Compress preview image (max width 1000px, quality 75, WebP format, auto-rotate EXIF)
-                await sharp(tempFilePath)
-                    .rotate()
-                    .resize({ width: 1000, height: 1000, fit: 'inside', withoutEnlargement: true })
-                    .webp({ quality: 75, effort: 4 })
-                    .toFile(origFilePath);
-
-                // Create thumbnail (max width 400px, quality 60, WebP format, auto-rotate EXIF)
-                await sharp(tempFilePath)
-                    .rotate()
-                    .resize({ width: 400, height: 400, fit: 'inside', withoutEnlargement: true })
-                    .webp({ quality: 60, effort: 4 })
-                    .toFile(thumbFilePath);
-
-                // Calculate exact file size written to disk
-                const origStats = fs.statSync(origFilePath);
-                const thumbStats = fs.statSync(thumbFilePath);
-                const fileSizeBytes = origStats.size + thumbStats.size;
-
-                insertPhoto.run(projectId, origPathDb, thumbPathDb, origPathDb, fileSizeBytes);
-
-                // Update vendor total storage usage
-                db.prepare('UPDATE vendors SET usedStorageBytes = usedStorageBytes + ? WHERE id = ?').run(fileSizeBytes, project.vendorId);
-
-                // Check if storage limit is exceeded for Storage-based plans
-                const vendorStore = db.prepare(`
-                    SELECT v.usedStorageBytes, p.maxStorageMB, p.planType 
-                    FROM vendors v 
-                    JOIN plans p ON v.planId = p.id 
-                    WHERE v.id = ?
-                `).get(project.vendorId);
-
-                if (vendorStore && vendorStore.planType === 'storage') {
-                    const maxStorageBytes = vendorStore.maxStorageMB * 1024 * 1024;
-                    if (vendorStore.usedStorageBytes > maxStorageBytes) {
-                        throw new Error('STORAGE_LIMIT_EXCEEDED');
-                    }
-                }
-
-                successCount++;
-            } catch (err) {
-                console.error(`Failed to process file in background: ${file.name || file.id}`, err);
-                if (err.message === 'STORAGE_LIMIT_EXCEEDED') {
-                    isStorageFull = true;
-                    break;
-                }
-                failCount++;
-            } finally {
-                // Always clean up the temporary file immediately after each attempt
-                try {
-                    if (fs.existsSync(tempFilePath)) {
-                        fs.unlinkSync(tempFilePath);
-                    }
-                } catch (unlinkErr) {
-                    console.error(`Failed to delete temp file ${tempFilePath}:`, unlinkErr);
-                }
-            }
-        }
-
-        // Clean up temp directory itself
-        try {
-            if (fs.existsSync(tempDir)) {
-                fs.rmSync(tempDir, { recursive: true, force: true });
-            }
-        } catch (rmErr) {
-            console.error(`Failed to delete temp directory ${tempDir}:`, rmErr);
-        }
-
-        if (isStorageFull) {
-            // Rollback all imported files for this project to free space
-            await rollbackProjectFiles(projectId, uploadDir, project.vendorId);
-            db.prepare("UPDATE projects SET status = ? WHERE id = ?").run('failed', projectId);
-        } else if (successCount === 0) {
-            // Mark project as failed if all files failed
+        const files = await fetchFolderFiles(folderId);
+        if (!files || files.length === 0) {
+            console.warn(`[runImportTask] No files found for project ${projectId}`);
             db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('failed', projectId);
-        } else {
-            // Calculate project expiresAt date based on plan now that import is successful
-            const planInfo = db.prepare(`
-                SELECT p.projectExpireDays 
-                FROM projects proj
-                JOIN vendors v ON proj.vendorId = v.id
-                JOIN plans p ON v.planId = p.id
-                WHERE proj.id = ?
-            `).get(projectId);
-
-            let expiresAt = null;
-            if (planInfo && planInfo.projectExpireDays > 0 && planInfo.projectExpireDays < 99999) {
-                const expireDate = new Date();
-                expireDate.setDate(expireDate.getDate() + planInfo.projectExpireDays);
-                expiresAt = expireDate.toISOString();
-            }
-
-            // Successfully imported at least one file!
-            db.prepare('UPDATE projects SET status = ?, expiresAt = ? WHERE id = ?').run('pending_selection', expiresAt, projectId);
-            console.log(`--> [runImportTask] Successfully completed import for project: ${projectId}`);
+            return;
         }
+
+        const insertPhoto = db.prepare('INSERT INTO photos (projectId, originalPath, thumbnailPath, watermarkedPath, fileSizeBytes, category) VALUES (?, ?, ?, ?, ?, ?)');
+
+        const insertMany = db.transaction((photosList) => {
+            for (const file of photosList) {
+                const cleanName = file.name || `photo_${file.id}.jpg`;
+                const categoryName = file.category || '';
+                const thumbPath = `/api/proxy/thumb/${file.id}/${encodeURIComponent(cleanName)}?sz=w400`;
+                const origPath = `/api/proxy/thumb/${file.id}/${encodeURIComponent(cleanName)}?sz=w1200`;
+                insertPhoto.run(projectId, origPath, thumbPath, origPath, 0, categoryName);
+            }
+        });
+
+        insertMany(files);
+
+        const planInfo = db.prepare(`
+            SELECT p.projectExpireDays 
+            FROM projects proj
+            JOIN vendors v ON proj.vendorId = v.id
+            JOIN plans p ON v.planId = p.id
+            WHERE proj.id = ?
+        `).get(projectId);
+
+        let expiresAt = null;
+        if (planInfo && planInfo.projectExpireDays > 0 && planInfo.projectExpireDays < 99999) {
+            const expireDate = new Date();
+            expireDate.setDate(expireDate.getDate() + planInfo.projectExpireDays);
+            expiresAt = expireDate.toISOString();
+        }
+
+        db.prepare('UPDATE projects SET status = ?, expiresAt = ? WHERE id = ?').run('pending_selection', expiresAt, projectId);
+        console.log(`--> [runImportTask Zero-Storage] Successfully completed import for project ${projectId} (${files.length} photos) with 0 Bytes server disk!`);
     } catch (fatalErr) {
         console.error(`[runImportTask Fatal Error] Uncaught error processing project ${projectId}:`, fatalErr);
         try {
