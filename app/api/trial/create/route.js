@@ -55,14 +55,17 @@ export async function POST(request) {
     }
     const categories = [...categoryMap.keys()];
 
-    // First N categories = unlocked (load actual files, limited to trial_max_photos per tab)
-    // Remaining categories = locked (store only a lightweight marker with count — no file IDs proxied)
+    // First N categories = unlocked, total photos across ALL unlocked tabs = trial_max_photos (shared pool)
+    // Remaining categories = locked (only a lightweight marker with count — no real file IDs proxied)
     const trialFiles = [];
+    let photoPool = dynamicMaxPhotos; // shared budget across all unlocked tabs
+
     categories.forEach((cat, idx) => {
       const catFiles = categoryMap.get(cat);
       if (idx < dynamicMaxSubfolders) {
-        // Unlocked tab: real file entries with IDs for proxy
-        catFiles.slice(0, dynamicMaxPhotos).forEach((file, fileIdx) => {
+        // Unlocked tab: consume from the shared pool greedily
+        const quota = Math.min(catFiles.length, photoPool);
+        catFiles.slice(0, quota).forEach((file, fileIdx) => {
           trialFiles.push({
             id: file.id,
             name: file.name || `Photo_${fileIdx + 1}.jpg`,
@@ -71,6 +74,7 @@ export async function POST(request) {
             origUrl: `/api/proxy/thumb/${file.id}?sz=w1200`,
           });
         });
+        photoPool -= quota; // deduct from shared budget
       } else {
         // Locked tabs: single marker entry — just name + count, no real file IDs
         trialFiles.push({
