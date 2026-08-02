@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
+import { getRequestOrigin } from '@/lib/url';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,9 +19,8 @@ export async function GET(request) {
             return NextResponse.json({ message: 'Isi Google Client ID terlebih dahulu di Admin Settings.' }, { status: 400 });
         }
 
-        const host = request.headers.get('host');
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        const redirectUri = `${protocol}://${host}/api/admin/auth/google/callback`;
+        const origin = getRequestOrigin(request);
+        const redirectUri = `${origin}/api/admin/auth/google/callback`;
 
         const scopes = [
             'https://www.googleapis.com/auth/drive.readonly',

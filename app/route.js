@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import fs from 'fs';
 import path from 'path';
+import { getRequestOrigin } from '@/lib/url';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,10 +10,11 @@ export async function GET(request) {
     // Check if user is logged in
     const vendor = getAuthVendor();
     if (vendor) {
+        const origin = getRequestOrigin(request);
         if (vendor.role === 'admin') {
-            return NextResponse.redirect(new URL('/admin', request.url));
+            return NextResponse.redirect(new URL('/admin', origin));
         } else {
-            return NextResponse.redirect(new URL('/dashboard', request.url));
+            return NextResponse.redirect(new URL('/dashboard', origin));
         }
     }
 

@@ -111,12 +111,13 @@ export default function AdminSettings({
             </summary>
             <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#a1a1aa' }}>Origins: <code style={{ color: '#34d399', fontFamily: 'monospace' }}>http://localhost:3000</code></span>
+                <span style={{ fontSize: '11px', color: '#a1a1aa' }}>Origins: <code style={{ color: '#34d399', fontFamily: 'monospace' }}>{typeof window !== 'undefined' ? window.location.origin : 'https://domain-anda.com'}</code></span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText('http://localhost:3000');
-                    alert('✓ Authorized JavaScript origins berhasil disalin!');
+                    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+                    navigator.clipboard.writeText(origin);
+                    alert(`✓ Authorized JavaScript origins (${origin}) berhasil disalin!`);
                   }}
                   className="btn-secondary"
                   style={{ padding: '2px 8px', fontSize: '10px', background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}
@@ -126,12 +127,14 @@ export default function AdminSettings({
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#a1a1aa' }}>Redirect URI: <code style={{ color: '#fbbf24', fontFamily: 'monospace' }}>http://localhost:3000/api/auth/google/callback</code></span>
+                <span style={{ fontSize: '11px', color: '#a1a1aa' }}>Redirect URI: <code style={{ color: '#fbbf24', fontFamily: 'monospace' }}>{(typeof window !== 'undefined' ? window.location.origin : 'https://domain-anda.com') + '/api/auth/google/callback'}</code></span>
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard.writeText('http://localhost:3000/api/auth/google/callback');
-                    alert('✓ Authorized redirect URIs berhasil disalin!');
+                    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+                    const redirectUrl = `${origin}/api/auth/google/callback`;
+                    navigator.clipboard.writeText(redirectUrl);
+                    alert(`✓ Authorized redirect URIs (${redirectUrl}) berhasil disalin!`);
                   }}
                   className="btn-secondary"
                   style={{ padding: '2px 8px', fontSize: '10px', background: 'rgba(251,191,36,0.2)', color: '#fde68a' }}

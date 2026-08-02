@@ -2,21 +2,21 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { generateToken, setAuthCookie } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import { getRequestOrigin } from '@/lib/url';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
     try {
+        const origin = getRequestOrigin(request);
         const { searchParams } = new URL(request.url);
         const code = searchParams.get('code');
         const error = searchParams.get('error');
 
-        const host = request.headers.get('host');
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+        const redirectUri = `${origin}/api/auth/google/callback`;
 
         if (error || !code) {
-            return NextResponse.redirect(new URL('/login?error=Google authentication was cancelled.', request.url));
+            return NextResponse.redirect(new URL('/login?error=Google authentication was cancelled.', origin));
         }
 
         const clientIdStmt = db.prepare("SELECT value FROM saas_settings WHERE key = 'google_client_id'").get();
@@ -26,7 +26,7 @@ export async function GET(request) {
         const clientSecret = clientSecretStmt?.value || process.env.GOOGLE_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
-            return NextResponse.redirect(new URL('/login?error=Google OAuth settings incomplete in Admin Panel.', request.url));
+            return NextResponse.redirect(new URL('/login?error=Google OAuth settings incomplete in Admin Panel.', origin));
         }
 
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -44,7 +44,7 @@ export async function GET(request) {
         const tokenData = await tokenRes.json();
         if (!tokenRes.ok || !tokenData.access_token) {
             console.error('Failed to exchange Google OAuth code:', tokenData);
-            return NextResponse.redirect(new URL('/login?error=Failed to exchange Google authentication code.', request.url));
+            return NextResponse.redirect(new URL('/login?error=Failed to exchange Google authentication code.', origin));
         }
 
         const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -53,7 +53,7 @@ export async function GET(request) {
         const googleUser = await userRes.json();
 
         if (!googleUser.email) {
-            return NextResponse.redirect(new URL('/login?error=Email address not received from Google.', request.url));
+            return NextResponse.redirect(new URL('/login?error=Email address not received from Google.', origin));
         }
 
         const email = googleUser.email.toLowerCase().trim();
@@ -83,10 +83,10 @@ export async function GET(request) {
             if (vendor.status === 'active') {
                 // Jika sudah terdaftar & aktif -> Masukkan ke Dashboard!
                 const redirectPath = action === 'register' ? '/dashboard?notice=already_registered' : '/dashboard';
-                return NextResponse.redirect(new URL(redirectPath, request.url));
+                return NextResponse.redirect(new URL(redirectPath, origin));
             } else {
                 // Jika pendaftaran belum selesai / pending -> Arahkan kembali ke Langkah Pilih Paket untuk melanjutkannya!
-                return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(vendor.email)}`, request.url));
+                return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(vendor.email)}`, origin));
             }
         }
 
@@ -113,9 +113,9 @@ export async function GET(request) {
         const token = generateToken(newVendor);
         setAuthCookie(token);
 
-        return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`, request.url));
+        return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`, origin));
     } catch (error) {
         console.error('Google OAuth callback error:', error);
-        return NextResponse.redirect(new URL('/login?error=Internal authentication failure.', request.url));
+        return NextResponse.redirect(new URL('/login?error=Internal authentication failure.', getRequestOrigin(request)));
     }
 }

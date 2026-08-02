@@ -528,14 +528,14 @@ export default function RegisterPage() {
                                                         }} />
 
                                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#d4d4d8' }}>
-                                                            <div>✓ Maksimal <strong>{p.maxProjects} Proyek Aktif</strong></div>
-                                                            <div>✓ Foto <strong>{(!p.maxPhotosPerProject || p.maxPhotosPerProject === 0) ? 'Tanpa Batas (Unlimited)' : `${p.maxPhotosPerProject} Foto`}</strong> per Proyek</div>
+                                                            <div>✓ Maksimal <strong>{p.maxProjects} Project Aktif</strong></div>
+                                                            <div>✓ Foto <strong>{(!p.maxPhotosPerProject || p.maxPhotosPerProject === 0) ? 'Tanpa Batas (Unlimited)' : `${p.maxPhotosPerProject} Foto`}</strong> per Project</div>
                                                             <div>✓ Galeri <strong>{(!p.projectExpireDays || p.projectExpireDays >= 99999) ? 'Aktif Selama Project Ada (Permanen)' : `Masa Simpan ${p.projectExpireDays} Hari`}</strong></div>
-                                                            <div>✓ Zero-Storage Drive Streaming</div>
+                                                            <div>✓ Integrasi Langsung Google Drive</div>
                                                             {p.allowCustomLogo === 1 || p.name.includes('Pro') || p.name.includes('Business') ? (
                                                                 <div style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Custom Logo Studio (White-Label)</div>
                                                             ) : (
-                                                                <div style={{ color: '#71717a' }}>• Logo Default SaaS Standard</div>
+                                                                <div style={{ color: '#71717a' }}>• Logo Default Platform Standard</div>
                                                             )}
                                                         </div>
 

@@ -1,20 +1,20 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getRequestOrigin } from '@/lib/url';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
     try {
+        const origin = getRequestOrigin(request);
         const { searchParams } = new URL(request.url);
         const code = searchParams.get('code');
         const error = searchParams.get('error');
 
-        const host = request.headers.get('host');
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        const redirectUri = `${protocol}://${host}/api/admin/auth/google/callback`;
+        const redirectUri = `${origin}/api/admin/auth/google/callback`;
 
         if (error || !code) {
-            return NextResponse.redirect(new URL('/admin#settings?error=Otorisasi Google Master dibatalkan.', request.url));
+            return NextResponse.redirect(new URL('/admin#settings?error=Otorisasi Google Master dibatalkan.', origin));
         }
 
         const clientIdStmt = db.prepare("SELECT value FROM saas_settings WHERE key = 'google_client_id'").get();
@@ -24,7 +24,7 @@ export async function GET(request) {
         const clientSecret = clientSecretStmt?.value || process.env.GOOGLE_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
-            return NextResponse.redirect(new URL('/admin#settings?error=Google OAuth settings incomplete.', request.url));
+            return NextResponse.redirect(new URL('/admin#settings?error=Google OAuth settings incomplete.', origin));
         }
 
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -42,7 +42,7 @@ export async function GET(request) {
         const tokenData = await tokenRes.json();
         if (!tokenRes.ok || !tokenData.access_token) {
             console.error('Failed to exchange Google OAuth code for Admin Master:', tokenData);
-            return NextResponse.redirect(new URL('/admin#settings?error=Gagal mengumpulkan token Google Master.', request.url));
+            return NextResponse.redirect(new URL('/admin#settings?error=Gagal mengumpulkan token Google Master.', origin));
         }
 
         const upsertStmt = db.prepare(`
@@ -55,9 +55,9 @@ export async function GET(request) {
             upsertStmt.run('google_refresh_token', tokenData.refresh_token);
         }
 
-        return NextResponse.redirect(new URL('/admin#settings?success=Google Master Drive berhasil terhubung!', request.url));
+        return NextResponse.redirect(new URL('/admin#settings?success=Google Master Drive berhasil terhubung!', origin));
     } catch (error) {
         console.error('Admin Google callback error:', error);
-        return NextResponse.redirect(new URL('/admin#settings?error=Internal failure during Google Master auth.', request.url));
+        return NextResponse.redirect(new URL('/admin#settings?error=Internal failure during Google Master auth.', getRequestOrigin(request)));
     }
 }

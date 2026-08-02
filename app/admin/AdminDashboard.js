@@ -781,11 +781,11 @@ export default function AdminDashboard({ adminUser }) {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                                 <div className="form-group">
-                                    <label className="form-label">Batas Proyek Aktif</label>
+                                    <label className="form-label">Batas Project Aktif</label>
                                     <input type="number" className="input-text" required min="1" value={planMaxProjects} onChange={e => setPlanMaxProjects(parseInt(e.target.value) || 0)} />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Max Foto per Proyek</label>
+                                    <label className="form-label">Max Foto per Project</label>
                                     <input type="number" className="input-text" required min="1" value={planMaxPhotos} onChange={e => setPlanMaxPhotos(parseInt(e.target.value) || 0)} />
                                 </div>
                             </div>

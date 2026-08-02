@@ -12,9 +12,9 @@ export default function AdminPlans({
     <div className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '600' }}>Kelola Paket Langganan SaaS</h3>
+          <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '600' }}>Kelola Paket Berlangganan</h3>
           <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa' }}>
-            Atur 3 Paket SaaS Berbasis Fitur (Starter, Pro Studio, & Unlimited Master)
+            Atur Paket Berbasis Fitur (Starter, Pro Studio, & Unlimited Master)
           </p>
         </div>
         <button
@@ -86,13 +86,13 @@ export default function AdminPlans({
                 </div>
 
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '13px', color: '#e4e4e7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <li>✓ Maksimal <strong>{p.maxProjects >= 99999 ? 'Unlimited' : p.maxProjects} Proyek</strong></li>
-                  <li>✓ Foto <strong>{(!p.maxPhotosPerProject || p.maxPhotosPerProject === 0 || p.maxPhotosPerProject >= 99999) ? 'Unlimited (Tanpa Batas)' : `${p.maxPhotosPerProject} Foto`}</strong> per Proyek</li>
+                  <li>✓ Maksimal <strong>{p.maxProjects >= 99999 ? 'Unlimited' : p.maxProjects} Project</strong></li>
+                  <li>✓ Foto <strong>{(!p.maxPhotosPerProject || p.maxPhotosPerProject === 0 || p.maxPhotosPerProject >= 99999) ? 'Unlimited (Tanpa Batas)' : `${p.maxPhotosPerProject} Foto`}</strong> per Project</li>
                   <li>✓ Masa Simpan Galeri Klien: <strong>{p.projectExpireDays >= 99999 ? 'Permanen' : `${p.projectExpireDays} Hari`}</strong></li>
                   {p.allowCustomLogo === 1 || p.name.includes('Pro') || p.name.includes('Unlimited') || p.name.includes('Master') ? (
                     <li style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Custom Logo Studio (White-Label)</li>
                   ) : (
-                    <li style={{ color: '#71717a' }}>• Logo Default SaaS (Standard)</li>
+                    <li style={{ color: '#71717a' }}>• Logo Default Platform (Standard)</li>
                   )}
                 </ul>
               </div>

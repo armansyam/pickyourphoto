@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getRequestOrigin } from '@/lib/url';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,13 +14,12 @@ export async function GET(request) {
 
         if (!clientId) {
             return NextResponse.json({ 
-                message: 'Google Sign-In belum dikonfigurasi oleh Admin SaaS. Silakan isi Google Client ID di Admin Panel.' 
+                message: 'Google Sign-In belum dikonfigurasi oleh Admin. Silakan isi Google Client ID di Admin Panel.' 
             }, { status: 400 });
         }
 
-        const host = request.headers.get('host');
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        const redirectUri = `${protocol}://${host}/api/auth/google/callback`;
+        const origin = getRequestOrigin(request);
+        const redirectUri = `${origin}/api/auth/google/callback`;
 
         const scope = encodeURIComponent('openid profile email');
         const state = encodeURIComponent(JSON.stringify({ action }));

@@ -124,7 +124,7 @@ export default function AdminOverview({ analyticsData, diskStats }) {
           </div>
 
           <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '14px', padding: '14px 16px' }}>
-            <div style={{ fontSize: '11px', color: '#a1a1aa' }}>Total Galeri Foto (Proyek)</div>
+            <div style={{ fontSize: '11px', color: '#a1a1aa' }}>Total Galeri Foto (Project)</div>
             <div style={{ fontSize: '22px', fontWeight: '800', color: '#818cf8', marginTop: '2px' }}>
               {totalProjects} <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: 'normal' }}>Galeri</span>
             </div>
@@ -395,7 +395,7 @@ export default function AdminOverview({ analyticsData, diskStats }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
               {/* Recent Projects */}
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#818cf8', marginBottom: '10px' }}>📁 Galeri Proyek Terbaru</div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#818cf8', marginBottom: '10px' }}>📁 Galeri Project Terbaru</div>
                 {recentProjects.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {recentProjects.map(p => (
@@ -411,7 +411,7 @@ export default function AdminOverview({ analyticsData, diskStats }) {
                     ))}
                   </div>
                 ) : (
-                  <div style={{ fontSize: '11px', color: '#71717a' }}>Belum ada aktivitas proyek.</div>
+                  <div style={{ fontSize: '11px', color: '#71717a' }}>Belum ada aktivitas project.</div>
                 )}
               </div>
 
@@ -494,13 +494,13 @@ export default function AdminOverview({ analyticsData, diskStats }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px 14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: '#a1a1aa' }}>Proyek Selesai Dikerjakan</span>
-                <strong style={{ fontSize: '14px', color: '#34d399' }}>✓ {completedProjects} Proyek</strong>
+                <span style={{ fontSize: '12px', color: '#a1a1aa' }}>Project Selesai Dikerjakan</span>
+                <strong style={{ fontSize: '14px', color: '#34d399' }}>✓ {completedProjects} Project</strong>
               </div>
 
               <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px 14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: '#a1a1aa' }}>Proyek Masih Berjalan</span>
-                <strong style={{ fontSize: '14px', color: '#fbbf24' }}>⌛ {activeProjects} Proyek</strong>
+                <span style={{ fontSize: '12px', color: '#a1a1aa' }}>Project Masih Berjalan</span>
+                <strong style={{ fontSize: '14px', color: '#fbbf24' }}>⌛ {activeProjects} Project</strong>
               </div>
 
               <div style={{ background: 'rgba(251, 191, 36, 0.06)', border: '1px solid rgba(251, 191, 36, 0.2)', padding: '12px 14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

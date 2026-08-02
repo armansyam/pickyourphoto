@@ -627,16 +627,16 @@
   <main class="wrap">
 
     <section class="hero">
-      <div class="eyebrow" data-i18n="hero.eyebrow">User Guide</div>
-      <h1 data-i18n="hero.h1">Just paste once &mdash; all selected photos instantly appear.</h1>
-      <p class="lead" data-i18n="hero.lead">After clicking “Copy Filenames” in the dashboard, use this quick guide to locate the original files on your computer — via Finder, File Explorer, or directly inside Lightroom.</p>
+      <div class="eyebrow" data-i18n="hero.eyebrow">PANDUAN ALUR KERJA &amp; SORTIR RAW</div>
+      <h1 data-i18n="hero.h1">Dari Pilihan Klien &rarr; Langsung ke Folder RAW &amp; Lightroom.</h1>
+      <p class="lead" data-i18n="hero.lead">Kelola hasil seleksi foto klien secara otomatis dengan Automatic RAW Sorter 1-Klik 100% lokal, atau manfaatkan daftar nama file universal untuk pencarian cepat di Finder, Windows Explorer, Lightroom Classic, dan Capture One.</p>
 
       <div class="chip-mock">
-        <div class="cm-head"><span data-i18n="hero.copiedFrom">copied from dashboard</span><span data-i18n="hero.copiedStatus">copied ✓</span></div>
+        <div class="cm-head"><span data-i18n="hero.copiedFrom">hasil pilihan klien</span><span data-i18n="hero.copiedStatus">tersalin ✓</span></div>
         <div class="chip-row">
           <span class="chip">DSC_0412</span><span class="chip">DSC_0418</span><span class="chip">DSC_0421</span>
           <span class="chip">DSC_0430</span><span class="chip">DSC_0439</span><span class="chip">DSC_0447</span>
-          <span class="chip">DSC_0461</span><span class="chip">DSC_0470</span><span class="chip" data-i18n="hero.others">+ 42 others</span>
+          <span class="chip">DSC_0461</span><span class="chip">DSC_0470</span><span class="chip" data-i18n="hero.others">+ 42 lainnya</span>
         </div>
       </div>
     </section>
@@ -644,17 +644,17 @@
     <!-- KONSEP DASAR -->
     <section>
       <div class="section-head">
-        <h2 data-i18n="concept.h2">Why are the filenames extensionless?</h2>
-        <p data-i18n="concept.p">These aren't corrupted or cut-off filenames &mdash; in fact, this is precisely what makes the process work across all file types simultaneously.</p>
+        <h2 data-i18n="concept.h2">Bagaimana Cara Kerja Pemisahan File RAW Pilihan Klien?</h2>
+        <p data-i18n="concept.p">Sistem menghubungkan galeri seleksi digital dengan file foto asli di komputer Anda secara aman tanpa mengunggah file mentah berukuran besar ke server.</p>
       </div>
       <div class="concept-grid">
         <div class="concept">
-          <span class="tag" data-i18n="concept.c1.tag">What is copied</span>
-          <p id="conceptText1" data-i18n="concept.c1.text"><strong>Only the filenames</strong>, space-separated, without trailing ".jpg" or ".cr2". This format is intentionally built to be pasted directly into search bars on any computer.</p>
+          <span class="tag" data-i18n="concept.c1.tag">Otomatisasi 1-Klik RAW Sorter</span>
+          <p id="conceptText1" data-i18n="concept.c1.text">Skrip <strong>Automatic RAW Sorter</strong> secara cerdas memindai folder lokal Anda, lalu memindahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) yang cocok ke folder baru <code>SELECTED_RAW</code> secara instan.</p>
         </div>
         <div class="concept">
-          <span class="tag" data-i18n="concept.c2.tag">Why this helps</span>
-          <p id="conceptText2" data-i18n="concept.c2.text">A name-based search will locate <strong>all files with matching names</strong>, regardless of extension. So if clients select from a JPG preview, the original RAW files (.CR2, .NEF, .ARW, etc.) are filtered automatically — without you searching one by one.</p>
+          <span class="tag" data-i18n="concept.c2.tag">Pencarian Berbasis Nama File</span>
+          <p id="conceptText2" data-i18n="concept.c2.text">Bagi Anda yang memilih metode manual, daftar nama file dipisah spasi tanpa ekstensi. Pencarian nama akan menemukan <strong>seluruh format file dengan nama sama</strong> (JPG &amp; RAW) di sistem operasi dan software edit favorit Anda.</p>
         </div>
       </div>
     </section>
@@ -662,12 +662,13 @@
     <!-- TABS PER PLATFORM -->
     <section id="platform">
       <div class="section-head">
-        <h2 data-i18n="platform.h2">Choose the method for your device</h2>
-        <p data-i18n="platform.p">All four methods below use the exact same filename list &mdash; just choose the tab matching the software or OS you normally use.</p>
+        <h2 data-i18n="platform.h2">Pilih Metode Sortir Sesuai Software &amp; Perangkat Anda</h2>
+        <p data-i18n="platform.p">Gunakan fitur unggulan 1-Click Automatic RAW Sorter untuk pemisahan otomatis 100% lokal, atau pilih tab software/sistem operasi yang biasa Anda gunakan di bawah ini.</p>
       </div>
 
       <div class="tabs" id="tabButtons">
-        <div class="tab-btn active" data-tab="finder">macOS Finder</div>
+        <div class="tab-btn active" data-tab="rawsorter">⚡ RAW Sorter (1-Klik)</div>
+        <div class="tab-btn" data-tab="finder">macOS Finder</div>
         <div class="tab-btn" data-tab="explorer">Windows Explorer</div>
         <div class="tab-btn" data-tab="lightroom">Lightroom Classic</div>
         <div class="tab-btn" data-tab="captureone">Capture One</div>
@@ -676,8 +677,34 @@
 
       <div class="tab-panel-wrap">
 
+        <!-- RAW SORTER (1-KLIK) -->
+        <div class="tab-panel active" id="tab-rawsorter">
+          <div class="platform-note" data-i18n="rawsorter.note">⚡ Cara paling praktis &amp; otomatis — memisahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) pilihan klien secara 100% lokal langsung di komputer Anda tanpa pencarian manual.</div>
+          <div class="step-list">
+            <div class="step-item" data-n="1">
+              <h4 data-i18n="rawsorter.step1.h4">Salin Nama File dari Dashboard</h4>
+              <p data-i18n="rawsorter.step1.p">Di halaman project Pick Your Photo, klik tombol <strong>"Salin Nama File"</strong> untuk mengambil seluruh daftar nama foto pilihan klien.</p>
+            </div>
+            <div class="step-item" data-n="2">
+              <h4 data-i18n="rawsorter.step2.h4">Buka Folder Foto RAW di Komputer</h4>
+              <p data-i18n="rawsorter.step2.p">Buka folder di komputer atau harddisk eksternal yang menyimpan seluruh file foto RAW asli dari sesi tersebut.</p>
+            </div>
+            <div class="step-item" data-n="3">
+              <h4 data-i18n="rawsorter.step3.h4">Jalankan 1-Click RAW Sorter</h4>
+              <p data-i18n="rawsorter.step3.p">Jalankan skrip Automatic RAW Sorter di folder tersebut dan tempelkan daftar nama file yang sudah disalin.</p>
+            </div>
+            <div class="step-item" data-n="4">
+              <h4 data-i18n="rawsorter.step4.h4">Selesai — File RAW Terpisah Otomatis</h4>
+              <p data-i18n="rawsorter.step4.p">Seluruh file fisik RAW pilihan klien secara otomatis terkumpul rapi di folder baru <code>SELECTED_RAW</code>. Siap di-import ke Lightroom!</p>
+            </div>
+          </div>
+          <div class="callout" data-i18n="rawsorter.callout">
+            <strong>100% Lokal &amp; Privasi Aman:</strong> Proses sortir RAW bekerja sepenuhnya offline di komputer Anda. File RAW berukuran besar tidak perlu diunggah ke server.
+          </div>
+        </div>
+
         <!-- FINDER -->
-        <div class="tab-panel active" id="tab-finder">
+        <div class="tab-panel" id="tab-finder">
           <div class="platform-note" data-i18n="finder.note">📁 Perfect for gathering selected RAW + JPG files into a new folder before importing to any editing software.</div>
           <div class="step-list">
             <div class="step-item" data-n="1">
@@ -870,7 +897,7 @@
   </footer>
 
   <script>
-    const tabOrder = ['finder', 'explorer', 'lightroom', 'captureone'];
+    const tabOrder = ['rawsorter', 'finder', 'explorer', 'lightroom', 'captureone'];
     const buttons = document.querySelectorAll('.tab-btn');
     const panels = document.querySelectorAll('.tab-panel');
     const indicator = document.getElementById('tabIndicator');
@@ -924,24 +951,35 @@
     const i18n = {
       id: {
         "nav.back": "&larr; Kembali ke dashboard",
-        "hero.eyebrow": "Panduan Penggunaan",
-        "hero.h1": "Satu tempel saja &mdash; seluruh foto pilihan klien langsung tampil.",
-        "hero.lead": "Setelah menekan \u201cSalin Nama File\u201d di dashboard, ikuti panduan singkat ini untuk menemukan foto aslinya di komputer Anda &mdash; baik lewat Finder, File Explorer, maupun langsung di dalam Lightroom.",
-        "hero.copiedFrom": "hasil salin dari dashboard",
+        "hero.eyebrow": "PANDUAN ALUR KERJA &amp; SORTIR RAW",
+        "hero.h1": "Dari Pilihan Klien &rarr; Langsung ke Folder RAW &amp; Lightroom.",
+        "hero.lead": "Kelola hasil seleksi foto klien secara otomatis dengan Automatic RAW Sorter 1-Klik 100% lokal, atau manfaatkan daftar nama file universal untuk pencarian cepat di Finder, Windows Explorer, Lightroom Classic, dan Capture One.",
+        "hero.copiedFrom": "hasil pilihan klien",
         "hero.copiedStatus": "tersalin \u2713",
         "hero.others": "+ 42 lainnya",
 
-        "concept.h2": "Kenapa nama filenya tanpa ekstensi?",
-        "concept.p": "Ini bukan file yang terpotong &mdash; justru ini yang membuat prosesnya bekerja untuk semua jenis file sekaligus.",
-        "concept.c1.tag": "Yang disalin",
-        "concept.c1.text": "<strong>Hanya nama file</strong>, dipisah spasi, tanpa \".jpg\" atau \".cr2\" di belakangnya. Format ini sengaja dibuat supaya bisa langsung ditempel ke kolom pencarian di komputer manapun.",
-        "concept.c2.tag": "Kenapa ini menguntungkan",
-        "concept.c2.text": "Pencarian berbasis nama akan menemukan <strong>semua file dengan nama sama</strong>, apapun ekstensinya. Jadi kalau klien memilih dari preview JPG, file RAW aslinya (.CR2, .NEF, .ARW, dst) ikut tersaring otomatis &mdash; tanpa Anda cari satu-satu.",
+        "concept.h2": "Bagaimana Cara Kerja Pemisahan File RAW Pilihan Klien?",
+        "concept.p": "Sistem menghubungkan galeri seleksi digital dengan file foto asli di komputer Anda secara aman tanpa mengunggah file mentah berukuran besar ke server.",
+        "concept.c1.tag": "Otomatisasi 1-Klik RAW Sorter",
+        "concept.c1.text": "Skrip <strong>Automatic RAW Sorter</strong> secara cerdas memindai folder lokal Anda, lalu memindahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) yang cocok ke folder baru <code>SELECTED_RAW</code> secara instan.",
+        "concept.c2.tag": "Pencarian Berbasis Nama File",
+        "concept.c2.text": "Bagi Anda yang memilih metode manual, daftar nama file dipisah spasi tanpa ekstensi. Pencarian nama akan menemukan <strong>seluruh format file dengan nama sama</strong> (JPG &amp; RAW) di sistem operasi dan software edit favorit Anda.",
 
-        "platform.h2": "Pilih cara sesuai perangkat Anda",
-        "platform.p": "Keempat metode di bawah memakai daftar nama yang sama persis &mdash; tinggal pilih tab sesuai software atau sistem operasi yang biasa Anda pakai.",
+        "platform.h2": "Pilih cara sesuai perangkat & workflow Anda",
+        "platform.p": "Gunakan Automatic RAW Sorter 1-klik untuk pemisahan instan 100% lokal, atau pilih tab software/OS pilihan Anda di bawah ini.",
 
-        "finder.note": "\ud83d\udcc1 Cocok untuk mengumpulkan RAW + JPG hasil pilihan klien ke satu folder baru, sebelum masuk ke software edit apapun.",
+        "rawsorter.note": "⚡ Cara paling praktis &amp; otomatis — memisahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) pilihan klien secara 100% lokal langsung di komputer Anda tanpa pencarian manual.",
+        "rawsorter.step1.h4": "Salin Nama File dari Dashboard",
+        "rawsorter.step1.p": "Di halaman project Pick Your Photo, klik tombol <strong>\"Salin Nama File\"</strong> untuk mengambil seluruh daftar nama foto pilihan klien.",
+        "rawsorter.step2.h4": "Buka Folder Foto RAW di Komputer",
+        "rawsorter.step2.p": "Buka folder di komputer atau harddisk eksternal yang menyimpan seluruh file foto RAW asli dari sesi tersebut.",
+        "rawsorter.step3.h4": "Jalankan 1-Click RAW Sorter",
+        "rawsorter.step3.p": "Jalankan skrip Automatic RAW Sorter di folder tersebut dan tempelkan daftar nama file yang sudah disalin.",
+        "rawsorter.step4.h4": "Selesai — File RAW Terpisah Otomatis",
+        "rawsorter.step4.p": "Seluruh file fisik RAW pilihan klien secara otomatis terkumpul rapi di folder baru <code>SELECTED_RAW</code>. Siap di-import ke Lightroom!",
+        "rawsorter.callout": "<strong>100% Lokal &amp; Privasi Aman:</strong> Proses sortir RAW bekerja sepenuhnya offline di komputer Anda. File RAW berukuran besar tidak perlu diunggah ke server.",
+
+        "finder.note": "📁 Cocok untuk mengumpulkan RAW + JPG hasil pilihan klien ke satu folder baru, sebelum masuk ke software edit apapun.",
         "finder.step1.h4": "Buka folder foto asli",
         "finder.step1.p": "Buka folder yang menyimpan seluruh hasil jepretan (RAW dan JPG) dari sesi foto tersebut.",
         "finder.step2.h4": "Klik kolom pencarian",
@@ -1024,24 +1062,35 @@
       },
       en: {
         "nav.back": "&larr; Back to dashboard",
-        "hero.eyebrow": "User Guide",
-        "hero.h1": "Just paste once &mdash; all selected photos instantly appear.",
-        "hero.lead": "After clicking \u201cCopy Filenames\u201d in the dashboard, use this quick guide to locate the original files on your computer &mdash; via Finder, File Explorer, or directly inside Lightroom.",
-        "hero.copiedFrom": "copied from dashboard",
+        "hero.eyebrow": "WORKFLOW &amp; RAW SORTING GUIDE",
+        "hero.h1": "From Client Selection &rarr; Straight to Your RAW Folder &amp; Lightroom.",
+        "hero.lead": "Effortlessly process client selections with our 100% local 1-Click Automatic RAW Sorter, or use universal filename lists for instant filtering across Finder, File Explorer, Lightroom Classic, and Capture One.",
+        "hero.copiedFrom": "client choices",
         "hero.copiedStatus": "copied \u2713",
         "hero.others": "+ 42 others",
 
-        "concept.h2": "Why are the filenames extensionless?",
-        "concept.p": "These aren't corrupted or cut-off filenames &mdash; in fact, this is precisely what makes the process work across all file types simultaneously.",
-        "concept.c1.tag": "What is copied",
-        "concept.c1.text": "<strong>Only the filenames</strong>, space-separated, without trailing \".jpg\" or \".cr2\". This format is intentionally built to be pasted directly into search bars on any computer.",
-        "concept.c2.tag": "Why this helps",
-        "concept.c2.text": "A name-based search will locate <strong>all files with matching names</strong>, regardless of extension. So if clients select from a JPG preview, the original RAW files (.CR2, .NEF, .ARW, etc.) are filtered automatically — without you searching one by one.",
+        "concept.h2": "How Does Automated Client RAW File Selection Work?",
+        "concept.p": "Our system connects digital selection galleries with original local files on your computer securely — without ever uploading heavy raw files to the server.",
+        "concept.c1.tag": "1-Click RAW Automation",
+        "concept.c1.text": "The <strong>Automatic RAW Sorter</strong> script intelligently scans your local folder and gathers matching physical RAW files (.CR3, .NEF, .ARW, .DNG) into a new <code>SELECTED_RAW</code> folder instantly.",
+        "concept.c2.tag": "Universal Filename Match",
+        "concept.c2.text": "For manual workflows, space-separated extensionless filenames match <strong>all file formats with the same name</strong> (JPG &amp; RAW) inside your OS search or favorite editing software.",
 
-        "platform.h2": "Choose the method for your device",
-        "platform.p": "All four methods below use the exact same filename list &mdash; just choose the tab matching the software or OS you normally use.",
+        "platform.h2": "Choose the method for your workflow",
+        "platform.p": "Use the 1-Click Automatic RAW Sorter for instant 100% local sorting, or select your preferred software/OS tab below.",
 
-        "finder.note": "\ud83d\udcc1 Perfect for gathering selected RAW + JPG files into a new folder before importing to any editing software.",
+        "rawsorter.note": "⚡ The fastest &amp; most automated way — separates original physical RAW files (.CR3, .NEF, .ARW, .DNG) 100% locally on your computer with zero manual searching.",
+        "rawsorter.step1.h4": "Copy Filenames from Dashboard",
+        "rawsorter.step1.p": "On your Pick Your Photo project page, click <strong>\"Copy Filenames\"</strong> to capture the complete list of client-selected photos.",
+        "rawsorter.step2.h4": "Open RAW Folder on Your Computer",
+        "rawsorter.step2.p": "Open the directory on your PC or external hard drive containing all original RAW files from the session.",
+        "rawsorter.step3.h4": "Run 1-Click RAW Sorter",
+        "rawsorter.step3.p": "Run the Automatic RAW Sorter script inside your RAW folder or execute the 1-click sorting tool.",
+        "rawsorter.step4.h4": "Done — RAW Files Automatically Separated",
+        "rawsorter.step4.p": "All client-selected RAW files are gathered instantly into a new <code>SELECTED_RAW</code> folder. Ready to import straight into Lightroom!",
+        "rawsorter.callout": "<strong>100% Local &amp; Privacy Safe:</strong> RAW sorting runs completely offline on your device. Your large RAW files are never uploaded or touched by our servers.",
+
+        "finder.note": "📁 Perfect for gathering selected RAW + JPG files into a new folder before importing to any editing software.",
         "finder.step1.h4": "Open original photo folder",
         "finder.step1.p": "Open the folder storing all the shots (RAW and JPG) from that photo session.",
         "finder.step2.h4": "Click the search bar",
@@ -1133,7 +1182,7 @@
       document.querySelectorAll('.lang-btn').forEach(function(btn){btn.classList.toggle('active',btn.dataset.lang===lang);});
     }
     document.querySelectorAll('.lang-btn').forEach(function(btn){btn.addEventListener('click',function(){applyLang(btn.dataset.lang);});});
-    applyLang('en');
+    applyLang('id');
   </script>
 </body>
 

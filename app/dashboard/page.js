@@ -1257,14 +1257,14 @@ export default function DashboardPage() {
                                                     style={{ padding: '4px 8px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px' }}
                                                     onClick={() => handleOpenEditProject(project)}
                                                     disabled={project.status === 'failed'}
-                                                    title="Pengaturan Proyek"
+                                                    title="Pengaturan Project"
                                                 >
                                                     ⚙️
                                                 </button>
                                                 <button
                                                     style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: '6px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}
                                                     onClick={() => handleDeleteProject(project.id, project.name)}
-                                                    title="Hapus Proyek"
+                                                    title="Hapus Project"
                                                 >
                                                     🗑️
                                                 </button>
