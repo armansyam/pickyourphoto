@@ -55,7 +55,7 @@ export async function GET() {
         `).all() || [];
 
         // Current trial settings from saas_settings
-        const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('raw_sorter_trial_limit', 'trial_cta_text', 'trial_cta_subtext', 'trial_max_selection', 'trial_max_photos', 'trial_preview_photos')").all() || [];
+        const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('raw_sorter_trial_limit', 'trial_cta_text', 'trial_cta_subtext', 'trial_max_selection', 'trial_max_photos', 'trial_preview_photos', 'trial_max_subfolders')").all() || [];
         const saasMap = {};
         saasRows.forEach(r => { saasMap[r.key] = r.value; });
 
@@ -79,6 +79,7 @@ export async function GET() {
                 trial_max_selection: parseInt(saasMap.trial_max_selection || '10'),
                 trial_max_photos: parseInt(saasMap.trial_max_photos || '50'),
                 trial_preview_photos: parseInt(saasMap.trial_preview_photos || '12'),
+                trial_max_subfolders: parseInt(saasMap.trial_max_subfolders || '1'),
                 trial_cta_text: saasMap.trial_cta_text || '',
                 trial_cta_subtext: saasMap.trial_cta_subtext || '',
             }
@@ -104,6 +105,7 @@ export async function PATCH(request) {
             raw_sorter_trial_limit,
             trial_max_selection,
             trial_max_photos,
+            trial_max_subfolders,
             trial_cta_text,
             trial_cta_subtext,
         } = body;
@@ -134,6 +136,7 @@ export async function PATCH(request) {
         if (trial_max_selection !== undefined) toUpdate.push(['trial_max_selection', String(Math.max(1, parseInt(trial_max_selection) || 10))]);
         if (trial_max_photos !== undefined) toUpdate.push(['trial_max_photos', String(Math.max(1, parseInt(trial_max_photos) || 50))]);
         if (body.trial_preview_photos !== undefined) toUpdate.push(['trial_preview_photos', String(Math.max(1, parseInt(body.trial_preview_photos) || 12))]);
+        if (trial_max_subfolders !== undefined) toUpdate.push(['trial_max_subfolders', String(Math.max(1, parseInt(trial_max_subfolders) || 1))]);
         if (trial_cta_text !== undefined) toUpdate.push(['trial_cta_text', trial_cta_text]);
         if (trial_cta_subtext !== undefined) toUpdate.push(['trial_cta_subtext', trial_cta_subtext]);
         if (toUpdate.length > 0) updateMany(toUpdate);

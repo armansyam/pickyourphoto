@@ -39,11 +39,12 @@ export async function POST(request) {
     const expiresAt = new Date(Date.now() + trialMinutes * 60 * 1000).toISOString();
 
     // Read dynamic limits from saas_settings
-    const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('trial_max_selection', 'trial_max_photos')").all() || [];
+    const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('trial_max_selection', 'trial_max_photos', 'trial_max_subfolders')").all() || [];
     const saasMap = {};
     saasRows.forEach(r => { saasMap[r.key] = r.value; });
     const dynamicMaxPhotos = parseInt(saasMap.trial_max_photos || '50');
     const dynamicMaxSelection = parseInt(saasMap.trial_max_selection || '10');
+    const dynamicMaxSubfolders = parseInt(saasMap.trial_max_subfolders || '1');
 
     // Group files by category/subfolder
     const categoryMap = new Map();
@@ -54,12 +55,12 @@ export async function POST(request) {
     }
     const categories = [...categoryMap.keys()];
 
-    // First category = unlocked (load actual files, limited to trial_max_photos)
-    // Other categories = locked (store only a lightweight marker with count — no file IDs proxied)
+    // First N categories = unlocked (load actual files, limited to trial_max_photos per tab)
+    // Remaining categories = locked (store only a lightweight marker with count — no file IDs proxied)
     const trialFiles = [];
     categories.forEach((cat, idx) => {
       const catFiles = categoryMap.get(cat);
-      if (idx === 0) {
+      if (idx < dynamicMaxSubfolders) {
         // Unlocked tab: real file entries with IDs for proxy
         catFiles.slice(0, dynamicMaxPhotos).forEach((file, fileIdx) => {
           trialFiles.push({

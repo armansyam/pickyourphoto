@@ -72,6 +72,7 @@ export default function AdminTrialControl({ addToast }) {
     const [sorterLimit, setSorterLimit] = useState(5);
     const [maxSelection, setMaxSelection] = useState(10);
     const [maxPhotos, setMaxPhotos] = useState(50);
+    const [maxSubfolders, setMaxSubfolders] = useState(1);
     const [previewPhotos, setPreviewPhotos] = useState(12);
     const [ctaText, setCtaText] = useState('');
     const [ctaSubtext, setCtaSubtext] = useState('');
@@ -93,6 +94,7 @@ export default function AdminTrialControl({ addToast }) {
             setSorterLimit(s.raw_sorter_trial_limit || 5);
             setMaxSelection(s.trial_max_selection || 10);
             setMaxPhotos(s.trial_max_photos || 50);
+            setMaxSubfolders(s.trial_max_subfolders || 1);
             setPreviewPhotos(s.trial_preview_photos || 12);
             setCtaText(s.trial_cta_text || '');
             setCtaSubtext(s.trial_cta_subtext || '');
@@ -115,6 +117,7 @@ export default function AdminTrialControl({ addToast }) {
                 raw_sorter_trial_limit: overrides.raw_sorter_trial_limit ?? sorterLimit,
                 trial_max_selection: overrides.trial_max_selection ?? maxSelection,
                 trial_max_photos: overrides.trial_max_photos ?? maxPhotos,
+                trial_max_subfolders: overrides.trial_max_subfolders ?? maxSubfolders,
                 trial_preview_photos: overrides.trial_preview_photos ?? previewPhotos,
                 trial_cta_text: overrides.trial_cta_text ?? ctaText,
                 trial_cta_subtext: overrides.trial_cta_subtext ?? ctaSubtext,
@@ -390,6 +393,36 @@ export default function AdminTrialControl({ addToast }) {
                         </div>
                         <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
                             Hanya {maxPhotos} foto pertama dari Google Drive yang ditampilkan saat trial.
+                        </div>
+                    </div>
+
+                    {/* Max Tab Subfolder Dibuka */}
+                    <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#a1a1aa', marginBottom: '8px' }}>
+                            📂 Max Tab Subfolder Dibuka (trial)
+                        </label>
+                        <input
+                            type="number" min="1" max="20"
+                            value={maxSubfolders}
+                            onChange={e => setMaxSubfolders(Math.max(1, parseInt(e.target.value) || 1))}
+                            style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
+                        />
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+                            {[1, 2, 3, 5, 10].map(n => (
+                                <button key={n} type="button" onClick={() => setMaxSubfolders(n)}
+                                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s',
+                                        background: maxSubfolders === n ? 'rgba(234,179,8,0.25)' : 'rgba(255,255,255,0.05)',
+                                        color: maxSubfolders === n ? '#eab308' : '#71717a',
+                                        border: maxSubfolders === n ? '1px solid #eab308' : '1px solid rgba(255,255,255,0.1)'
+                                    }}
+                                >{n} tab</button>
+                            ))}
+                        </div>
+                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
+                            {maxSubfolders === 1
+                                ? 'Hanya 1 tab subfolder pertama yang dapat dibuka. Tab lainnya terkunci (upsell).'
+                                : `${maxSubfolders} tab subfolder pertama terbuka. Selebihnya terkunci (upsell).`
+                            }
                         </div>
                     </div>
 
