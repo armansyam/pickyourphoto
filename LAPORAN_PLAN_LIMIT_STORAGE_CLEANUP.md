@@ -141,3 +141,60 @@ SELECT id, name, maxProjects, price, activePeriodDays, maxStorageMB, projectExpi
 3. Vendor dengan `expiresAt` di masa lalu → akses galeri klien 403 "diarsipkan", dashboard tampil banner.
 4. Simulasi renewal (approve `subscription_requests`) → project kembali aktif, link galeri bisa dibuka setelah refresh.
 5. Registrasi vendor baru → halaman paket tidak menyebut storage.
+
+
+---
+
+## 7. Rekomendasi Lanjutan (Hasil Verifikasi Produksi)
+
+Berikut rekomendasi yang ditemukan selama verifikasi end-to-end di server produksi (LXC 102) setelah implementasi perbaikan utama (commit `5966438`).
+
+### 7.1 UI Admin & Dashboard Vendor
+- [ ] **Tombol "Aktifkan Kembali"** di dashboard vendor (kartu project berstatus `archived`). Memanggil `POST /api/projects/[id]/reactivate`.
+- [ ] **Tombol "Refresh Link Galeri"** — setelah reaktivasi, vendor perlu link galeri baru/aktif untuk dibagikan ke klien.
+- [ ] **Indikator visual masa aktif** — badge "Aktif", "Kadaluarsa", "Diarsipkan" di setiap kartu project.
+- [ ] **Bulk reaktivasi** — tombol "Aktifkan Semua Project" setelah vendor perpanjangan paket.
+
+### 7.2 Notifikasi Otomatis (Email / WhatsApp)
+- [ ] Cron job H-7, H-3, H-0 sebelum `expiresAt` vendor:
+  - Template email: "Masa aktif paket Anda berakhir dalam X hari. Perpanjang sekarang untuk menjaga galeri klien tetap aktif."
+  - Butuh `saas_settings.smtp_enable = true` (sudah ada di DB) + konfigurasi SMTP valid.
+- [ ] Integrasi WhatsApp (opsional) via `saas_settings.contact_whatsapp` / provider WA Business API.
+
+### 7.3 Migrasi Database (Maintenance Window)
+- [ ] `ALTER TABLE plans DROP COLUMN maxStorageMB;` — kolom sudah bernilai 0, tidak dipakai.
+- [ ] `ALTER TABLE plans DROP COLUMN maxPhotosPerProject;` — default 0 = unlimited, logic sudah di application layer.
+- [ ] Pertahankan `projectExpireDays` — dipakai di `app/api/projects/route.js:244-254` untuk set `expiresAt` project.
+- [ ] Backup DB sebelum migrasi; verifikasi SQLite version ≥ 3.35 untuk `DROP COLUMN` support.
+
+### 7.4 Dokumentasi API
+- [ ] Tambah endpoint `POST /api/projects/[projectId]/reactivate` ke dokumentasi vendor (Swagger/OpenAPI atau markdown di repo).
+- [ ] Contoh request/response:
+```json
+POST /api/projects/123/reactivate
+Authorization: Bearer <token>
+Response 200:
+{
+  "success": true,
+  "message": "Galeri foto \"Project Name\" berhasil diaktifkan kembali hingga 2026-09-02!",
+  "expiresAt": "2026-09-02T15:30:00.000Z"
+}
+```
+
+### 7.5 Uji Regresi End-to-End
+- [ ] Login vendor → buat project → arsipkan project → perpanjang paket → klik "Aktifkan Kembali" → verifikasi galeri accessible.
+- [ ] Test matrix:
+  | Paket | Max Projects | Foto Unlimited | Galeri Expire |
+  |-------|--------------|----------------|---------------|
+  | Starter | 5 | Ya | 30 hari |
+  | Pro | 20 | Ya | 30 hari |
+  | Business | 50 | Ya | 30 hari |
+- [ ] Negative case: vendor expired → coba create project (403) → coba reactivate (403) → perpanjang → coba lagi (200).
+
+### 7.6 Monitoring & Observabilitas
+- [ ] Log audit reaktivasi: siapa, kapan, project_id, status_before/after.
+- [ ] Metrik: jumlah project archived vs active per hari (Grafana/Prometheus jika ada).
+
+---
+
+**Catatan:** Rekomendasi ini bersifat **penyempurnaan (enhancement)**, bukan blocker rilis. Prioritaskan UI tombol reaktivasi (7.1) agar vendor bisa self-service.
