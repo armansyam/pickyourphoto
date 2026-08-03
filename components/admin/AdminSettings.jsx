@@ -759,15 +759,22 @@ export default function AdminSettings({
                     const res = await fetch('/api/admin/smtp/test', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ targetEmail: smtpEmail })
+                      body: JSON.stringify({ 
+                        targetEmail: smtpEmail,
+                        smtpEmail,
+                        smtpPassword,
+                        smtpHost,
+                        smtpPort,
+                        smtpFromName
+                      })
                     });
                     const data = await res.json();
-                    if (res.ok) {
+                    if (res.ok && data.success) {
                       const msg = data.message || `Email uji coba BERHASIL dikirim ke ${smtpEmail}! Cek Inbox / Spam.`;
                       setTestEmailStatus({ loading: false, success: msg, error: '' });
                       if (addToast) addToast(msg, 'success');
                     } else {
-                      const errMsg = data.message || 'Gagal mengirim email uji coba. Periksa password SMTP Anda.';
+                      const errMsg = data.message || 'Gagal mengirim email uji coba. Periksa App Password SMTP Anda.';
                       setTestEmailStatus({ loading: false, success: '', error: errMsg });
                       if (addToast) addToast(errMsg, 'error');
                     }
@@ -911,20 +918,28 @@ export default function AdminSettings({
                       return;
                     }
                     setTestEmailStatus({ loading: true, success: '', error: '' });
-                    if (handleSaveProfile) await handleSaveProfile(e);
-                    setIsEditingSmtp(false);
                     
                     try {
                       const res = await fetch('/api/admin/smtp/test', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ targetEmail: smtpEmail })
+                        body: JSON.stringify({
+                          targetEmail: smtpEmail,
+                          smtpEmail,
+                          smtpPassword,
+                          smtpHost,
+                          smtpPort,
+                          smtpFromName
+                        })
                       });
                       const data = await res.json();
-                      if (res.ok) {
+                      if (res.ok && data.success) {
                         const msg = data.message || `Email uji coba BERHASIL dikirim ke ${smtpEmail}! Cek Inbox / Spam.`;
                         setTestEmailStatus({ loading: false, success: msg, error: '' });
                         if (addToast) addToast(msg, 'success');
+                        // Auto-save and close only when test succeeds!
+                        if (handleSaveProfile) await handleSaveProfile(e);
+                        setIsEditingSmtp(false);
                       } else {
                         const errMsg = data.message || 'Gagal mengirim email uji coba. Periksa password SMTP Anda.';
                         setTestEmailStatus({ loading: false, success: '', error: errMsg });
@@ -938,20 +953,22 @@ export default function AdminSettings({
                   }}
                   style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '9px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: testEmailStatus.loading ? 'wait' : 'pointer', transition: 'all 0.2s ease' }}
                 >
-                  {testEmailStatus.loading ? '⏳ Mengirim...' : '📧 Tes Kirim Email'}
+                  {testEmailStatus.loading ? '⏳ Menguji...' : '📧 Tes Kirim Email'}
                 </button>
-
                 <button
                   type="button"
+                  disabled={savingProfile}
                   onClick={async (e) => {
                     if (handleSaveProfile) await handleSaveProfile(e);
                     setIsEditingSmtp(false);
+                    if (addToast) addToast('Pengaturan SMTP berhasil disimpan.', 'success');
                   }}
-                  disabled={savingProfile}
+                  className="btn-primary"
                   style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#ffffff', padding: '9px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)', transition: 'all 0.2s ease' }}
                 >
                   💾 {savingProfile ? 'Menyimpan...' : 'Simpan & Tutup Form'}
                 </button>
+
               </div>
             </div>
           </div>
