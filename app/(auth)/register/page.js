@@ -600,8 +600,9 @@ export default function RegisterPage() {
                                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#d4d4d8' }}>
                                                             <div>✓ Maksimal <strong>{p.maxProjects} Project Aktif</strong></div>
                                                             <div>✓ Foto <strong>Tanpa Batas (Unlimited Direct Stream)</strong></div>
-                                                            <div>✓ Galeri <strong>Masa Simpan {(!p.projectExpireDays || p.projectExpireDays >= 99999) ? '30 Hari' : `${p.projectExpireDays} Hari`}</strong></div>
+                                                            <div>✓ Fitur <strong>Seleksi Foto & Notifikasi WA Klien</strong></div>
                                                             <div>✓ Integrasi Langsung Google Drive</div>
+
 
                                                             {p.allowCustomLogo === 1 || p.name.includes('Pro') || p.name.includes('Business') ? (
                                                                 <div style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Custom Logo Studio (White-Label)</div>
