@@ -4,19 +4,24 @@ Pick-Your-Photo adalah platform SaaS mandiri yang dirancang khusus untuk memperm
 
 ## 🤝 ALUR KERJA TIM KROSS-SERVER: AUDIT (HERMES) ↔ IMPLEMENTASI (ANTIGRAVITY)
 
-Aplikasi ini dikelola dengan ritme kerja dua arah lintas-server melalui kanal berkas **`REPORTS/`** di repositori GitHub:
+Aplikasi ini dikelola dengan ritme kerja dua arah lintas-server melalui kanal berkas **`REPORTS/`** di repositori GitHub dengan metode **Multi-Stage Progressive Audit**:
 
-- **Server Auditor (Hermes Agent @ LXC 102)**:
-  1. Mengunduh commit perbaikan terbaru (`git pull origin main`).
-  2. Melakukan audit komprehensif (Keamanan, Dead Code, Business Logic, QRIS, & Build).
-  3. Mem-push berkas laporan temuan baru ke folder **`REPORTS/pending/AUDIT_XXX.md`**.
+### 🎯 Protokol Pengujian Bertahap (Progressive Staged Audit):
+1. **Tahap 1: Sanity & Build Verification**  
+   Uji kompilasi (`npm run build`). Jika Tahap 1 GAGAL ➔ **STOP**, buat laporan & kirim rekomendasi solusi ke Antigravity.
+2. **Tahap 2: Security & Authentication Gate**  
+   Uji `JWT_SECRET` (wajib dari env tanpa fallback), token expiry `24h`, cookie `sameSite: 'lax'`, rate limiting di 3 endpoint, dan sanitasi response login. Jika GAGAL ➔ **STOP**, buat laporan & rekomendasi.
+3. **Tahap 3: Business Logic & Payment Gate**  
+   Uji status registrasi QRIS (`isGateway` ➔ `pending_payment`), alur Midtrans webhook/status polling, dan aturan paket berlangganan. Jika GAGAL ➔ **STOP**, buat laporan & rekomendasi.
+4. **Tahap 4: Performance, OAuth & Subfolder Deep Scan**  
+   Uji `oauth2Client.on('tokens')` di `lib/google-master-drive.js` dan penelusuran rekursif subfolder hingga 5 level kedalaman. Jika GAGAL ➔ **STOP**, buat laporan & rekomendasi.
+5. **Tahap 5: Code Hygiene & Dead Code Cleanup**  
+   Memastikan tidak ada file mati (`trial-scraper.js`, `storage-cleaner.js`, route over-limit), tidak ada duplikasi fungsi, dan warning static generation bersih.
 
-- **Server Implementasi (Antigravity Agent @ Local IDE / Dev)**:
-  1. Membaca laporan di **`REPORTS/pending/`**.
-  2. Memperbaiki kode, me-run `npm run build`, dan memindahkan status berkas ke **`REPORTS/verified/AUDIT_XXX.md`**.
-  3. Mem-push commit perbaikan kembali ke GitHub `origin/main`.
+### 📝 Kontinuitas Laporan Audit:
+- **Setiap Iterasi Membuat Berkas Baru**: Nomor laporan terus meningkat secara sekuensial (`AUDIT_001`, `AUDIT_002`, `AUDIT_003`... `AUDIT_00X`) di folder `REPORTS/pending/`.
+- **Verifikasi Berkas Lama**: Jika ada temuan lama yang belum 100% tuntas, Antigravity akan terus memperbaikinya hingga diverifikasi dan dipindahkan ke `REPORTS/verified/`.
 
-- **Loop Lintas Server**: Hermes Agent di LXC 102 mendeteksi push dari Antigravity, lalu melakukan audit verifikasi ulang hingga 100% lulus audit production.
 
 ## 🖥️ SPESIFIKASI DOKUMEN SERVER LXC 102 (PANDUAN HERMES AGENT)
 
