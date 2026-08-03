@@ -1,12 +1,29 @@
+import { NextResponse } from 'next/server';
+import db from '@/lib/db';
+import bcrypt from 'bcryptjs';
 import { generateToken, setAuthCookie } from '@/lib/auth';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request) {
     try {
+        const clientIp = getClientIp(request);
         const { email, password } = await request.json();
+
+        // Rate limiting check (max 5 login attempts per minute per IP / email)
+        const ipRate = checkRateLimit(`login_ip_${clientIp}`, 5, 60);
+        const emailRate = checkRateLimit(`login_email_${email || 'unknown'}`, 5, 60);
+
+        if (!ipRate.success || !emailRate.success) {
+            const waitSec = Math.max(ipRate.resetSeconds, emailRate.resetSeconds);
+            return NextResponse.json({
+                message: `Terlalu banyak percobaan login. Harap coba lagi dalam ${waitSec} detik.`
+            }, { status: 429 });
+        }
 
         if (!email || !password) {
             return NextResponse.json({ message: 'Email and password are required.' }, { status: 400 });
         }
+
 
         const stmt = db.prepare('SELECT id, name, email, password, role, status FROM vendors WHERE email = ?');
         const vendor = stmt.get(email.toLowerCase().trim());

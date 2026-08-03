@@ -3,9 +3,19 @@ import db from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request) {
     try {
+        const clientIp = getClientIp(request);
+        const rateCheck = checkRateLimit(`register_ip_${clientIp}`, 5, 60);
+
+        if (!rateCheck.success) {
+            return NextResponse.json({
+                message: `Terlalu banyak percobaan pendaftaran. Harap tunggu ${rateCheck.resetSeconds} detik.`
+            }, { status: 429 });
+        }
+
         const formData = await request.formData();
         const name = formData.get('name');
         const email = formData.get('email');
@@ -17,6 +27,7 @@ export async function POST(request) {
         if (!email || !whatsapp || !plan) {
             return NextResponse.json({ message: 'Email, nomor WhatsApp, dan pilihan paket wajib diisi.' }, { status: 400 });
         }
+
 
         // --- Registration Settings & Quota Check ---
         const settings = db.prepare("SELECT * FROM system_settings WHERE id = 1").get() || {

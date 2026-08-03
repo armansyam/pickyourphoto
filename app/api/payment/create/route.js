@@ -1,9 +1,19 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { createPayment, getPaymentGatewayConfig } from '@/lib/payment-gateway';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request) {
   try {
+    const clientIp = getClientIp(request);
+    const rateCheck = checkRateLimit(`payment_create_ip_${clientIp}`, 5, 60);
+
+    if (!rateCheck.success) {
+      return NextResponse.json({
+        message: `Terlalu banyak permintaan pembayaran. Harap tunggu ${rateCheck.resetSeconds} detik.`
+      }, { status: 429 });
+    }
+
     const config = getPaymentGatewayConfig();
     if (!config.enabled) {
       return NextResponse.json({ message: 'Payment Gateway saat ini dinonaktifkan.' }, { status: 400 });
@@ -14,6 +24,7 @@ export async function POST(request) {
     if (!vendorId || !planId) {
       return NextResponse.json({ message: 'vendorId dan planId wajib diisi.' }, { status: 400 });
     }
+
 
     const vendor = db.prepare('SELECT id, name, email, whatsapp FROM vendors WHERE id = ?').get(vendorId);
     if (!vendor) {
