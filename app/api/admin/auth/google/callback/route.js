@@ -46,8 +46,7 @@ export async function GET(request) {
         }
 
         const upsertStmt = db.prepare(`
-            INSERT INTO saas_settings (key, value, updatedAt) VALUES (?, ?, CURRENT_TIMESTAMP)
-            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updatedAt = CURRENT_TIMESTAMP
+            INSERT OR REPLACE INTO saas_settings (key, value) VALUES (?, ?)
         `);
 
         upsertStmt.run('google_access_token', tokenData.access_token);

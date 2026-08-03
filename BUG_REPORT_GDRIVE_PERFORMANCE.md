@@ -2,7 +2,7 @@
 
 - **ID:** BUG-GDRIVE-PERF-01
 - **Tanggal:** 2026-08-03
-- **Status:** Open
+- **Status:** Resolved
 - **Prioritas:** Tinggi (Fungsi inti terganggu, menyebabkan pengalaman pengguna yang buruk)
 
 ## Ringkasan Masalah

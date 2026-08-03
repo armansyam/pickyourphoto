@@ -161,14 +161,32 @@ export default function AdminSettings({
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <a
+                  href="/api/admin/auth/google"
+                  className="btn-primary"
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '12px',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    borderRadius: '8px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  🔗 Otorisasi Drive OAuth
+                </a>
                 <button
                   type="button"
                   onClick={() => setIsEditingGoogleCredentials(true)}
                   className="btn-secondary"
                   style={{ padding: '8px 14px', fontSize: '12px', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
                 >
-                  ✏️ Edit / Ganti
+                  ✏️ Edit
                 </button>
                 <button
                   type="button"
