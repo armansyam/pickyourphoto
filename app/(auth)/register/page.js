@@ -703,18 +703,17 @@ export default function RegisterPage() {
                                                             >
                                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                                     <span style={{ fontSize: '13px', fontWeight: 'bold', color: paymentMethod === 'gateway' ? '#34d399' : '#ffffff' }}>
-                                                                        ⚡ Midtrans Gateway
+                                                                        ⚡ Pembayaran Otomatis (QRIS, VA & E-Wallet)
                                                                     </span>
                                                                     <span style={{ fontSize: '10px', background: 'rgba(52, 211, 153, 0.2)', color: '#34d399', padding: '2px 6px', borderRadius: '6px', fontWeight: 'bold' }}>
-                                                                        OTOMATIS
+                                                                        OTOMATIS & INSTAN
                                                                     </span>
                                                                 </div>
                                                                 <span style={{ fontSize: '11px', color: '#a1a1aa', lineHeight: '1.4' }}>
-                                                                    QRIS, BCA VA, Mandiri, GoPay. Akun <strong>langsung otomatis aktif instan</strong> tanpa upload foto bukti.
+                                                                    Bayar via QRIS, Virtual Account Bank (BCA, Mandiri, BRI, BNI), GoPay, atau ShopeePay. Akun <strong>otomatis aktif seketika</strong> tanpa upload foto bukti.
                                                                 </span>
                                                             </div>
 
-                                                            {/* Option 2: Manual Bank Transfer */}
                                                             <div
                                                                 onClick={() => setPaymentMethod('manual')}
                                                                 style={{
@@ -777,7 +776,7 @@ export default function RegisterPage() {
                                                     </>
                                                 ) : (
                                                     <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '14px 16px', borderRadius: '12px', marginBottom: '20px', fontSize: '13px', color: '#34d399', lineHeight: '1.5' }}>
-                                                        ⚡ Anda memilih <strong>Pembayaran Otomatis via Midtrans Gateway</strong>. Setelah menekan tombol daftar, pop-up pembayaran otomatis Midtrans Snap akan langsung muncul di layar Anda untuk melakukan pembayaran instan!
+                                                        ⚡ Anda memilih <strong>Pembayaran Otomatis (Instan)</strong>. Setelah menekan tombol daftar, jendela pembayaran otomatis akan langsung muncul di layar Anda untuk penyelesaian instan.
                                                     </div>
                                                 )}
                                             </div>
