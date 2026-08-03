@@ -41,7 +41,9 @@ export default function AdminSettings({
   const [isEditingPaymentGateway, setIsEditingPaymentGateway] = React.useState(false);
   const [isEditingSmtp, setIsEditingSmtp] = React.useState(false);
 
+  const [paymentTestStatus, setPaymentTestStatus] = React.useState({ loading: false, success: '', error: '' });
   const [testEmailStatus, setTestEmailStatus] = React.useState({ loading: false, success: '', error: '' });
+
 
   return (
     <div className="glass-card" style={{ padding: '28px', borderRadius: '16px', maxWidth: '750px', margin: '0 auto' }}>
@@ -377,8 +379,23 @@ export default function AdminSettings({
 
           {enablePaymentGateway && paymentGatewayClientKey && paymentGatewayServerKey && !isEditingPaymentGateway ? (
             <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              {/* PAYMENT TEST ALERT BANNERS */}
+              {paymentTestStatus.success && (
+                <div style={{ background: 'rgba(52, 211, 153, 0.12)', border: '1px solid rgba(52, 211, 153, 0.3)', color: '#34d399', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{paymentTestStatus.success}</span>
+                  <button type="button" onClick={() => setPaymentTestStatus(prev => ({ ...prev, success: '' }))} style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
+                </div>
+              )}
+
+              {paymentTestStatus.error && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{paymentTestStatus.error}</span>
+                  <button type="button" onClick={() => setPaymentTestStatus(prev => ({ ...prev, error: '' }))} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
+                </div>
+              )}
+
               <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '18px 20px', borderRadius: '12px', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 10px #34d399' }} />
@@ -391,7 +408,51 @@ export default function AdminSettings({
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      disabled={paymentTestStatus.loading}
+                      onClick={async () => {
+                        setPaymentTestStatus({ loading: true, success: '', error: '' });
+                        try {
+                          const res = await fetch('/api/admin/payment/test', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              provider: paymentGatewayProvider,
+                              clientKey: paymentGatewayClientKey,
+                              serverKey: paymentGatewayServerKey,
+                              isProduction: false
+                            })
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            setPaymentTestStatus({ loading: false, success: data.message, error: '' });
+                            if (addToast) addToast(data.message, 'success');
+                          } else {
+                            const msg = data.message || 'Tes koneksi gagal. Periksa Server Key Anda.';
+                            setPaymentTestStatus({ loading: false, success: '', error: msg });
+                            if (addToast) addToast(msg, 'error');
+                          }
+                        } catch (err) {
+                          const msg = err.message || 'Terjadi kesalahan koneksi API.';
+                          setPaymentTestStatus({ loading: false, success: '', error: msg });
+                          if (addToast) addToast(msg, 'error');
+                        }
+                      }}
+                      style={{
+                        background: 'rgba(56, 189, 248, 0.12)',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        color: '#38bdf8',
+                        padding: '8px 14px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: paymentTestStatus.loading ? 'wait' : 'pointer'
+                      }}
+                    >
+                      {paymentTestStatus.loading ? '⏳ Memeriksa Koneksi...' : '🔍 Tes Koneksi API Midtrans'}
+                    </button>
                     <button
                       type="button"
                       onClick={() => setIsEditingPaymentGateway(true)}
@@ -460,6 +521,21 @@ export default function AdminSettings({
             </div>
           ) : enablePaymentGateway ? (
             <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              {/* PAYMENT TEST ALERT BANNERS */}
+              {paymentTestStatus.success && (
+                <div style={{ background: 'rgba(52, 211, 153, 0.12)', border: '1px solid rgba(52, 211, 153, 0.3)', color: '#34d399', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{paymentTestStatus.success}</span>
+                  <button type="button" onClick={() => setPaymentTestStatus(prev => ({ ...prev, success: '' }))} style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
+                </div>
+              )}
+
+              {paymentTestStatus.error && (
+                <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{paymentTestStatus.error}</span>
+                  <button type="button" onClick={() => setPaymentTestStatus(prev => ({ ...prev, error: '' }))} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
+                </div>
+              )}
+
               <div className="form-group" style={{ marginBottom: '12px' }}>
                 <label className="form-label" style={{ fontSize: '12px' }}>Pilih Provider Payment Gateway</label>
                 <select
@@ -513,12 +589,56 @@ export default function AdminSettings({
                 </div>
               </div>
 
-              {/* Dedicated Save Button */}
+              {/* Dedicated Save Button & Test Connection Button */}
               <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                 <span style={{ fontSize: '11px', color: '#94a3b8' }}>
                   💡 Simpan kredensial untuk menghubungkan Payment Gateway ke database.
                 </span>
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <button
+                    type="button"
+                    disabled={paymentTestStatus.loading || !paymentGatewayServerKey}
+                    onClick={async () => {
+                      setPaymentTestStatus({ loading: true, success: '', error: '' });
+                      try {
+                        const res = await fetch('/api/admin/payment/test', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            provider: paymentGatewayProvider,
+                            clientKey: paymentGatewayClientKey,
+                            serverKey: paymentGatewayServerKey,
+                            isProduction: false
+                          })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                          setPaymentTestStatus({ loading: false, success: data.message, error: '' });
+                          if (addToast) addToast(data.message, 'success');
+                        } else {
+                          const msg = data.message || 'Tes koneksi gagal. Periksa Server Key Anda.';
+                          setPaymentTestStatus({ loading: false, success: '', error: msg });
+                          if (addToast) addToast(msg, 'error');
+                        }
+                      } catch (err) {
+                        const msg = err.message || 'Terjadi kesalahan koneksi API.';
+                        setPaymentTestStatus({ loading: false, success: '', error: msg });
+                        if (addToast) addToast(msg, 'error');
+                      }
+                    }}
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      color: '#38bdf8',
+                      padding: '9px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      cursor: paymentTestStatus.loading ? 'wait' : 'pointer'
+                    }}
+                  >
+                    {paymentTestStatus.loading ? '⏳ Memeriksa Koneksi...' : '🔍 Tes Koneksi API Midtrans'}
+                  </button>
                   {paymentGatewayClientKey && paymentGatewayServerKey && (
                     <button
                       type="button"
@@ -556,6 +676,7 @@ export default function AdminSettings({
               </div>
             </div>
           ) : null}
+
 
         </div>
 
