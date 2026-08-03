@@ -18,9 +18,39 @@ export default function RegisterPage() {
     const [selectedTab, setSelectedTab] = useState('limit');
     const [step, setStep] = useState(1);
     
-    // --- NEW: Registration status state ---
+    // --- NEW: Registration status state & payment method ---
     const [regStatus, setRegStatus] = useState({ registration_open: true, free_trial_available: true, reason_closed: null });
     const [checkingStatus, setCheckingStatus] = useState(true);
+    const [paymentMethod, setPaymentMethod] = useState('gateway');
+
+    const isGatewayEnabled = settings?.enable_payment_gateway === '1' || settings?.enable_payment_gateway === 'true';
+
+    useEffect(() => {
+        if (isGatewayEnabled) {
+            setPaymentMethod('gateway');
+        } else {
+            setPaymentMethod('manual');
+        }
+    }, [settings, isGatewayEnabled]);
+
+    useEffect(() => {
+        if (isGatewayEnabled) {
+            const clientKey = settings?.payment_gateway_client_key || '';
+            const isProd = settings?.payment_gateway_is_production === '1';
+            const snapUrl = isProd 
+                ? 'https://app.midtrans.com/snap/snap.js'
+                : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
+            if (!document.getElementById('midtrans-snap-script')) {
+                const script = document.createElement('script');
+                script.id = 'midtrans-snap-script';
+                script.src = snapUrl;
+                if (clientKey) script.setAttribute('data-client-key', clientKey);
+                document.body.appendChild(script);
+            }
+        }
+    }, [settings, isGatewayEnabled]);
+
 
     const trialPlan = plans.find(p => p.price === 0 && p.planType === selectedTab);
     const hasTrial = !!trialPlan && regStatus.free_trial_available;
@@ -142,7 +172,9 @@ export default function RegisterPage() {
         }
 
         const isFree = selectedPlan.price === 0;
-        if (!isFree && !paymentProof) {
+        const isGateway = isGatewayEnabled && paymentMethod === 'gateway';
+
+        if (!isFree && !isGateway && !paymentProof) {
             setError('Silakan upload bukti pembayaran/transfer terlebih dahulu.');
             setLoading(false);
             return;
@@ -155,6 +187,7 @@ export default function RegisterPage() {
             formData.append('whatsapp', whatsapp);
             formData.append('password', password);
             formData.append('plan', plan);
+            formData.append('paymentMethod', isGateway ? 'gateway' : 'manual');
             if (paymentProof) {
                 formData.append('paymentProof', paymentProof);
             }
@@ -170,6 +203,41 @@ export default function RegisterPage() {
                 throw new Error(data.message || 'Registration failed.');
             }
 
+            // Handle Automatic Payment Gateway Checkout if selected
+            if (!isFree && isGateway && data.vendorId) {
+                try {
+                    const payRes = await fetch('/api/payment/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ vendorId: data.vendorId, planId: selectedPlan.id })
+                    });
+                    const payData = await payRes.json();
+
+                    if (payRes.ok && payData.token && typeof window !== 'undefined' && window.snap) {
+                        window.snap.pay(payData.token, {
+                            onSuccess: function () {
+                                window.location.href = '/dashboard';
+                            },
+                            onPending: function () {
+                                setSuccess(true);
+                            },
+                            onError: function () {
+                                setError('Pembayaran gagal atau dibatalkan oleh pengguna.');
+                            },
+                            onClose: function () {
+                                setSuccess(true);
+                            }
+                        });
+                        return;
+                    } else if (payData.redirectUrl) {
+                        window.location.href = payData.redirectUrl;
+                        return;
+                    }
+                } catch (payErr) {
+                    console.error('[Payment Gateway Launch Error]:', payErr);
+                }
+            }
+
             setSuccess(true);
             setName('');
             setEmail('');
@@ -180,6 +248,7 @@ export default function RegisterPage() {
             setLoading(false);
         }
     };
+
 
     if (checkingStatus) {
         return (
@@ -604,40 +673,113 @@ export default function RegisterPage() {
 
                                         return (
                                             <div style={{
-                                                maxHeight: showPayment ? '450px' : '0px',
+                                                maxHeight: showPayment ? '600px' : '0px',
                                                 opacity: showPayment ? 1 : 0,
                                                 transform: showPayment ? 'translateY(0)' : 'translateY(-10px)',
                                                 overflow: 'hidden',
                                                 transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 visibility: showPayment ? 'visible' : 'hidden'
                                             }}>
-                                                <div className="form-group" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', padding: '14px', borderRadius: '10px', marginBottom: '20px' }}>
-                                                    <span style={{ fontSize: '12px', color: '#a1a1aa', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Tujuan Transfer Pembayaran:</span>
-                                                    <div style={{ fontSize: '13px', color: '#f4f4f5', lineHeight: '1.6' }}>
-                                                        <div>Bank: <strong>{settings?.bank_name || 'BCA (Bank Central Asia)'}</strong></div>
-                                                        <div>No. Rekening: <strong style={{ color: '#818cf8', fontSize: '14px' }}>{settings?.bank_account_number || '1234-5678-90'}</strong></div>
-                                                        <div>Atas Nama: <strong>{settings?.bank_account_name || 'PT Pick Your Photo'}</strong></div>
-                                                        {settings?.contact_email && (
-                                                            <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                                                                Hubungi: {settings.contact_email} {settings.contact_whatsapp && ` | WA: +${settings.contact_whatsapp}`}
+                                                {isGatewayEnabled && (
+                                                    <div style={{ marginBottom: '20px' }}>
+                                                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#e4e4e7', marginBottom: '12px' }}>
+                                                            💳 Pilih Metode Pembayaran
+                                                        </label>
+                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                                                            {/* Option 1: Automatic Gateway */}
+                                                            <div
+                                                                onClick={() => setPaymentMethod('gateway')}
+                                                                style={{
+                                                                    background: paymentMethod === 'gateway' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                                                                    border: paymentMethod === 'gateway' ? '2px solid #34d399' : '1px solid rgba(255, 255, 255, 0.08)',
+                                                                    borderRadius: '12px',
+                                                                    padding: '14px 16px',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s ease',
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    gap: '6px'
+                                                                }}
+                                                            >
+                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: paymentMethod === 'gateway' ? '#34d399' : '#ffffff' }}>
+                                                                        ⚡ Midtrans Gateway
+                                                                    </span>
+                                                                    <span style={{ fontSize: '10px', background: 'rgba(52, 211, 153, 0.2)', color: '#34d399', padding: '2px 6px', borderRadius: '6px', fontWeight: 'bold' }}>
+                                                                        OTOMATIS
+                                                                    </span>
+                                                                </div>
+                                                                <span style={{ fontSize: '11px', color: '#a1a1aa', lineHeight: '1.4' }}>
+                                                                    QRIS, BCA VA, Mandiri, GoPay. Akun <strong>langsung otomatis aktif instan</strong> tanpa upload foto bukti.
+                                                                </span>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </div>
 
-                                                <div className="form-group" style={{ marginBottom: '20px' }}>
-                                                    <label className="form-label">Upload Bukti Pembayaran / Transfer</label>
-                                                    <input
-                                                        type="file"
-                                                        className="input-text"
-                                                        required={showPayment}
-                                                        accept="image/*"
-                                                        onChange={(e) => setPaymentProof(e.target.files ? e.target.files[0] : null)}
-                                                        disabled={loading}
-                                                        style={{ cursor: 'pointer' }}
-                                                    />
-                                                    <span style={{ fontSize: '11px', color: '#71717a' }}>Format gambar yang didukung: JPG, PNG.</span>
-                                                </div>
+                                                            {/* Option 2: Manual Bank Transfer */}
+                                                            <div
+                                                                onClick={() => setPaymentMethod('manual')}
+                                                                style={{
+                                                                    background: paymentMethod === 'manual' ? 'rgba(99, 102, 241, 0.12)' : 'rgba(255, 255, 255, 0.02)',
+                                                                    border: paymentMethod === 'manual' ? '2px solid #818cf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                                                                    borderRadius: '12px',
+                                                                    padding: '14px 16px',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.2s ease',
+                                                                    display: 'flex',
+                                                                    flexDirection: 'column',
+                                                                    gap: '6px'
+                                                                }}
+                                                            >
+                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: paymentMethod === 'manual' ? '#818cf8' : '#ffffff' }}>
+                                                                        🏦 Transfer Bank Manual
+                                                                    </span>
+                                                                    <span style={{ fontSize: '10px', background: 'rgba(255, 255, 255, 0.08)', color: '#a1a1aa', padding: '2px 6px', borderRadius: '6px' }}>
+                                                                        MANUAL
+                                                                    </span>
+                                                                </div>
+                                                                <span style={{ fontSize: '11px', color: '#a1a1aa', lineHeight: '1.4' }}>
+                                                                    Transfer ke Rekening Admin & upload foto bukti transfer (membutuhkan approval manual Admin).
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {paymentMethod === 'manual' ? (
+                                                    <>
+                                                        <div className="form-group" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', padding: '14px', borderRadius: '10px', marginBottom: '20px' }}>
+                                                            <span style={{ fontSize: '12px', color: '#a1a1aa', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Tujuan Transfer Pembayaran:</span>
+                                                            <div style={{ fontSize: '13px', color: '#f4f4f5', lineHeight: '1.6' }}>
+                                                                <div>Bank: <strong>{settings?.bank_name || 'BCA (Bank Central Asia)'}</strong></div>
+                                                                <div>No. Rekening: <strong style={{ color: '#818cf8', fontSize: '14px' }}>{settings?.bank_account_number || '1234-5678-90'}</strong></div>
+                                                                <div>Atas Nama: <strong>{settings?.bank_account_name || 'PT Pick Your Photo'}</strong></div>
+                                                                {settings?.contact_email && (
+                                                                    <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
+                                                                        Hubungi: {settings.contact_email} {settings.contact_whatsapp && ` | WA: +${settings.contact_whatsapp}`}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="form-group" style={{ marginBottom: '20px' }}>
+                                                            <label className="form-label">Upload Bukti Pembayaran / Transfer</label>
+                                                            <input
+                                                                type="file"
+                                                                className="input-text"
+                                                                required={paymentMethod === 'manual'}
+                                                                accept="image/*"
+                                                                onChange={(e) => setPaymentProof(e.target.files ? e.target.files[0] : null)}
+                                                                disabled={loading}
+                                                                style={{ cursor: 'pointer' }}
+                                                            />
+                                                            <span style={{ fontSize: '11px', color: '#71717a' }}>Format gambar yang didukung: JPG, PNG.</span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '14px 16px', borderRadius: '12px', marginBottom: '20px', fontSize: '13px', color: '#34d399', lineHeight: '1.5' }}>
+                                                        ⚡ Anda memilih <strong>Pembayaran Otomatis via Midtrans Gateway</strong>. Setelah menekan tombol daftar, pop-up pembayaran otomatis Midtrans Snap akan langsung muncul di layar Anda untuk melakukan pembayaran instan!
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     })()}

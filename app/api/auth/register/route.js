@@ -68,13 +68,15 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Paket uji coba gratis tidak tersedia saat ini.' }, { status: 400 });
         }
 
-        if (!isFreePlan && !paymentProofFile) {
+        const isGateway = formData.get('paymentMethod') === 'gateway';
+
+        if (!isFreePlan && !paymentProofFile && !isGateway) {
             return NextResponse.json({ message: 'Bukti transfer pembayaran wajib diupload untuk paket berbayar.' }, { status: 400 });
         }
 
         // Save payment proof file without sharp compression
         let paymentProofPath = '';
-        if (paymentProofFile && paymentProofFile.size > 0) {
+        if (paymentProofFile && paymentProofFile.size > 0 && typeof paymentProofFile !== 'string') {
             try {
                 const arrayBuffer = await paymentProofFile.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
@@ -95,9 +97,12 @@ export async function POST(request) {
                 console.error('Failed to save payment proof:', err);
                 return NextResponse.json({ message: 'Failed to process payment proof image.' }, { status: 400 });
             }
+        } else if (isGateway) {
+            paymentProofPath = 'Midtrans Automatic Payment';
         } else if (isFreePlan) {
             paymentProofPath = 'Free Trial';
         }
+
 
         if (existingVendor && existingVendor.status === 'pending') {
             const updateStmt = db.prepare(`
