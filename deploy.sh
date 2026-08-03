@@ -22,20 +22,26 @@ if [ ! -f .env ]; then
     ENV_CREATED=1
 fi
 
-# Cek apakah JWT_SECRET masih menggunakan nilai default template
-if grep -q "JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman" .env; then
-    echo "🔑 Menghasilkan JWT_SECRET acak yang aman (cryptographically secure)..."
-    # Gunakan Node.js bawaan untuk generate string secure hex & replace untuk menghindari masalah perbedaan sed MacOS/Linux
-    node -e "
-      const fs = require('fs');
-      const crypto = require('crypto');
-      const secureKey = crypto.randomBytes(32).toString('hex');
-      let content = fs.readFileSync('.env', 'utf8');
-      content = content.replace('JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman', 'JWT_SECRET=' + secureKey);
-      fs.writeFileSync('.env', content, 'utf8');
-    "
-    echo "✅ JWT_SECRET aman berhasil di-generate dan disimpan ke .env!"
-fi
+# Cek & Otomatisasi JWT_SECRET jika belum ada, kosong, atau default
+echo "🔑 Memeriksa dan mengamankan JWT_SECRET di .env..."
+node -e "
+  const fs = require('fs');
+  const crypto = require('crypto');
+  let content = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
+  if (!content.includes('JWT_SECRET=') || content.includes('JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman') || content.includes('JWT_SECRET=pick-your-photo-super-secret-key-2026')) {
+    const secureKey = crypto.randomBytes(32).toString('hex');
+    if (content.includes('JWT_SECRET=')) {
+      content = content.replace(/JWT_SECRET=.*/g, 'JWT_SECRET=' + secureKey);
+    } else {
+      content += '\nJWT_SECRET=' + secureKey + '\n';
+    }
+    fs.writeFileSync('.env', content, 'utf8');
+    console.log('✅ JWT_SECRET acak (64 hex characters) berhasil di-generate otomatis!');
+  } else {
+    console.log('✅ JWT_SECRET sudah terkonfigurasi dengan aman.');
+  }
+"
+
 
 
 
