@@ -480,7 +480,25 @@ export default function DashboardPage() {
         }
     };
 
+    const handleReactivateProject = async (projectId) => {
+        try {
+            const res = await fetch(`/api/projects/${projectId}/reactivate`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Gagal mengaktifkan kembali galeri.');
+            }
+            addToast(data.message || 'Galeri berhasil diaktifkan kembali!', 'success');
+            fetchProjects();
+        } catch (err) {
+            addToast(err.message, 'error');
+        }
+    };
+
     const handleUpdateProjectStatus = async (projectId, status, actionLabel) => {
+
         if (status === 'archived') {
             const proj = projects.find(p => p.id === projectId);
             setProjectToArchive({ ...proj, actionLabel });
@@ -1310,6 +1328,16 @@ export default function DashboardPage() {
                                             style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: '#000', fontWeight: '700', fontSize: '12px', borderRadius: '8px' }}
                                         >
                                             🔄 Coba Impor Lagi
+                                        </button>
+                                    )}
+
+                                    {project.status === 'archived' && (
+                                        <button
+                                            onClick={() => handleReactivateProject(project.id)}
+                                            className="btn-primary"
+                                            style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '12px', borderRadius: '8px' }}
+                                        >
+                                            ⚡ Aktifkan Kembali Galeri (30 Hari)
                                         </button>
                                     )}
 

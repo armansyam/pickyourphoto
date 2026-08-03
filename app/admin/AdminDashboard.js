@@ -782,7 +782,11 @@ export default function AdminDashboard({ adminUser }) {
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Masa Aktif Akun (Hari)</label>
-                                    <input type="number" className="input-text" required min="1" value={planActivePeriodDays} onChange={e => setPlanActivePeriodDays(parseInt(e.target.value) || 0)} />
+                                    <input type="number" className="input-text" required min="1" value={planActivePeriodDays} onChange={e => {
+                                        const days = parseInt(e.target.value) || 30;
+                                        setPlanActivePeriodDays(days);
+                                        setPlanProjectExpireDays(days);
+                                    }} />
                                 </div>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -791,15 +795,16 @@ export default function AdminDashboard({ adminUser }) {
                                     <input type="number" className="input-text" required min="1" value={planMaxProjects} onChange={e => setPlanMaxProjects(parseInt(e.target.value) || 0)} />
                                 </div>
                                 <div className="form-group">
-                                    <label className="form-label">Max Foto per Project</label>
-                                    <input type="number" className="input-text" required min="1" value={planMaxPhotos} onChange={e => setPlanMaxPhotos(parseInt(e.target.value) || 0)} />
+                                    <label className="form-label">Foto per Project</label>
+                                    <input type="text" className="input-text" disabled value="Unlimited (Direct Stream)" style={{ background: 'rgba(0,0,0,0.3)', color: '#34d399', fontWeight: 'bold' }} />
                                 </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Masa Simpan Galeri Klien (Hari)</label>
-                                <input type="number" className="input-text" required min="1" placeholder="99999 = Permanen" value={planProjectExpireDays} onChange={e => setPlanProjectExpireDays(parseInt(e.target.value) || 0)} />
-                                <span style={{ fontSize: '11px', color: '#71717a' }}>Berapa hari galeri klien tersimpan aktif sebelum diarsipkan (99999 = Permanen).</span>
+                                <input type="number" className="input-text" required min="1" value={planProjectExpireDays || 30} onChange={e => setPlanProjectExpireDays(parseInt(e.target.value) || 30)} />
+                                <span style={{ fontSize: '11px', color: '#71717a' }}>Masa simpan galeri klien tersimpan aktif sebelum diarsipkan (mengikuti masa aktif paket, default 30 hari).</span>
                             </div>
+
                             <div className="form-group" style={{ background: 'rgba(99,102,241,0.06)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.15)', marginTop: '8px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <input 

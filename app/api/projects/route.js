@@ -84,25 +84,16 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        // Check project limit or storage limit depending on plan type
-        const planType = vendor.planType || 'limit';
-        if (planType === 'limit') {
-            const countStmt = db.prepare('SELECT COUNT(*) as count FROM projects WHERE vendorId = ?');
-            const projectCount = countStmt.get(vendor.id)?.count || 0;
+        // Check project limit
+        const countStmt = db.prepare('SELECT COUNT(*) as count FROM projects WHERE vendorId = ?');
+        const projectCount = countStmt.get(vendor.id)?.count || 0;
 
-            if (projectCount >= vendor.maxProjects) {
-                return NextResponse.json({
-                    message: `Batas jumlah project tercapai. Anda telah menggunakan ${projectCount} dari ${vendor.maxProjects} project yang diperbolehkan. Silakan upgrade paket Anda.`
-                }, { status: 403 });
-            }
-        } else if (planType === 'storage') {
-            const maxStorageBytes = (vendor.maxStorageMB || 0) * 1024 * 1024;
-            if (vendor.usedStorageBytes >= maxStorageBytes) {
-                return NextResponse.json({
-                    message: `Kapasitas penyimpanan Anda penuh (${(vendor.usedStorageBytes / (1024 * 1024)).toFixed(1)} MB dari ${vendor.maxStorageMB} MB). Silakan arsipkan project lain terlebih dahulu.`
-                }, { status: 403 });
-            }
+        if (projectCount >= vendor.maxProjects) {
+            return NextResponse.json({
+                message: `Batas jumlah project tercapai. Anda telah menggunakan ${projectCount} dari ${vendor.maxProjects} project yang diperbolehkan. Silakan upgrade paket Anda.`
+            }, { status: 403 });
         }
+
 
         // Check subscription expiration
         if (vendor.isExpired) {

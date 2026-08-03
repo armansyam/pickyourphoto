@@ -56,11 +56,6 @@ export async function POST(request, { params }) {
             return NextResponse.json({ message: 'Tidak ditemukan file gambar di dalam folder Google Drive tersebut.' }, { status: 400 });
         }
 
-        // Enforce maxPhotosPerProject limit from subscription plan
-        const maxPhotos = vendor.maxPhotosPerProject || 0;
-        if (maxPhotos > 0 && files.length > maxPhotos) {
-            files = files.slice(0, maxPhotos);
-        }
 
         // 1. Reset project status to 'importing', filesDeleted = 0, and expiresAt = NULL
         db.prepare('UPDATE projects SET status = ?, filesDeleted = 0, expiresAt = NULL WHERE id = ?').run('importing', projectId);
