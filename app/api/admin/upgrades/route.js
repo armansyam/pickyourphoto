@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // GET: Retrieve all upgrade requests for Superadmin
 export async function GET() {
     try {

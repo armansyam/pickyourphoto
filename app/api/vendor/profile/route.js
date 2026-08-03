@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
+
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';

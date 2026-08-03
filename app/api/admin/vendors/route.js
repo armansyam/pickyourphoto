@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
+
 // GET: List all vendors (Superadmin only)
 export async function GET() {
     try {
