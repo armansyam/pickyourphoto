@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import jwt from 'jsonwebtoken';
+import { generateToken } from '@/lib/auth';
 import { getPaymentGatewayConfig } from '@/lib/payment-gateway';
+
 import { sendVendorApprovalEmail } from '@/lib/mailer';
 
 export const dynamic = 'force-dynamic';
@@ -81,13 +83,9 @@ export async function GET(request) {
     if (transaction.status === 'paid') {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
       if (vendor) {
-        // Generate auth session token matching login route
-        const secret = process.env.JWT_SECRET || 'pick-your-photo-super-secret-key-2026';
-        const token = jwt.sign(
-          { id: vendor.id, name: vendor.name, email: vendor.email },
-          secret,
-          { expiresIn: '7d' }
-        );
+        // Generate auth session token using standard 24h helper
+        const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email });
+
 
         const response = NextResponse.json({
           paid: true,
