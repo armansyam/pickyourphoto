@@ -1,7 +1,7 @@
 # BUG-GDRIVE-OAUTH-02: Trial Importer Tidak Menggunakan OAuth Master yang Sudah Tersedia
 
 **Tanggal:** 2026-08-03  
-**Status:** Open  
+**Status:** Resolved  
 **Prioritas:** CRITICAL  
 **File Terkait:** `lib/gdrive-importer.js`, `lib/google-master-drive.js`, `app/api/trial/create/route.js`
 

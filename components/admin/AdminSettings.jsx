@@ -6,6 +6,8 @@ export default function AdminSettings({
   googleClientId, setGoogleClientId,
   googleClientSecret, setGoogleClientSecret,
   googleMasterFolderId, setGoogleMasterFolderId,
+  googleRefreshToken,
+
   newPassword, setNewPassword,
   bankName, setBankName,
   bankAccountNumber, setBankAccountNumber,
@@ -147,59 +149,94 @@ export default function AdminSettings({
 
           {/* Conditional UI: Connected Badge vs Input Form */}
           {googleClientId && googleClientSecret && !isEditingGoogleCredentials ? (
-            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '18px 20px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 8px #34d399' }} />
-                  <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399' }}>OAuth 2.0 Credentials Terhubung & Aktif</span>
+            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '18px 20px', borderRadius: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: googleRefreshToken ? '#34d399' : '#fbbf24', boxShadow: googleRefreshToken ? '0 0 10px #34d399' : '0 0 10px #fbbf24' }} />
+                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: googleRefreshToken ? '#34d399' : '#fbbf24' }}>
+                      {googleRefreshToken ? 'Google Master OAuth 2.0 100% Terhubung' : 'Kredensial Tersimpan — Menunggu Otorisasi OAuth'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '4px' }}>
+                    ⚡ Engine Google Drive API v3 & Sign-In Vendor Siap Digunakan.
+                  </div>
                 </div>
-                <div style={{ fontSize: '12px', color: '#a1a1aa', fontFamily: 'monospace', marginTop: '4px' }}>
-                  Client ID: <span style={{ color: '#f4f4f5' }}>{googleClientId.substring(0, 18)}...{googleClientId.substring(googleClientId.length - 8)}</span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#71717a', marginTop: '6px' }}>
-                  ⚡ Engine Google Drive API v3 & Sign-In Vendor Siap Digunakan.
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <a
+                    href="/api/admin/auth/google"
+                    className="btn-primary"
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: '12px',
+                      background: googleRefreshToken ? 'rgba(16,185,129,0.2)' : 'linear-gradient(135deg, #10b981, #059669)',
+                      color: '#ffffff',
+                      border: googleRefreshToken ? '1px solid rgba(16,185,129,0.4)' : 'none',
+                      textDecoration: 'none',
+                      borderRadius: '8px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    {googleRefreshToken ? '🔄 Hubungkan Ulang OAuth' : '🔗 Hubungkan Google Master'}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingGoogleCredentials(true)}
+                    className="btn-secondary"
+                    style={{ padding: '8px 12px', fontSize: '12px', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGoogleClientId('');
+                      setGoogleClientSecret('');
+                      setIsEditingGoogleCredentials(true);
+                    }}
+                    className="btn-secondary"
+                    style={{ padding: '8px 12px', fontSize: '12px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+                  >
+                    🗑️ Putuskan
+                  </button>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <a
-                  href="/api/admin/auth/google"
-                  className="btn-primary"
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: '12px',
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: '#ffffff',
-                    textDecoration: 'none',
-                    borderRadius: '8px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  🔗 Otorisasi Drive OAuth
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingGoogleCredentials(true)}
-                  className="btn-secondary"
-                  style={{ padding: '8px 14px', fontSize: '12px', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
-                >
-                  ✏️ Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setGoogleClientId('');
-                    setGoogleClientSecret('');
-                    setIsEditingGoogleCredentials(true);
-                  }}
-                  className="btn-secondary"
-                  style={{ padding: '8px 14px', fontSize: '12px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
-                >
-                  🗑️ Putuskan
-                </button>
+              {/* 3 Status Item Badges */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>1. Client ID Form</div>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                    <span>✓ Terdaftar</span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                    {googleClientId ? `${googleClientId.substring(0, 12)}...` : '-'}
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                  <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>2. Client Secret Form</div>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                    <span>✓ Terdaftar</span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
+                    ••••••••7Gx3
+                  </div>
+                </div>
+
+                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: googleRefreshToken ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(251,191,36,0.3)' }}>
+                  <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>3. Token OAuth Master</div>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: googleRefreshToken ? '#34d399' : '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                    <span>{googleRefreshToken ? '✓ Terhubung' : '⚠️ Belum Terotentikasi'}</span>
+                  </div>
+                  <div style={{ fontSize: '10px', color: googleRefreshToken ? '#34d399' : '#a1a1aa', marginTop: '2px' }}>
+                    {googleRefreshToken ? 'Refresh Token Aktif' : 'Klik "Hubungkan Google Master"'}
+                  </div>
+                </div>
               </div>
             </div>
           ) : (

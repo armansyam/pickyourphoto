@@ -68,6 +68,8 @@ export default function AdminDashboard({ adminUser }) {
     const [googleClientId, setGoogleClientId] = useState('');
     const [googleClientSecret, setGoogleClientSecret] = useState('');
     const [googleMasterFolderId, setGoogleMasterFolderId] = useState('');
+    const [googleRefreshToken, setGoogleRefreshToken] = useState('');
+
 
     // Payment Gateway Toggle States
     const [enablePaymentGateway, setEnablePaymentGateway] = useState(false);
@@ -205,6 +207,8 @@ export default function AdminDashboard({ adminUser }) {
                     if (data.saasSettings.google_client_id) setGoogleClientId(data.saasSettings.google_client_id);
                     if (data.saasSettings.google_client_secret) setGoogleClientSecret(data.saasSettings.google_client_secret);
                     if (data.saasSettings.google_master_folder_id) setGoogleMasterFolderId(data.saasSettings.google_master_folder_id);
+                    if (data.saasSettings.google_refresh_token) setGoogleRefreshToken(data.saasSettings.google_refresh_token);
+
 
                     if (data.saasSettings.enable_payment_gateway) setEnablePaymentGateway(data.saasSettings.enable_payment_gateway === '1' || data.saasSettings.enable_payment_gateway === 'true');
                     if (data.saasSettings.payment_gateway_provider) setPaymentGatewayProvider(data.saasSettings.payment_gateway_provider);
@@ -638,6 +642,8 @@ export default function AdminDashboard({ adminUser }) {
                         googleClientId={googleClientId} setGoogleClientId={setGoogleClientId}
                         googleClientSecret={googleClientSecret} setGoogleClientSecret={setGoogleClientSecret}
                         googleMasterFolderId={googleMasterFolderId} setGoogleMasterFolderId={setGoogleMasterFolderId}
+                        googleRefreshToken={googleRefreshToken}
+
                         newPassword={newPassword} setNewPassword={setNewPassword}
                         bankName={bankName} setBankName={setBankName}
                         bankAccountNumber={bankAccountNumber} setBankAccountNumber={setBankAccountNumber}
