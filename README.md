@@ -27,7 +27,9 @@ Agar **Hermes Agent** tidak salah lokasi saat mengakses server audit/deploy, gun
 | **Nama Container LXC** | `LXC 102` |
 | **IP Address LAN** | `192.168.100.83` |
 | **Port Aplikasi** | `3051` |
-| **Domain Publik** | `https://pick-your-photo.ammang.my.id` |
+| **Domain Publik Utama (Primary)** | `https://pilih.ammang.my.id` |
+| **Domain Sekunder (Secondary)** | `https://pick-your-photo.ammang.my.id` |
+
 | **Direktori Proyek di LXC 102** | `/DATA/AppData/pickyourphoto` |
 | **Watchdog Script** | `/opt/hermes/watchdog.sh` |
 | **Log Audit Watchdog** | `/var/log/hermes-watchdog.log` |
