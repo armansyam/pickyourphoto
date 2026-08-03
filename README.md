@@ -34,8 +34,10 @@ Agar **Hermes Agent** tidak salah lokasi saat mengakses server audit/deploy, gun
 
 | Parameter Server | Nilai Resmi / Path |
 |------------------|-------------------|
-| **Nama Container LXC** | `LXC 102` |
-| **IP Address LAN** | `192.168.100.83` |
+| **Server Auditor Hermes Agent** | `192.168.100.254` |
+| **Nama Container Deploy LXC** | `LXC 102` |
+| **IP Address LAN Deploy** | `192.168.100.83` |
+
 | **Port Aplikasi** | `3051` |
 | **Domain Publik Utama (Primary)** | `https://pilih.ammang.my.id` |
 | **Domain Sekunder (Secondary)** | `https://pick-your-photo.ammang.my.id` |
