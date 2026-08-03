@@ -324,11 +324,12 @@ export default function AdminVendors({
             {activeMenuVendor.paymentProof && (
               <button
                 onClick={() => { setActiveProofUrl(activeMenuVendor.paymentProof); setActiveMenuVendor(null); }}
-                style={{ padding: '8px 10px', fontSize: '12px', background: 'none', border: 'none', color: '#e4e4e7', borderRadius: '6px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{ padding: '8px 10px', fontSize: '12px', background: 'none', border: 'none', color: activeMenuVendor.paymentProof === 'via_payment_gateway' ? '#34d399' : '#e4e4e7', borderRadius: '6px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                👁 Bukti Transfer
+                {activeMenuVendor.paymentProof === 'via_payment_gateway' ? '⚡ Info Pembayaran QRIS' : '👁 Bukti Transfer'}
               </button>
             )}
+
             <button
               onClick={() => { setEditingVendor(activeMenuVendor); setActiveMenuVendor(null); }}
               style={{ padding: '8px 10px', fontSize: '12px', background: 'none', border: 'none', color: '#e4e4e7', borderRadius: '6px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}

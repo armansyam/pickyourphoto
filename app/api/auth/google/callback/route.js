@@ -90,30 +90,10 @@ export async function GET(request) {
             }
         }
 
-        // New Vendor Registration via Google (Action == 'register' or seamless onboarding for unregistered login)
-        const starterPlan = db.prepare("SELECT id, maxProjects FROM plans WHERE name LIKE '%Starter%' ORDER BY price ASC LIMIT 1").get();
-        const defaultPlanId = starterPlan ? starterPlan.id : 1;
-        const defaultMaxProjects = starterPlan ? starterPlan.maxProjects : 5;
-        const dummyPassword = await bcrypt.hash(Math.random().toString(36), 10);
-
-        const insertStmt = db.prepare(`
-            INSERT INTO vendors (name, email, password, role, status, planId, maxProjects, createdAt)
-            VALUES (?, ?, ?, 'vendor', 'pending', ?, ?, CURRENT_TIMESTAMP)
-        `);
-
-        const result = insertStmt.run(name, email, dummyPassword, defaultPlanId, defaultMaxProjects);
-
-        const newVendor = {
-            id: result.lastInsertRowid,
-            email,
-            name,
-            role: 'vendor'
-        };
-
-        const token = generateToken(newVendor);
-        setAuthCookie(token);
-
+        // New Vendor Registration via Google: Do NOT insert into DB yet!
+        // Redirect to register page so the user chooses a plan and completes payment/upload first.
         return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`, origin));
+
     } catch (error) {
         console.error('Google OAuth callback error:', error);
         return NextResponse.redirect(new URL('/login?error=Internal authentication failure.', getRequestOrigin(request)));
