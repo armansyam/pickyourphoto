@@ -326,7 +326,76 @@ export async function GET() {
             });
         }
 
-        console.log('--> [/api/admin/analytics] Returning real analytics:', { activeVendorsCount, mrr, totalProjects, totalPhotos, selectedPhotosCount });
+        // 9. Calculate Top 5 Free Trial galleries and Top 5 Subscribed Vendors by Photo Scan volume
+        let topTrialGalleries = [];
+        let totalTrialPhotosScanned = 0;
+        let todayTrialPhotosScanned = 0;
+        try {
+            const trialGalleriesAll = db.prepare("SELECT slug, title, stagingFiles, createdAt FROM trial_galleries").all() || [];
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            const parsedTrialGalleries = trialGalleriesAll.map(g => {
+                let files = [];
+                try { files = JSON.parse(g.stagingFiles || '[]'); } catch(e){}
+                
+                let photoCount = 0;
+                let unlockedCount = 0;
+                files.forEach(f => {
+                    if (f._isLocked) {
+                        photoCount += (f._count || 0);
+                    } else {
+                        photoCount += 1;
+                        unlockedCount += 1;
+                    }
+                });
+
+                totalTrialPhotosScanned += photoCount;
+                if (g.createdAt && g.createdAt.startsWith(todayStr)) {
+                    todayTrialPhotosScanned += photoCount;
+                }
+
+                return {
+                    slug: g.slug,
+                    title: g.title || 'Galeri Trial',
+                    photoCount,
+                    unlockedCount,
+                    createdAt: g.createdAt
+                };
+            });
+
+            topTrialGalleries = parsedTrialGalleries
+                .sort((a, b) => b.photoCount - a.photoCount)
+                .slice(0, 5);
+        } catch (tErr) {
+            console.error('[Analytics Error] Failed to calculate trial photo stats:', tErr);
+        }
+
+        let topVendorsByPhotos = [];
+        let todayVendorPhotosScanned = 0;
+        try {
+            topVendorsByPhotos = db.prepare(`
+                SELECT 
+                    v.id, 
+                    v.name, 
+                    v.brandName,
+                    v.email,
+                    p.name as planName,
+                    COUNT(DISTINCT pr.id) as totalProjects,
+                    COUNT(ph.id) as totalPhotos
+                FROM vendors v
+                LEFT JOIN plans p ON v.planId = p.id
+                LEFT JOIN projects pr ON pr.vendorId = v.id
+                LEFT JOIN photos ph ON ph.projectId = pr.id
+                WHERE v.role = 'vendor' AND v.status = 'active'
+                GROUP BY v.id
+                ORDER BY totalPhotos DESC
+                LIMIT 5
+            `).all() || [];
+
+            todayVendorPhotosScanned = db.prepare("SELECT COUNT(*) as count FROM photos WHERE date(uploadedAt) = date('now') OR date(uploadedAt, 'localtime') = date('now')").get()?.count || 0;
+        } catch (vErr) {
+            console.error('[Analytics Error] Failed to calculate vendor photo stats:', vErr);
+        }
 
         return NextResponse.json({
             topStorageUsers,
@@ -341,6 +410,14 @@ export async function GET() {
             trialsExpiredNoConvert,
             trialConversionRate,
             trialTrend,
+            topTrialGalleries,
+            topVendorsByPhotos,
+            photoScanStats: {
+                totalTrialPhotosScanned,
+                todayTrialPhotosScanned,
+                totalVendorPhotosScanned: totalPhotos,
+                todayVendorPhotosScanned
+            },
             activeVendorCount: activeVendorsCount,
             pendingVendorCount,
             totalVendorsCount,
@@ -372,6 +449,7 @@ export async function GET() {
                 lastBackupTime
             }
         });
+
     } catch (error) {
         console.error('Failed to retrieve analytics:', error);
         return NextResponse.json({ message: 'Internal server error.' }, { status: 500 });

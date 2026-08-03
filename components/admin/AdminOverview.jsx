@@ -29,7 +29,12 @@ export default function AdminOverview({ analyticsData, diskStats }) {
   const selectedPhotos = analyticsData?.selectedPhotosCount || 0;
   const selectionRate = totalPhotos > 0 ? ((selectedPhotos / totalPhotos) * 100).toFixed(1) : '0.0';
 
+  const topTrialGalleries = analyticsData?.topTrialGalleries || [];
+  const topVendorsByPhotos = analyticsData?.topVendorsByPhotos || [];
+  const photoScanStats = analyticsData?.photoScanStats || {};
+
   const recentProjects = analyticsData?.recentProjects || [];
+
   const recentVendors = analyticsData?.recentVendors || [];
   const planDistribution = analyticsData?.planDistribution || [];
 
@@ -146,7 +151,92 @@ export default function AdminOverview({ analyticsData, diskStats }) {
         </div>
       </div>
 
-      {/* ── 2. WIDGET GRAFIK UTAMA (PENDAPATAN & AKTIVITAS UNGGAH/SELEKSI FOTO) ── */}
+      {/* ── 2. WIDGET MINIMALIS: TOP 5 IMPOR FOTO (TRIAL VS VENDOR BERLANGGANAN) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
+        
+        {/* Card Kanan: Top 5 Free Trial Impor Terbanyak */}
+        <div className="glass-card" style={{ padding: '22px', borderRadius: '18px', border: '1px solid rgba(251, 191, 36, 0.25)', background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.04) 0%, rgba(15, 23, 42, 0.6) 100%)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>🔥</span>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#fbbf24' }}>Top 5 Free Trial (Foto Terbanyak)</h3>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#94a3b8' }}>
+                Total: <strong>{(photoScanStats.totalTrialPhotosScanned || 0).toLocaleString()} Foto</strong> • Hari Ini: <strong style={{ color: '#34d399' }}>+{(photoScanStats.todayTrialPhotosScanned || 0).toLocaleString()} Foto</strong>
+              </p>
+            </div>
+            <span style={{ fontSize: '10px', background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold' }}>TRIAL</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {topTrialGalleries.length > 0 ? (
+              topTrialGalleries.map((t, idx) => (
+                <div key={t.slug || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: idx === 0 ? '#fbbf24' : '#64748b', width: '16px' }}>#{idx + 1}</span>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <a href={`/trial-gallery/${t.slug}`} target="_blank" rel="noreferrer" style={{ fontSize: '12px', fontWeight: '600', color: '#f8fafc', textDecoration: 'none' }}>
+                        {t.slug}
+                      </a>
+                      <div style={{ fontSize: '10px', color: '#64748b' }}>{t.title}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#fbbf24' }}>{(t.photoCount || 0).toLocaleString()} Foto</span>
+                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>{t.unlockedCount} Terbuka</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', padding: '16px' }}>Belum ada data galeri trial.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Card Kiri: Top 5 Vendor Berlangganan Impor Terbanyak */}
+        <div className="glass-card" style={{ padding: '22px', borderRadius: '18px', border: '1px solid rgba(52, 211, 153, 0.25)', background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.04) 0%, rgba(15, 23, 42, 0.6) 100%)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>🏆</span>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#34d399' }}>Top 5 Vendor Berlangganan (Foto Terbanyak)</h3>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#94a3b8' }}>
+                Total: <strong>{(photoScanStats.totalVendorPhotosScanned || 0).toLocaleString()} Foto</strong> • Hari Ini: <strong style={{ color: '#34d399' }}>+{(photoScanStats.todayVendorPhotosScanned || 0).toLocaleString()} Foto</strong>
+              </p>
+            </div>
+            <span style={{ fontSize: '10px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold' }}>BERLANGGANAN</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {topVendorsByPhotos.length > 0 ? (
+              topVendorsByPhotos.map((v, idx) => (
+                <div key={v.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', color: idx === 0 ? '#34d399' : '#64748b', width: '16px' }}>#{idx + 1}</span>
+                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#f8fafc' }}>
+                        {v.brandName || v.name}
+                      </div>
+                      <div style={{ fontSize: '10px', color: '#64748b' }}>{v.planName || 'Vendor'} • {v.email}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#34d399' }}>{(v.totalPhotos || 0).toLocaleString()} Foto</span>
+                    <div style={{ fontSize: '10px', color: '#94a3b8' }}>{v.totalProjects || 0} Project</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{ fontSize: '12px', color: '#64748b', textAlign: 'center', padding: '16px' }}>Belum ada data vendor.</div>
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* ── 3. WIDGET GRAFIK UTAMA (PENDAPATAN & AKTIVITAS UNGGAH/SELEKSI FOTO) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: '24px' }}>
         
         {/* WIDGET GRAFIK 1: PENDAPATAN BULANAN (6 BULAN TERAKHIR) */}
