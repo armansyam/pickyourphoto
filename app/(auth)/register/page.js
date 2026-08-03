@@ -28,7 +28,8 @@ export default function RegisterPage() {
     useEffect(() => {
         const checkRegStatus = async () => {
             try {
-                const res = await fetch('/api/register/status');
+                const res = await fetch('/api/register/status', { cache: 'no-store' });
+
                 if (res.ok) {
                     const data = await res.json();
                     setRegStatus(data);

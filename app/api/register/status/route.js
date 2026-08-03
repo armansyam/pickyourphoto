@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { statfs } from 'fs/promises';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
+
     try {
         const settings = db.prepare("SELECT * FROM system_settings WHERE id = 1").get() || {
             enable_registration: 1,

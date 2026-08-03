@@ -975,35 +975,68 @@ export default function AdminSettings({
         )}
 
         {/* ── MODUL 4: KONTROL OPERASIONAL SAAS & FREE TRIAL ── */}
-        <h4 style={{ margin: '24px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
-          ⚙️ Modul 4: Kontrol Operasional SaaS & Free Trial
+        <h4 style={{ margin: '24px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span>⚙️ Modul 4: Kontrol Operasional SaaS & Free Trial</span>
+          <span style={{ fontSize: '11px', background: sysEnableReg ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: sysEnableReg ? '#34d399' : '#f87171', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold' }}>
+            {sysEnableReg ? '🟢 PENDAFTARAN DIBUKA' : '🔴 PENDAFTARAN DITUTUP (LOCKED)'}
+          </span>
         </h4>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <input
-              type="checkbox"
-              id="enable_registration"
-              checked={sysEnableReg}
-              onChange={e => setSysEnableReg(e.target.checked)}
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-            />
-            <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>Buka Pendaftaran Vendor Baru</label>
+        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <input
+                type="checkbox"
+                id="enable_registration"
+                checked={sysEnableReg}
+                onChange={async (e) => {
+                  const newChecked = e.target.checked;
+                  setSysEnableReg(newChecked);
+                }}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableReg ? '#34d399' : '#f87171' }}>
+                Buka Pendaftaran Vendor Baru (Registration Open)
+              </label>
+            </div>
+
+            <button
+              type="button"
+              disabled={savingProfile}
+              onClick={async (e) => {
+                if (handleSaveProfile) await handleSaveProfile(e);
+                if (addToast) addToast(`Status Pendaftaran Vendor Baru berhasil disimpan: ${sysEnableReg ? 'DIBUKA' : 'DITUTUP'}!`, 'success');
+              }}
+              className="btn-primary"
+              style={{
+                padding: '8px 16px',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              💾 {savingProfile ? 'Menyimpan...' : 'Simpan Status Pendaftaran'}
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label" style={{ fontSize: '12px' }}>Batas Maksimal Vendor Aktif (Quota)</label>
+              <input
+                type="number"
+                className="input-text"
+                placeholder="Kosongkan untuk tanpa batas"
+                value={sysMaxQuota === null ? '' : sysMaxQuota}
+                onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
+              />
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Batas Maksimal Vendor Aktif</label>
-            <input
-              type="number"
-              className="input-text"
-              placeholder="Kosongkan untuk tanpa batas"
-              value={sysMaxQuota === null ? '' : sysMaxQuota}
-              onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
-            />
-          </div>
-        </div>
 
         {/* Password Reset Section */}
         <h4 style={{ margin: '24px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
