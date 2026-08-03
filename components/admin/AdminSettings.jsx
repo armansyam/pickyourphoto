@@ -974,9 +974,10 @@ export default function AdminSettings({
           </div>
         )}
 
-        {/* ── MODUL 4: KONTROL OPERASIONAL SAAS & FREE TRIAL ── */}
+        {/* ── MODUL 4: KONTROL OPERASIONAL PENDAFTARAN SAAS ── */}
         <h4 style={{ margin: '24px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>⚙️ Modul 4: Kontrol Operasional SaaS & Free Trial</span>
+          <span>⚙️ Modul 4: Kontrol Operasional Pendaftaran SaaS</span>
+
           <span style={{ fontSize: '11px', background: sysEnableReg ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: sysEnableReg ? '#34d399' : '#f87171', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold' }}>
             {sysEnableReg ? '🟢 PENDAFTARAN DIBUKA' : '🔴 PENDAFTARAN DITUTUP (LOCKED)'}
           </span>
