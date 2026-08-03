@@ -94,9 +94,9 @@ export async function POST(request) {
     if (!baseSlug) baseSlug = 'trial';
     const slug = `${baseSlug}-${randomHex}`;
 
-    // Validasi ukuran logoUrl (base64) - maks ~700KB encoded
-    if (logoUrl && logoUrl.length > 700 * 1024) {
-      return NextResponse.json({ message: 'Logo terlalu besar. Maksimal 500KB.' }, { status: 400 });
+    // Validasi ukuran logoUrl (base64 terkompresi) - maks ~2MB encoded
+    if (logoUrl && logoUrl.length > 2 * 1024 * 1024) {
+      return NextResponse.json({ message: 'Logo terlalu besar. Maksimal 5MB.' }, { status: 400 });
     }
 
     const insertStmt = db.prepare(`

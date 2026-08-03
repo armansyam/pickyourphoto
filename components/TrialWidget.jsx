@@ -115,14 +115,15 @@ export default function TrialWidget() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 500 * 1024) {
-      setError('Ukuran file logo maksimal 500KB. Gunakan gambar yang lebih kecil.');
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Ukuran file logo maksimal 5MB. Silakan gunakan gambar yang lebih kecil dari 5MB.');
       return;
     }
 
     try {
       setError('');
-      const compressedDataUrl = await compressToWebP(file, 320, 0.75);
+      const quality = file.size > 1 * 1024 * 1024 ? 0.65 : 0.75;
+      const compressedDataUrl = await compressToWebP(file, 320, quality);
       setLogoUrl(compressedDataUrl);
       setLogoPreview(compressedDataUrl);
     } catch (err) {
@@ -309,8 +310,8 @@ export default function TrialWidget() {
                   </div>
                 )}
               </div>
-              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                * Maks 500KB • Format: PNG/JPG/WebP • Otomatis dikompres ke WebP untuk loading cepat
+              <div style={{ fontSize: '11px', color: '#71717a', marginTop: '6px' }}>
+                * Maks 5MB • Format: PNG/JPG/WebP • Otomatis dikompresi ke WebP untuk loading cepat
               </div>
             </div>
 
