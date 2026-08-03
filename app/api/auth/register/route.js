@@ -130,17 +130,19 @@ export async function POST(request) {
         }
 
         const hashedPassword = await bcrypt.hash(password || Math.random().toString(36), 10);
+        const initialStatus = isGateway ? 'pending_payment' : 'pending';
 
         const insertStmt = db.prepare(`
             INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, resetRequested) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         `);
-        const info = insertStmt.run(name || email.split('@')[0], email, whatsapp, hashedPassword, 'vendor', 'pending', planDetails.maxProjects, planDetails.id, paymentProofPath);
+        const info = insertStmt.run(name || email.split('@')[0], email, whatsapp, hashedPassword, 'vendor', initialStatus, planDetails.maxProjects, planDetails.id, paymentProofPath);
 
         return NextResponse.json({ 
-            message: 'Registration submitted successfully. Waiting for admin approval.', 
+            message: isGateway ? 'Registration submitted successfully. Waiting for QRIS payment.' : 'Registration submitted successfully. Waiting for admin approval.', 
             vendorId: info.lastInsertRowid 
         }, { status: 201 });
+
 
     } catch (error) {
         console.error(error);
