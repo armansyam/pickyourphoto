@@ -9,7 +9,7 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Payment Gateway saat ini dinonaktifkan.' }, { status: 400 });
     }
 
-    const { vendorId, planId } = await request.json();
+    const { vendorId, planId, customAmount } = await request.json();
 
     if (!vendorId || !planId) {
       return NextResponse.json({ message: 'vendorId dan planId wajib diisi.' }, { status: 400 });
@@ -27,7 +27,8 @@ export async function POST(request) {
 
     // Generate unique orderId
     const orderId = `ORDER-${Date.now()}-${vendor.id}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const amount = plan.price;
+    const amount = (customAmount && customAmount > 0) ? customAmount : plan.price;
+
 
     const paymentResult = await createPayment({
       orderId,

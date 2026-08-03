@@ -123,6 +123,11 @@ export default function DashboardPage() {
     const [isSubmittingUpgrade, setIsSubmittingUpgrade] = useState(false);
     const [upgradeError, setUpgradeError] = useState('');
     const [bankSettings, setBankSettings] = useState(null);
+    const [enablePaymentGateway, setEnablePaymentGateway] = useState(false);
+    const [paymentGatewayClientKey, setPaymentGatewayClientKey] = useState('');
+    const [paymentGatewayIsProduction, setPaymentGatewayIsProduction] = useState(false);
+    const [upgradePaymentMethod, setUpgradePaymentMethod] = useState('gateway');
+
 
     // Project deletion states
     const [projectToDelete, setProjectToDelete] = useState(null);
@@ -224,7 +229,7 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchProjects();
-        // Fetch admin WA and available plans
+        // Fetch admin WA, bank settings, and payment gateway config
         fetch('/api/settings').then(r => r.json()).then(s => {
             setAdminWhatsapp(s.contact_whatsapp || '');
             setBankSettings({
@@ -232,9 +237,37 @@ export default function DashboardPage() {
                 bankAccountNumber: s.bank_account_number || '',
                 bankAccountName: s.bank_account_name || ''
             });
+
+            const isGw = s.enable_payment_gateway === '1' || s.enable_payment_gateway === 'true';
+            setEnablePaymentGateway(isGw);
+            setPaymentGatewayClientKey(s.payment_gateway_client_key || '');
+            setPaymentGatewayIsProduction(s.payment_gateway_is_production === '1');
+            if (isGw) {
+                setUpgradePaymentMethod('gateway');
+            } else {
+                setUpgradePaymentMethod('manual');
+            }
         }).catch(() => {});
         fetch('/api/plans').then(r => r.json()).then(p => setAvailablePlans(Array.isArray(p) ? p : [])).catch(() => {});
     }, []);
+
+    // Dynamically inject Midtrans Snap script if Payment Gateway is enabled
+    useEffect(() => {
+        if (enablePaymentGateway && paymentGatewayClientKey && typeof window !== 'undefined') {
+            const snapUrl = paymentGatewayIsProduction
+                ? 'https://app.midtrans.com/snap/snap.js'
+                : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
+            if (!document.querySelector(`script[src="${snapUrl}"]`)) {
+                const script = document.createElement('script');
+                script.src = snapUrl;
+                script.setAttribute('data-client-key', paymentGatewayClientKey);
+                script.async = true;
+                document.body.appendChild(script);
+            }
+        }
+    }, [enablePaymentGateway, paymentGatewayClientKey, paymentGatewayIsProduction]);
+
 
     // Polling effect if any project has "importing" status
     useEffect(() => {
@@ -386,6 +419,87 @@ export default function DashboardPage() {
             setIsSubmittingUpgrade(false);
         }
     };
+
+    // Submit upgrade plan request via Payment Gateway (QRIS)
+    const handleGatewayUpgrade = async () => {
+        if (!selectedUpgradePlan || !vendorDetails?.id) return;
+        setIsSubmittingUpgrade(true);
+        setUpgradeError('');
+
+        try {
+            const proration = getProrationDetails(selectedUpgradePlan);
+            const res = await fetch('/api/payment/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    vendorId: vendorDetails.id,
+                    planId: selectedUpgradePlan.id,
+                    customAmount: proration.total
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.token) {
+                throw new Error(data.message || 'Gagal memproses pembayaran gateway.');
+            }
+
+            let pollTimer = null;
+            if (data.orderId) {
+                pollTimer = setInterval(async () => {
+                    try {
+                        const stRes = await fetch(`/api/payment/status?orderId=${data.orderId}`);
+                        const stData = await stRes.json();
+                        if (stRes.ok && stData.paid) {
+                            clearInterval(pollTimer);
+                            setShowUpgradeModal(false);
+                            setSelectedUpgradePlan(null);
+                            addToast('🎉 Upgrade Plan Berhasil! Paket Anda telah diperbarui.', 'success');
+                            fetchProjects();
+                        }
+                    } catch (e) {}
+                }, 2500);
+            }
+
+            if (typeof window !== 'undefined' && window.snap) {
+                window.snap.pay(data.token, {
+                    onSuccess: function () {
+                        if (pollTimer) clearInterval(pollTimer);
+                        setShowUpgradeModal(false);
+                        setSelectedUpgradePlan(null);
+                        addToast('🎉 Upgrade Plan Berhasil! Paket Anda telah diperbarui.', 'success');
+                        fetchProjects();
+                    },
+                    onPending: function () {
+                        addToast('Menunggu konfirmasi pembayaran QRIS...', 'info');
+                    },
+                    onError: function () {
+                        if (pollTimer) clearInterval(pollTimer);
+                        setUpgradeError('Pembayaran gagal atau dibatalkan oleh pengguna.');
+                    },
+                    onClose: function () {
+                        fetch(`/api/payment/status?orderId=${data.orderId}`)
+                            .then(r => r.json())
+                            .then(d => {
+                                if (d.paid) {
+                                    if (pollTimer) clearInterval(pollTimer);
+                                    setShowUpgradeModal(false);
+                                    setSelectedUpgradePlan(null);
+                                    addToast('🎉 Upgrade Plan Berhasil! Paket Anda telah diperbarui.', 'success');
+                                    fetchProjects();
+                                }
+                            }).catch(() => {});
+                    }
+                });
+            } else if (data.redirectUrl) {
+                window.location.href = data.redirectUrl;
+            }
+        } catch (err) {
+            setUpgradeError(err.message);
+        } finally {
+            setIsSubmittingUpgrade(false);
+        }
+    };
+
 
     // Delete Project
     const handleDeleteProject = (id, name) => {
@@ -2373,31 +2487,85 @@ export default function DashboardPage() {
                                     )}
 
                                     <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', margin: '12px 0', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: '700' }}>
-                                        <span style={{ color: '#e4e4e7' }}>{selectedUpgradePlan.id === vendorDetails?.planId ? 'Biaya Perpanjangan' : 'Total Transfer'}</span>
-                                        <span style={{ color: '#fbbf24' }}>Rp {selectedUpgradePlan.price.toLocaleString('id-ID')}</span>
+                                        <span style={{ color: '#e4e4e7' }}>{selectedUpgradePlan.id === vendorDetails?.planId ? 'Biaya Perpanjangan' : 'Total Pembayaran'}</span>
+                                        <span style={{ color: '#fbbf24' }}>Rp {getProrationDetails(selectedUpgradePlan).total.toLocaleString('id-ID')}</span>
                                     </div>
                                 </div>
 
-                                {bankSettings && (
-                                    <div style={{ background: 'rgba(99,102,241,0.04)', border: '1px dashed rgba(99,102,241,0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px' }}>
-                                        <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#a5b4fc', fontWeight: '600' }}>🏦 Rekening Pembayaran</h4>
-                                        <p style={{ margin: '0 0 6px 0', fontSize: '13px', color: '#a1a1aa' }}>Bank: <strong style={{ color: '#e4e4e7' }}>{bankSettings.bankName}</strong></p>
-                                        <p style={{ margin: '0 0 6px 0', fontSize: '13px', color: '#a1a1aa' }}>Nomor Rekening: <strong style={{ color: '#fbbf24', fontFamily: 'monospace', fontSize: '15px' }}>{bankSettings.bankAccountNumber}</strong></p>
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa' }}>Atas Nama: <strong style={{ color: '#e4e4e7' }}>{bankSettings.bankAccountName}</strong></p>
+                                {enablePaymentGateway && (
+                                    <div style={{ marginBottom: '20px' }}>
+                                        <label style={{ display: 'block', marginBottom: '10px', fontSize: '13px', color: '#a1a1aa', fontWeight: '600' }}>Pilih Metode Pembayaran</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                            <div 
+                                                onClick={() => setUpgradePaymentMethod('gateway')}
+                                                style={{
+                                                    background: upgradePaymentMethod === 'gateway' ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
+                                                    border: `1.5px solid ${upgradePaymentMethod === 'gateway' ? '#6366f1' : 'rgba(255,255,255,0.1)'}`,
+                                                    borderRadius: '10px',
+                                                    padding: '12px 14px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>⚡ Pembayaran Otomatis</span>
+                                                    <span style={{ fontSize: '10px', background: '#10b981', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>INSTAN QRIS</span>
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: '#a1a1aa', lineHeight: '1.4' }}>Bayar via QRIS instan tanpa upload foto bukti transfer.</div>
+                                            </div>
+
+                                            <div 
+                                                onClick={() => setUpgradePaymentMethod('manual')}
+                                                style={{
+                                                    background: upgradePaymentMethod === 'manual' ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
+                                                    border: `1.5px solid ${upgradePaymentMethod === 'manual' ? '#6366f1' : 'rgba(255,255,255,0.1)'}`,
+                                                    borderRadius: '10px',
+                                                    padding: '12px 14px',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>🏦 Bank Transfer</span>
+                                                    <span style={{ fontSize: '10px', background: '#6366f1', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>MANUAL</span>
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: '#a1a1aa', lineHeight: '1.4' }}>Transfer bank manual & upload foto bukti transaksi.</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
-                                <div className="form-group" style={{ marginBottom: '20px' }}>
-                                    <label className="form-label" style={{ display: 'block', marginBottom: '8px' }}>Upload Bukti Transfer</label>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        onChange={(e) => setTransferProofFile(e.target.files[0])}
-                                        required 
-                                        style={{ display: 'block', width: '100%', fontSize: '13px', color: '#a1a1aa' }} 
-                                    />
-                                    <span style={{ fontSize: '11px', color: '#71717a', display: 'block', marginTop: '4px' }}>Dukungan file gambar (JPEG, PNG, WebP) maks 5MB.</span>
-                                </div>
+                                {upgradePaymentMethod === 'gateway' ? (
+                                    <div style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px' }}>
+                                        <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#34d399', fontWeight: '600' }}>⚡ Pembayaran Otomatis & Instan</h4>
+                                        <p style={{ margin: 0, fontSize: '12px', color: '#a1a1aa', lineHeight: '1.5' }}>
+                                            Klik tombol di bawah untuk membuka QRIS. Anda dapat membayar menggunakan <strong>BCA Mobile, Livin, BRImo, GoPay, OVO, ShopeePay, atau DANA</strong>. Paket Anda otomatis ter-upgrade seketika tanpa upload foto bukti!
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {bankSettings && (
+                                            <div style={{ background: 'rgba(99,102,241,0.04)', border: '1px dashed rgba(99,102,241,0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px' }}>
+                                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#a5b4fc', fontWeight: '600' }}>🏦 Rekening Pembayaran</h4>
+                                                <p style={{ margin: '0 0 6px 0', fontSize: '13px', color: '#a1a1aa' }}>Bank: <strong style={{ color: '#e4e4e7' }}>{bankSettings.bankName}</strong></p>
+                                                <p style={{ margin: '0 0 6px 0', fontSize: '13px', color: '#a1a1aa' }}>Nomor Rekening: <strong style={{ color: '#fbbf24', fontFamily: 'monospace', fontSize: '15px' }}>{bankSettings.bankAccountNumber}</strong></p>
+                                                <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa' }}>Atas Nama: <strong style={{ color: '#e4e4e7' }}>{bankSettings.bankAccountName}</strong></p>
+                                            </div>
+                                        )}
+
+                                        <div className="form-group" style={{ marginBottom: '20px' }}>
+                                            <label className="form-label" style={{ display: 'block', marginBottom: '8px' }}>Upload Bukti Transfer</label>
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                onChange={(e) => setTransferProofFile(e.target.files[0])}
+                                                required 
+                                                style={{ display: 'block', width: '100%', fontSize: '13px', color: '#a1a1aa' }} 
+                                            />
+                                            <span style={{ fontSize: '11px', color: '#71717a', display: 'block', marginTop: '4px' }}>Dukungan file gambar (JPEG, PNG, WebP) maks 5MB.</span>
+                                        </div>
+                                    </>
+                                )}
 
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
                                     <button type="button" className="btn-secondary" onClick={() => {
@@ -2406,9 +2574,21 @@ export default function DashboardPage() {
                                         setUpgradeError('');
                                     }} disabled={isSubmittingUpgrade}>Kembali</button>
                                     
-                                    <button type="submit" className="btn-primary" disabled={isSubmittingUpgrade || !transferProofFile}>
-                                        {isSubmittingUpgrade ? 'Mengirim...' : 'Kirim Bukti Pembayaran'}
-                                    </button>
+                                    {upgradePaymentMethod === 'gateway' ? (
+                                        <button 
+                                            type="button" 
+                                            className="btn-primary" 
+                                            onClick={handleGatewayUpgrade} 
+                                            disabled={isSubmittingUpgrade}
+                                            style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}
+                                        >
+                                            {isSubmittingUpgrade ? 'Memproses Gateway...' : '🚀 Bayar Upgrade via QRIS'}
+                                        </button>
+                                    ) : (
+                                        <button type="submit" className="btn-primary" disabled={isSubmittingUpgrade || !transferProofFile}>
+                                            {isSubmittingUpgrade ? 'Mengirim...' : 'Kirim Bukti Pembayaran'}
+                                        </button>
+                                    )}
                                 </div>
                             </form>
                         )}
