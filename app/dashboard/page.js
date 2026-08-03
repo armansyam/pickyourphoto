@@ -43,7 +43,18 @@ function CountdownTimer({ expiresAt }) {
     );
 }
 
-import { normalizeWhatsappNumber } from '@/lib/vendor-status';
+const normalizeWhatsappNumber = (rawNumber) => {
+    if (!rawNumber) return '';
+    let cleaned = rawNumber.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) {
+        cleaned = '62' + cleaned.slice(1);
+    }
+    if (!cleaned.startsWith('62')) {
+        cleaned = '62' + cleaned;
+    }
+    return cleaned;
+};
+
 
 
 export default function DashboardPage() {
