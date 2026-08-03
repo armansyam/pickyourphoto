@@ -30,9 +30,11 @@ Agar **Hermes Agent** tidak salah lokasi saat mengakses server audit/deploy, gun
 | **Domain Publik Utama (Primary)** | `https://pilih.ammang.my.id` |
 | **Domain Sekunder (Secondary)** | `https://pick-your-photo.ammang.my.id` |
 
+| **Process Manager** | `PM2 (Node.js Direct Manager)` |
 | **Direktori Proyek di LXC 102** | `/DATA/AppData/pickyourphoto` |
 | **Watchdog Script** | `/opt/hermes/watchdog.sh` |
 | **Log Audit Watchdog** | `/var/log/hermes-watchdog.log` |
+
 
 > [!IMPORTANT]
 > **Panduan untuk Hermes Agent**: Saat berpindah atau mengeksekusi script di LXC 102, selalu masuk ke direktori resmi `/DATA/AppData/pickyourphoto`. Jangan mengakses direktori `/tmp` atau folder lain!
