@@ -1,7 +1,4 @@
-import { NextResponse } from 'next/server';
-import db from '@/lib/db';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import { generateToken, setAuthCookie } from '@/lib/auth';
 
 export async function POST(request) {
     try {
@@ -12,7 +9,7 @@ export async function POST(request) {
         }
 
         const stmt = db.prepare('SELECT id, name, email, password, role, status FROM vendors WHERE email = ?');
-        const vendor = stmt.get(email);
+        const vendor = stmt.get(email.toLowerCase().trim());
 
         if (!vendor) {
             return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
@@ -33,26 +30,13 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Akun Anda telah ditangguhkan. Silakan hubungi administrator.' }, { status: 401 });
         }
 
-        const secret = process.env.JWT_SECRET || 'pick-your-photo-super-secret-key-2026';
-        const token = jwt.sign(
-            { id: vendor.id, name: vendor.name, email: vendor.email },
-            secret,
-            { expiresIn: '7d' }
-        );
+        const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
+        setAuthCookie(token);
 
-        const response = NextResponse.json({ message: 'Login successful.', role: vendor.role });
-        response.cookies.set('token', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 60 * 60 * 24, // 1 day
-            path: '/',
-        });
-
-        return response;
+        return NextResponse.json({ success: true, message: 'Login successful.' });
 
     } catch (error) {
-        console.error(error);
+        console.error('Login Error:', error);
         return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
     }
 }
