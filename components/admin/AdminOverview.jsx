@@ -120,7 +120,17 @@ export default function AdminOverview({ analyticsData, diskStats }) {
         </div>
 
         {/* Right Side: Key Metric Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+          <div style={{ background: 'rgba(52, 211, 153, 0.08)', border: '1px solid rgba(52, 211, 153, 0.25)', borderRadius: '14px', padding: '14px 16px' }}>
+            <div style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>⚡ Dipindai HARI INI</div>
+            <div style={{ fontSize: '22px', fontWeight: '800', color: '#ffffff', marginTop: '2px' }}>
+              +{((photoScanStats.todayTrialPhotosScanned || 0) + (photoScanStats.todayVendorPhotosScanned || 0)).toLocaleString('id-ID')} <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal' }}>Foto</span>
+            </div>
+            <div style={{ fontSize: '10px', color: '#a1a1aa', marginTop: '4px' }}>
+              Trial: <strong style={{ color: '#fbbf24' }}>+{(photoScanStats.todayTrialPhotosScanned || 0).toLocaleString()}</strong> • Vendor: <strong style={{ color: '#34d399' }}>+{(photoScanStats.todayVendorPhotosScanned || 0).toLocaleString()}</strong>
+            </div>
+          </div>
+
           <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '14px', padding: '14px 16px' }}>
             <div style={{ fontSize: '11px', color: '#a1a1aa' }}>Studio Aktif Berlangganan</div>
             <div style={{ fontSize: '22px', fontWeight: '800', color: '#34d399', marginTop: '2px' }}>
@@ -150,6 +160,7 @@ export default function AdminOverview({ analyticsData, diskStats }) {
           </div>
         </div>
       </div>
+
 
       {/* ── 2. WIDGET MINIMALIS: TOP 5 IMPOR FOTO (TRIAL VS VENDOR BERLANGGANAN) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
