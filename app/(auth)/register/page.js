@@ -213,30 +213,54 @@ export default function RegisterPage() {
                     });
                     const payData = await payRes.json();
 
-                    if (payRes.ok && payData.token && typeof window !== 'undefined' && window.snap) {
-                        window.snap.pay(payData.token, {
-                            onSuccess: function () {
-                                window.location.href = '/dashboard';
-                            },
-                            onPending: function () {
-                                setSuccess(true);
-                            },
-                            onError: function () {
-                                setError('Pembayaran gagal atau dibatalkan oleh pengguna.');
-                            },
-                            onClose: function () {
-                                setSuccess(true);
-                            }
-                        });
-                        return;
-                    } else if (payData.redirectUrl) {
-                        window.location.href = payData.redirectUrl;
-                        return;
+                    if (payRes.ok && payData.token) {
+                        // Start real-time background status polling for auto-login & auto-redirect
+                        if (payData.orderId) {
+                            const pollTimer = setInterval(async () => {
+                                try {
+                                    const stRes = await fetch(`/api/payment/status?orderId=${payData.orderId}`);
+                                    const stData = await stRes.json();
+                                    if (stRes.ok && stData.paid) {
+                                        clearInterval(pollTimer);
+                                        window.location.href = stData.redirectUrl || '/dashboard';
+                                    }
+                                } catch (e) {
+                                    // ignore polling errors
+                                }
+                            }, 2000);
+                        }
+
+                        if (typeof window !== 'undefined' && window.snap) {
+                            window.snap.pay(payData.token, {
+                                onSuccess: function () {
+                                    window.location.href = '/dashboard';
+                                },
+                                onPending: function () {
+                                    setSuccess(true);
+                                },
+                                onError: function () {
+                                    setError('Pembayaran gagal atau dibatalkan oleh pengguna.');
+                                },
+                                onClose: function () {
+                                    fetch(`/api/payment/status?orderId=${payData.orderId}`)
+                                        .then(r => r.json())
+                                        .then(d => {
+                                            if (d.paid) window.location.href = '/dashboard';
+                                            else setSuccess(true);
+                                        }).catch(() => setSuccess(true));
+                                }
+                            });
+                            return;
+                        } else if (payData.redirectUrl) {
+                            window.location.href = payData.redirectUrl;
+                            return;
+                        }
                     }
                 } catch (payErr) {
                     console.error('[Payment Gateway Launch Error]:', payErr);
                 }
             }
+
 
             setSuccess(true);
             setName('');
