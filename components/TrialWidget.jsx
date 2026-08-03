@@ -278,9 +278,9 @@ export default function TrialWidget() {
                 <input
                   type="number"
                   min="1"
-                  max="15"
+                  max={trialSettings.trial_max_selection}
                   value={maxSelection}
-                  onChange={(e) => setMaxSelection(e.target.value)}
+                  onChange={(e) => setMaxSelection(Math.min(parseInt(e.target.value) || 1, trialSettings.trial_max_selection))}
                   style={{ width: '100%', padding: '10px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '14px', outline: 'none' }}
                 />
               </div>

@@ -261,7 +261,9 @@ export default function TrialGalleryPage({ params }) {
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>⚡ Powered by Pick-Your-Photo (Trial Co-Branded)</span>
+          {!data?.logoUrl && (
+            <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>⚡ Powered by Pick-Your-Photo (Trial Co-Branded)</span>
+          )}
           <Link href="/register" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#1e1b4b', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 2px 8px rgba(245,158,11,0.4)' }}>
             🚀 Hapus Badge SaaS (Upgrade Pro)
           </Link>
@@ -272,10 +274,18 @@ export default function TrialGalleryPage({ params }) {
       <header style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 20px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {data?.logoUrl && (
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-              <div style={{ background: '#ffffff', padding: '8px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.2)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <img src={data.logoUrl} alt="Logo Studio Vendor" style={{ maxHeight: '60px', maxWidth: '180px', objectFit: 'contain' }} />
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <img
+                src={data.logoUrl}
+                alt="Logo Studio Vendor"
+                style={{
+                  maxHeight: '56px',
+                  maxWidth: '160px',
+                  objectFit: 'contain',
+                  display: 'block',
+                  filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))',
+                }}
+              />
             </div>
           )}
           <div>
