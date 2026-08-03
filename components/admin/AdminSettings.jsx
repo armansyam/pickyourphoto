@@ -38,7 +38,9 @@ export default function AdminSettings({
   handleSaveProfile
 }) {
   const [isEditingGoogleCredentials, setIsEditingGoogleCredentials] = React.useState(false);
+  const [isEditingPaymentGateway, setIsEditingPaymentGateway] = React.useState(false);
   const [isEditingSmtp, setIsEditingSmtp] = React.useState(false);
+
   const [testEmailStatus, setTestEmailStatus] = React.useState({ loading: false, success: '', error: '' });
 
   return (
@@ -373,7 +375,90 @@ export default function AdminSettings({
             </span>
           </div>
 
-          {enablePaymentGateway && (
+          {enablePaymentGateway && paymentGatewayClientKey && paymentGatewayServerKey && !isEditingPaymentGateway ? (
+            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '18px 20px', borderRadius: '12px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 10px #34d399' }} />
+                      <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399' }}>
+                        Payment Gateway ({paymentGatewayProvider.toUpperCase()}) 100% Terhubung & Aktif
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '4px' }}>
+                      ⚡ Kredensial tersimpan secara aman di database. Pembayaran vendor otomatis diproses.
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingPaymentGateway(true)}
+                      className="btn-secondary"
+                      style={{ padding: '8px 14px', fontSize: '12px', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
+                    >
+                      ✏️ Edit Kredensial
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async (e) => {
+                        setEnablePaymentGateway(false);
+                        setIsEditingPaymentGateway(true);
+                        await handleSaveSettings(e);
+                        if (addToast) addToast('Payment Gateway dinonaktifkan.', 'info');
+                      }}
+                      className="btn-secondary"
+                      style={{ padding: '8px 14px', fontSize: '12px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
+                    >
+                      🗑️ Nonaktifkan
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3 Status Item Badges */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>1. Status Provider</div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
+                      ✓ {paymentGatewayProvider.toUpperCase()} (Sandbox)
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>2. Client Key</div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
+                      ✓ Terdaftar
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
+                      {paymentGatewayClientKey ? `${paymentGatewayClientKey.substring(0, 14)}...` : '-'}
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>3. Server Key</div>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
+                      ✓ Terdaftar
+                    </div>
+                    <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
+                      {paymentGatewayServerKey ? '••••••••' + paymentGatewayServerKey.slice(-4) : '-'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Webhook Callback Notification URL Helper */}
+              <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '12px 14px', borderRadius: '8px', fontSize: '12px' }}>
+                <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback (Otomatis Lunas):</div>
+                <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
+                  {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'}
+                </code>
+                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px' }}>
+                  * Salin URL di atas dan pasang di Dashboard Provider ({paymentGatewayProvider.toUpperCase()}) pada bagian <em>Notification / Webhook URL</em> agar akun vendor otomatis aktif saat pembayaran lunas.
+                </div>
+              </div>
+            </div>
+          ) : enablePaymentGateway ? (
             <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
               <div className="form-group" style={{ marginBottom: '12px' }}>
                 <label className="form-label" style={{ fontSize: '12px' }}>Pilih Provider Payment Gateway</label>
@@ -428,16 +513,27 @@ export default function AdminSettings({
                 </div>
               </div>
 
-              {/* Dedicated Save Button & Status Badges for Payment Gateway */}
-              <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                    💡 Klik simpan di samping untuk menerapkan Kredensial Payment Gateway ke database.
-                  </span>
+              {/* Dedicated Save Button */}
+              <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                  💡 Simpan kredensial untuk menghubungkan Payment Gateway ke database.
+                </span>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  {paymentGatewayClientKey && paymentGatewayServerKey && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingPaymentGateway(false)}
+                      className="btn-secondary"
+                      style={{ padding: '9px 16px', fontSize: '12px' }}
+                    >
+                      Batal
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={async (e) => {
                       await handleSaveSettings(e);
+                      setIsEditingPaymentGateway(false);
                       if (addToast) addToast(`Kredensial Payment Gateway (${paymentGatewayProvider.toUpperCase()}) berhasil disimpan dan terhubung!`, 'success');
                     }}
                     disabled={savingProfile}
@@ -454,42 +550,13 @@ export default function AdminSettings({
                       boxShadow: '0 2px 8px rgba(16,185,129,0.3)'
                     }}
                   >
-                    💾 {savingProfile ? 'Menyimpan...' : 'Simpan Kredensial Payment Gateway'}
+                    💾 {savingProfile ? 'Menyimpan...' : 'Simpan & Tutup Form'}
                   </button>
-                </div>
-
-                {/* 3 Status Item Badges */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '6px' }}>
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>1. Status Provider</div>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
-                      ✓ {paymentGatewayProvider.toUpperCase()} (Sandbox)
-                    </div>
-                  </div>
-
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: paymentGatewayClientKey ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(251,191,36,0.3)' }}>
-                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>2. Client Key</div>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: paymentGatewayClientKey ? '#34d399' : '#fbbf24', marginTop: '2px' }}>
-                      {paymentGatewayClientKey ? '✓ Terdaftar' : '⚠️ Belum Diisi'}
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                      {paymentGatewayClientKey ? `${paymentGatewayClientKey.substring(0, 14)}...` : '-'}
-                    </div>
-                  </div>
-
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: paymentGatewayServerKey ? '1px solid rgba(16,185,129,0.2)' : '1px solid rgba(251,191,36,0.3)' }}>
-                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>3. Server Key</div>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: paymentGatewayServerKey ? '#34d399' : '#fbbf24', marginTop: '2px' }}>
-                      {paymentGatewayServerKey ? '✓ Terdaftar' : '⚠️ Belum Diisi'}
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
-                      {paymentGatewayServerKey ? '••••••••' + paymentGatewayServerKey.slice(-4) : '-'}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
+
         </div>
 
 
