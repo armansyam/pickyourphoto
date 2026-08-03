@@ -668,16 +668,6 @@ export default function AdminSettings({
             />
             <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>Buka Pendaftaran Vendor Baru</label>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <input
-              type="checkbox"
-              id="enable_free_trial"
-              checked={sysEnableTrial}
-              onChange={e => setSysEnableTrial(e.target.checked)}
-              style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-            />
-            <label htmlFor="enable_free_trial" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: '500' }}>Aktifkan Free Trial</label>
-          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
@@ -690,46 +680,6 @@ export default function AdminSettings({
               value={sysMaxQuota === null ? '' : sysMaxQuota}
               onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
             />
-          </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Durasi Masa Berlaku Galeri Trial (Dalam Menit)</label>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-              <input
-                type="number"
-                className="input-text"
-                required
-                min="1"
-                max="10080"
-                placeholder="Contoh: 15, 30, atau 60"
-                value={sysTrialExpirationMinutes}
-                onChange={e => setSysTrialExpirationMinutes(Math.max(1, parseInt(e.target.value) || 15))}
-                style={{ flex: 1, minWidth: '120px' }}
-              />
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {[15, 30, 45, 60].map(mins => (
-                  <button
-                    key={mins}
-                    type="button"
-                    onClick={() => setSysTrialExpirationMinutes(mins)}
-                    style={{
-                      padding: '6px 10px',
-                      borderRadius: '6px',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      background: sysTrialExpirationMinutes === mins ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.05)',
-                      color: sysTrialExpirationMinutes === mins ? '#818cf8' : '#a1a1aa',
-                      border: sysTrialExpirationMinutes === mins ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.1)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {mins} Menit
-                  </button>
-                ))}
-              </div>
-            </div>
-            <span style={{ fontSize: '11px', color: '#71717a', marginTop: '6px', display: 'block' }}>
-              Lama masa aktif galeri trial instan sejak dibuat (bebas diatur dalam menit, misal: 15 menit, 30 menit, dsb).
-            </span>
           </div>
         </div>
 
