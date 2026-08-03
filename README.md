@@ -18,4 +18,22 @@ Aplikasi ini dikelola dengan ritme kerja dua arah lintas-server melalui kanal be
 
 - **Loop Lintas Server**: Hermes Agent di LXC 102 mendeteksi push dari Antigravity, lalu melakukan audit verifikasi ulang hingga 100% lulus audit production.
 
+## 🖥️ SPESIFIKASI DOKUMEN SERVER LXC 102 (PANDUAN HERMES AGENT)
+
+Agar **Hermes Agent** tidak salah lokasi saat mengakses server audit/deploy, gunakan kredensial dan lokasi resmi berikut:
+
+| Parameter Server | Nilai Resmi / Path |
+|------------------|-------------------|
+| **Nama Container LXC** | `LXC 102` |
+| **IP Address LAN** | `192.168.100.83` |
+| **Port Aplikasi** | `3051` |
+| **Domain Publik** | `https://pick-your-photo.ammang.my.id` |
+| **Direktori Proyek di LXC 102** | `/DATA/AppData/pickyourphoto` |
+| **Watchdog Script** | `/opt/hermes/watchdog.sh` |
+| **Log Audit Watchdog** | `/var/log/hermes-watchdog.log` |
+
+> [!IMPORTANT]
+> **Panduan untuk Hermes Agent**: Saat berpindah atau mengeksekusi script di LXC 102, selalu masuk ke direktori resmi `/DATA/AppData/pickyourphoto`. Jangan mengakses direktori `/tmp` atau folder lain!
+
+
 
