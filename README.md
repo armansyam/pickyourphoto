@@ -22,6 +22,9 @@ Aplikasi ini dikelola dengan ritme kerja dua arah lintas-server melalui kanal be
 - **Setiap Iterasi Membuat Berkas Baru**: Nomor laporan terus meningkat secara sekuensial (`AUDIT_001`, `AUDIT_002`, `AUDIT_003`... `AUDIT_00X`) di folder `REPORTS/pending/`.
 - **Verifikasi Berkas Lama**: Jika ada temuan lama yang belum 100% tuntas, Antigravity akan terus memperbaikinya hingga diverifikasi dan dipindahkan ke `REPORTS/verified/`.
 - **Aturan Zero-Defect & Continuous Debugging**: Antigravity & Hermes tidak akan pernah berhenti menganalisis, memperbaiki, dan menguji sistem selama masih terdapat error sekecil apa pun. Pengujian dilakukan secara penuh hingga sistem 100% lulus tanpa error satupun.
+- **Protokol Dialog & Justifikasi Rasional**: Setiap perbaikan atau penolakan rekomendasi oleh Antigravity wajib menyertakan alasan teknis yang jelas. Jika Antigravity memiliki solusi yang lebih baik, Antigravity akan memberikan penjelasan rasional di dokumen laporan dan meminta tanggapan/alasan teknis dari Hermes Agent di iterasi berikutnya.
+- **Isolasi Commit**: Antigravity tidak akan meng-commit perubahan di tengah proses pengujian Hermes agar tidak mengganggu commit milik Hermes Agent.
+
 
 
 
