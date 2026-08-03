@@ -52,7 +52,8 @@ export async function GET() {
                 p.planType,
                 COUNT(v.id) as count
             FROM plans p
-            LEFT JOIN vendors v ON v.planId = p.id AND v.status = 'active'
+            LEFT JOIN vendors v ON v.planId = p.id AND v.status = 'active' AND v.role = 'vendor'
+
             GROUP BY p.id
             ORDER BY count DESC
         `);
