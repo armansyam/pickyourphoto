@@ -16,13 +16,28 @@ export async function POST(request) {
             }, { status: 429 });
         }
 
-        const formData = await request.formData();
-        const name = formData.get('name');
-        const email = formData.get('email');
-        const whatsapp = formData.get('whatsapp');
-        const password = formData.get('password');
-        const plan = formData.get('plan');
-        const paymentProofFile = formData.get('paymentProof');
+        const contentType = request.headers.get('content-type') || '';
+        let name, email, whatsapp, password, plan, paymentProofFile, rawPaymentMethod;
+
+        if (contentType.includes('application/json')) {
+            const body = await request.json();
+            name = body.name;
+            email = body.email;
+            whatsapp = body.whatsapp;
+            password = body.password;
+            plan = body.plan;
+            paymentProofFile = body.paymentProof;
+            rawPaymentMethod = body.paymentMethod;
+        } else {
+            const formData = await request.formData();
+            name = formData.get('name');
+            email = formData.get('email');
+            whatsapp = formData.get('whatsapp');
+            password = formData.get('password');
+            plan = formData.get('plan');
+            paymentProofFile = formData.get('paymentProof');
+            rawPaymentMethod = formData.get('paymentMethod');
+        }
 
         if (!email || !whatsapp || !plan) {
             return NextResponse.json({ message: 'Email, nomor WhatsApp, dan pilihan paket wajib diisi.' }, { status: 400 });
@@ -79,9 +94,9 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Paket uji coba gratis tidak tersedia saat ini.' }, { status: 400 });
         }
 
-        const rawPaymentMethod = formData.get('paymentMethod') || 'manual';
-        const isGateway = rawPaymentMethod === 'gateway' || rawPaymentMethod === 'qris';
-        const isManual = rawPaymentMethod === 'manual';
+        const selectedPaymentMethod = rawPaymentMethod || 'manual';
+        const isGateway = selectedPaymentMethod === 'gateway' || selectedPaymentMethod === 'qris';
+        const isManual = selectedPaymentMethod === 'manual';
 
         if (!isFreePlan && !paymentProofFile && !isGateway) {
             return NextResponse.json({ message: 'Bukti transfer pembayaran wajib diupload untuk paket berbayar.' }, { status: 400 });
