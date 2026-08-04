@@ -39,7 +39,7 @@ Menjadi platform SaaS nomor satu bagi fotografer profesional untuk berkolaborasi
 | Paket | Maks. Proyek | Harga/Bulan | Custom Logo | RAW Selector |
 |---|---|---|---|---|
 | **Starter Plan** | 5 | Rp 49.000 | ❌ | ❌ |
-| **Pro Studio Plan** | 20 | Rp 129.000 | ✅ | ✅ |
+| **Pro Studio Plan** | 20 | Rp 129.000 | ✅ | ❌ |
 | **Business Studio Plan** | 50 | Rp 249.000 | ✅ | ✅ |
 
 **Vendor Status Lifecycle:**

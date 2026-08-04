@@ -510,7 +510,7 @@ export default function AdminSettings({
               🔒 Keamanan Akun Superadmin
             </h4>
 
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontSize: '12px' }}>Ganti Password Master Superadmin</label>
                 <input
@@ -521,6 +521,50 @@ export default function AdminSettings({
                   onChange={e => setNewPassword(e.target.value)}
                   disabled={savingProfile}
                 />
+              </div>
+            </div>
+
+            {/* AUTO-BACKUP DATABASE */}
+            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+              💾 Auto-Backup Database
+            </h4>
+
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id="enable_auto_backup"
+                    checked={!!sysEnableBackup}
+                    onChange={e => setSysEnableBackup(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="enable_auto_backup" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableBackup ? '#34d399' : '#94a3b8' }}>
+                    Aktifkan Auto-Backup Database Otomatis
+                  </label>
+                </div>
+                <span style={{ fontSize: '11px', background: sysEnableBackup ? 'rgba(16,185,129,0.15)' : 'rgba(148,163,184,0.1)', color: sysEnableBackup ? '#34d399' : '#94a3b8', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  {sysEnableBackup ? '🟢 BACKUP AKTIF' : '⚪ BACKUP NONAKTIF'}
+                </span>
+              </div>
+
+              <div className="form-group" style={{ margin: 0, opacity: sysEnableBackup ? 1 : 0.4, transition: 'opacity 0.2s' }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Interval Backup (Jam)</label>
+                <input
+                  type="number"
+                  className="input-text"
+                  placeholder="Contoh: 6 (backup setiap 6 jam)"
+                  min="1"
+                  max="168"
+                  value={sysBackupInterval ?? 6}
+                  onChange={e => setSysBackupInterval(parseInt(e.target.value) || 6)}
+                  disabled={!sysEnableBackup}
+                  style={{ maxWidth: '200px' }}
+                />
+                <p style={{ fontSize: '11px', color: '#64748b', margin: '6px 0 0 0' }}>
+                  Backup berjalan otomatis via <code>scripts/backup-db.sh</code> saat analitik dimuat.
+                  File backup tersimpan di folder <code>backups/</code> di server.
+                </p>
               </div>
             </div>
 

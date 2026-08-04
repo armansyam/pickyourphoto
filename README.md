@@ -97,7 +97,7 @@ Vendor mengisi form registrasi di /register
 | Paket | Proyek Maks. | Harga/Bulan | Custom Logo | RAW Selector |
 |---|---|---|---|---|
 | Starter Plan | 5 | Rp 49.000 | ❌ | ❌ |
-| Pro Studio Plan | 20 | Rp 129.000 | ✅ | ✅ |
+| Pro Studio Plan | 20 | Rp 129.000 | ✅ | ❌ |
 | Business Studio Plan | 50 | Rp 249.000 | ✅ | ✅ |
 
 > Semua paket: **30 hari masa aktif**, **Unlimited foto** (Zero-Storage — tidak ada file di server).
