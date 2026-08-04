@@ -12,9 +12,9 @@ export const dynamic = 'force-dynamic';
 export default function AdminPage() {
     const admin = getAuthVendor();
 
-    // Enforce authentication
+    // Enforce authentication — redirect unauthenticated to dedicated admin login
     if (!admin) {
-        redirect('/login');
+        redirect('/admin/login');
     }
 
     // Restrict to superadmin role only
