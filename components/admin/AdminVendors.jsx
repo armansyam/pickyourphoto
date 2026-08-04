@@ -112,6 +112,8 @@ export default function AdminVendors({
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
   };
 
+  const [pendingFilter, setPendingFilter] = useState('all'); // 'all' | 'qris' | 'manual'
+
   // ── Helper to identify QRIS vs Manual Vendors ──────────────────────────────
   const isQrisVendor = (v) => {
     return v.status === 'pending_payment' || 
@@ -122,6 +124,8 @@ export default function AdminVendors({
   // ── Counts ────────────────────────────────────────────────────────────────
   const countProspect = vendors.filter(v => v.status === 'draft_plan').length;
   const countPending  = vendors.filter(v => ['pending', 'pending_payment', 'pending_manual'].includes(v.status)).length;
+  const countPendingQris = vendors.filter(v => ['pending', 'pending_payment', 'pending_manual'].includes(v.status) && isQrisVendor(v)).length;
+  const countPendingManual = vendors.filter(v => ['pending', 'pending_payment', 'pending_manual'].includes(v.status) && !isQrisVendor(v)).length;
   const countArchive  = vendors.filter(v => ['expired_draft', 'cancelled', 'rejected'].includes(v.status)).length;
   const countActive   = vendors.filter(v => v.status === 'active' && !isExpired(v.expiresAt)).length;
 
@@ -137,7 +141,13 @@ export default function AdminVendors({
     let matchesTab = false;
     if (vendorSubTab === 'inquiry') {
       if (inquirySubTab === 'prospect') matchesTab = v.status === 'draft_plan';
-      if (inquirySubTab === 'pending')  matchesTab = ['pending', 'pending_payment', 'pending_manual'].includes(v.status);
+      if (inquirySubTab === 'pending')  {
+        const isPending = ['pending', 'pending_payment', 'pending_manual'].includes(v.status);
+        if (!isPending) matchesTab = false;
+        else if (pendingFilter === 'qris') matchesTab = isQrisVendor(v);
+        else if (pendingFilter === 'manual') matchesTab = !isQrisVendor(v);
+        else matchesTab = true;
+      }
       if (inquirySubTab === 'archive')  matchesTab = ['expired_draft', 'cancelled', 'rejected'].includes(v.status);
     } else {
       // Kelola Vendor — active only
@@ -247,16 +257,34 @@ export default function AdminVendors({
 
       {/* ── Inquiry Sub Tabs (hanya tampil di tab Inquiry) ── */}
       {vendorSubTab === 'inquiry' && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px' }}>
-          <button onClick={() => setInquirySubTab('prospect')} style={subTabBtn(inquirySubTab === 'prospect', '#38bdf8')}>
-            📝 Prospek / Lead {countProspect > 0 && `(${countProspect})`}
-          </button>
-          <button onClick={() => setInquirySubTab('pending')} style={subTabBtn(inquirySubTab === 'pending', '#fbbf24')}>
-            ⚡ Menunggu Bayar {countPending > 0 && `(${countPending})`}
-          </button>
-          <button onClick={() => setInquirySubTab('archive')} style={subTabBtn(inquirySubTab === 'archive', '#71717a')}>
-            🗃️ Arsip {countArchive > 0 && `(${countArchive})`}
-          </button>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <button onClick={() => setInquirySubTab('prospect')} style={subTabBtn(inquirySubTab === 'prospect', '#38bdf8')}>
+              📝 Prospek / Lead {countProspect > 0 && `(${countProspect})`}
+            </button>
+            <button onClick={() => setInquirySubTab('pending')} style={subTabBtn(inquirySubTab === 'pending', '#fbbf24')}>
+              ⚡ Menunggu Bayar {countPending > 0 && `(${countPending})`}
+            </button>
+            <button onClick={() => setInquirySubTab('archive')} style={subTabBtn(inquirySubTab === 'archive', '#71717a')}>
+              🗃️ Arsip {countArchive > 0 && `(${countArchive})`}
+            </button>
+          </div>
+
+          {/* Quick Method Filter Chips for Menunggu Bayar */}
+          {inquirySubTab === 'pending' && countPending > 0 && (
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '2px 6px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ fontSize: '11px', color: '#71717a', marginRight: '4px' }}>Metode:</span>
+              <button onClick={() => setPendingFilter('all')} style={{ padding: '2px 8px', borderRadius: '10px', border: 'none', background: pendingFilter === 'all' ? '#fbbf24' : 'transparent', color: pendingFilter === 'all' ? '#000' : '#a1a1aa', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
+                Semua ({countPending})
+              </button>
+              <button onClick={() => setPendingFilter('qris')} style={{ padding: '2px 8px', borderRadius: '10px', border: 'none', background: pendingFilter === 'qris' ? '#fbbf24' : 'transparent', color: pendingFilter === 'qris' ? '#000' : '#a1a1aa', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
+                ⚡ QRIS ({countPendingQris})
+              </button>
+              <button onClick={() => setPendingFilter('manual')} style={{ padding: '2px 8px', borderRadius: '10px', border: 'none', background: pendingFilter === 'manual' ? '#818cf8' : 'transparent', color: pendingFilter === 'manual' ? '#fff' : '#a1a1aa', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
+                📄 Manual ({countPendingManual})
+              </button>
+            </div>
+          )}
         </div>
       )}
 
