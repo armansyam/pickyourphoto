@@ -640,7 +640,7 @@ export default function AdminDashboard({ adminUser }) {
                         setVendorToDelete={setVendorToDelete}
                         setActiveProofUrl={setActiveProofUrl}
                         handleToggleVendorStatus={handleToggleVendorStatus}
-                        refetchVendors={fetchVendors}
+                        refetchVendors={fetchData}
                     />
                 )}
 
@@ -656,7 +656,7 @@ export default function AdminDashboard({ adminUser }) {
                         setVendorToDelete={setVendorToDelete}
                         setActiveProofUrl={setActiveProofUrl}
                         handleToggleVendorStatus={handleToggleVendorStatus}
-                        refetchVendors={fetchVendors}
+                        refetchVendors={fetchData}
                     />
                 )}
 
