@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 130" width="100%" height="100%">
+  <defs>
+    <style>
+      .qris-red { fill: #EA212D; }
+      .qris-dark { fill: #1E1E24; }
+    </style>
+  </defs>
+
+  <!-- QRIS Red Emblem Top Bar Accent -->
+  <path class="qris-red" d="M 45,15 L 75,15 C 80,15 84,19 84,24 L 84,32 L 45,32 Z"/>
+  <path class="qris-dark" d="M 88,15 L 120,15 L 120,32 L 88,32 Z"/>
+
+  <!-- Q letter -->
+  <path class="qris-red" d="M 75,42 C 55,42 42,55 42,75 C 42,95 55,108 75,108 C 84,108 92,104 98,97 L 108,107 L 118,97 L 108,87 C 113,80 115,71 115,62 C 115,50 108,42 95,42 L 75,42 Z M 77,60 C 88,60 93,66 93,75 C 93,84 88,90 77,90 C 66,90 61,84 61,75 C 61,66 66,60 77,60 Z"/>
+
+  <!-- R letter -->
+  <path class="qris-red" d="M 125,44 L 125,106 L 145,106 L 145,82 L 158,82 L 172,106 L 195,106 L 178,79 C 188,75 194,67 194,57 C 194,48 186,44 172,44 L 125,44 Z M 145,60 L 168,60 C 172,60 174,62 174,65 C 174,68 172,70 168,70 L 145,70 L 145,60 Z"/>
+
+  <!-- I letter -->
+  <path class="qris-red" d="M 205,44 L 205,106 L 225,106 L 225,44 Z"/>
+
+  <!-- S letter -->
+  <path class="qris-red" d="M 270,44 C 248,44 238,54 238,65 C 238,76 248,81 262,84 C 274,87 278,89 278,93 C 278,97 272,100 262,100 C 250,100 244,94 242,88 L 223,88 C 225,101 238,110 262,110 C 285,110 298,100 298,89 C 298,76 288,72 272,69 C 260,66 257,64 257,60 C 257,56 262,54 270,54 C 280,54 286,58 288,64 L 306,64 C 304,52 292,44 270,44 Z"/>
+
+  <!-- Subtitle Text: Quick Response Code Indonesian Standard -->
+  <text x="42" y="122" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="700" letter-spacing="0.4" class="qris-dark">
+    National QR Code Standard Indonesia
+  </text>
+</svg>
