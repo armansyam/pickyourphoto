@@ -615,6 +615,8 @@ export default function AdminDashboard({ adminUser }) {
                             addToast={addToast}
                             sysEnableReg={sysEnableReg} setSysEnableReg={setSysEnableReg}
                             sysMaxQuota={sysMaxQuota} setSysMaxQuota={setSysMaxQuota}
+                            sysEnableBackup={sysEnableBackup} setSysEnableBackup={setSysEnableBackup}
+                            sysBackupInterval={sysBackupInterval} setSysBackupInterval={setSysBackupInterval}
                             savingProfile={savingProfile}
                             profileSuccessMsg={profileSuccessMsg}
                             setProfileSuccessMsg={setProfileSuccessMsg}
