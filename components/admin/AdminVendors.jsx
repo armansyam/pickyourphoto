@@ -366,8 +366,9 @@ export default function AdminVendors({
                         <div>
                           {isQris ? (
                             <>
-                              <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
-                                ⚡ Menunggu Bayar QRIS
+                              <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+                                <img src="/qris-logo.svg" alt="QRIS" style={{ height: '14px', background: '#ffffff', padding: '1px 4px', borderRadius: '3px' }} />
+                                Menunggu Bayar
                               </span>
                               <div><QrisCountdown expiresAt={v.qrisExpiresAt || v.paymentExpiresAt} /></div>
                             </>
