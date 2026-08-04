@@ -623,7 +623,6 @@ export default function AdminDashboard({ adminUser }) {
                         analyticsData={analytics} 
                         diskStats={diskStats} 
                         onNavigateTab={handleTabChange}
-                        setVendorSubTab={setVendorSubTab}
                     />
                 )}
 

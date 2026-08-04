@@ -112,9 +112,16 @@ export default function AdminVendors({
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
   };
 
+  // ── Helper to identify QRIS vs Manual Vendors ──────────────────────────────
+  const isQrisVendor = (v) => {
+    return v.status === 'pending_payment' || 
+           v.paymentProof === 'via_payment_gateway' || 
+           (v.paymentProof && v.paymentProof.includes('Midtrans'));
+  };
+
   // ── Counts ────────────────────────────────────────────────────────────────
-  const countQris    = vendors.filter(v => v.status === 'pending_payment').length;
-  const countManual  = vendors.filter(v => v.status === 'pending_manual' || v.status === 'pending').length;
+  const countQris    = vendors.filter(v => isQrisVendor(v) && !['active', 'expired_draft', 'cancelled', 'rejected'].includes(v.status)).length;
+  const countManual  = vendors.filter(v => !isQrisVendor(v) && ['pending', 'pending_manual'].includes(v.status)).length;
   const countArchive = vendors.filter(v => ['expired_draft', 'cancelled', 'rejected'].includes(v.status)).length;
   const countActive  = vendors.filter(v => v.status === 'active' && !isExpired(v.expiresAt)).length;
 
@@ -129,8 +136,8 @@ export default function AdminVendors({
 
     let matchesTab = false;
     if (vendorSubTab === 'inquiry') {
-      if (inquirySubTab === 'qris')    matchesTab = v.status === 'pending_payment';
-      if (inquirySubTab === 'manual')  matchesTab = v.status === 'pending_manual' || v.status === 'pending';
+      if (inquirySubTab === 'qris')    matchesTab = isQrisVendor(v) && !['active', 'expired_draft', 'cancelled', 'rejected'].includes(v.status);
+      if (inquirySubTab === 'manual')  matchesTab = !isQrisVendor(v) && ['pending', 'pending_manual'].includes(v.status);
       if (inquirySubTab === 'archive') matchesTab = ['expired_draft', 'cancelled', 'rejected'].includes(v.status);
     } else {
       // Kelola Vendor — active only
