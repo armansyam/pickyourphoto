@@ -9,8 +9,8 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import AdminTrialControl from '@/components/admin/AdminTrialControl';
 
 export default function AdminDashboard({ adminUser }) {
-    const [activeTab, setActiveTab] = useState('analytics'); // 'analytics', 'vendors', 'plans', 'upgrades', 'settings'
-    const [vendorSubTab, setVendorSubTab] = useState('active'); // 'pending', 'active', 'inactive'
+    const [activeTab, setActiveTab] = useState('analytics'); // 'analytics', 'inquiry', 'vendors', 'plans', 'trial', 'settings'
+    const [inquirySubTab, setInquirySubTab] = useState('qris'); // 'qris' | 'manual' | 'archive'
     const [vendors, setVendors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toasts, setToasts] = useState([]);
@@ -551,11 +551,10 @@ export default function AdminDashboard({ adminUser }) {
                     <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>Kelola vendor, paket berlangganan & monitoring bisnis SaaS</p>
                 </div>
 
-                {/* Tab Navigation (Pure Business Focus) */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px' }}>
+                {/* Tab Navigation */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => handleTabChange('analytics')}
-                        className={`btn-tab ${activeTab === 'analytics' ? 'active' : ''}`}
                         style={{
                             padding: '10px 20px', borderRadius: '10px', border: 'none',
                             background: activeTab === 'analytics' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
@@ -564,20 +563,40 @@ export default function AdminDashboard({ adminUser }) {
                     >
                         📊 Monitor Bisnis & Analisis
                     </button>
+
+                    {/* INQUIRY — calon vendor, pisah dari Kelola Vendor */}
+                    <button
+                        onClick={() => handleTabChange('inquiry')}
+                        style={{
+                            padding: '10px 20px', borderRadius: '10px', border: 'none',
+                            background: activeTab === 'inquiry' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent',
+                            color: activeTab === 'inquiry' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
+                            position: 'relative',
+                            display: 'flex', alignItems: 'center', gap: '6px'
+                        }}
+                    >
+                        📋 Inquiry
+                        {vendors.filter(v => ['pending_payment','pending_manual','pending','expired_draft','cancelled','rejected'].includes(v.status)).length > 0 && (
+                            <span style={{ background: '#ef4444', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>
+                                {vendors.filter(v => v.status === 'pending_payment' || v.status === 'pending_manual' || v.status === 'pending').length}
+                            </span>
+                        )}
+                    </button>
+
+                    {/* KELOLA VENDOR — hanya vendor aktif berlangganan */}
                     <button
                         onClick={() => handleTabChange('vendors')}
-                        className={`btn-tab ${activeTab === 'vendors' ? 'active' : ''}`}
                         style={{
                             padding: '10px 20px', borderRadius: '10px', border: 'none',
                             background: activeTab === 'vendors' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
                             color: activeTab === 'vendors' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
                         }}
                     >
-                        👥 Kelola Vendor ({vendors.length})
+                        👥 Kelola Vendor ({vendors.filter(v => v.status === 'active').length})
                     </button>
+
                     <button
                         onClick={() => handleTabChange('plans')}
-                        className={`btn-tab ${activeTab === 'plans' ? 'active' : ''}`}
                         style={{
                             padding: '10px 20px', borderRadius: '10px', border: 'none',
                             background: activeTab === 'plans' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
@@ -588,12 +607,10 @@ export default function AdminDashboard({ adminUser }) {
                     </button>
                     <button
                         onClick={() => handleTabChange('trial')}
-                        className={`btn-tab ${activeTab === 'trial' ? 'active' : ''}`}
                         style={{
                             padding: '10px 20px', borderRadius: '10px', border: 'none',
                             background: activeTab === 'trial' ? 'linear-gradient(135deg, #a855f7, #7c3aed)' : 'transparent',
                             color: activeTab === 'trial' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
-                            position: 'relative',
                         }}
                     >
                         🎯 Trial Control
@@ -610,17 +627,37 @@ export default function AdminDashboard({ adminUser }) {
                     />
                 )}
 
-                {activeTab === 'vendors' && (
+                {/* INQUIRY TAB — Calon vendor (pending, arsip) */}
+                {activeTab === 'inquiry' && (
                     <AdminVendors
                         vendors={vendors}
                         loading={loading}
-                        vendorSubTab={vendorSubTab}
-                        setVendorSubTab={setVendorSubTab}
+                        vendorSubTab="inquiry"
+                        setVendorSubTab={() => {}}
+                        inquirySubTabOverride={inquirySubTab}
+                        setInquirySubTabOverride={setInquirySubTab}
                         setEditingVendor={setEditingVendor}
                         setVendorToApprove={setVendorToApprove}
                         setVendorToDelete={setVendorToDelete}
                         setActiveProofUrl={setActiveProofUrl}
                         handleToggleVendorStatus={handleToggleVendorStatus}
+                        refetchVendors={fetchVendors}
+                    />
+                )}
+
+                {/* KELOLA VENDOR TAB — Vendor aktif berlangganan saja */}
+                {activeTab === 'vendors' && (
+                    <AdminVendors
+                        vendors={vendors}
+                        loading={loading}
+                        vendorSubTab="active"
+                        setVendorSubTab={() => {}}
+                        setEditingVendor={setEditingVendor}
+                        setVendorToApprove={setVendorToApprove}
+                        setVendorToDelete={setVendorToDelete}
+                        setActiveProofUrl={setActiveProofUrl}
+                        handleToggleVendorStatus={handleToggleVendorStatus}
+                        refetchVendors={fetchVendors}
                     />
                 )}
 

@@ -50,6 +50,9 @@ export default function AdminVendors({
   loading = false,
   vendorSubTab = 'active',
   setVendorSubTab,
+  // Optional: parent controls inquiry sub-tab (when Inquiry is top-level tab)
+  inquirySubTabOverride,
+  setInquirySubTabOverride,
   setEditingVendor,
   setVendorToApprove,
   setVendorToDelete,
@@ -61,7 +64,10 @@ export default function AdminVendors({
   refetchVendors,
 }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [inquirySubTab, setInquirySubTab] = useState('qris'); // 'qris' | 'manual' | 'archive'
+  const [_inquirySubTab, _setInquirySubTab] = useState('qris');
+  // Use override from parent if provided, otherwise internal state
+  const inquirySubTab = inquirySubTabOverride ?? _inquirySubTab;
+  const setInquirySubTab = setInquirySubTabOverride ?? _setInquirySubTab;
   const [sortField, setSortField] = useState('expiresAt');
   const [sortOrder, setSortOrder] = useState('asc');
   const [activeMenuVendor, setActiveMenuVendor] = useState(null);
@@ -207,20 +213,20 @@ export default function AdminVendors({
   return (
     <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', minHeight: '480px', paddingBottom: '160px' }}>
 
-      {/* ── Top Level Tabs ── */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button onClick={() => setVendorSubTab('inquiry')} style={tabBtn(vendorSubTab === 'inquiry', '#f59e0b')}>
-            📋 Inquiry
-            {(countQris + countManual + countArchive) > 0 && (
-              <span style={{ marginLeft: '6px', background: '#ef4444', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '10px' }}>
-                {countQris + countManual}
-              </span>
-            )}
-          </button>
-          <button onClick={() => setVendorSubTab('active')} style={tabBtn(vendorSubTab === 'active', '#6366f1')}>
-            👥 Kelola Vendor ({countActive})
-          </button>
+      {/* ── Header row: title + search ── */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          {vendorSubTab === 'inquiry' ? (
+            <>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#fbbf24' }}>📋 Inquiry — Calon Vendor</h3>
+              <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#71717a' }}>Proses pendaftaran sebelum menjadi vendor berlangganan</p>
+            </>
+          ) : (
+            <>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>👥 Kelola Vendor</h3>
+              <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#71717a' }}>Vendor aktif berlangganan — klik kolom tabel untuk mengurutkan</p>
+            </>
+          )}
         </div>
         <input
           type="text"
@@ -232,7 +238,7 @@ export default function AdminVendors({
         />
       </div>
 
-      {/* ── Inquiry Sub Tabs ── */}
+      {/* ── Inquiry Sub Tabs (hanya tampil di tab Inquiry) ── */}
       {vendorSubTab === 'inquiry' && (
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px' }}>
           <button onClick={() => setInquirySubTab('qris')} style={subTabBtn(inquirySubTab === 'qris', '#fbbf24')}>
