@@ -27,11 +27,9 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Sesi pembayaran tidak ditemukan.' }, { status: 404 });
     }
 
-    // Allow logged-in admin/vendor OR matching candidate vendor (by vendorId or email)
+    // Allow logged-in admin/vendor OR matching candidate vendor email
     let isAuthorized = false;
     if (currentUser && (currentUser.role === 'admin' || session.vendorId === currentUser.id)) {
-      isAuthorized = true;
-    } else if (vendorId && parseInt(vendorId) === session.vendorId) {
       isAuthorized = true;
     } else if (email) {
       const v = db.prepare('SELECT id FROM vendors WHERE email = ?').get(email.toLowerCase().trim());

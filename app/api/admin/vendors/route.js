@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
+import { getPaymentGatewayConfig } from '@/lib/payment-gateway';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -51,13 +52,14 @@ export async function GET() {
             const pendingTxs = db.prepare("SELECT pt.*, v.email as vendorEmail FROM payment_transactions pt JOIN vendors v ON pt.vendorId = v.id WHERE v.status = 'pending_payment' AND pt.status = 'pending'").all();
             
             if (pendingTxs && pendingTxs.length > 0) {
-                const serverKeyRow = db.prepare("SELECT value FROM saas_settings WHERE key='payment_gateway_server_key'").get();
-                const serverKey = serverKeyRow ? serverKeyRow.value : '';
+                const pgConfig = getPaymentGatewayConfig();
+                const serverKey = pgConfig.serverKey;
                 if (serverKey) {
                     const authHeader = 'Basic ' + Buffer.from(serverKey + ':').toString('base64');
+                    const baseUrl = pgConfig.isProduction ? 'https://api.midtrans.com/v2' : 'https://api.sandbox.midtrans.com/v2';
                     for (const tx of pendingTxs) {
                         try {
-                            const midRes = await fetch(`https://api.sandbox.midtrans.com/v2/${tx.orderId}/status`, {
+                            const midRes = await fetch(`${baseUrl}/${tx.orderId}/status`, {
                                 headers: { 'Accept': 'application/json', 'Authorization': authHeader }
                             });
                             if (midRes.ok) {

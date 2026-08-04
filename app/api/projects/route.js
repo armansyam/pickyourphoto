@@ -247,26 +247,3 @@ async function runImportTask(projectId, folderId) {
     }
 }
 
-// Rollback processed project files and decrease storage counter
-async function rollbackProjectFiles(projectId, uploadDir, vendorId) {
-    try {
-        // 1. Get sum of fileSizeBytes for photos in this project
-        const totalBytes = db.prepare('SELECT SUM(fileSizeBytes) as total FROM photos WHERE projectId = ?').get(projectId)?.total || 0;
-
-        // 2. Subtract from usedStorageBytes
-        if (totalBytes > 0) {
-            db.prepare('UPDATE vendors SET usedStorageBytes = MAX(0, usedStorageBytes - ?) WHERE id = ?').run(totalBytes, vendorId);
-        }
-
-        // 3. Delete DB rows
-        db.prepare('DELETE FROM photos WHERE projectId = ?').run(projectId);
-
-        // 4. Clean physical directory
-        if (fs.existsSync(uploadDir)) {
-            fs.rmSync(uploadDir, { recursive: true, force: true });
-        }
-        console.log(`[Storage Rollback] Successfully rolled back ${totalBytes} bytes for project ${projectId} due to storage exhaustion.`);
-    } catch (err) {
-        console.error(`[Storage Rollback] Failed to rollback project ${projectId} files:`, err);
-    }
-}
