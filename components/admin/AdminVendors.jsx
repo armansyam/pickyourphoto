@@ -57,7 +57,7 @@ export default function AdminVendors({
 
   const filteredVendors = vendors.filter(v => {
     const expired = isExpired(v.expiresAt);
-    const isPending = v.status === 'pending' || v.status === 'pending_payment';
+    const isPending = v.status === 'pending' || v.status === 'pending_payment' || v.status === 'pending_manual';
     const matchesTab = vendorSubTab === 'pending'
       ? isPending
       : vendorSubTab === 'active'
@@ -141,7 +141,7 @@ export default function AdminVendors({
             cursor: 'pointer'
           }}
         >
-          Menunggu Konfirmasi ({vendors.filter(v => v.status === 'pending' || v.status === 'pending_payment').length})
+          Menunggu Konfirmasi ({vendors.filter(v => v.status === 'pending' || v.status === 'pending_payment' || v.status === 'pending_manual').length})
         </button>
         <button
           onClick={() => setVendorSubTab('active')}
@@ -250,9 +250,9 @@ export default function AdminVendors({
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       {v.status === 'pending_payment' || (v.status === 'pending' && v.paymentProof && v.paymentProof.includes('Midtrans')) ? (
-                        <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>⚡ Menunggu Pembayaran QRIS</span>
-                      ) : v.status === 'pending' ? (
-                        <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>⏳ Menunggu Konfirmasi</span>
+                        <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>⚡ Menunggu Pembayaran QRIS (Otomatis)</span>
+                      ) : (v.status === 'pending' || v.status === 'pending_manual') ? (
+                        <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>⏳ Menunggu Konfirmasi Manual</span>
                       ) : v.status === 'suspended' ? (
                         <span style={{ color: '#f87171', background: 'rgba(239,68,68,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>🚫 Ditangguhkan</span>
                       ) : expired ? (
@@ -262,7 +262,7 @@ export default function AdminVendors({
                       )}
                     </td>
                     <td style={{ padding: '12px 16px', color: '#a1a1aa', fontSize: '12px' }}>
-                      {v.status === 'pending' || v.status === 'pending_payment'
+                      {v.status === 'pending' || v.status === 'pending_payment' || v.status === 'pending_manual'
                         ? 'Belum Aktif'
                         : v.expiresAt
                         ? new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -270,7 +270,7 @@ export default function AdminVendors({
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px' }}>
-                        {(v.status === 'pending' || v.status === 'pending_payment') && (
+                        {(v.status === 'pending' || v.status === 'pending_manual') && (
                           <button
                             onClick={() => setVendorToApprove(v)}
                             className="btn-primary"

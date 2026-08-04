@@ -79,7 +79,9 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Paket uji coba gratis tidak tersedia saat ini.' }, { status: 400 });
         }
 
-        const isGateway = formData.get('paymentMethod') === 'gateway';
+        const rawPaymentMethod = formData.get('paymentMethod') || 'manual';
+        const isGateway = rawPaymentMethod === 'gateway' || rawPaymentMethod === 'qris';
+        const isManual = rawPaymentMethod === 'manual';
 
         if (!isFreePlan && !paymentProofFile && !isGateway) {
             return NextResponse.json({ message: 'Bukti transfer pembayaran wajib diupload untuk paket berbayar.' }, { status: 400 });
@@ -115,9 +117,9 @@ export async function POST(request) {
         }
 
 
-        const initialStatus = isGateway ? 'pending_payment' : 'pending';
+        const initialStatus = isGateway ? 'pending_payment' : 'pending_manual';
 
-        if (existingVendor && (existingVendor.status === 'pending' || existingVendor.status === 'pending_payment')) {
+        if (existingVendor && (existingVendor.status === 'pending' || existingVendor.status === 'pending_payment' || existingVendor.status === 'pending_manual')) {
             const updateStmt = db.prepare(`
                 UPDATE vendors 
                 SET whatsapp = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?
