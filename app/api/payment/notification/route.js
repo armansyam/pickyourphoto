@@ -41,6 +41,9 @@ export async function POST(request) {
       // Update transaction status
       db.prepare("UPDATE payment_transactions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE id = ?").run(transaction.id);
 
+      // Sync payment_sessions to 'paid' as well (prevents auto-cleanup from archiving paid vendors)
+      db.prepare("UPDATE payment_sessions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE orderId = ?").run(orderId);
+
       // Fetch vendor & plan
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
       const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);

@@ -52,8 +52,7 @@ export default function RegisterPage() {
     }, [settings, isGatewayEnabled]);
 
 
-    const trialPlan = plans.find(p => p.price === 0 && p.planType === selectedTab);
-    const hasTrial = !!trialPlan && regStatus.free_trial_available;
+    // Free plan removed from registration — use trial gallery on landing page instead
 
     useEffect(() => {
         const checkRegStatus = async () => {
@@ -171,10 +170,9 @@ export default function RegisterPage() {
             return;
         }
 
-        const isFree = selectedPlan.price === 0;
         const isGateway = isGatewayEnabled && paymentMethod === 'gateway';
 
-        if (!isFree && !isGateway && !paymentProof) {
+        if (!isGateway && !paymentProof) {
             setError('Silakan upload bukti pembayaran/transfer terlebih dahulu.');
             setLoading(false);
             return;
@@ -204,7 +202,7 @@ export default function RegisterPage() {
             }
 
             // Handle Automatic Payment Gateway Checkout if selected
-            if (!isFree && isGateway && data.vendorId) {
+            if (isGateway && data.vendorId) {
                 try {
                     const payRes = await fetch('/api/payment/create', {
                         method: 'POST',
@@ -233,12 +231,14 @@ export default function RegisterPage() {
                         if (typeof window !== 'undefined' && window.snap) {
                             window.snap.pay(payData.token, {
                                 onSuccess: function () {
+                                    clearInterval(pollTimer);
                                     window.location.href = '/dashboard';
                                 },
                                 onPending: function () {
                                     setSuccess(true);
                                 },
                                 onError: function () {
+                                    if (pollTimer) clearInterval(pollTimer);
                                     setError('Pembayaran gagal atau dibatalkan oleh pengguna.');
                                 },
                                 onClose: function () {
@@ -344,11 +344,7 @@ export default function RegisterPage() {
                         {settings?.contact_whatsapp && (() => {
                             const selectedPlan = plans.find(p => p.id === parseInt(plan)) || plans[0];
                             const planName = selectedPlan ? `${selectedPlan.name} Plan` : 'Basic Plan';
-                            const isFree = selectedPlan ? selectedPlan.price === 0 : false;
-                            
-                            const waMessage = isFree
-                                ? `Halo Admin, saya baru saja mendaftar sebagai fotografer di Pick Your Photo.\n\nBerikut detail pendaftaran saya:\n- Nama: ${name}\n- Email: ${email}\n- Paket: ${planName} (Free Trial)\n\nMohon untuk diaktifkan masa uji coba gratis saya. Terima kasih!`
-                                : `Halo Admin, saya baru saja mendaftar sebagai fotografer di Pick Your Photo.\n\nBerikut detail pendaftaran saya:\n- Nama: ${name}\n- Email: ${email}\n- Paket: ${planName}\n\nSaya sudah mengupload bukti bayar di form. Mohon disetujui pendaftarannya. Terima kasih!`;
+                            const waMessage = `Halo Admin, saya baru saja mendaftar sebagai fotografer di Pick Your Photo.\n\nBerikut detail pendaftaran saya:\n- Nama: ${name}\n- Email: ${email}\n- Paket: ${planName}\n\nSaya sudah menyelesaikan proses pembayaran. Mohon disetujui pendaftarannya. Terima kasih!`;
                             
                             return (
                                 <a 
@@ -482,62 +478,7 @@ export default function RegisterPage() {
                                 </div>
                             ) : (
                                 <div className="fade-in-up" key="step2">
-                                    {hasTrial && (
-                                        <div 
-                                            onClick={() => !loading && setPlan(trialPlan.id.toString())}
-                                            style={{
-                                                background: parseInt(plan) === trialPlan.id 
-                                                    ? 'rgba(99, 102, 241, 0.12)' 
-                                                    : 'rgba(255, 255, 255, 0.02)',
-                                                border: parseInt(plan) === trialPlan.id 
-                                                    ? '2px solid #818cf8' 
-                                                    : '1px solid rgba(255, 255, 255, 0.08)',
-                                                borderRadius: '12px',
-                                                padding: '16px 20px',
-                                                marginBottom: '24px',
-                                                cursor: loading ? 'not-allowed' : 'pointer',
-                                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                boxShadow: parseInt(plan) === trialPlan.id 
-                                                    ? '0 6px 20px rgba(168, 85, 247, 0.2)' 
-                                                    : 'none',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                gap: '16px',
-                                                position: 'relative',
-                                                overflow: 'hidden'
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <span style={{ fontSize: '24px' }}>🎁</span>
-                                                <div style={{ textAlign: 'left' }}>
-                                                    <div style={{ fontWeight: 'bold', fontSize: '14px', color: '#ffffff' }}>
-                                                        Coba Gratis Sekarang! ({trialPlan.name})
-                                                    </div>
-                                                    <div style={{ fontSize: '12px', color: '#a1a1aa', marginTop: '2px' }}>
-                                                        {trialPlan.planType === 'storage'
-                                                            ? `Kapasitas Storage ${trialPlan.maxStorageMB >= 1024 ? `${(trialPlan.maxStorageMB / 1024).toFixed(0)} GB` : `${trialPlan.maxStorageMB} MB`} • Aktif ${trialPlan.activePeriodDays} Hari`
-                                                            : `Batas ${trialPlan.maxProjects} Project • Maks. ${trialPlan.maxPhotosPerProject} Foto/Project • Aktif ${trialPlan.activePeriodDays} Hari`
-                                                        }
-                                                     </div>
-                                                </div>
-                                            </div>
-                                            <div style={{
-                                                padding: '6px 16px',
-                                                borderRadius: '20px',
-                                                fontSize: '11px',
-                                                fontWeight: 'bold',
-                                                background: parseInt(plan) === trialPlan.id 
-                                                    ? 'linear-gradient(135deg, #a855f7, #3b82f6)' 
-                                                    : 'rgba(255,255,255,0.06)',
-                                                color: '#ffffff',
-                                                border: parseInt(plan) === trialPlan.id ? 'none' : '1px solid rgba(255,255,255,0.1)',
-                                                whiteSpace: 'nowrap'
-                                            }}>
-                                                {parseInt(plan) === trialPlan.id ? 'TERPILIH' : 'AKTIFKAN TRIAL'}
-                                            </div>
-                                        </div>
-                                    )}
+
 
                                     <div className="form-group" style={{ marginBottom: '24px' }}>
                                         <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontWeight: '600', color: '#e4e4e7' }}>Pilih Paket Langganan SaaS</label>
@@ -558,7 +499,7 @@ export default function RegisterPage() {
                                             }
                                         `}</style>
                                         <div className="plans-swipe-container fade-in-up">
-                                            {plans.map(p => {
+                                            {plans.filter(p => p.price > 0).map(p => {
                                                 const isSelected = parseInt(plan) === p.id;
                                                 const isBestSeller = p.name.includes('Pro');
                                                 return (
@@ -692,9 +633,7 @@ export default function RegisterPage() {
                                      </div>
 
                                     {(() => {
-                                        const selectedPlanObj = plans.find(p => p.id === parseInt(plan)) || plans[0];
-                                        const isFreePlan = selectedPlanObj ? selectedPlanObj.price === 0 : false;
-                                        const showPayment = !isFreePlan && plans.length > 0;
+                                        const showPayment = plans.length > 0;
 
                                         return (
                                             <div style={{

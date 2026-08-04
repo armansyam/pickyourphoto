@@ -88,17 +88,16 @@ export async function POST(request) {
             planDetails = db.prepare('SELECT * FROM plans ORDER BY price ASC LIMIT 1').get();
         }
 
-        const isFreePlan = planDetails.price === 0;
-
-        if (isFreePlan && settings.enable_free_trial === 0) {
-            return NextResponse.json({ message: 'Paket uji coba gratis tidak tersedia saat ini.' }, { status: 400 });
+        // Block free plans (price=0) from registration — use trial gallery on landing page
+        if (planDetails.price === 0) {
+            return NextResponse.json({ message: 'Paket gratis tidak tersedia di form registrasi. Gunakan fitur trial di halaman utama untuk mencoba platform.' }, { status: 400 });
         }
 
         const selectedPaymentMethod = rawPaymentMethod || 'manual';
         const isGateway = selectedPaymentMethod === 'gateway' || selectedPaymentMethod === 'qris';
         const isManual = selectedPaymentMethod === 'manual';
 
-        if (!isFreePlan && !paymentProofFile && !isGateway) {
+        if (!paymentProofFile && !isGateway) {
             return NextResponse.json({ message: 'Bukti transfer pembayaran wajib diupload untuk paket berbayar.' }, { status: 400 });
         }
 
@@ -127,8 +126,6 @@ export async function POST(request) {
             }
         } else if (isGateway) {
             paymentProofPath = 'Midtrans Automatic Payment';
-        } else if (isFreePlan) {
-            paymentProofPath = 'Free Trial';
         }
 
 
