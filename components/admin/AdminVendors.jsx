@@ -57,8 +57,9 @@ export default function AdminVendors({
 
   const filteredVendors = vendors.filter(v => {
     const expired = isExpired(v.expiresAt);
+    const isPending = v.status === 'pending' || v.status === 'pending_payment';
     const matchesTab = vendorSubTab === 'pending'
-      ? v.status === 'pending'
+      ? isPending
       : vendorSubTab === 'active'
       ? v.status === 'active' && !expired
       : v.status === 'suspended' || (v.status === 'active' && expired);
@@ -140,7 +141,7 @@ export default function AdminVendors({
             cursor: 'pointer'
           }}
         >
-          Menunggu Konfirmasi ({vendors.filter(v => v.status === 'pending').length})
+          Menunggu Konfirmasi ({vendors.filter(v => v.status === 'pending' || v.status === 'pending_payment').length})
         </button>
         <button
           onClick={() => setVendorSubTab('active')}
@@ -248,7 +249,9 @@ export default function AdminVendors({
                       {v.planName || 'Free Trial'}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
-                      {v.status === 'pending' ? (
+                      {v.status === 'pending_payment' || (v.status === 'pending' && v.paymentProof && v.paymentProof.includes('Midtrans')) ? (
+                        <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>⚡ Menunggu Pembayaran QRIS</span>
+                      ) : v.status === 'pending' ? (
                         <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>⏳ Menunggu Konfirmasi</span>
                       ) : v.status === 'suspended' ? (
                         <span style={{ color: '#f87171', background: 'rgba(239,68,68,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>🚫 Ditangguhkan</span>
@@ -259,7 +262,7 @@ export default function AdminVendors({
                       )}
                     </td>
                     <td style={{ padding: '12px 16px', color: '#a1a1aa', fontSize: '12px' }}>
-                      {v.status === 'pending'
+                      {v.status === 'pending' || v.status === 'pending_payment'
                         ? 'Belum Aktif'
                         : v.expiresAt
                         ? new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -267,7 +270,7 @@ export default function AdminVendors({
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px' }}>
-                        {v.status === 'pending' && (
+                        {(v.status === 'pending' || v.status === 'pending_payment') && (
                           <button
                             onClick={() => setVendorToApprove(v)}
                             className="btn-primary"
@@ -323,10 +326,18 @@ export default function AdminVendors({
           }}>
             {activeMenuVendor.paymentProof && (
               <button
-                onClick={() => { setActiveProofUrl(activeMenuVendor.paymentProof); setActiveMenuVendor(null); }}
-                style={{ padding: '8px 10px', fontSize: '12px', background: 'none', border: 'none', color: activeMenuVendor.paymentProof === 'via_payment_gateway' ? '#34d399' : '#e4e4e7', borderRadius: '6px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}
+                onClick={() => {
+                  setActiveProofUrl({
+                    url: activeMenuVendor.paymentProof,
+                    status: activeMenuVendor.status,
+                    name: activeMenuVendor.name,
+                    email: activeMenuVendor.email
+                  });
+                  setActiveMenuVendor(null);
+                }}
+                style={{ padding: '8px 10px', fontSize: '12px', background: 'none', border: 'none', color: (activeMenuVendor.paymentProof === 'via_payment_gateway' || activeMenuVendor.paymentProof.includes('Midtrans')) ? '#34d399' : '#e4e4e7', borderRadius: '6px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                {activeMenuVendor.paymentProof === 'via_payment_gateway' ? '⚡ Info Pembayaran QRIS' : '👁 Bukti Transfer'}
+                {(activeMenuVendor.paymentProof === 'via_payment_gateway' || activeMenuVendor.paymentProof.includes('Midtrans')) ? '⚡ Info Pembayaran QRIS' : '👁 Bukti Transfer'}
               </button>
             )}
 

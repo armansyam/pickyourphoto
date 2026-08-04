@@ -717,6 +717,11 @@ export default function AdminDashboard({ adminUser }) {
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
                                 Apakah Anda yakin ingin menyetujui pendaftaran vendor <strong>"{vendorToApprove.name}"</strong>?
                             </p>
+                            {(vendorToApprove.status === 'pending_payment' || (vendorToApprove.paymentProof && vendorToApprove.paymentProof.includes('Midtrans'))) && (
+                                <div style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '8px', padding: '10px 12px', marginTop: '14px', fontSize: '12px', color: '#fbbf24', textAlign: 'left' }}>
+                                    ⚠️ <strong>Catatan:</strong> Vendor ini mendaftar via QRIS / Midtrans tetapi transaksi pembayaran saat ini <strong>belum terkonfirmasi lunas oleh sistem Midtrans</strong>. Menyetujui secara manual akan mengaktifkan akun vendor tanpa menunggu konfirmasi pembayaran.
+                                </div>
+                            )}
                         </div>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button onClick={() => setVendorToApprove(null)} className="btn-secondary" style={{ flex: 1 }} disabled={approving}>Batal</button>
@@ -837,35 +842,63 @@ export default function AdminDashboard({ adminUser }) {
             {activeProofUrl && (
                 <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setActiveProofUrl(null)}>
                     <div className="modal-content" style={{ maxWidth: '540px', textAlign: 'left', background: 'rgba(18, 18, 24, 0.98)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', padding: '24px' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '20px' }}>
-                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
-                                {activeProofUrl === 'via_payment_gateway' ? '⚡ Rincian Pembayaran QRIS' : '🖼️ Bukti Pembayaran / Transfer'}
-                            </h3>
-                            <button onClick={() => setActiveProofUrl(null)} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '12px' }}>&times; Tutup</button>
-                        </div>
+                        {(() => {
+                            const proofStr = typeof activeProofUrl === 'object' ? (activeProofUrl.url || '') : (activeProofUrl || '');
+                            const vendorStatus = typeof activeProofUrl === 'object' ? activeProofUrl.status : null;
+                            const isGateway = proofStr === 'via_payment_gateway' || proofStr.includes('Midtrans');
+                            const isPaid = vendorStatus === 'active';
 
-                        {activeProofUrl === 'via_payment_gateway' || !activeProofUrl.match(/\.(jpg|jpeg|png|webp)($|\?)/i) && !activeProofUrl.startsWith('/') ? (
-                            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '32px', marginBottom: '10px' }}>✅</div>
-                                <h4 style={{ margin: '0 0 6px 0', color: '#34d399', fontSize: '16px', fontWeight: '700' }}>Pembayaran Otomatis via QRIS Gateway</h4>
-                                <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '1.5' }}>
-                                    Transaksi ini diverifikasi & dilunasi secara otomatis oleh sistem Midtrans Snap API. Vendor tidak perlu mengunggah foto bukt fisik.
-                                </p>
-                                <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', fontSize: '12px', color: '#e4e4e7', display: 'inline-block', textAlign: 'left', width: '100%' }}>
-                                    <div>• <strong>Status Verifikasi:</strong> <span style={{ color: '#34d399', fontWeight: 'bold' }}>LUNAS (SETTLEMENT)</span></div>
-                                    <div>• <strong>Metode Bayar:</strong> QRIS / E-Wallet / Virtual Account</div>
-                                    <div>• <strong>Pengaktifan Akun:</strong> Instan Otomatis System</div>
-                                </div>
-                            </div>
-                        ) : (
-                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                <img src={activeProofUrl} alt="Bukti Transfer" style={{ maxWidth: '100%', maxHeight: '55vh', objectFit: 'contain', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }} />
-                            </div>
-                        )}
+                            return (
+                                <>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '20px' }}>
+                                        <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
+                                            {isGateway ? '⚡ Rincian Pembayaran QRIS' : '🖼️ Bukti Pembayaran / Transfer'}
+                                        </h3>
+                                        <button onClick={() => setActiveProofUrl(null)} className="btn-secondary" style={{ padding: '4px 10px', fontSize: '12px' }}>&times; Tutup</button>
+                                    </div>
 
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                            <button onClick={() => setActiveProofUrl(null)} className="btn-secondary">Tutup</button>
-                        </div>
+                                    {isGateway ? (
+                                        <div style={{
+                                            background: isPaid ? 'rgba(16, 185, 129, 0.08)' : 'rgba(251, 191, 36, 0.08)',
+                                            border: `1px solid ${isPaid ? 'rgba(16, 185, 129, 0.25)' : 'rgba(251, 191, 36, 0.25)'}`,
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '20px',
+                                            textAlign: 'center'
+                                        }}>
+                                            <div style={{ fontSize: '32px', marginBottom: '10px' }}>{isPaid ? '✅' : '⏳'}</div>
+                                            <h4 style={{ margin: '0 0 6px 0', color: isPaid ? '#34d399' : '#fbbf24', fontSize: '16px', fontWeight: '700' }}>
+                                                {isPaid ? 'Pembayaran Otomatis via QRIS Gateway' : 'Menunggu Pembayaran QRIS Gateway'}
+                                            </h4>
+                                            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '1.5' }}>
+                                                {isPaid 
+                                                    ? 'Transaksi ini telah diverifikasi & dilunasi secara otomatis oleh sistem Midtrans Snap API. Vendor tidak perlu mengunggah foto bukti fisik.'
+                                                    : 'Vendor memilih pembayaran via QRIS Gateway, namun transaksi saat ini belum dikonfirmasi lunas oleh sistem Midtrans. Akun akan aktif secara otomatis begitu vendor menyelesaikan pembayaran.'}
+                                            </p>
+                                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', fontSize: '12px', color: '#e4e4e7', display: 'inline-block', textAlign: 'left', width: '100%' }}>
+                                                <div>• <strong>Status Verifikasi:</strong> <span style={{ color: isPaid ? '#34d399' : '#fbbf24', fontWeight: 'bold' }}>{isPaid ? 'LUNAS (SETTLEMENT)' : 'BELUM DIBAYAR (MENUNGGU PEMBAYARAN QRIS)'}</span></div>
+                                                <div>• <strong>Metode Bayar:</strong> QRIS / E-Wallet / Virtual Account</div>
+                                                <div>• <strong>Pengaktifan Akun:</strong> {isPaid ? 'Instan Otomatis System' : 'Otomatis Saat Pembayaran Lunas'}</div>
+                                            </div>
+                                        </div>
+                                    ) : (!proofStr.match(/\.(jpg|jpeg|png|webp)($|\?)/i) && !proofStr.startsWith('/')) ? (
+                                        <div style={{ background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.25)', borderRadius: '12px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '32px', marginBottom: '10px' }}>ℹ️</div>
+                                            <h4 style={{ margin: '0 0 6px 0', color: '#fbbf24', fontSize: '16px', fontWeight: '700' }}>Info Pembayaran</h4>
+                                            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#a1a1aa' }}>{proofStr}</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                            <img src={proofStr} alt="Bukti Transfer" style={{ maxWidth: '100%', maxHeight: '55vh', objectFit: 'contain', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                        <button onClick={() => setActiveProofUrl(null)} className="btn-secondary">Tutup</button>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}

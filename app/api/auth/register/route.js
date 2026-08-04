@@ -115,22 +115,23 @@ export async function POST(request) {
         }
 
 
-        if (existingVendor && existingVendor.status === 'pending') {
+        const initialStatus = isGateway ? 'pending_payment' : 'pending';
+
+        if (existingVendor && (existingVendor.status === 'pending' || existingVendor.status === 'pending_payment')) {
             const updateStmt = db.prepare(`
                 UPDATE vendors 
-                SET whatsapp = ?, planId = ?, maxProjects = ?, paymentProof = ?
+                SET whatsapp = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?
                 WHERE id = ?
             `);
-            updateStmt.run(whatsapp, planDetails.id, planDetails.maxProjects, paymentProofPath, existingVendor.id);
+            updateStmt.run(whatsapp, planDetails.id, planDetails.maxProjects, paymentProofPath, initialStatus, existingVendor.id);
 
             return NextResponse.json({ 
-                message: 'Registration submitted successfully. Waiting for admin approval.', 
+                message: isGateway ? 'Registration submitted successfully. Waiting for QRIS payment.' : 'Registration submitted successfully. Waiting for admin approval.', 
                 vendorId: existingVendor.id 
             }, { status: 200 });
         }
 
         const hashedPassword = await bcrypt.hash(password || Math.random().toString(36), 10);
-        const initialStatus = isGateway ? 'pending_payment' : 'pending';
 
         const insertStmt = db.prepare(`
             INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, resetRequested) 
