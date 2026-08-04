@@ -24,6 +24,7 @@ Aplikasi ini dikelola dengan ritme kerja dua arah lintas-server melalui kanal be
 - **Aturan Zero-Defect & Continuous Debugging**: Antigravity & Hermes tidak akan pernah berhenti menganalisis, memperbaiki, dan menguji sistem selama masih terdapat error sekecil apa pun. Pengujian dilakukan secara penuh hingga sistem 100% lulus tanpa error satupun.
 - **Protokol Dialog & Justifikasi Rasional**: Setiap perbaikan atau penolakan rekomendasi oleh Antigravity wajib menyertakan alasan teknis yang jelas. Jika Antigravity memiliki solusi yang lebih baik, Antigravity akan memberikan penjelasan rasional di dokumen laporan dan meminta tanggapan/alasan teknis dari Hermes Agent di iterasi berikutnya.
 - **Isolasi Commit**: Antigravity tidak akan meng-commit perubahan di tengah proses pengujian Hermes agar tidak mengganggu commit milik Hermes Agent.
+- **Wajib Build Ulang & Restart PM2**: Setiap kali Hermes Agent mendeteksi commit/pembaruan baru dari Antigravity di server LXC 102 (`/DATA/AppData/pickyourphoto`), Hermes wajib menjalankan `npm run build` dan merestart aplikasi (`pm2 restart pickyourphoto` / `pm2 reload`) sebelum melakukan pengujian audit agar pengujian berjalan pada versi kode & bundle terbaru.
 
 
 
