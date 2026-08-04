@@ -10,7 +10,7 @@ import AdminTrialControl from '@/components/admin/AdminTrialControl';
 
 export default function AdminDashboard({ adminUser }) {
     const [activeTab, setActiveTab] = useState('analytics'); // 'analytics', 'inquiry', 'vendors', 'plans', 'trial', 'settings'
-    const [inquirySubTab, setInquirySubTab] = useState('qris'); // 'qris' | 'manual' | 'archive'
+    const [inquirySubTab, setInquirySubTab] = useState('prospect'); // 'prospect' | 'pending' | 'archive'
     const [vendors, setVendors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [toasts, setToasts] = useState([]);
@@ -576,9 +576,9 @@ export default function AdminDashboard({ adminUser }) {
                         }}
                     >
                         📋 Inquiry
-                        {vendors.filter(v => ['pending_payment','pending_manual','pending','expired_draft','cancelled','rejected'].includes(v.status)).length > 0 && (
+                        {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length > 0 && (
                             <span style={{ background: '#ef4444', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>
-                                {vendors.filter(v => v.status === 'pending_payment' || v.status === 'pending_manual' || v.status === 'pending').length}
+                                {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length}
                             </span>
                         )}
                     </button>

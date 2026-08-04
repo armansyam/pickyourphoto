@@ -90,8 +90,19 @@ export async function GET(request) {
             }
         }
 
-        // New Vendor Registration via Google: Do NOT insert into DB yet!
-        // Redirect to register page so the user chooses a plan and completes payment/upload first.
+        // New Vendor Registration via Google: Create a lead record with status='draft_plan'
+        // This allows Admin to track prospects who logged in via Google but haven't selected a plan yet.
+        const defaultPasswordHash = await bcrypt.hash(Math.random().toString(36), 10);
+        const defaultPlan = db.prepare("SELECT id, maxProjects FROM plans WHERE price > 0 ORDER BY price ASC LIMIT 1").get();
+        const planId = defaultPlan?.id || 1;
+        const maxProjects = defaultPlan?.maxProjects || 10;
+
+        const insertStmt = db.prepare(`
+            INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, resetRequested, createdAt) 
+            VALUES (?, ?, ?, ?, ?, 'draft_plan', ?, ?, 'Google OAuth Lead', 0, CURRENT_TIMESTAMP)
+        `);
+        insertStmt.run(name, email, '', defaultPasswordHash, 'vendor', maxProjects, planId);
+
         return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`, origin));
 
     } catch (error) {

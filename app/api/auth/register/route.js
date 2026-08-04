@@ -131,7 +131,7 @@ export async function POST(request) {
 
         const initialStatus = isGateway ? 'pending_payment' : 'pending_manual';
 
-        if (existingVendor && (existingVendor.status === 'pending' || existingVendor.status === 'pending_payment' || existingVendor.status === 'pending_manual')) {
+        if (existingVendor && (existingVendor.status === 'pending' || existingVendor.status === 'pending_payment' || existingVendor.status === 'pending_manual' || existingVendor.status === 'draft_plan')) {
             const updateStmt = db.prepare(`
                 UPDATE vendors 
                 SET whatsapp = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?

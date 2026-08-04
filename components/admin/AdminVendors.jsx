@@ -120,10 +120,10 @@ export default function AdminVendors({
   };
 
   // ── Counts ────────────────────────────────────────────────────────────────
-  const countQris    = vendors.filter(v => isQrisVendor(v) && !['active', 'expired_draft', 'cancelled', 'rejected'].includes(v.status)).length;
-  const countManual  = vendors.filter(v => !isQrisVendor(v) && ['pending', 'pending_manual'].includes(v.status)).length;
-  const countArchive = vendors.filter(v => ['expired_draft', 'cancelled', 'rejected'].includes(v.status)).length;
-  const countActive  = vendors.filter(v => v.status === 'active' && !isExpired(v.expiresAt)).length;
+  const countProspect = vendors.filter(v => v.status === 'draft_plan').length;
+  const countPending  = vendors.filter(v => ['pending', 'pending_payment', 'pending_manual'].includes(v.status)).length;
+  const countArchive  = vendors.filter(v => ['expired_draft', 'cancelled', 'rejected'].includes(v.status)).length;
+  const countActive   = vendors.filter(v => v.status === 'active' && !isExpired(v.expiresAt)).length;
 
   // ── Filter per tab ────────────────────────────────────────────────────────
   const filteredVendors = vendors.filter(v => {
@@ -136,9 +136,9 @@ export default function AdminVendors({
 
     let matchesTab = false;
     if (vendorSubTab === 'inquiry') {
-      if (inquirySubTab === 'qris')    matchesTab = isQrisVendor(v) && !['active', 'expired_draft', 'cancelled', 'rejected'].includes(v.status);
-      if (inquirySubTab === 'manual')  matchesTab = !isQrisVendor(v) && ['pending', 'pending_manual'].includes(v.status);
-      if (inquirySubTab === 'archive') matchesTab = ['expired_draft', 'cancelled', 'rejected'].includes(v.status);
+      if (inquirySubTab === 'prospect') matchesTab = v.status === 'draft_plan';
+      if (inquirySubTab === 'pending')  matchesTab = ['pending', 'pending_payment', 'pending_manual'].includes(v.status);
+      if (inquirySubTab === 'archive')  matchesTab = ['expired_draft', 'cancelled', 'rejected'].includes(v.status);
     } else {
       // Kelola Vendor — active only
       matchesTab = v.status === 'active';
@@ -187,8 +187,8 @@ export default function AdminVendors({
   // ── Empty state message ───────────────────────────────────────────────────
   const emptyMsg = () => {
     if (vendorSubTab === 'active') return 'Tidak ada vendor berlangganan aktif.';
-    if (inquirySubTab === 'qris') return 'Tidak ada calon vendor yang menunggu pembayaran QRIS.';
-    if (inquirySubTab === 'manual') return 'Tidak ada calon vendor yang menunggu konfirmasi manual.';
+    if (inquirySubTab === 'prospect') return 'Tidak ada calon vendor di tahap pemilihan paket (Lead kosong).';
+    if (inquirySubTab === 'pending') return 'Tidak ada transaksi yang sedang menunggu pembayaran / approval.';
     return 'Tidak ada data di arsip.';
   };
 
@@ -248,11 +248,11 @@ export default function AdminVendors({
       {/* ── Inquiry Sub Tabs (hanya tampil di tab Inquiry) ── */}
       {vendorSubTab === 'inquiry' && (
         <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px' }}>
-          <button onClick={() => setInquirySubTab('qris')} style={subTabBtn(inquirySubTab === 'qris', '#fbbf24')}>
-            ⚡ QRIS / Otomatis {countQris > 0 && `(${countQris})`}
+          <button onClick={() => setInquirySubTab('prospect')} style={subTabBtn(inquirySubTab === 'prospect', '#38bdf8')}>
+            📝 Prospek / Lead {countProspect > 0 && `(${countProspect})`}
           </button>
-          <button onClick={() => setInquirySubTab('manual')} style={subTabBtn(inquirySubTab === 'manual', '#818cf8')}>
-            📄 Transfer Manual {countManual > 0 && `(${countManual})`}
+          <button onClick={() => setInquirySubTab('pending')} style={subTabBtn(inquirySubTab === 'pending', '#fbbf24')}>
+            ⚡ Menunggu Bayar {countPending > 0 && `(${countPending})`}
           </button>
           <button onClick={() => setInquirySubTab('archive')} style={subTabBtn(inquirySubTab === 'archive', '#71717a')}>
             🗃️ Arsip {countArchive > 0 && `(${countArchive})`}
@@ -275,8 +275,8 @@ export default function AdminVendors({
                 <th onClick={() => handleSort('planName')} style={{ padding: '10px 14px', cursor: 'pointer', color: getHeaderColor('planName') }}>Paket</th>
                 <th style={{ padding: '10px 14px', color: '#a1a1aa' }}>
                   {vendorSubTab === 'active' ? 'Status / Masa Aktif' :
-                   inquirySubTab === 'qris' ? 'Sisa Waktu QRIS' :
-                   inquirySubTab === 'archive' ? 'Status / Auto-Hapus' : 'Status'}
+                   inquirySubTab === 'prospect' ? 'Status Lead' :
+                   inquirySubTab === 'pending' ? 'Status Pembayaran' : 'Status / Auto-Hapus'}
                 </th>
                 <th style={{ padding: '10px 14px', textAlign: 'right', color: '#a1a1aa' }}>Aksi</th>
               </tr>
@@ -285,6 +285,7 @@ export default function AdminVendors({
               {sortedVendors.map(v => {
                 const expired = isExpired(v.expiresAt);
                 const waUrl = getWaReminderUrl(v.whatsapp, v.name, v.planName, v.expiresAt);
+                const isQris = isQrisVendor(v);
 
                 return (
                   <tr key={v.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -297,7 +298,7 @@ export default function AdminVendors({
                     {/* Contact */}
                     <td style={{ padding: '12px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ color: '#e4e4e7', fontSize: '12px' }}>{v.whatsapp || '–'}</span>
+                        <span style={{ color: '#e4e4e7', fontSize: '12px' }}>{v.whatsapp || '– (OAuth)'}</span>
                         {waUrl && vendorSubTab === 'active' && (
                           <a href={waUrl} target="_blank" rel="noopener noreferrer"
                             style={{ padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: '6px', textDecoration: 'none' }}
@@ -308,7 +309,7 @@ export default function AdminVendors({
 
                     {/* Plan */}
                     <td style={{ padding: '12px 14px', color: '#fbbf24', fontWeight: '500' }}>
-                      {v.planName || 'Free Trial'}
+                      {v.status === 'draft_plan' ? '⏳ Belum Pilih' : (v.planName || 'Free Trial')}
                     </td>
 
                     {/* Status column — context-aware */}
@@ -325,18 +326,29 @@ export default function AdminVendors({
                           )}
                         </div>
                       )}
-                      {vendorSubTab === 'inquiry' && inquirySubTab === 'qris' && (
+                      {vendorSubTab === 'inquiry' && inquirySubTab === 'prospect' && (
                         <div>
-                          <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
-                            ⚡ Menunggu Bayar QRIS
+                          <span style={{ color: '#38bdf8', background: 'rgba(56,189,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
+                            📝 Tahap 1: Pilih Paket
                           </span>
-                          <div><QrisCountdown expiresAt={v.qrisExpiresAt || v.paymentExpiresAt} /></div>
+                          <div style={{ fontSize: '11px', color: '#71717a' }}>OAuth Google Lead</div>
                         </div>
                       )}
-                      {vendorSubTab === 'inquiry' && inquirySubTab === 'manual' && (
-                        <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                          📄 Menunggu Konfirmasi
-                        </span>
+                      {vendorSubTab === 'inquiry' && inquirySubTab === 'pending' && (
+                        <div>
+                          {isQris ? (
+                            <>
+                              <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
+                                ⚡ Menunggu Bayar QRIS
+                              </span>
+                              <div><QrisCountdown expiresAt={v.qrisExpiresAt || v.paymentExpiresAt} /></div>
+                            </>
+                          ) : (
+                            <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                              📄 Transfer Manual
+                            </span>
+                          )}
+                        </div>
                       )}
                       {vendorSubTab === 'inquiry' && inquirySubTab === 'archive' && (
                         <div>
@@ -356,43 +368,55 @@ export default function AdminVendors({
                     <td style={{ padding: '12px 14px', textAlign: 'right' }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
 
-                        {/* QRIS sub-tab actions */}
-                        {vendorSubTab === 'inquiry' && inquirySubTab === 'qris' && (
+                        {/* Prospect sub-tab actions */}
+                        {vendorSubTab === 'inquiry' && inquirySubTab === 'prospect' && (
                           <button
-                            onClick={() => onCancelQris && onCancelQris(v)}
+                            onClick={() => setVendorToDelete(v)}
                             className="btn-secondary"
                             style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#f87171', borderColor: 'rgba(248,113,113,0.3)' }}
                           >
-                            🚫 Batalkan
+                            🗑️ Hapus Lead
                           </button>
                         )}
 
-                        {/* Manual sub-tab actions */}
-                        {vendorSubTab === 'inquiry' && inquirySubTab === 'manual' && (
+                        {/* Pending sub-tab actions */}
+                        {vendorSubTab === 'inquiry' && inquirySubTab === 'pending' && (
                           <>
-                            {v.paymentProof && (
+                            {isQris ? (
                               <button
-                                onClick={() => setActiveProofUrl({ url: v.paymentProof, status: v.status, name: v.name, email: v.email })}
+                                onClick={() => onCancelQris && onCancelQris(v)}
                                 className="btn-secondary"
-                                style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px' }}
+                                style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#f87171', borderColor: 'rgba(248,113,113,0.3)' }}
                               >
-                                👁 Bukti
+                                🚫 Batalkan
                               </button>
+                            ) : (
+                              <>
+                                {v.paymentProof && (
+                                  <button
+                                    onClick={() => setActiveProofUrl({ url: v.paymentProof, status: v.status, name: v.name, email: v.email })}
+                                    className="btn-secondary"
+                                    style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px' }}
+                                  >
+                                    👁 Bukti
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => setVendorToApprove(v)}
+                                  className="btn-primary"
+                                  style={{ padding: '4px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '6px' }}
+                                >
+                                  ✓ Setujui
+                                </button>
+                                <button
+                                  onClick={() => { setRejectModal(v); setRejectReason(''); }}
+                                  className="btn-secondary"
+                                  style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#f87171', borderColor: 'rgba(248,113,113,0.3)' }}
+                                >
+                                  ✗ Tolak
+                                </button>
+                              </>
                             )}
-                            <button
-                              onClick={() => setVendorToApprove(v)}
-                              className="btn-primary"
-                              style={{ padding: '4px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '6px' }}
-                            >
-                              ✓ Setujui
-                            </button>
-                            <button
-                              onClick={() => { setRejectModal(v); setRejectReason(''); }}
-                              className="btn-secondary"
-                              style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#f87171', borderColor: 'rgba(248,113,113,0.3)' }}
-                            >
-                              ✗ Tolak
-                            </button>
                           </>
                         )}
 
