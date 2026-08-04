@@ -47,6 +47,9 @@ export async function GET(request) {
             if (txStatus === 'settlement' || txStatus === 'capture') {
               // Update payment transaction status in DB
               db.prepare("UPDATE payment_transactions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE id = ?").run(transaction.id);
+              try {
+                db.prepare("UPDATE payment_sessions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE orderId = ?").run(orderId);
+              } catch (e) {}
 
               // Activate vendor account
               const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
@@ -80,6 +83,8 @@ export async function GET(request) {
       }
     }
 
+    const session = db.prepare('SELECT * FROM payment_sessions WHERE orderId = ?').get(orderId);
+
     if (transaction.status === 'paid') {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
       if (vendor) {
@@ -107,7 +112,11 @@ export async function GET(request) {
       }
     }
 
-    return NextResponse.json({ paid: false, status: transaction.status });
+    return NextResponse.json({ 
+      paid: false, 
+      status: transaction.status,
+      expiresAt: session?.expiresAt || null
+    });
 
   } catch (error) {
     console.error('[Payment Status Check Error]:', error);

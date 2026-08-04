@@ -50,6 +50,10 @@ export async function POST(request) {
       planName: plan.name,
     });
 
+    // Calculate 2-hour QRIS expiration time
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
+
     // Save payment transaction log in DB
     db.prepare(`
       INSERT INTO payment_transactions (orderId, vendorId, planId, amount, provider, status, paymentUrl, rawResponse)
@@ -64,12 +68,27 @@ export async function POST(request) {
       JSON.stringify(paymentResult.raw || {})
     );
 
+    // Save payment session in DB with 2-hour QRIS expiration
+    db.prepare(`
+      INSERT INTO payment_sessions (orderId, vendorId, planId, amount, status, paymentMethod, qrUrl, expiresAt, rawResponse)
+      VALUES (?, ?, ?, ?, 'pending', 'qris', ?, ?, ?)
+    `).run(
+      orderId,
+      vendor.id,
+      plan.id,
+      amount,
+      paymentResult.redirectUrl || '',
+      expiresAt,
+      JSON.stringify(paymentResult.raw || {})
+    );
+
     return NextResponse.json({
       success: true,
       orderId,
       provider: config.provider,
       token: paymentResult.token,
       redirectUrl: paymentResult.redirectUrl,
+      expiresAt,
     });
 
   } catch (error) {
