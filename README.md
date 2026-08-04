@@ -1,21 +1,22 @@
 # Pick-Your-Photo — Self-Hosted SaaS Platform for Photographers
 
-**Pick-Your-Photo** adalah platform SaaS mandiri yang dirancang khusus untuk memudahkan fotografer (vendor) mengelola proses seleksi foto bersama klien secara online, dengan sistem berlangganan berbasis paket, manajemen galeri Zero-Storage, dan integrasi Google Drive.
+**Pick-Your-Photo** adalah platform SaaS mandiri yang dirancang khusus untuk memudahkan fotografer (vendor) mengelola proses seleksi foto bersama klien secara online, dengan sistem berlangganan berbasis paket, manajemen galeri Zero-Storage, sortir file RAW lokal, dan integrasi Google Drive.
 
 ---
 
-## 🏗️ Arsitektur Sistem
+## 🏗️ Arsitektur & Spesifikasi Teknikal
 
-| Layer | Teknologi |
-|-------|-----------|
-| Framework | Next.js 14.2.3 (App Router) |
-| Database | SQLite via `better-sqlite3` (WAL mode) |
-| Autentikasi | JWT (cookie `httpOnly`, 24 jam) + bcrypt |
-| Payment Gateway | Midtrans Snap + Core API (QRIS/GoPay) |
-| Google Drive | Master OAuth 2.0 (Drive API v3, rekursif 5 level) |
-| Proxy Gambar | True Pipe Stream — RAM ~0, Cloudflare cache 30 hari |
-| Process Manager | PM2 |
-| Email Notifikasi | Nodemailer (SMTP via `saas_settings`) |
+| Layer | Teknologi & Implementasi |
+|-------|--------------------------|
+| **Framework** | Next.js 14.2.3 (App Router) |
+| **Database** | SQLite via `better-sqlite3` (WAL mode, busy_timeout 10s) |
+| **Autentikasi** | JWT (cookie `httpOnly`, 24 jam) + bcrypt (cost 10) |
+| **Payment Gateway** | Multi-provider dispatcher: Midtrans Snap + Core API (QRIS/GoPay), Xendit, Tripay, Duitku |
+| **Google Drive** | Master OAuth 2.0 (Drive API v3, scan rekursif hingga 5 subfolder) |
+| **Proxy Gambar** | True Pipe Stream (`ReadableStream`) — RAM ~0 MB, Cloudflare CDN Cache 30 hari |
+| **RAW Selector** | 100% Client-side sorting via File System Access API (Chrome/Edge) |
+| **Email Notifikasi** | Nodemailer (SMTP otomatis via `saas_settings` DB) |
+| **Process Manager** | PM2 |
 
 ---
 
@@ -23,13 +24,13 @@
 
 | Parameter | Nilai |
 |-----------|-------|
-| **Container Deploy** | LXC 102 |
+| **Container Deploy** | Proxmox LXC 102 |
 | **IP Address LAN Deploy** | `192.168.100.83` |
 | **Port Aplikasi** | `3051` |
 | **Domain Utama (Primary)** | `https://pilih.ammang.my.id` |
 | **Domain Sekunder** | `https://pick-your-photo.ammang.my.id` |
 | **Process Manager** | PM2 (Node.js) |
-| **Direktori Proyek di LXC 102** | `/DATA/AppData/pickyourphoto` |
+| **Direktori Proyek di Server** | `/DATA/AppData/pickyourphoto` |
 
 ---
 
@@ -42,14 +43,14 @@ ADMIN_PASSWORD=      # Password akun superadmin
 NODE_ENV=production
 ```
 
-> **Catatan:** Google OAuth, SMTP, dan Payment Gateway dikonfigurasi via **Admin Panel → Settings** (tersimpan di `saas_settings` DB) — tidak perlu di `.env`.
+> **Catatan:** Integrasi Google OAuth Master, SMTP Email, dan Payment Gateway QRIS dikonfigurasi langsung melalui **Admin Panel → Settings** (tersimpan di `saas_settings` DB) tanpa perlu edit file `.env`.
 
 ---
 
 ## 🚀 Menjalankan Aplikasi
 
 ```bash
-# Development (clear cache otomatis)
+# Development (dengan HMR)
 npm run dev
 
 # Production Build & Start
@@ -59,8 +60,9 @@ pm2 restart pickyourphoto || pm2 start npm --name "pickyourphoto" -- start
 
 ---
 
-## 📊 Alur Registrasi Vendor
+## 📊 Alur Operasional Sistem
 
+### 1. Registrasi Vendor
 ```
 Vendor mengisi form registrasi di /register
         │
@@ -71,48 +73,60 @@ Vendor mengisi form registrasi di /register
         └─ Paket Berbayar (QRIS/GoPay) ──────► Status: pending_payment
                                                 Scan QR → Midtrans webhook/polling
                                                 → active + Email notifikasi otomatis
-                                                (Sesi QRIS expire sesuai konfigurasi Admin)
+                                                (Sesi QRIS expire dalam 2 jam / auto-cleanup)
 ```
 
 > ⚠️ **Tidak ada paket gratis di form registrasi.**  
-> Demo/trial tersedia khusus di **halaman landing page** (`/`) — tanpa akun, langsung coba galeri seleksi dengan folder Google Drive sendiri.
+> Demo/trial tersedia khusus di **halaman landing page** (`/`) — tanpa perlu daftar akun, pengunjung langsung dapat mencoba galeri seleksi dengan folder Google Drive publik.
+
+### 2. Galeri Trial Instan (Landing Page)
+- Pengunjung input link folder Google Drive di halaman utama (`/`)
+- Server memindai file & mengelompokkan berdasarkan subfolder/kategori
+- Galeri instan dibuat dengan masa aktif (default: 30–60 menit)
+- Pengunjung dapat mencoba pengalaman memilih foto secara real-time
+
+### 3. RAW Selector (Sortir RAW Lokal)
+- Fotografer membuka proyek di Dashboard → klik **"📁 Sortir RAW"**
+- Browser menyalin/memindahkan file RAW (`.CR2`, `.NEF`, `.ARW`, `.DNG`, dll.) di folder lokal komputer fotografer sesuai nama file yang dipilih klien
+- **0 Byte diunggah ke server** (100% menggunakan File System Access API browser)
 
 ---
 
-## 🗂️ Struktur Data Penting
+## 🗂️ Struktur Data & Persistent Volume
 
 | Direktori/File | Fungsi |
 |---|---|
-| `data/database.db` | SQLite database — **JANGAN hapus di produksi** |
-| `public/staging_uploads/payment_proofs/` | Bukti transfer vendor |
-| `public/vendor_logos/` | Logo studio vendor |
-| `backups/` | Auto-backup database (via Admin Panel) |
+| `data/database.db` | SQLite database — **Wajib di-mount / di-backup** |
+| `public/staging_uploads/payment_proofs/` | Bukti transfer pembayaran manual vendor |
+| `public/vendor_logos/` | Brand logo studio vendor |
+| `backups/` | Folder backup otomatis database (`.db`) & foto static |
 
-> **Volume yang wajib di-mount (Docker):** `data/`, `public/staging_uploads/`, `public/vendor_logos/`
+> **Volume yang wajib di-mount di Docker/LXC:**  
+> `./data`, `./public/staging_uploads`, `./public/vendor_logos`, `./backups`
 
 ---
 
-## 📦 Paket Berlangganan
+## 📦 Paket Berlangganan (SaaS Multi-Tier)
 
 | Paket | Proyek Maks. | Harga/Bulan | Custom Logo | RAW Selector |
 |---|---|---|---|---|
-| Starter Plan | 5 | Rp 49.000 | ❌ | ❌ |
-| Pro Studio Plan | 20 | Rp 129.000 | ✅ | ❌ |
-| Business Studio Plan | 50 | Rp 249.000 | ✅ | ✅ |
+| **Starter Plan** | 5 Proyek | Rp 49.000 | ❌ | ❌ |
+| **Pro Studio Plan** | 20 Proyek | Rp 129.000 | ✅ | ❌ |
+| **Business Studio Plan** | 50 Proyek | Rp 249.000 | ✅ | ✅ |
 
-> Semua paket: **30 hari masa aktif**, **Unlimited foto** (Zero-Storage — tidak ada file di server).
+> **Fitur Semua Paket:** 30 hari masa aktif, **Unlimited Foto per Proyek** (Zero-Storage architecture — gambar langsung disajikan via Direct Stream Google CDN).
 
 ---
 
-## 📖 Dokumentasi Lengkap
+## 📖 Dokumentasi Teknis Terstruktur
 
-| Dokumen | Isi |
+| Dokumen | Deskripsi & Isi |
 |---|---|
-| [`docs/01-SYSTEM-SPECIFICATION.md`](docs/01-SYSTEM-SPECIFICATION.md) | Spesifikasi sistem, fitur, lifecycle status |
-| [`docs/02-DATABASE-AND-SECURITY.md`](docs/02-DATABASE-AND-SECURITY.md) | Skema database, keamanan, migrasi |
-| [`docs/03-DEPLOYMENT-GUIDE.md`](docs/03-DEPLOYMENT-GUIDE.md) | Panduan deployment, PM2, Docker |
-| [`docs/04-IMPLEMENTATION-PLAN.md`](docs/04-IMPLEMENTATION-PLAN.md) | Status fitur & roadmap |
-| [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) | Dokumentasi API endpoint lengkap |
+| [`docs/01-SYSTEM-SPECIFICATION.md`](docs/01-SYSTEM-SPECIFICATION.md) | Visi, spesifikasi lengkap, arsitektur, dan lifecycle status |
+| [`docs/02-DATABASE-AND-SECURITY.md`](docs/02-DATABASE-AND-SECURITY.md) | Skema tabel SQLite, indeks, migrasi, dan standar keamanan |
+| [`docs/03-DEPLOYMENT-GUIDE.md`](docs/03-DEPLOYMENT-GUIDE.md) | Panduan deployment LXC, PM2, Docker, Nginx, dan SSL |
+| [`docs/04-IMPLEMENTATION-PLAN.md`](docs/04-IMPLEMENTATION-PLAN.md) | Status fitur berjalan, roadmap prioritas, & audit history |
+| [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) | Dokumentasi API endpoint terperinci (Auth, Proxy, Payment, RAW Selector) |
 
 ---
 
