@@ -3,6 +3,8 @@ import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 
 // GET: List all vendors (Superadmin only)
 export async function GET() {
@@ -34,15 +36,60 @@ export async function GET() {
                 p.price as planPrice,
                 p.activePeriodDays as planActivePeriodDays,
                 (SELECT COUNT(*) FROM projects WHERE vendorId = v.id) as projectCount,
-                (SELECT COUNT(*) FROM projects WHERE vendorId = v.id AND status = 'completed') as completedProjectsCount
+                (SELECT COUNT(*) FROM projects WHERE vendorId = v.id AND status = 'completed') as completedProjectsCount,
+                (SELECT expiresAt FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as paymentExpiresAt,
+                (SELECT expiresAt FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as qrisExpiresAt,
+                (SELECT orderId FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as orderId,
+                (SELECT paymentMethod FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as sessionPaymentMethod
             FROM vendors v
             LEFT JOIN plans p ON v.planId = p.id
             WHERE v.role != 'admin'
             ORDER BY v.createdAt DESC
         `);
-        const vendors = stmt.all();
+        // Auto-sync live Midtrans status for any pending_payment vendors
+        try {
+            const pendingTxs = db.prepare("SELECT pt.*, v.email as vendorEmail FROM payment_transactions pt JOIN vendors v ON pt.vendorId = v.id WHERE v.status = 'pending_payment' AND pt.status = 'pending'").all();
+            
+            if (pendingTxs && pendingTxs.length > 0) {
+                const serverKeyRow = db.prepare("SELECT value FROM saas_settings WHERE key='payment_gateway_server_key'").get();
+                const serverKey = serverKeyRow ? serverKeyRow.value : '';
+                if (serverKey) {
+                    const authHeader = 'Basic ' + Buffer.from(serverKey + ':').toString('base64');
+                    for (const tx of pendingTxs) {
+                        try {
+                            const midRes = await fetch(`https://api.sandbox.midtrans.com/v2/${tx.orderId}/status`, {
+                                headers: { 'Accept': 'application/json', 'Authorization': authHeader }
+                            });
+                            if (midRes.ok) {
+                                const midData = await midRes.json();
+                                if (midData.transaction_status === 'settlement' || midData.transaction_status === 'capture') {
+                                    db.prepare("UPDATE payment_transactions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE id = ?").run(tx.id);
+                                    try { db.prepare("UPDATE payment_sessions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE orderId = ?").run(tx.orderId); } catch (e) {}
+                                    
+                                    const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(tx.planId);
+                                    const expDate = new Date();
+                                    expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
+                                    const expiresAt = expDate.toISOString().split('T')[0];
 
+                                    db.prepare("UPDATE vendors SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ? WHERE id = ?")
+                                        .run(plan ? plan.id : tx.planId, expiresAt, plan ? plan.maxProjects : 10, tx.vendorId);
+                                    
+                                    console.log(`[Admin API Auto-Sync SUCCESS] Vendor ID ${tx.vendorId} activated automatically!`);
+                                }
+                            }
+                        } catch (err) {
+                            console.warn('[Admin API Auto-Sync Warning]:', err);
+                        }
+                    }
+                }
+            }
+        } catch (syncErr) {
+            console.error('[Admin Vendors Sync Error]:', syncErr);
+        }
+
+        const vendors = stmt.all();
         return NextResponse.json(vendors);
+
     } catch (error) {
         console.error('Failed to retrieve vendors for admin:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

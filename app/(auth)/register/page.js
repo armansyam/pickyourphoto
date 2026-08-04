@@ -1,7 +1,10 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import NativeQrisDisplay from '@/components/NativeQrisDisplay';
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
@@ -21,17 +24,9 @@ export default function RegisterPage() {
     // --- NEW: Registration status state & payment method ---
     const [regStatus, setRegStatus] = useState({ registration_open: true, free_trial_available: true, reason_closed: null });
     const [checkingStatus, setCheckingStatus] = useState(true);
-    const [paymentMethod, setPaymentMethod] = useState('gateway');
+    const [paymentMethod, setPaymentMethod] = useState('');
 
     const isGatewayEnabled = settings?.enable_payment_gateway === '1' || settings?.enable_payment_gateway === 'true';
-
-    useEffect(() => {
-        if (isGatewayEnabled) {
-            setPaymentMethod('gateway');
-        } else {
-            setPaymentMethod('manual');
-        }
-    }, [settings, isGatewayEnabled]);
 
     useEffect(() => {
         if (isGatewayEnabled) {
@@ -101,9 +96,9 @@ export default function RegisterPage() {
 
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('status') === 'pending') {
-                setSuccess(true);
-            }
+            // NOTE: status=pending means awaiting admin approval (no payment),
+            // NOT payment success. Do NOT call setSuccess here.
+            // Payment success is triggered only via payment polling in NativeQrisDisplay.
             if (urlParams.get('step') === 'select-plan') {
                 const userEmail = urlParams.get('email');
                 if (userEmail) setEmail(userEmail);
@@ -112,10 +107,39 @@ export default function RegisterPage() {
         }
     }, []);
 
+    const [pendingOrder, setPendingOrder] = useState(null);
+    const [expiredOrder, setExpiredOrder] = useState(null);
+
+    useEffect(() => {
+        if (email && email.includes('@')) {
+            fetch(`/api/payment/check-pending?email=${encodeURIComponent(email)}`)
+                .then(r => r.json())
+                .then(d => {
+                    if (d.hasPending) {
+                        setPendingOrder(d);
+                        setExpiredOrder(null);
+                    } else if (d.hasExpired) {
+                        setExpiredOrder(d);
+                        setPendingOrder(null);
+                    } else {
+                        setPendingOrder(null);
+                        setExpiredOrder(null);
+                    }
+                })
+                .catch(() => { setPendingOrder(null); setExpiredOrder(null); });
+        } else {
+            setPendingOrder(null);
+            setExpiredOrder(null);
+        }
+    }, [email]);
+
+    const [showSummary, setShowSummary] = useState(false);
+    const [validatingSummary, setValidatingSummary] = useState(false);
+
     const handleNextStep = (e) => {
         e.preventDefault();
-        if (!name || !email || !whatsapp || !password) {
-            setError('Semua kolom data diri wajib diisi.');
+        if (!name || !email || !password) {
+            setError('Nama, Email, dan Password wajib diisi.');
             return;
         }
         if (password.length < 6) {
@@ -126,23 +150,50 @@ export default function RegisterPage() {
         setStep(2);
     };
 
-    const getFeatures = (p) => {
-        if (p.planType === 'storage') {
-            return [
-                `Penyimpanan ${p.maxStorageMB >= 1024 ? `${(p.maxStorageMB / 1024).toFixed(0)} GB` : `${p.maxStorageMB} MB`}`,
-                'Project Tanpa Batas',
-                'Foto Tanpa Batas',
-                `Masa Aktif ${p.activePeriodDays} Hari`
-            ];
-        } else {
-            return [
-                `Batas ${p.maxProjects} Project Aktif`,
-                `Maks. ${p.maxPhotosPerProject} Foto / Project`,
-                `Storage Lega (hingga ${(p.maxStorageMB / 1024).toFixed(0)}GB)`,
-                `Masa Aktif ${p.activePeriodDays} Hari`,
-                'Sistem Cleaner 5 Hari'
-            ];
+
+    const handleProceedToSummary = async (e) => {
+        if (e) e.preventDefault();
+        setError('');
+        
+        if (!plan) {
+            setError('Silakan pilih salah satu paket langganan terlebih dahulu.');
+            return;
         }
+
+
+        setValidatingSummary(true);
+        try {
+            const res = await fetch('/api/auth/validate-register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, whatsapp })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Validasi registrasi gagal.');
+            }
+
+            setShowSummary(true);
+        } catch (err) {
+            setError(err.message || 'Gagal memverifikasi nomor WhatsApp.');
+        } finally {
+            setValidatingSummary(false);
+        }
+    };
+
+    const getFeatures = (p) => {
+        return [
+            `Maksimal ${p.maxProjects} Project Aktif`,
+            'Foto Unlimited',
+            'Galeri Online & Seleksi Foto Klien',
+            p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business')
+                ? 'Bisa Menggunakan Logo Studio Sendiri'
+                : 'Logo Platform Standard',
+            p.allowRawSelector === 1 || p.allowRawSelector === true
+                ? 'Fitur Auto-Sorter / Selector File RAW'
+                : 'Fitur RAW Selector Nonaktif'
+        ];
     };
 
     const handleSubmit = async (e) => {
@@ -164,11 +215,6 @@ export default function RegisterPage() {
             return;
         }
 
-        if (!whatsapp || whatsapp.trim() === '') {
-            setError('Nomor WhatsApp (WA) wajib diisi untuk pengiriman notifikasi otomatis.');
-            setLoading(false);
-            return;
-        }
 
         const isGateway = isGatewayEnabled && paymentMethod === 'gateway';
 
@@ -210,51 +256,32 @@ export default function RegisterPage() {
                         body: JSON.stringify({ vendorId: data.vendorId, planId: selectedPlan.id })
                     });
                     const payData = await payRes.json();
-
+                    
                     if (payRes.ok && payData.token) {
-                        // Start real-time background status polling for auto-login & auto-redirect
-                        if (payData.orderId) {
-                            const pollTimer = setInterval(async () => {
-                                try {
-                                    const stRes = await fetch(`/api/payment/status?orderId=${payData.orderId}`);
-                                    const stData = await stRes.json();
-                                    if (stRes.ok && stData.paid) {
-                                        clearInterval(pollTimer);
-                                        window.location.href = stData.redirectUrl || '/dashboard';
-                                    }
-                                } catch (e) {
-                                    // ignore polling errors
-                                }
-                            }, 2000);
-                        }
+                        // Directly render Native QRIS Embedded Card (No Popup Window!)
+                        setPendingOrder({
+                            hasPending: true,
+                            vendorId: data.vendorId,
+                            name: name,
+                            email: email,
+                            whatsapp: whatsapp,
+                            orderId: payData.orderId,
+                            token: payData.token,
+                            redirectUrl: payData.redirectUrl,
+                            qrUrl: payData.qrUrl || payData.redirectUrl,
+                            amount: payData.amount || selectedPlan.price,
+                            expiresAt: payData.expiresAt,
+                            planName: selectedPlan.name,
+                            planPrice: selectedPlan.price
+                        });
+                        setLoading(false);
+                        return;
+                    }
 
-                        if (typeof window !== 'undefined' && window.snap) {
-                            window.snap.pay(payData.token, {
-                                onSuccess: function () {
-                                    clearInterval(pollTimer);
-                                    window.location.href = '/dashboard';
-                                },
-                                onPending: function () {
-                                    setSuccess(true);
-                                },
-                                onError: function () {
-                                    if (pollTimer) clearInterval(pollTimer);
-                                    setError('Pembayaran gagal atau dibatalkan oleh pengguna.');
-                                },
-                                onClose: function () {
-                                    fetch(`/api/payment/status?orderId=${payData.orderId}`)
-                                        .then(r => r.json())
-                                        .then(d => {
-                                            if (d.paid) window.location.href = '/dashboard';
-                                            else setSuccess(true);
-                                        }).catch(() => setSuccess(true));
-                                }
-                            });
-                            return;
-                        } else if (payData.redirectUrl) {
-                            window.location.href = payData.redirectUrl;
-                            return;
-                        }
+                    // Fallback to original redirect logic if needed
+                    if (payData.redirectUrl) {
+                        window.location.href = payData.redirectUrl;
+                        return;
                     }
                 } catch (payErr) {
                     console.error('[Payment Gateway Launch Error]:', payErr);
@@ -315,8 +342,29 @@ export default function RegisterPage() {
                 .fade-in-up {
                     animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                 }
+                @media (max-width: 640px) {
+                    .register-glass-card {
+                        padding: 16px 8px !important;
+                        border-radius: 16px !important;
+                        border: none !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                    }
+                    .plans-swipe-container {
+                        grid-template-columns: 1fr !important;
+                        gap: 16px !important;
+                        padding: 4px 0 16px 0 !important;
+                    }
+                    .plan-card-item {
+                        padding: 24px 16px 20px 16px !important;
+                        min-height: auto !important;
+                        background: rgba(15, 23, 42, 0.95) !important;
+                        border-radius: 16px !important;
+                    }
+                }
             `}</style>
-            <div className="glass-card" style={{ width: '100%', maxWidth: step === 1 ? '400px' : '940px', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+            <div className="glass-card register-glass-card" style={{ width: '100%', maxWidth: step === 1 ? '400px' : '940px', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+
                 {success ? (
                     <div style={{ textAlign: 'center', padding: '20px 0' }}>
                         <div style={{ 
@@ -478,174 +526,178 @@ export default function RegisterPage() {
                                 </div>
                             ) : (
                                 <div className="fade-in-up" key="step2">
-
-
-                                    <div className="form-group" style={{ marginBottom: '24px' }}>
-                                        <label className="form-label" style={{ marginBottom: '12px', display: 'block', fontWeight: '600', color: '#e4e4e7' }}>Pilih Paket Langganan SaaS</label>
-
-                                        {/* Grid of 3 Clean Plans */}
-                                        <style>{`
-                                            .plans-swipe-container {
-                                                display: grid;
-                                                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-                                                gap: 20px;
-                                                margin-top: 16px;
-                                                margin-bottom: 20px;
-                                                padding: 10px 4px 20px 4px;
-                                            }
-                                            .plan-card-item {
-                                                width: 100%;
-                                                box-sizing: border-box;
-                                            }
-                                        `}</style>
-                                        <div className="plans-swipe-container fade-in-up">
-                                            {plans.filter(p => p.price > 0).map(p => {
-                                                const isSelected = parseInt(plan) === p.id;
-                                                const isBestSeller = p.name.includes('Pro');
-                                                return (
-                                                    <div 
-                                                        key={p.id}
-                                                        className="plan-card-item"
-                                                        onClick={() => !loading && setPlan(p.id.toString())}
-                                                        style={{
-                                                            position: 'relative',
-                                                            background: isSelected 
-                                                                ? 'rgba(99, 102, 241, 0.12)' 
-                                                                : 'rgba(255, 255, 255, 0.02)',
-                                                            border: isSelected 
-                                                                ? '2px solid #818cf8' 
-                                                                : isBestSeller
-                                                                    ? '1px solid rgba(99, 102, 241, 0.4)'
-                                                                    : '1px solid rgba(255, 255, 255, 0.08)',
-                                                            borderRadius: '16px',
-                                                            padding: '36px 20px 24px 20px',
-                                                            cursor: loading ? 'not-allowed' : 'pointer',
-                                                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                            boxShadow: isSelected ? '0 12px 28px rgba(99, 102, 241, 0.25)' : 'none',
-                                                            transform: isSelected ? 'translateY(-4px)' : 'none',
-                                                            boxSizing: 'border-box',
-                                                            display: 'flex',
-                                                            flexDirection: 'column',
-                                                            justify: 'space-between',
-                                                            minHeight: '320px'
+                                    {expiredOrder ? (
+                                        /* ===== EXPIRED QRIS STATE ===== */
+                                        <div className="fade-in-up" style={{ background: 'linear-gradient(160deg,rgba(15,23,42,0.98),rgba(10,17,35,0.99))', border: '1.5px solid rgba(239,68,68,0.5)', borderRadius: '22px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 20px 60px rgba(239,68,68,0.15)' }}>
+                                            {/* Header */}
+                                            <div style={{ background: 'linear-gradient(90deg,rgba(239,68,68,0.15),rgba(220,38,38,0.1))', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div>
+                                                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#fca5a5' }}>Pembayaran QRIS Kedaluwarsa</div>
+                                                    <div style={{ fontSize: '11px', color: '#64748b' }}>{expiredOrder.email}</div>
+                                                </div>
+                                                <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: '99px' }}>
+                                                    <span style={{ fontSize: '10px', fontWeight: '700', color: '#ef4444' }}>⏰ EXPIRED</span>
+                                                </div>
+                                            </div>
+                                            {/* Body */}
+                                            <div style={{ padding: '28px 24px', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '48px', marginBottom: '12px' }}>⏰</div>
+                                                <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '800', color: '#fca5a5' }}>
+                                                    QRIS untuk {expiredOrder.planName} Telah Kedaluwarsa
+                                                </h3>
+                                                <p style={{ margin: '0 0 6px', fontSize: '13px', color: '#94a3b8' }}>
+                                                    Nominal: <strong style={{ color: '#34d399' }}>Rp {(expiredOrder.planPrice || expiredOrder.amount || 0).toLocaleString('id-ID')}</strong>
+                                                </p>
+                                                <p style={{ margin: '0 0 24px', fontSize: '12px', color: '#64748b' }}>
+                                                    Silakan lakukan pembayaran ulang. Pilih metode yang diinginkan:
+                                                </p>
+                                                {/* Retry options */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            setLoading(true);
+                                                            try {
+                                                                // Cancel expired order
+                                                                await fetch('/api/payment/cancel', {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ orderId: expiredOrder.orderId, email: expiredOrder.email })
+                                                                });
+                                                                // Create new QRIS payment
+                                                                const payRes = await fetch('/api/payment/create', {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ vendorId: expiredOrder.vendorId, planId: expiredOrder.planId })
+                                                                });
+                                                                const payData = await payRes.json();
+                                                                if (!payRes.ok) throw new Error(payData.message || 'Gagal membuat pembayaran baru');
+                                                                setExpiredOrder(null);
+                                                                setPendingOrder({
+                                                                    orderId: payData.orderId,
+                                                                    email: expiredOrder.email,
+                                                                    token: payData.token,
+                                                                    qrUrl: payData.qrUrl,
+                                                                    expiresAt: payData.expiresAt,
+                                                                    planName: expiredOrder.planName,
+                                                                    planPrice: expiredOrder.planPrice || expiredOrder.amount,
+                                                                });
+                                                            } catch (e) {
+                                                                setError(e.message);
+                                                            } finally {
+                                                                setLoading(false);
+                                                            }
                                                         }}
+                                                        style={{ padding: '13px', borderRadius: '12px', border: 'none', background: loading ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}
+                                                        disabled={loading}
                                                     >
-                                                        {isBestSeller && (
-                                                            <div style={{
-                                                                position: 'absolute',
-                                                                top: '-12px',
-                                                                right: '20px',
-                                                                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                                                                color: '#ffffff',
-                                                                padding: '4px 12px',
-                                                                borderRadius: '20px',
-                                                                fontSize: '10px',
-                                                                fontWeight: 'bold',
-                                                                letterSpacing: '0.05em'
-                                                            }}>
-                                                                BEST SELLER
-                                                            </div>
-                                                        )}
-
-                                                        <div style={{ textAlign: 'center' }}>
-                                                            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>{p.name}</h3>
-                                                            <div style={{ fontSize: '26px', fontWeight: '850', color: '#fbbf24', marginBottom: '4px' }}>
-                                                                Rp {p.price ? p.price.toLocaleString('id-ID') : '0'}
-                                                                <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}> / {p.activePeriodDays} hari</span>
-                                                            </div>
-                                                        </div>
-
-                                                        <div style={{
-                                                            width: '100%',
-                                                            height: '1px',
-                                                            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
-                                                            margin: '16px 0'
-                                                        }} />
-
-                                                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#d4d4d8' }}>
-                                                            <div>✓ Maksimal <strong>{p.maxProjects} Project Aktif</strong></div>
-                                                            <div>✓ Foto <strong>Tanpa Batas (Unlimited Direct Stream)</strong></div>
-                                                            <div>✓ Fitur <strong>Seleksi Foto & Notifikasi WA Klien</strong></div>
-                                                            <div>✓ Integrasi Langsung Google Drive</div>
-
-
-                                                            {p.allowCustomLogo === 1 || p.name.includes('Pro') || p.name.includes('Business') ? (
-                                                                <div style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Custom Logo Studio (White-Label)</div>
-                                                            ) : (
-                                                                <div style={{ color: '#71717a' }}>• Logo Default Platform Standard</div>
-                                                            )}
-                                                        </div>
-
-                                                        <button
-                                                            type="button"
-                                                            style={{
-                                                                width: '100%',
-                                                                padding: '12px 16px',
-                                                                borderRadius: '10px',
-                                                                fontWeight: '800',
-                                                                fontSize: '12px',
-                                                                cursor: loading ? 'not-allowed' : 'pointer',
-                                                                transition: 'all 0.3s ease',
-                                                                background: isSelected 
-                                                                    ? 'linear-gradient(135deg, #6366f1, #4f46e5)' 
-                                                                    : 'rgba(255, 255, 255, 0.04)',
-                                                                color: '#ffffff',
-                                                                border: isSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.12)',
-                                                                marginTop: '16px'
-                                                            }}
-                                                        >
-                                                            {isSelected ? '✓ TERPILIH' : 'PILIH PAKET'}
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })}
+                                                        {loading ? '⏳ Memproses...' : '🔄 Bayar Ulang via QRIS'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setExpiredOrder(null);
+                                                            setPlan(String(expiredOrder.planId));
+                                                            setShowSummary(true);
+                                                        }}
+                                                        style={{ padding: '13px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.08)', color: '#a5b4fc', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}
+                                                    >
+                                                        🏦 Transfer Manual / Upload Bukti Bayar
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setExpiredOrder(null);
+                                                            setPlan('');
+                                                            setShowSummary(false);
+                                                        }}
+                                                        style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#64748b', fontWeight: '500', fontSize: '13px', cursor: 'pointer' }}
+                                                    >
+                                                        📦 Ganti Paket
+                                                    </button>
+                                                </div>
+                                                {error && <p style={{ marginTop: '12px', color: '#ef4444', fontSize: '12px' }}>{error}</p>}
+                                            </div>
                                         </div>
-                                    </div>
-                                     {/* WHATSAPP MANDATORY INPUT WITH AUTOMATIC +62 COUNTRY CODE PREFIX */}
-                                     <div style={{ background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
-                                         <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#a5b4fc', marginBottom: '8px' }}>
-                                             📱 Nomor WhatsApp (WA) — Wajib Diisi untuk Notifikasi Otomatis
-                                         </label>
-                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                             <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '12px 14px', fontSize: '14px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px', userSelect: 'none' }}>
-                                                 <span>🇮🇩</span>
-                                                 <span>+62</span>
-                                             </div>
-                                             <input
-                                                 type="text"
-                                                 required
-                                                 placeholder="81234567890"
-                                                 value={whatsapp.startsWith('62') ? whatsapp.slice(2) : whatsapp.startsWith('0') ? whatsapp.slice(1) : whatsapp}
-                                                 onChange={(e) => {
-                                                     let raw = e.target.value.replace(/\D/g, '');
-                                                     if (raw.startsWith('0')) {
-                                                         raw = raw.slice(1);
-                                                     }
-                                                     setWhatsapp(raw ? `62${raw}` : '');
-                                                 }}
-                                                 disabled={loading}
-                                                 style={{ flex: 1, padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#ffffff', fontSize: '14px', outline: 'none' }}
-                                             />
-                                         </div>
-                                         <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '6px' }}>
-                                             Otomatis diformat internasional: <strong style={{ color: '#38bdf8' }}>+{whatsapp || '6281234567890'}</strong>
-                                         </span>
-                                     </div>
 
-                                    {(() => {
-                                        const showPayment = plans.length > 0;
+                                    ) : pendingOrder ? (
+                                        <NativeQrisDisplay
+                                            pendingOrder={pendingOrder}
+                                            onCancel={async () => {
+                                                if (pendingOrder.orderId) {
+                                                    try {
+                                                        await fetch('/api/payment/cancel', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ orderId: pendingOrder.orderId, email: pendingOrder.email })
+                                                        });
+                                                    } catch (e) {}
+                                                }
+                                                setPendingOrder(null);
+                                            }}
+                                        />
+                                    ) : showSummary ? (
 
-                                        return (
-                                            <div style={{
-                                                maxHeight: showPayment ? '600px' : '0px',
-                                                opacity: showPayment ? 1 : 0,
-                                                transform: showPayment ? 'translateY(0)' : 'translateY(-10px)',
-                                                overflow: 'hidden',
-                                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                visibility: showPayment ? 'visible' : 'hidden'
-                                            }}>
+                                        <div className="fade-in-up" style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '16px', padding: '24px', marginBottom: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+                                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                                <span style={{ fontSize: '11px', fontWeight: 'bold', background: 'rgba(99, 102, 241, 0.2)', color: '#818cf8', padding: '4px 12px', borderRadius: '20px' }}>
+                                                    KONFIRMASI DETAIL & PEMBAYARAN
+                                                </span>
+                                                <h3 style={{ margin: '8px 0 4px 0', fontSize: '20px', fontWeight: 'bold', color: '#ffffff' }}>
+                                                    Periksa Pesanan & Pilih Metode Pembayaran
+                                                </h3>
+                                                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
+                                                    Pastikan data pendaftaran benar lalu pilih metode pembayaran Anda.
+                                                </p>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
+                                                {/* 1. Account Info Summary */}
+                                                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px' }}>
+                                                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', marginBottom: '6px' }}>👤 DETAIL AKUN VENDOR</div>
+                                                    <div style={{ color: '#ffffff', fontWeight: '600' }}>{name}</div>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '12px' }}>✉️ {email}</div>
+                                                    {whatsapp && <div style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>📱 +{whatsapp}</div>}
+
+                                                </div>
+
+                                                {/* 2. Selected Plan Summary */}
+                                                {(() => {
+                                                    const selPlan = plans.find(p => p.id === parseInt(plan));
+                                                    return selPlan ? (
+                                                        <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', borderRadius: '12px', padding: '16px' }}>
+                                                            <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', marginBottom: '8px' }}>📦 PAKET SAAS YANG DIPILIH</div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                                <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>{selPlan.name}</span>
+                                                                <span style={{ color: '#fbbf24', fontWeight: '850', fontSize: '17px' }}>Rp {selPlan.price ? selPlan.price.toLocaleString('id-ID') : '0'}</span>
+                                                            </div>
+                                                            
+                                                            <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
+
+                                                            {/* Plan Features List Details */}
+                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#d4d4d8' }}>
+                                                                <div>✓ Maksimal <strong>{selPlan.maxProjects} Project Aktif</strong></div>
+                                                                <div>✓ Foto <strong>Unlimited</strong> / project</div>
+                                                                <div>✓ <strong>Galeri Online & Seleksi Foto Klien</strong></div>
+                                                                {selPlan.allowCustomLogo === 1 || selPlan.allowCustomLogo === true || selPlan.name.includes('Pro') || selPlan.name.includes('Business') ? (
+                                                                    <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Bisa Menggunakan Logo Studio Sendiri</div>
+                                                                ) : (
+                                                                    <div style={{ color: '#71717a' }}>• Logo Platform Standard</div>
+                                                                )}
+                                                                {selPlan.allowRawSelector === 1 || selPlan.allowRawSelector === true ? (
+                                                                    <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Fitur Auto-Sorter / Selector File RAW</div>
+                                                                ) : (
+                                                                    <div style={{ color: '#71717a' }}>• Fitur RAW Selector Nonaktif</div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    ) : null;
+                                                })()}
+
+
+                                                {/* 3. PAYMENT METHOD SELECTION IN STEP 3 */}
                                                 {isGatewayEnabled && (
-                                                    <div style={{ marginBottom: '20px' }}>
+                                                    <div>
                                                         <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#e4e4e7', marginBottom: '12px' }}>
                                                             💳 Pilih Metode Pembayaran
                                                         </label>
@@ -710,7 +762,7 @@ export default function RegisterPage() {
 
                                                 {paymentMethod === 'manual' ? (
                                                     <>
-                                                        <div className="form-group" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', padding: '14px', borderRadius: '10px', marginBottom: '20px' }}>
+                                                        <div className="form-group" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', padding: '14px', borderRadius: '10px', marginTop: '6px' }}>
                                                             <span style={{ fontSize: '12px', color: '#a1a1aa', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Tujuan Transfer Pembayaran:</span>
                                                             <div style={{ fontSize: '13px', color: '#f4f4f5', lineHeight: '1.6' }}>
                                                                 <div>Bank: <strong>{settings?.bank_name || 'BCA (Bank Central Asia)'}</strong></div>
@@ -724,7 +776,7 @@ export default function RegisterPage() {
                                                             </div>
                                                         </div>
 
-                                                        <div className="form-group" style={{ marginBottom: '20px' }}>
+                                                        <div className="form-group">
                                                             <label className="form-label">Upload Bukti Pembayaran / Transfer</label>
                                                             <input
                                                                 type="file"
@@ -738,44 +790,305 @@ export default function RegisterPage() {
                                                             <span style={{ fontSize: '11px', color: '#71717a' }}>Format gambar yang didukung: JPG, PNG.</span>
                                                         </div>
                                                     </>
+                                                ) : paymentMethod === 'gateway' ? (
+                                                    <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '14px 16px', borderRadius: '12px', fontSize: '13px', color: '#34d399', lineHeight: '1.5' }}>
+                                                        ⚡ Anda memilih <strong>Pembayaran Otomatis (Instan)</strong>. Jendela pembayaran instan Midtrans (QRIS/VA) akan langsung terbuka setelah Anda menekan tombol bayar.
+                                                    </div>
                                                 ) : (
-                                                    <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '14px 16px', borderRadius: '12px', marginBottom: '20px', fontSize: '13px', color: '#34d399', lineHeight: '1.5' }}>
-                                                        ⚡ Anda memilih <strong>Pembayaran Otomatis (Instan)</strong>. Setelah menekan tombol daftar, jendela pembayaran otomatis akan langsung muncul di layar Anda untuk penyelesaian instan.
+                                                    <div style={{ background: 'rgba(234, 179, 8, 0.08)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '14px 16px', borderRadius: '12px', fontSize: '13px', color: '#fbbf24', lineHeight: '1.5', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <span style={{ fontSize: '18px' }}>💡</span>
+                                                        <span>Silakan <strong>pilih salah satu metode pembayaran di atas</strong> untuk mengaktifkan tombol konfirmasi & pembayaran.</span>
                                                     </div>
                                                 )}
                                             </div>
-                                        );
-                                    })()}
 
-                                    <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setStep(1)} 
-                                            style={{
-                                                background: 'rgba(255, 255, 255, 0.05)',
-                                                color: '#e4e4e7',
-                                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                                borderRadius: '12px',
-                                                padding: '14px 24px',
-                                                fontWeight: '600',
-                                                fontSize: '14px',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
-                                                flex: 1
-                                            }}
-                                            onMouseEnter={(e) => {
-                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-                                            }}
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                                            }}
-                                        >
-                                            Kembali
-                                        </button>
-                                        <button type="submit" className="btn-primary" style={{ flex: 2 }} disabled={loading}>
-                                            {loading ? 'Daftar...' : 'Daftar Sekarang'}
-                                        </button>
-                                    </div>
+                                            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowSummary(false)}
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.05)',
+                                                        color: '#e4e4e7',
+                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                        borderRadius: '12px',
+                                                        padding: '14px 20px',
+                                                        fontWeight: '600',
+                                                        fontSize: '13px',
+                                                        cursor: 'pointer',
+                                                        flex: 1
+                                                    }}
+                                                >
+                                                    ✏️ Ubah Data
+                                                </button>
+                                                <button 
+                                                    type="submit" 
+                                                    className="btn-primary" 
+                                                    style={{ 
+                                                        flex: 2, 
+                                                        padding: '14px 20px', 
+                                                        fontSize: '14px',
+                                                        opacity: (loading || !paymentMethod) ? 0.5 : 1,
+                                                        cursor: (loading || !paymentMethod) ? 'not-allowed' : 'pointer'
+                                                    }} 
+                                                    disabled={loading || !paymentMethod}
+                                                >
+                                                    {loading 
+                                                        ? 'Memproses Transaksi...' 
+                                                        : !paymentMethod 
+                                                            ? '⚠️ Pilih Metode Pembayaran' 
+                                                            : '🚀 Confirm & Bayar Sekarang'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="form-group" style={{ marginBottom: '24px' }}>
+                                                 {/* Mobile Plan Stepper Switcher */}
+                                                 <style>{`
+                                                     .plans-swipe-container {
+                                                         display: grid;
+                                                         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                                                         gap: 20px;
+                                                         margin-top: 16px;
+                                                         margin-bottom: 20px;
+                                                         padding: 10px 4px 20px 4px;
+                                                     }
+                                                     .plan-card-item {
+                                                         width: 100%;
+                                                         box-sizing: border-box;
+                                                     }
+                                                     .mobile-plan-tabs, .mobile-plan-nav {
+                                                         display: none;
+                                                     }
+                                                     @media (max-width: 640px) {
+                                                         .plans-swipe-container {
+                                                             display: block !important;
+                                                             padding: 0 !important;
+                                                             margin-bottom: 12px !important;
+                                                         }
+                                                         .plan-card-item {
+                                                             display: none !important;
+                                                         }
+                                                         .plan-card-item.active-mobile-plan {
+                                                             display: flex !important;
+                                                             width: 100% !important;
+                                                             max-width: 360px !important;
+                                                             margin: 0 auto !important;
+                                                             min-height: auto !important;
+                                                             padding: 28px 20px 24px 20px !important;
+                                                             border-radius: 18px !important;
+                                                         }
+                                                         .mobile-plan-tabs, .mobile-plan-nav {
+                                                             display: flex !important;
+                                                         }
+                                                     }
+                                                 `}</style>
+
+                                                 {/* Mobile Top Tab Selector */}
+                                                 {(() => {
+                                                     const paidPlansList = plans.filter(p => p.price > 0);
+                                                     const activePlanId = parseInt(plan) || 0;
+                                                     const currentIdx = Math.max(0, paidPlansList.findIndex(p => p.id === activePlanId));
+
+                                                     return (
+                                                         <>
+                                                             <div className="plans-swipe-container fade-in-up">
+                                                                 {paidPlansList.map(p => {
+                                                                     const isSelected = activePlanId === p.id;
+                                                                     const isBestSeller = p.name.includes('Pro');
+                                                                     return (
+                                                                         <div 
+                                                                             key={p.id}
+                                                                             className={`plan-card-item ${isSelected ? 'active-mobile-plan' : ''}`}
+                                                                             onClick={() => !loading && setPlan(p.id.toString())}
+                                                                             style={{
+                                                                                 position: 'relative',
+                                                                                 background: isSelected 
+                                                                                     ? 'rgba(99, 102, 241, 0.12)' 
+                                                                                     : 'rgba(255, 255, 255, 0.02)',
+                                                                                 border: isSelected 
+                                                                                     ? '2px solid #818cf8' 
+                                                                                     : isBestSeller
+                                                                                         ? '1px solid rgba(99, 102, 241, 0.4)'
+                                                                                         : '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                 borderRadius: '16px',
+                                                                                 padding: '36px 20px 24px 20px',
+                                                                                 cursor: loading ? 'not-allowed' : 'pointer',
+                                                                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                                                 boxShadow: isSelected ? '0 12px 28px rgba(99, 102, 241, 0.25)' : 'none',
+                                                                                 transform: isSelected ? 'translateY(-2px)' : 'none',
+                                                                                 boxSizing: 'border-box',
+                                                                                 display: 'flex',
+                                                                                 flexDirection: 'column',
+                                                                                 justify: 'space-between',
+                                                                                 minHeight: '320px'
+                                                                             }}
+                                                                         >
+                                                                             {isBestSeller && (
+                                                                                 <div style={{
+                                                                                     position: 'absolute',
+                                                                                     top: '-12px',
+                                                                                     right: '20px',
+                                                                                     background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                                                                     color: '#ffffff',
+                                                                                     padding: '4px 12px',
+                                                                                     borderRadius: '20px',
+                                                                                     fontSize: '10px',
+                                                                                     fontWeight: 'bold',
+                                                                                     letterSpacing: '0.05em'
+                                                                                 }}>
+                                                                                     BEST SELLER
+                                                                                 </div>
+                                                                             )}
+
+                                                                             <div style={{ textAlign: 'center' }}>
+                                                                                 <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>{p.name}</h3>
+                                                                                 <div style={{ fontSize: '26px', fontWeight: '850', color: '#fbbf24', marginBottom: '4px' }}>
+                                                                                     Rp {p.price ? p.price.toLocaleString('id-ID') : '0'}
+                                                                                     <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}> / {p.activePeriodDays} hari</span>
+                                                                                 </div>
+                                                                             </div>
+
+                                                                             <div style={{
+                                                                                 width: '100%',
+                                                                                 height: '1px',
+                                                                                 background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent)',
+                                                                                 margin: '16px 0'
+                                                                             }} />
+
+                                                                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#d4d4d8' }}>
+                                                                                 <div>✓ <strong>Foto Unlimited</strong></div>
+                                                                                 <div>✓ <strong>Galeri Online & Seleksi Foto Klien</strong></div>
+                                                                                 <div>✓ Maksimal <strong>{p.maxProjects} Project Aktif</strong></div>
+                                                                                 {p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business') ? (
+                                                                                     <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Bisa Menggunakan Logo Studio Sendiri</div>
+                                                                                 ) : (
+                                                                                     <div style={{ color: '#71717a' }}>• Logo Platform Standard</div>
+                                                                                 )}
+                                                                                 {p.allowRawSelector === 1 || p.allowRawSelector === true ? (
+                                                                                     <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Fitur Auto-Sorter / Selector File RAW</div>
+                                                                                 ) : (
+                                                                                     <div style={{ color: '#71717a' }}>• Fitur RAW Selector Nonaktif</div>
+                                                                                 )}
+                                                                             </div>
+
+                                                                             <button
+                                                                                 type="button"
+                                                                                 style={{
+                                                                                     width: '100%',
+                                                                                     padding: '12px 16px',
+                                                                                     borderRadius: '10px',
+                                                                                     fontWeight: '800',
+                                                                                     fontSize: '12px',
+                                                                                     cursor: loading ? 'not-allowed' : 'pointer',
+                                                                                     transition: 'all 0.3s ease',
+                                                                                     background: isSelected 
+                                                                                         ? 'linear-gradient(135deg, #6366f1, #4f46e5)' 
+                                                                                         : 'rgba(255, 255, 255, 0.04)',
+                                                                                     color: '#ffffff',
+                                                                                     border: isSelected ? 'none' : '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                     marginTop: '16px'
+                                                                                 }}
+                                                                             >
+                                                                                 {isSelected ? '✓ TERPILIH' : 'PILIH PAKET'}
+                                                                             </button>
+                                                                         </div>
+                                                                     );
+                                                                 })}
+                                                             </div>
+
+                                                             {/* Clean Floating Icon Arrows Navigation (Infinite Circular Loop) */}
+                                                             <div className="mobile-plan-nav" style={{ justifyContent: 'center', alignItems: 'center', gap: '40px', marginTop: '16px', marginBottom: '8px' }}>
+                                                                 <button
+                                                                     type="button"
+                                                                     onClick={() => {
+                                                                         const prevIdx = (currentIdx - 1 + paidPlansList.length) % paidPlansList.length;
+                                                                         setPlan(paidPlansList[prevIdx].id.toString());
+                                                                     }}
+                                                                     title="Paket Sebelumnya"
+                                                                     style={{
+                                                                         background: 'none',
+                                                                         border: 'none',
+                                                                         color: '#818cf8',
+                                                                         fontSize: '32px',
+                                                                         fontWeight: 'bold',
+                                                                         cursor: 'pointer',
+                                                                         padding: '6px 20px',
+                                                                         transition: 'all 0.2s ease',
+                                                                         lineHeight: 1
+                                                                     }}
+                                                                 >
+                                                                     ❮
+                                                                 </button>
+                                                                 <button
+                                                                     type="button"
+                                                                     onClick={() => {
+                                                                         const nextIdx = (currentIdx + 1) % paidPlansList.length;
+                                                                         setPlan(paidPlansList[nextIdx].id.toString());
+                                                                     }}
+                                                                     title="Paket Selanjutnya"
+                                                                     style={{
+                                                                         background: 'none',
+                                                                         border: 'none',
+                                                                         color: '#818cf8',
+                                                                         fontSize: '32px',
+                                                                         fontWeight: 'bold',
+                                                                         cursor: 'pointer',
+                                                                         padding: '6px 20px',
+                                                                         transition: 'all 0.2s ease',
+                                                                         lineHeight: 1
+                                                                     }}
+                                                                 >
+                                                                     ❯
+                                                                 </button>
+                                                             </div>
+
+
+                                                         </>
+                                                     );
+                                                 })()}
+                                            </div>
+
+
+
+                                            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setStep(1)} 
+                                                    style={{
+                                                        background: 'rgba(255, 255, 255, 0.05)',
+                                                        color: '#e4e4e7',
+                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                        borderRadius: '12px',
+                                                        padding: '14px 24px',
+                                                        fontWeight: '600',
+                                                        fontSize: '14px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s ease',
+                                                        flex: 1
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                                                    }}
+                                                >
+                                                    Kembali
+                                                </button>
+                                                <button 
+                                                    type="button"
+                                                    onClick={handleProceedToSummary}
+                                                    className="btn-primary" 
+                                                    style={{ flex: 2 }} 
+                                                    disabled={loading || validatingSummary}
+                                                >
+                                                    {validatingSummary ? 'Memeriksa Data...' : 'Lanjut Konfirmasi Detail'}
+
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </form>

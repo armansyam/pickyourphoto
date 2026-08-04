@@ -10,7 +10,7 @@ export async function GET() {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const stmt = db.prepare('SELECT id, name, maxProjects, price, projectExpireDays, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo, createdAt FROM plans ORDER BY price ASC');
+        const stmt = db.prepare('SELECT id, name, maxProjects, price, projectExpireDays, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo, allowRawSelector, createdAt FROM plans ORDER BY price ASC');
         const plans = stmt.all();
 
         return NextResponse.json(plans);
@@ -28,7 +28,7 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { name, maxProjects, price, projectExpireDays, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo } = await request.json();
+        const { name, maxProjects, price, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo, allowRawSelector } = await request.json();
 
         if (!name || maxProjects === undefined || price === undefined) {
             return NextResponse.json({ message: 'Name, max projects, and price are required.' }, { status: 400 });
@@ -39,8 +39,8 @@ export async function POST(request) {
             return NextResponse.json({ message: 'A plan with this name already exists.' }, { status: 409 });
         }
 
-        const insertStmt = db.prepare('INSERT INTO plans (name, maxProjects, price, projectExpireDays, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-        const info = insertStmt.run(name, maxProjects, price, projectExpireDays || 180, maxPhotosPerProject || 0, activePeriodDays !== undefined ? activePeriodDays : 30, status || 'active', planType || 'limit', maxStorageMB || 51200, allowCustomLogo ? 1 : 0);
+        const insertStmt = db.prepare('INSERT INTO plans (name, maxProjects, price, projectExpireDays, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo, allowRawSelector) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)');
+        const info = insertStmt.run(name, maxProjects, price, maxPhotosPerProject || 0, activePeriodDays !== undefined ? activePeriodDays : 30, status || 'active', planType || 'limit', maxStorageMB || 0, allowCustomLogo ? 1 : 0, allowRawSelector !== undefined ? (allowRawSelector ? 1 : 0) : 1);
 
         return NextResponse.json({ message: 'Subscription plan created successfully.', planId: info.lastInsertRowid }, { status: 201 });
     } catch (error) {

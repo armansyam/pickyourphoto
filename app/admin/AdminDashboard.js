@@ -41,8 +41,8 @@ export default function AdminDashboard({ adminUser }) {
     const [planMaxPhotos, setPlanMaxPhotos] = useState(300);
     const [planPrice, setPlanPrice] = useState(99000);
     const [planActivePeriodDays, setPlanActivePeriodDays] = useState(30);
-    const [planProjectExpireDays, setPlanProjectExpireDays] = useState(180);
     const [planAllowCustomLogo, setPlanAllowCustomLogo] = useState(false);
+    const [planAllowRawSelector, setPlanAllowRawSelector] = useState(true);
     const [planStatus, setPlanStatus] = useState('active');
     const [planType, setPlanType] = useState('limit');
     const [planMaxStorageMB, setPlanMaxStorageMB] = useState(51200);
@@ -76,6 +76,7 @@ export default function AdminDashboard({ adminUser }) {
     const [paymentGatewayProvider, setPaymentGatewayProvider] = useState('midtrans');
     const [paymentGatewayClientKey, setPaymentGatewayClientKey] = useState('');
     const [paymentGatewayServerKey, setPaymentGatewayServerKey] = useState('');
+    const [qrisExpirationMinutes, setQrisExpirationMinutes] = useState(15);
 
     // SMTP Email Settings States
     const [smtpEnable, setSmtpEnable] = useState(true);
@@ -122,10 +123,10 @@ export default function AdminDashboard({ adminUser }) {
         }, duration);
     }, []);
 
-    const fetchData = async () => {
+    const fetchData = async (isBackground = false) => {
         try {
-            setLoading(true);
-            const res = await fetch('/api/admin/vendors');
+            if (!isBackground) setLoading(true);
+            const res = await fetch('/api/admin/vendors', { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 setVendors(data);
@@ -133,9 +134,10 @@ export default function AdminDashboard({ adminUser }) {
         } catch (err) {
             console.error('Failed to fetch vendors:', err);
         } finally {
-            setLoading(false);
+            if (!isBackground) setLoading(false);
         }
     };
+
 
     const fetchAnalytics = async () => {
         try {
@@ -214,6 +216,7 @@ export default function AdminDashboard({ adminUser }) {
                     if (data.saasSettings.payment_gateway_provider) setPaymentGatewayProvider(data.saasSettings.payment_gateway_provider);
                     if (data.saasSettings.payment_gateway_client_key) setPaymentGatewayClientKey(data.saasSettings.payment_gateway_client_key);
                     if (data.saasSettings.payment_gateway_server_key) setPaymentGatewayServerKey(data.saasSettings.payment_gateway_server_key);
+                    if (data.saasSettings.qris_expiration_minutes) setQrisExpirationMinutes(parseInt(data.saasSettings.qris_expiration_minutes) || 15);
 
                     if (data.saasSettings.smtp_enable !== undefined) setSmtpEnable(data.saasSettings.smtp_enable === '1' || data.saasSettings.smtp_enable === 'true');
                     if (data.saasSettings.smtp_host) setSmtpHost(data.saasSettings.smtp_host);
@@ -272,7 +275,16 @@ export default function AdminDashboard({ adminUser }) {
         fetchUpgrades();
         fetchSystemSettings();
         fetchDiskStats();
+
+        // Silent real-time auto polling every 5 seconds for inquiries & vendors
+        const interval = setInterval(() => {
+            fetchData(true);
+            fetchAnalytics();
+        }, 5000);
+
+        return () => clearInterval(interval);
     }, []);
+
 
     const handleToggleVendorStatus = async (vendorId, newStatus) => {
         try {
@@ -335,6 +347,7 @@ export default function AdminDashboard({ adminUser }) {
                         payment_gateway_provider: paymentGatewayProvider,
                         payment_gateway_client_key: paymentGatewayClientKey,
                         payment_gateway_server_key: paymentGatewayServerKey,
+                        qris_expiration_minutes: String(qrisExpirationMinutes || 15),
                         smtp_enable: smtpEnable ? '1' : '0',
                         smtp_host: smtpHost,
                         smtp_port: smtpPort ? String(smtpPort) : '465',
@@ -347,10 +360,11 @@ export default function AdminDashboard({ adminUser }) {
 
             if (!resSysSettings.ok) {
                 const sysData = await resSysSettings.json();
-                throw new Error(sysData.message || 'Failed to update system settings.');
+                throw new Error(sysData.message || 'Gagal memperbarui pengaturan sistem.');
             }
 
-            setProfileSuccessMsg('Superadmin profile & SaaS settings updated successfully.');
+            setProfileSuccessMsg('Pengaturan SaaS & profil admin berhasil diperbarui.');
+            if (addToast) addToast('Pengaturan SaaS berhasil disimpan.', 'success');
             setNewPassword('');
             fetchData();
             fetchSystemSettings();
@@ -361,7 +375,8 @@ export default function AdminDashboard({ adminUser }) {
                 setProfileSuccessMsg('');
             }, 4500);
         } catch (err) {
-            setProfileErrorMsg(err.message);
+            setProfileErrorMsg(err.message || 'Gagal menyimpan pengaturan.');
+            if (addToast) addToast(err.message || 'Gagal menyimpan pengaturan.', 'error');
         } finally {
             setSavingProfile(false);
         }
@@ -375,8 +390,8 @@ export default function AdminDashboard({ adminUser }) {
             setPlanMaxPhotos(plan.maxPhotosPerProject);
             setPlanPrice(plan.price);
             setPlanActivePeriodDays(plan.activePeriodDays || 30);
-            setPlanProjectExpireDays(plan.projectExpireDays !== undefined ? plan.projectExpireDays : 180);
             setPlanAllowCustomLogo(plan.allowCustomLogo === 1 || plan.allowCustomLogo === true);
+            setPlanAllowRawSelector(plan.allowRawSelector === undefined ? true : (plan.allowRawSelector === 1 || plan.allowRawSelector === true));
             setPlanStatus(plan.status || 'active');
             setPlanType(plan.planType || 'limit');
             setPlanMaxStorageMB(plan.maxStorageMB || 51200);
@@ -387,8 +402,8 @@ export default function AdminDashboard({ adminUser }) {
             setPlanMaxPhotos(300);
             setPlanPrice(49000);
             setPlanActivePeriodDays(30);
-            setPlanProjectExpireDays(180);
             setPlanAllowCustomLogo(false);
+            setPlanAllowRawSelector(true);
             setPlanStatus('active');
             setPlanType('limit');
             setPlanMaxStorageMB(51200);
@@ -411,8 +426,8 @@ export default function AdminDashboard({ adminUser }) {
                     maxPhotosPerProject: planMaxPhotos,
                     price: planPrice,
                     activePeriodDays: planActivePeriodDays,
-                    projectExpireDays: planProjectExpireDays,
                     allowCustomLogo: planAllowCustomLogo ? 1 : 0,
+                    allowRawSelector: planAllowRawSelector ? 1 : 0,
                     status: planStatus,
                     planType,
                     maxStorageMB: planMaxStorageMB
@@ -546,169 +561,196 @@ export default function AdminDashboard({ adminUser }) {
             </header>
 
             <main className="app-container" style={{ paddingTop: '32px' }}>
-                <div style={{ marginBottom: '32px' }}>
-                    <h2 style={{ fontSize: '28px', fontWeight: '800', margin: '0 0 4px 0' }}>Admin Control Panel</h2>
-                    <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>Kelola vendor, paket berlangganan & monitoring bisnis SaaS</p>
-                </div>
-
-                {/* Tab Navigation */}
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px', flexWrap: 'wrap' }}>
-                    <button
-                        onClick={() => handleTabChange('analytics')}
-                        style={{
-                            padding: '10px 20px', borderRadius: '10px', border: 'none',
-                            background: activeTab === 'analytics' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
-                            color: activeTab === 'analytics' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
-                        }}
-                    >
-                        📊 Monitor Bisnis & Analisis
-                    </button>
-
-                    {/* INQUIRY — calon vendor, pisah dari Kelola Vendor */}
-                    <button
-                        onClick={() => handleTabChange('inquiry')}
-                        style={{
-                            padding: '10px 20px', borderRadius: '10px', border: 'none',
-                            background: activeTab === 'inquiry' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent',
-                            color: activeTab === 'inquiry' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
-                            position: 'relative',
-                            display: 'flex', alignItems: 'center', gap: '6px'
-                        }}
-                    >
-                        📋 Inquiry
-                        {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length > 0 && (
-                            <span style={{ background: '#ef4444', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>
-                                {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length}
+                {activeTab === 'settings' ? (
+                    <div className="fade-in-up">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                            <button
+                                type="button"
+                                onClick={() => handleTabChange('analytics')}
+                                style={{
+                                    background: 'rgba(99, 102, 241, 0.15)',
+                                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                                    color: '#818cf8',
+                                    padding: '10px 18px',
+                                    borderRadius: '10px',
+                                    fontSize: '13px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.15)'
+                                }}
+                            >
+                                ← Kembali ke Dashboard Operasional
+                            </button>
+                            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                                Mode: <strong>Pengaturan Terpusat Platform</strong>
                             </span>
+                        </div>
+
+                        <AdminSettings
+                            googleClientId={googleClientId} setGoogleClientId={setGoogleClientId}
+                            googleClientSecret={googleClientSecret} setGoogleClientSecret={setGoogleClientSecret}
+                            googleMasterFolderId={googleMasterFolderId} setGoogleMasterFolderId={setGoogleMasterFolderId}
+                            googleRefreshToken={googleRefreshToken}
+
+                            newPassword={newPassword} setNewPassword={setNewPassword}
+                            bankName={bankName} setBankName={setBankName}
+                            bankAccountNumber={bankAccountNumber} setBankAccountNumber={setBankAccountNumber}
+                            bankAccountName={bankAccountName} setBankAccountName={setBankAccountName}
+                            contactEmail={contactEmail} setContactEmail={setContactEmail}
+                            contactWhatsapp={contactWhatsapp} setContactWhatsapp={setContactWhatsapp}
+                            enablePaymentGateway={enablePaymentGateway} setEnablePaymentGateway={setEnablePaymentGateway}
+                            paymentGatewayProvider={paymentGatewayProvider} setPaymentGatewayProvider={setPaymentGatewayProvider}
+                            paymentGatewayClientKey={paymentGatewayClientKey} setPaymentGatewayClientKey={setPaymentGatewayClientKey}
+                            paymentGatewayServerKey={paymentGatewayServerKey} setPaymentGatewayServerKey={setPaymentGatewayServerKey}
+                            qrisExpirationMinutes={qrisExpirationMinutes} setQrisExpirationMinutes={setQrisExpirationMinutes}
+                            smtpEnable={smtpEnable} setSmtpEnable={setSmtpEnable}
+                            smtpHost={smtpHost} setSmtpHost={setSmtpHost}
+                            smtpPort={smtpPort} setSmtpPort={setSmtpPort}
+                            smtpEmail={smtpEmail} setSmtpEmail={setSmtpEmail}
+                            smtpPassword={smtpPassword} setSmtpPassword={setSmtpPassword}
+                            smtpFromName={smtpFromName} setSmtpFromName={setSmtpFromName}
+                            addToast={addToast}
+                            sysEnableReg={sysEnableReg} setSysEnableReg={setSysEnableReg}
+                            sysMaxQuota={sysMaxQuota} setSysMaxQuota={setSysMaxQuota}
+                            savingProfile={savingProfile}
+                            profileSuccessMsg={profileSuccessMsg}
+                            setProfileSuccessMsg={setProfileSuccessMsg}
+                            profileErrorMsg={profileErrorMsg}
+                            handleSaveProfile={handleSaveProfile}
+                        />
+                    </div>
+                ) : (
+                    <>
+                        <div style={{ marginBottom: '32px' }}>
+                            <h2 style={{ fontSize: '28px', fontWeight: '800', margin: '0 0 4px 0' }}>Admin Control Panel</h2>
+                            <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>Kelola vendor, paket berlangganan & monitoring bisnis SaaS</p>
+                        </div>
+
+                        {/* Tab Navigation */}
+                        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={() => handleTabChange('analytics')}
+                                style={{
+                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    background: activeTab === 'analytics' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
+                                    color: activeTab === 'analytics' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
+                                }}
+                            >
+                                📊 Monitor Bisnis & Analisis
+                            </button>
+
+                            {/* INQUIRY — calon vendor, pisah dari Kelola Vendor */}
+                            <button
+                                onClick={() => handleTabChange('inquiry')}
+                                style={{
+                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    background: activeTab === 'inquiry' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent',
+                                    color: activeTab === 'inquiry' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
+                                    position: 'relative',
+                                    display: 'flex', alignItems: 'center', gap: '6px'
+                                }}
+                            >
+                                📋 Inquiry
+                                {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length > 0 && (
+                                    <span style={{ background: '#ef4444', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>
+                                        {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length}
+                                    </span>
+                                )}
+                            </button>
+
+                            {/* KELOLA VENDOR — hanya vendor aktif berlangganan */}
+                            <button
+                                onClick={() => handleTabChange('vendors')}
+                                style={{
+                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    background: activeTab === 'vendors' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
+                                    color: activeTab === 'vendors' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
+                                }}
+                            >
+                                👥 Kelola Vendor ({vendors.filter(v => v.status === 'active').length})
+                            </button>
+
+                            <button
+                                onClick={() => handleTabChange('plans')}
+                                style={{
+                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    background: activeTab === 'plans' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
+                                    color: activeTab === 'plans' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
+                                }}
+                            >
+                                📦 Kelola Paket ({plans.length})
+                            </button>
+                            <button
+                                onClick={() => handleTabChange('trial')}
+                                style={{
+                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    background: activeTab === 'trial' ? 'linear-gradient(135deg, #a855f7, #7c3aed)' : 'transparent',
+                                    color: activeTab === 'trial' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
+                                }}
+                            >
+                                🎯 Trial Control
+                            </button>
+                        </div>
+
+                        {/* Render Modular View Components */}
+                        {activeTab === 'analytics' && (
+                            <AdminOverview 
+                                analyticsData={analytics} 
+                                diskStats={diskStats} 
+                                onNavigateTab={handleTabChange}
+                            />
                         )}
-                    </button>
 
-                    {/* KELOLA VENDOR — hanya vendor aktif berlangganan */}
-                    <button
-                        onClick={() => handleTabChange('vendors')}
-                        style={{
-                            padding: '10px 20px', borderRadius: '10px', border: 'none',
-                            background: activeTab === 'vendors' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
-                            color: activeTab === 'vendors' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
-                        }}
-                    >
-                        👥 Kelola Vendor ({vendors.filter(v => v.status === 'active').length})
-                    </button>
+                        {/* INQUIRY TAB — Calon vendor (pending, arsip) */}
+                        {activeTab === 'inquiry' && (
+                            <AdminVendors
+                                vendors={vendors}
+                                loading={loading}
+                                vendorSubTab="inquiry"
+                                setVendorSubTab={() => {}}
+                                inquirySubTabOverride={inquirySubTab}
+                                setInquirySubTabOverride={setInquirySubTab}
+                                setEditingVendor={setEditingVendor}
+                                setVendorToApprove={setVendorToApprove}
+                                setVendorToDelete={setVendorToDelete}
+                                setActiveProofUrl={setActiveProofUrl}
+                                handleToggleVendorStatus={handleToggleVendorStatus}
+                                refetchVendors={fetchData}
+                            />
+                        )}
 
-                    <button
-                        onClick={() => handleTabChange('plans')}
-                        style={{
-                            padding: '10px 20px', borderRadius: '10px', border: 'none',
-                            background: activeTab === 'plans' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
-                            color: activeTab === 'plans' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
-                        }}
-                    >
-                        📦 Kelola Paket ({plans.length})
-                    </button>
-                    <button
-                        onClick={() => handleTabChange('trial')}
-                        style={{
-                            padding: '10px 20px', borderRadius: '10px', border: 'none',
-                            background: activeTab === 'trial' ? 'linear-gradient(135deg, #a855f7, #7c3aed)' : 'transparent',
-                            color: activeTab === 'trial' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
-                        }}
-                    >
-                        🎯 Trial Control
-                    </button>
-                </div>
+                        {/* KELOLA VENDOR TAB — Vendor aktif berlangganan saja */}
+                        {activeTab === 'vendors' && (
+                            <AdminVendors
+                                vendors={vendors}
+                                loading={loading}
+                                vendorSubTab="active"
+                                setVendorSubTab={() => {}}
+                                setEditingVendor={setEditingVendor}
+                                setVendorToApprove={setVendorToApprove}
+                                setVendorToDelete={setVendorToDelete}
+                                setActiveProofUrl={setActiveProofUrl}
+                                handleToggleVendorStatus={handleToggleVendorStatus}
+                                refetchVendors={fetchData}
+                            />
+                        )}
 
-                {/* Render Modular View Components */}
-                {activeTab === 'analytics' && (
-                    <AdminOverview 
-                        analyticsData={analytics} 
-                        diskStats={diskStats} 
-                        onNavigateTab={handleTabChange}
-                    />
-                )}
+                        {activeTab === 'plans' && (
+                            <AdminPlans
+                                plans={plans}
+                                loadingPlans={loadingPlans}
+                                openPlanModal={openPlanModal}
+                                setPlanToDelete={setPlanToDelete}
+                            />
+                        )}
 
-                {/* INQUIRY TAB — Calon vendor (pending, arsip) */}
-                {activeTab === 'inquiry' && (
-                    <AdminVendors
-                        vendors={vendors}
-                        loading={loading}
-                        vendorSubTab="inquiry"
-                        setVendorSubTab={() => {}}
-                        inquirySubTabOverride={inquirySubTab}
-                        setInquirySubTabOverride={setInquirySubTab}
-                        setEditingVendor={setEditingVendor}
-                        setVendorToApprove={setVendorToApprove}
-                        setVendorToDelete={setVendorToDelete}
-                        setActiveProofUrl={setActiveProofUrl}
-                        handleToggleVendorStatus={handleToggleVendorStatus}
-                        refetchVendors={fetchData}
-                    />
-                )}
-
-                {/* KELOLA VENDOR TAB — Vendor aktif berlangganan saja */}
-                {activeTab === 'vendors' && (
-                    <AdminVendors
-                        vendors={vendors}
-                        loading={loading}
-                        vendorSubTab="active"
-                        setVendorSubTab={() => {}}
-                        setEditingVendor={setEditingVendor}
-                        setVendorToApprove={setVendorToApprove}
-                        setVendorToDelete={setVendorToDelete}
-                        setActiveProofUrl={setActiveProofUrl}
-                        handleToggleVendorStatus={handleToggleVendorStatus}
-                        refetchVendors={fetchData}
-                    />
-                )}
-
-                {activeTab === 'plans' && (
-                    <AdminPlans
-                        plans={plans}
-                        loadingPlans={loadingPlans}
-                        openPlanModal={openPlanModal}
-                        setPlanToDelete={setPlanToDelete}
-                    />
-                )}
-
-                {activeTab === 'trial' && (
-                    <AdminTrialControl addToast={addToast} />
-                )}
-
-                {activeTab === 'settings' && (
-                    <AdminSettings
-                        googleClientId={googleClientId} setGoogleClientId={setGoogleClientId}
-                        googleClientSecret={googleClientSecret} setGoogleClientSecret={setGoogleClientSecret}
-                        googleMasterFolderId={googleMasterFolderId} setGoogleMasterFolderId={setGoogleMasterFolderId}
-                        googleRefreshToken={googleRefreshToken}
-
-                        newPassword={newPassword} setNewPassword={setNewPassword}
-                        bankName={bankName} setBankName={setBankName}
-                        bankAccountNumber={bankAccountNumber} setBankAccountNumber={setBankAccountNumber}
-                        bankAccountName={bankAccountName} setBankAccountName={setBankAccountName}
-                        contactEmail={contactEmail} setContactEmail={setContactEmail}
-                        contactWhatsapp={contactWhatsapp} setContactWhatsapp={setContactWhatsapp}
-                        enablePaymentGateway={enablePaymentGateway} setEnablePaymentGateway={setEnablePaymentGateway}
-                        paymentGatewayProvider={paymentGatewayProvider} setPaymentGatewayProvider={setPaymentGatewayProvider}
-                        paymentGatewayClientKey={paymentGatewayClientKey} setPaymentGatewayClientKey={setPaymentGatewayClientKey}
-                        paymentGatewayServerKey={paymentGatewayServerKey} setPaymentGatewayServerKey={setPaymentGatewayServerKey}
-                        smtpEnable={smtpEnable} setSmtpEnable={setSmtpEnable}
-                        smtpHost={smtpHost} setSmtpHost={setSmtpHost}
-                        smtpPort={smtpPort} setSmtpPort={setSmtpPort}
-                        smtpEmail={smtpEmail} setSmtpEmail={setSmtpEmail}
-                        smtpPassword={smtpPassword} setSmtpPassword={setSmtpPassword}
-                        smtpFromName={smtpFromName} setSmtpFromName={setSmtpFromName}
-                        addToast={addToast}
-                        sysEnableReg={sysEnableReg} setSysEnableReg={setSysEnableReg}
-                        sysEnableTrial={sysEnableTrial} setSysEnableTrial={setSysEnableTrial}
-                        sysMaxQuota={sysMaxQuota} setSysMaxQuota={setSysMaxQuota}
-                        sysTrialExpirationMinutes={sysTrialExpirationMinutes} setSysTrialExpirationMinutes={setSysTrialExpirationMinutes}
-                        sysEnableBackup={sysEnableBackup} setSysEnableBackup={setSysEnableBackup}
-                        sysBackupInterval={sysBackupInterval} setSysBackupInterval={setSysBackupInterval}
-                        savingProfile={savingProfile}
-                        profileSuccessMsg={profileSuccessMsg}
-                        setProfileSuccessMsg={setProfileSuccessMsg}
-                        profileErrorMsg={profileErrorMsg}
-                        handleSaveProfile={handleSaveProfile}
-                    />
+                        {activeTab === 'trial' && (
+                            <AdminTrialControl addToast={addToast} />
+                        )}
+                    </>
                 )}
 
                 {/* ── GLOBAL FOOTER SYSTEM STATUS BAR (VISIBLE ACROSS ALL TABS) ── */}
@@ -826,7 +868,6 @@ export default function AdminDashboard({ adminUser }) {
                                     <input type="number" className="input-text" required min="1" value={planActivePeriodDays} onChange={e => {
                                         const days = parseInt(e.target.value) || 30;
                                         setPlanActivePeriodDays(days);
-                                        setPlanProjectExpireDays(days);
                                     }} />
                                 </div>
                             </div>
@@ -837,13 +878,8 @@ export default function AdminDashboard({ adminUser }) {
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Foto per Project</label>
-                                    <input type="text" className="input-text" disabled value="Unlimited (Direct Stream)" style={{ background: 'rgba(0,0,0,0.3)', color: '#34d399', fontWeight: 'bold' }} />
+                                    <input type="text" className="input-text" disabled value="Unlimited" style={{ background: 'rgba(0,0,0,0.3)', color: '#34d399', fontWeight: 'bold' }} />
                                 </div>
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Masa Simpan Galeri Klien (Hari)</label>
-                                <input type="number" className="input-text" required min="1" value={planProjectExpireDays || 30} onChange={e => setPlanProjectExpireDays(parseInt(e.target.value) || 30)} />
-                                <span style={{ fontSize: '11px', color: '#71717a' }}>Masa simpan galeri klien tersimpan aktif sebelum diarsipkan (mengikuti masa aktif paket, default 30 hari).</span>
                             </div>
 
                             <div className="form-group" style={{ background: 'rgba(99,102,241,0.06)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.15)', marginTop: '8px' }}>
@@ -856,11 +892,29 @@ export default function AdminDashboard({ adminUser }) {
                                         style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                                     />
                                     <label htmlFor="planAllowCustomLogo" style={{ cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#a5b4fc' }}>
-                                        Fitur Custom Logo Studio (White-Label Branding)
+                                        Fitur Logo Studio Sendiri (White-Label Branding)
                                     </label>
                                 </div>
                                 <span style={{ fontSize: '11px', color: '#71717a', display: 'block', marginTop: '4px', paddingLeft: '28px' }}>
                                     Izinkan vendor di paket ini mengunggah logo brand studio mereka sendiri di galeri seleksi klien.
+                                </span>
+                            </div>
+
+                            <div className="form-group" style={{ background: 'rgba(52,211,153,0.06)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.15)', marginTop: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="planAllowRawSelector"
+                                        checked={planAllowRawSelector}
+                                        onChange={e => setPlanAllowRawSelector(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    />
+                                    <label htmlFor="planAllowRawSelector" style={{ cursor: 'pointer', fontSize: '13px', fontWeight: '600', color: '#6ee7b7' }}>
+                                        Fitur Auto-Sorter / Selector File RAW
+                                    </label>
+                                </div>
+                                <span style={{ fontSize: '11px', color: '#71717a', display: 'block', marginTop: '4px', paddingLeft: '28px' }}>
+                                    Izinkan vendor di paket ini menggunakan fitur sortir otomatis file RAW di browser.
                                 </span>
                             </div>
                             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>

@@ -27,6 +27,33 @@ body {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
+@media (max-width: 640px) {
+    .app-container {
+        padding: 12px 8px !important;
+    }
+    .glass-card {
+        padding: 16px 12px !important;
+        border-radius: 14px !important;
+    }
+    .register-glass-card {
+        padding: 12px 4px !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .plans-swipe-container {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+        padding: 0 !important;
+    }
+    .plan-card-item {
+        padding: 24px 16px !important;
+        background: rgba(15, 23, 42, 0.95) !important;
+        border-radius: 16px !important;
+    }
+}
+
+
 .title-gradient {
     background: linear-gradient(135deg, #a5b4fc, #6366f1);
     -webkit-background-clip: text;

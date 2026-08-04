@@ -37,16 +37,18 @@ export async function GET(request, { params }) {
     }
 
     const contentType = response.headers.get('content-type') || 'image/jpeg';
-    const buffer = await response.arrayBuffer();
 
-    return new NextResponse(buffer, {
+    // ✅ TRUE PIPE STREAM — data langsung diteruskan dari Google CDN ke browser
+    // tanpa menampung seluruh file di RAM server (tidak ada arrayBuffer()).
+    // Domain tetap pickyourphoto.com, URL Google tidak terekspos ke client.
+    return new NextResponse(response.body, {
       status: 200,
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400',
         'CDN-Cache-Control': 'public, max-age=2592000',
         'Cloudflare-CDN-Cache-Control': 'public, max-age=2592000',
-        'X-Proxy-Source': 'drive-cdn'
+        'X-Proxy-Source': 'drive-pipe'
       },
     });
   } catch (error) {

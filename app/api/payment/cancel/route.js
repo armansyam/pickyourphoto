@@ -13,12 +13,9 @@ export const dynamic = 'force-dynamic';
 export async function POST(request) {
   try {
     const currentUser = getAuthVendor();
-    if (!currentUser) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
-    const { orderId } = body;
+    const { orderId, vendorId, email } = body;
 
     if (!orderId) {
       return NextResponse.json({ message: 'orderId wajib diisi.' }, { status: 400 });
@@ -30,8 +27,20 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Sesi pembayaran tidak ditemukan.' }, { status: 404 });
     }
 
-    // Only allow the owning vendor or admin to cancel
-    if (currentUser.role !== 'admin' && session.vendorId !== currentUser.id) {
+    // Allow logged-in admin/vendor OR matching candidate vendor (by vendorId or email)
+    let isAuthorized = false;
+    if (currentUser && (currentUser.role === 'admin' || session.vendorId === currentUser.id)) {
+      isAuthorized = true;
+    } else if (vendorId && parseInt(vendorId) === session.vendorId) {
+      isAuthorized = true;
+    } else if (email) {
+      const v = db.prepare('SELECT id FROM vendors WHERE email = ?').get(email.toLowerCase().trim());
+      if (v && v.id === session.vendorId) {
+        isAuthorized = true;
+      }
+    }
+
+    if (!isAuthorized) {
       return NextResponse.json({ message: 'Forbidden.' }, { status: 403 });
     }
 

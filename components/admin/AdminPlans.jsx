@@ -87,15 +87,18 @@ export default function AdminPlans({
 
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '13px', color: '#e4e4e7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <li>✓ Maksimal <strong>{p.maxProjects >= 99999 ? 'Unlimited' : p.maxProjects} Project</strong></li>
-                  <li>✓ Foto <strong>Unlimited (Direct Google Drive Stream)</strong></li>
-                  <li>✓ Fitur <strong>Seleksi Foto & Notifikasi WA Klien</strong></li>
-                  {p.allowCustomLogo === 1 || p.name.includes('Pro') || p.name.includes('Business') || p.name.includes('Unlimited') || p.name.includes('Master') ? (
-
-                    <li style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Custom Logo Studio (White-Label)</li>
+                  <li>✓ Foto <strong>Unlimited</strong></li>
+                  <li>✓ Galeri Online & Seleksi Foto Klien</li>
+                  {p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business') ? (
+                    <li style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Bisa Menggunakan Logo Studio Sendiri</li>
                   ) : (
-                    <li style={{ color: '#71717a' }}>• Logo Default Platform (Standard)</li>
+                    <li style={{ color: '#71717a' }}>• Logo Platform Standard</li>
                   )}
-
+                  {p.allowRawSelector === undefined || p.allowRawSelector === 1 || p.allowRawSelector === true ? (
+                    <li style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Fitur Auto-Sorter / Selector File RAW</li>
+                  ) : (
+                    <li style={{ color: '#71717a' }}>• Fitur RAW Selector Nonaktif</li>
+                  )}
                 </ul>
               </div>
 

@@ -93,6 +93,10 @@ export default function DashboardPage() {
     const [limitExceededInfo, setLimitExceededInfo] = useState(null);
     const [showLimitConfirmModal, setShowLimitConfirmModal] = useState(false);
 
+
+
+
+
     // Detail modal states
     const [selectedProjectDetails, setSelectedProjectDetails] = useState(null);
     const [detailPhotos, setDetailPhotos] = useState([]);
@@ -201,13 +205,14 @@ export default function DashboardPage() {
 
     // Fetch projects
     const fetchProjects = async () => {
-        console.log("--> [Client] fetchProjects() called");
+        const safetyTimer = setTimeout(() => {
+            setLoading(false);
+        }, 600);
+
         try {
-            const res = await fetch('/api/projects');
-            console.log("--> [Client] fetchProjects() response status:", res.status);
+            const res = await fetch('/api/projects', { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
-                console.log("--> [Client] fetchProjects() data:", data);
                 setProjects(data.projects || []);
                 if (data.vendor) {
                     setVendorDetails(data.vendor);
@@ -217,29 +222,35 @@ export default function DashboardPage() {
                     if (data.vendor.copyDelimiter !== undefined) setCopyDelimiter(data.vendor.copyDelimiter);
                     if (data.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(data.vendor.copyIncludeExt);
                     if (data.vendor.copySortOrder !== undefined) setCopySortOrder(data.vendor.copySortOrder);
+
+
+
                 }
             } else {
-                console.warn("--> [Client] fetchProjects() res not OK:", res.status);
+                console.warn('fetchProjects: response not ok', res.status);
             }
         } catch (err) {
             console.error('Error fetching projects:', err);
         } finally {
-            console.log("--> [Client] fetchProjects() finally block, setting loading to false");
+            clearTimeout(safetyTimer);
             setLoading(false);
         }
     };
 
+
     useEffect(() => {
+        // Parallelkan semua fetch awal agar tidak sequential
         fetchProjects();
-        // Fetch admin WA, bank settings, and payment gateway config
-        fetch('/api/settings').then(r => r.json()).then(s => {
+        Promise.all([
+            fetch('/api/settings').then(r => r.json()).catch(() => ({})),
+            fetch('/api/plans').then(r => r.json()).catch(() => [])
+        ]).then(([s, p]) => {
             setAdminWhatsapp(s.contact_whatsapp || '');
             setBankSettings({
                 bankName: s.bank_name || '',
                 bankAccountNumber: s.bank_account_number || '',
                 bankAccountName: s.bank_account_name || ''
             });
-
             const isGw = s.enable_payment_gateway === '1' || s.enable_payment_gateway === 'true';
             setEnablePaymentGateway(isGw);
             setPaymentGatewayClientKey(s.payment_gateway_client_key || '');
@@ -249,8 +260,8 @@ export default function DashboardPage() {
             } else {
                 setUpgradePaymentMethod('manual');
             }
-        }).catch(() => {});
-        fetch('/api/plans').then(r => r.json()).then(p => setAvailablePlans(Array.isArray(p) ? p : [])).catch(() => {});
+            setAvailablePlans(Array.isArray(p) ? p : []);
+        });
     }, []);
 
     // Dynamically inject Midtrans Snap script if Payment Gateway is enabled
@@ -805,6 +816,9 @@ export default function DashboardPage() {
         }
     };
 
+
+
+
     // Helper to copy text to clipboard
     const copyToClipboard = (text, successMsg) => {
         if (navigator.clipboard && window.isSecureContext) {
@@ -929,17 +943,17 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '16px', marginBottom: '16px' }}>
+            <div className="dashboard-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '16px', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 'bold' }}>Dashboard</h1>
-                    <p style={{ color: '#a1a1aa', margin: '4px 0 0 0', fontSize: '14px' }}>
+                    <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Dashboard</h1>
+                    <p style={{ color: '#a1a1aa', margin: '4px 0 0 0', fontSize: '13px' }}>
                         Kelola project seleksi foto klien
                         {vendorDetails && (
                             <span> — Paket: <strong>{vendorDetails.planName || 'Basic'} Plan</strong> (Masa aktif s/d: {vendorDetails.expiresAt ? new Date(vendorDetails.expiresAt).toLocaleDateString() : 'Lifetime'})</span>
                         )}
                     </p>
                 </div>
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                <div className="dashboard-header-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                     {adminWhatsapp && (
                         <a
                             href={`https://wa.me/${normalizeWhatsappNumber(adminWhatsapp)}?text=${encodeURIComponent('Halo Admin, saya vendor ' + (vendorDetails?.name || '') + '. Saya ingin bertanya mengenai layanan Pick Your Photo.')}`}
@@ -970,74 +984,29 @@ export default function DashboardPage() {
 
             {/* ── PLAN INFO CARDS ── */}
             {vendorDetails && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '24px' }}>
-                    {vendorDetails.planType === 'storage' ? (
-                        <>
-                            <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Penyimpanan (Storage)</p>
-                                <p style={{ margin: '6px 0 4px 0', fontSize: '22px', fontWeight: '700', color: '#e4e4e7' }}>
-                                    {vendorDetails.usedStorageBytes >= 1024 * 1024 * 1024
-                                        ? `${((vendorDetails.usedStorageBytes || 0) / (1024 * 1024 * 1024)).toFixed(2)} GB`
-                                        : `${((vendorDetails.usedStorageBytes || 0) / (1024 * 1024)).toFixed(1)} MB`
-                                    }
-                                    <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>
-                                        {' '} / {vendorDetails.maxStorageMB >= 1024
-                                            ? `${(vendorDetails.maxStorageMB / 1024).toFixed(1)} GB`
-                                            : `${vendorDetails.maxStorageMB} MB`
-                                        }
-                                    </span>
-                                </p>
-                                <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden', marginTop: '8px' }}>
-                                    <div style={{ 
-                                        width: `${Math.min(100, ((vendorDetails.usedStorageBytes || 0) / ((vendorDetails.maxStorageMB || 1) * 1024 * 1024) * 100))}%`, 
-                                        height: '100%', 
-                                        background: ((vendorDetails.usedStorageBytes || 0) / ((vendorDetails.maxStorageMB || 1) * 1024 * 1024) * 100) > 90 ? '#ef4444' : '#6366f1', 
-                                        borderRadius: '3px',
-                                        transition: 'width 0.3s ease'
-                                    }} />
-                                </div>
-                            </div>
-                            <div style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Maks Project</p>
-                                <p style={{ margin: '6px 0 0 0', fontSize: '22px', fontWeight: '700', color: '#e4e4e7' }}>
-                                    {projects.length} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>/ Tak Terbatas</span>
-                                </p>
-                            </div>
-                            <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Masa Aktif Akun</p>
-                                <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7' }}>
-                                    {vendorDetails.expiresAt 
-                                        ? new Date(vendorDetails.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-                                        : 'Selamanya'
-                                    }
-                                </p>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Maks Project</p>
-                                <p style={{ margin: '6px 0 0 0', fontSize: '22px', fontWeight: '700', color: '#e4e4e7' }}>
-                                    {projects.length} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>/ {vendorDetails.maxProjects || '∞'}</span>
-                                </p>
-                            </div>
-                            <div style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Maks Foto / Project</p>
-                                <p style={{ margin: '6px 0 0 0', fontSize: '22px', fontWeight: '700', color: '#e4e4e7' }}>
-                                    {vendorDetails.maxPhotosPerProject || '∞'} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>foto</span>
-                                </p>
-                            </div>
-                            <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
-                                <p style={{ margin: 0, fontSize: '11px', color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Masa Aktif Akun</p>
-                                <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7' }}>
-                                    {vendorDetails.expiresAt 
-                                        ? new Date(vendorDetails.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-                                        : 'Selamanya'
-                                    }
-                                </p>
-                            </div>
-                        </>
-                    )}
+                <div className="dashboard-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+
+                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Kuota Project Aktif</p>
+                        <p style={{ margin: '6px 0 0 0', fontSize: '22px', fontWeight: '700', color: '#e4e4e7' }}>
+                            {projects.length} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>/ {vendorDetails.maxProjects || '∞'} Project</span>
+                        </p>
+                    </div>
+                    <div style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Foto per Project</p>
+                        <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: '#34d399' }}>
+                            Unlimited <span style={{ fontSize: '12px', color: '#71717a', fontWeight: '400' }}>(GDrive Stream)</span>
+                        </p>
+                    </div>
+                    <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Masa Aktif Akun</p>
+                        <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7' }}>
+                            {vendorDetails.expiresAt 
+                                ? new Date(vendorDetails.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+                                : 'Aktif'
+                            }
+                        </p>
+                    </div>
                 </div>
             )}
 
@@ -1122,7 +1091,8 @@ export default function DashboardPage() {
                         )}
 
                         {/* ── UNIFIED ULTRA-MINIMALIST CONTROL BAR ── */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                        <div className="dashboard-control-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+
                             {/* Left: Sleek Segmented Pill Tabs */}
                             <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', gap: '4px' }}>
                                 <button
@@ -1611,6 +1581,11 @@ export default function DashboardPage() {
                                                 transition: 'all 0.2s',
                                             }}
                                             onClick={() => {
+                                                if (vendorDetails?.allowRawSelector === 0 || vendorDetails?.allowRawSelector === false) {
+                                                    addToast('Fitur RAW Selector hanya tersedia di paket Pro Studio ke atas. Silakan upgrade paket Anda.', 'warning');
+                                                    setShowUpgradeModal(true);
+                                                    return;
+                                                }
                                                 setSorterProject(project);
                                                 setShowSorter(true);
                                             }}
@@ -1623,7 +1598,7 @@ export default function DashboardPage() {
                                                 e.target.style.borderColor = 'rgba(139, 92, 246, 0.25)';
                                             }}
                                         >
-                                            📁 Sortir RAW
+                                            {vendorDetails?.allowRawSelector === 0 || vendorDetails?.allowRawSelector === false ? '🔒 Sortir RAW (Upgrade Pro)' : '📁 Sortir RAW'}
                                         </button>
                                     )}
 
@@ -2322,8 +2297,11 @@ export default function DashboardPage() {
                                         const isCurrentPlan = vendorDetails?.planId === plan.id;
                                         const accentColor = isCurrentPlan ? '#6366f1' : '#e4e4e7';
                                         
-                                        // Calculate proration
+                                        // Calculate proration & days remaining
                                         const { discount, total } = getProrationDetails(plan);
+                                        const daysRemaining = vendorDetails?.expiresAt 
+                                            ? Math.max(0, Math.ceil((new Date(vendorDetails.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)))
+                                            : 0;
 
                                         return (
                                             <div key={plan.id} style={{
@@ -2369,16 +2347,24 @@ export default function DashboardPage() {
                                                             <span>📁</span> Maksimal <strong style={{ color: '#f4f4f5' }}>{plan.maxProjects} project</strong>
                                                         </li>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span>📷</span> Maksimal <strong style={{ color: '#f4f4f5' }}>{plan.maxPhotosPerProject || '∞'} foto</strong> / project
+                                                            <span>📷</span> Foto <strong style={{ color: '#f4f4f5' }}>Unlimited</strong> / project
                                                         </li>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                                             <span>⏳</span> Masa Aktif Akun: <strong style={{ color: '#f4f4f5' }}>{plan.activePeriodDays || 30} hari</strong>
                                                         </li>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span>✨</span> Masa Simpan Galeri: <strong style={{ color: '#f4f4f5' }}>{(!plan.projectExpireDays || plan.projectExpireDays >= 99999) ? 'Permanen (Selama Project Ada)' : `${plan.projectExpireDays} hari`}</strong>
+                                                            <span>🎨</span> Logo Studio Sendiri: {plan.allowCustomLogo === 1 || plan.allowCustomLogo === true ? (
+                                                                <strong style={{ color: '#34d399' }}>Bisa Logo Sendiri</strong>
+                                                            ) : (
+                                                                <strong style={{ color: '#71717a' }}>Logo Platform Standard</strong>
+                                                            )}
                                                         </li>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span>🎨</span> Custom Logo & Brand Studio: <strong style={{ color: '#34d399' }}>Aktif</strong>
+                                                            {plan.allowRawSelector === 1 || plan.allowRawSelector === true ? (
+                                                                <><span>⚡</span> Fitur RAW Selector: <strong style={{ color: '#34d399' }}>Aktif</strong></>
+                                                            ) : (
+                                                                <><span>🔒</span> Fitur RAW Selector: <strong style={{ color: '#71717a' }}>Nonaktif (Upgrade Pro)</strong></>
+                                                            )}
                                                         </li>
                                                     </ul>
                                                 </div>
@@ -2387,7 +2373,11 @@ export default function DashboardPage() {
                                                     <button
                                                         onClick={() => {
                                                             if (vendorDetails?.upgradeRequest) {
-                                                                addToast('Anda sudah memiliki permintaan perpanjangan plan yang sedang diproses.', 'warning');
+                                                                addToast('Permintaan perpanjangan sedang diproses.', 'warning');
+                                                                return;
+                                                            }
+                                                            if (daysRemaining > 10) {
+                                                                addToast(`Perpanjangan hanya dapat dilakukan mulai H-10 sebelum expired (Sisa: ${daysRemaining} hari).`, 'warning');
                                                                 return;
                                                             }
                                                             setSelectedUpgradePlan(plan);
@@ -2397,23 +2387,28 @@ export default function DashboardPage() {
                                                             width: '100%',
                                                             padding: '10px',
                                                             textAlign: 'center',
-                                                            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-                                                            color: '#000000',
+                                                            background: daysRemaining > 10 ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                                                            color: daysRemaining > 10 ? '#71717a' : '#000000',
                                                             borderRadius: '10px',
                                                             fontWeight: '700',
                                                             fontSize: '12px',
-                                                            cursor: 'pointer',
-                                                            boxShadow: '0 4px 12px rgba(251,191,36,0.3)',
+                                                            cursor: daysRemaining > 10 ? 'not-allowed' : 'pointer',
+                                                            boxShadow: daysRemaining > 10 ? 'none' : '0 4px 12px rgba(251,191,36,0.3)',
                                                             border: 'none'
                                                         }}
                                                     >
-                                                        🔄 Perpanjang Paket Ini
+                                                        {daysRemaining > 10 ? `🔒 Perpanjang (Sisa ${daysRemaining} Hari)` : '🔄 Perpanjang Paket Ini'}
                                                     </button>
                                                 ) : (
                                                     <button
                                                         onClick={() => {
                                                             if (vendorDetails?.upgradeRequest) {
-                                                                addToast('Anda sudah memiliki permintaan upgrade plan yang sedang diproses.', 'warning');
+                                                                addToast('Permintaan upgrade sedang diproses.', 'warning');
+                                                                return;
+                                                            }
+                                                            const activeCount = projects.filter(p => p.status !== 'archived').length;
+                                                            if (activeCount > plan.maxProjects) {
+                                                                addToast(`Arsip ${activeCount - plan.maxProjects} project terlebih dahulu untuk memilih paket ini (Batas: ${plan.maxProjects} project).`, 'warning');
                                                                 return;
                                                             }
                                                             setSelectedUpgradePlan(plan);
@@ -2431,7 +2426,7 @@ export default function DashboardPage() {
                                                             boxShadow: '0 4px 12px rgba(99,102,241,0.25)'
                                                         }}
                                                     >
-                                                        🚀 Pilih {plan.name} {discount > 0 ? `(Rp ${total.toLocaleString('id-ID')})` : ''}
+                                                        🚀 Pilih {plan.name}
                                                     </button>
                                                 )}
                                             </div>
@@ -2461,7 +2456,7 @@ export default function DashboardPage() {
                                     
                                     {selectedUpgradePlan.id === vendorDetails?.planId ? (
                                         <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#a5b4fc', lineHeight: '1.4' }}>
-                                            ℹ️ <strong>Informasi:</strong> Perpanjangan paket akan menambahkan masa aktif plan Anda selama <strong>{selectedUpgradePlan.projectExpireDays || 30} hari</strong> secara akumulatif.
+                                            ℹ️ <strong>Informasi:</strong> Perpanjangan paket akan menambahkan masa aktif akun Anda selama <strong>{selectedUpgradePlan.activePeriodDays || 30} hari</strong> secara akumulatif.
                                         </div>
                                     ) : getProrationDetails(selectedUpgradePlan).isDowngrade && (
                                         <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#f87171', lineHeight: '1.4' }}>
@@ -2706,6 +2701,40 @@ export default function DashboardPage() {
                         width: 0%;
                     }
                 }
+                @media (max-width: 640px) {
+                    .dashboard-header-row {
+                        flex-direction: column !important;
+                        align-items: stretch !important;
+                        gap: 12px !important;
+                    }
+                    .dashboard-header-actions {
+                        display: flex !important;
+                        width: 100% !important;
+                        justify-content: space-between !important;
+                    }
+                    .dashboard-header-actions > * {
+                        flex: 1 !important;
+                        justify-content: center !important;
+                    }
+                    .dashboard-stats-grid {
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 8px !important;
+                    }
+                    .dashboard-stats-grid > div:last-child {
+                        grid-column: span 2 !important;
+                    }
+                    .dashboard-stats-grid > div {
+                        padding: 10px 12px !important;
+                    }
+                    .dashboard-control-bar {
+                        flex-direction: column !important;
+                        align-items: stretch !important;
+                        gap: 10px !important;
+                    }
+                    .dashboard-control-bar > div {
+                        width: 100% !important;
+                    }
+                }
             `}</style>
             {/* ── MODAL: CUSTOM DELETE PROJECT CONFIRMATION ── */}
             {projectToDelete && (
@@ -2857,6 +2886,7 @@ export default function DashboardPage() {
                 </div>
             )}
 
+
             {/* ── RAW SORTER DRAWER ── */}
             <RawSorterDrawer
                 isOpen={showSorter}
@@ -2864,6 +2894,7 @@ export default function DashboardPage() {
                 project={sorterProject}
                 vendorPlan={vendorDetails?.planType || ''}
             />
+
         </div>
     );
 }

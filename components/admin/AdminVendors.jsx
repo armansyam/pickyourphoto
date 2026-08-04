@@ -76,8 +76,40 @@ export default function AdminVendors({
   const [rejectModal, setRejectModal] = useState(null); // vendor to reject
   const [rejectReason, setRejectReason] = useState('');
   const [rejectLoading, setRejectLoading] = useState(false);
+  const [syncingId, setSyncingId] = useState(null);
+  const [syncStatusResult, setSyncStatusResult] = useState(null); // custom modal state
 
   useEffect(() => { setMounted(true); }, []);
+
+  const handleSyncQrisStatus = async (vendor) => {
+    setSyncingId(vendor.id);
+    try {
+      const res = await fetch(`/api/payment/status?vendorId=${vendor.id}`);
+      const data = await res.json();
+      if (data.paid) {
+        setSyncStatusResult({
+          type: 'success',
+          title: 'Pembayaran LUNAS! 🎉',
+          message: `Pembayaran untuk vendor "${vendor.name}" telah terverifikasi LUNAS oleh Midtrans! Akun vendor otomatis aktif.`
+        });
+      } else {
+        setSyncStatusResult({
+          type: 'info',
+          title: 'Status Pembayaran Pending',
+          message: data.message || 'Transaksi pembayaran Midtrans belum diselesaikan oleh calon vendor.'
+        });
+      }
+      if (refetchVendors) refetchVendors();
+    } catch (err) {
+      setSyncStatusResult({
+        type: 'error',
+        title: 'Gagal Mengecek Status',
+        message: err.message || 'Terjadi kesalahan koneksi saat mengecek status Midtrans.'
+      });
+    } finally {
+      setSyncingId(null);
+    }
+  };
 
   const isExpired = (expiryString) => {
     if (!expiryString) return false;
@@ -412,13 +444,24 @@ export default function AdminVendors({
                         {vendorSubTab === 'inquiry' && inquirySubTab === 'pending' && (
                           <>
                             {isQris ? (
-                              <button
-                                onClick={() => onCancelQris && onCancelQris(v)}
-                                className="btn-secondary"
-                                style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#f87171', borderColor: 'rgba(248,113,113,0.3)' }}
-                              >
-                                🚫 Batalkan
-                              </button>
+                              <>
+                                <button
+                                  onClick={() => handleSyncQrisStatus(v)}
+                                  disabled={syncingId === v.id}
+                                  className="btn-secondary"
+                                  style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)', cursor: 'pointer' }}
+                                  title="Cek & Sync status pembayaran langsung dari Midtrans API"
+                                >
+                                  {syncingId === v.id ? '⌛ Cek...' : '🔍 Cek Status Midtrans'}
+                                </button>
+                                <button
+                                  onClick={() => onCancelQris && onCancelQris(v)}
+                                  className="btn-secondary"
+                                  style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#f87171', borderColor: 'rgba(248,113,113,0.3)' }}
+                                >
+                                  🚫 Batalkan
+                                </button>
+                              </>
                             ) : (
                               <>
                                 {v.paymentProof && (
@@ -559,6 +602,36 @@ export default function AdminVendors({
           </div>
         </>,
         document.body
+      )}
+
+      {/* ── Custom Alert Modal for Midtrans Status Check ── */}
+      {syncStatusResult && (
+        <div className="modal-overlay" onClick={() => setSyncStatusResult(null)} style={{ zIndex: 12000, position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '90%', textAlign: 'center', background: '#121218', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '16px', padding: '28px', boxShadow: '0 20px 50px rgba(0,0,0,0.9)' }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              width: '56px', height: '56px', borderRadius: '50%',
+              background: syncStatusResult.type === 'success' ? 'rgba(16,185,129,0.15)' : syncStatusResult.type === 'error' ? 'rgba(239,68,68,0.15)' : 'rgba(251,191,36,0.15)',
+              color: syncStatusResult.type === 'success' ? '#34d399' : syncStatusResult.type === 'error' ? '#f87171' : '#fbbf24',
+              fontSize: '28px', marginBottom: '16px'
+            }}>
+              {syncStatusResult.type === 'success' ? '✓' : syncStatusResult.type === 'error' ? '⚠️' : 'ℹ️'}
+            </div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: 'bold', color: '#ffffff' }}>
+              {syncStatusResult.title}
+            </h3>
+            <p style={{ color: '#a1a1aa', fontSize: '14px', margin: '0 0 24px 0', lineHeight: '1.5' }}>
+              {syncStatusResult.message}
+            </p>
+            <button
+              onClick={() => setSyncStatusResult(null)}
+              className="btn-primary"
+              style={{ width: '100%', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
+            >
+              Mengerti / Tutup
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

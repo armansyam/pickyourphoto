@@ -50,9 +50,10 @@ export async function POST(request) {
       planName: plan.name,
     });
 
-    // Calculate 2-hour QRIS expiration time
+    // Calculate dynamic QRIS expiration time from Admin SaaS settings (default: 15 minutes)
+    const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 15;
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000).toISOString();
 
     // Save payment transaction log in DB
     db.prepare(`
@@ -68,7 +69,8 @@ export async function POST(request) {
       JSON.stringify(paymentResult.raw || {})
     );
 
-    // Save payment session in DB with 2-hour QRIS expiration
+    // Save payment session in DB with real qrUrl from Midtrans Core API
+    const qrUrl = paymentResult.qrUrl || paymentResult.redirectUrl || '';
     db.prepare(`
       INSERT INTO payment_sessions (orderId, vendorId, planId, amount, status, paymentMethod, qrUrl, expiresAt, rawResponse)
       VALUES (?, ?, ?, ?, 'pending', 'qris', ?, ?, ?)
@@ -77,19 +79,36 @@ export async function POST(request) {
       vendor.id,
       plan.id,
       amount,
-      paymentResult.redirectUrl || '',
+      qrUrl,
       expiresAt,
       JSON.stringify(paymentResult.raw || {})
     );
+
+    // Update vendor status back to pending_payment and clear archivedAt
+    db.prepare(`
+      UPDATE vendors 
+      SET status = 'pending_payment', archivedAt = NULL, planId = ? 
+      WHERE id = ?
+    `).run(plan.id, vendor.id);
+
+    // Mark old expired pending sessions as replaced
+    try {
+      db.prepare(`
+        UPDATE payment_sessions 
+        SET status = 'replaced' 
+        WHERE vendorId = ? AND status = 'pending' AND expiresAt <= CURRENT_TIMESTAMP
+      `).run(vendor.id);
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
       orderId,
       provider: config.provider,
       token: paymentResult.token,
-      redirectUrl: paymentResult.redirectUrl,
+      qrUrl,
       expiresAt,
     });
+
 
   } catch (error) {
     console.error('[Payment Create Error]:', error);

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function AdminSettings({
   googleClientId, setGoogleClientId,
@@ -18,6 +18,7 @@ export default function AdminSettings({
   paymentGatewayProvider = 'midtrans', setPaymentGatewayProvider,
   paymentGatewayClientKey = '', setPaymentGatewayClientKey,
   paymentGatewayServerKey = '', setPaymentGatewayServerKey,
+  qrisExpirationMinutes = 15, setQrisExpirationMinutes,
   smtpEnable = true, setSmtpEnable,
   smtpHost = 'smtp.gmail.com', setSmtpHost,
   smtpPort = 465, setSmtpPort,
@@ -26,9 +27,7 @@ export default function AdminSettings({
   smtpFromName = 'Pick Your Photo', setSmtpFromName,
   addToast,
   sysEnableReg, setSysEnableReg,
-  sysEnableTrial, setSysEnableTrial,
   sysMaxQuota, setSysMaxQuota,
-  sysTrialExpirationMinutes = 30, setSysTrialExpirationMinutes,
   sysEnableBackup, setSysEnableBackup,
   sysBackupInterval, setSysBackupInterval,
   savingProfile,
@@ -37,20 +36,29 @@ export default function AdminSettings({
   profileErrorMsg,
   handleSaveProfile
 }) {
-  const [isEditingGoogleCredentials, setIsEditingGoogleCredentials] = React.useState(false);
-  const [isEditingPaymentGateway, setIsEditingPaymentGateway] = React.useState(false);
-  const [isEditingSmtp, setIsEditingSmtp] = React.useState(false);
+  const [activeSubTab, setActiveSubTab] = useState('integrations'); // 'integrations' | 'payments' | 'system'
+  const [isEditingGoogleCredentials, setIsEditingGoogleCredentials] = useState(false);
+  const [isEditingPaymentGateway, setIsEditingPaymentGateway] = useState(false);
+  const [isEditingSmtp, setIsEditingSmtp] = useState(false);
 
-  const [paymentTestStatus, setPaymentTestStatus] = React.useState({ loading: false, success: '', error: '' });
-  const [testEmailStatus, setTestEmailStatus] = React.useState({ loading: false, success: '', error: '' });
-
+  const [paymentTestStatus, setPaymentTestStatus] = useState({ loading: false, success: '', error: '' });
+  const [testEmailStatus, setTestEmailStatus] = useState({ loading: false, success: '', error: '' });
 
   return (
-    <div className="glass-card" style={{ padding: '28px', borderRadius: '16px', maxWidth: '750px', margin: '0 auto' }}>
-      <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '600' }}>SaaS & Superadmin Settings</h3>
-      <p style={{ color: '#a1a1aa', margin: '0 0 24px 0', fontSize: '14px' }}>
-        Pengaturan terpusat DB-Driven untuk Google Studio, Pembayaran, dan Kontrol Operasional SaaS.
-      </p>
+    <div className="glass-card" style={{ padding: '28px', borderRadius: '16px', maxWidth: '850px', margin: '0 auto', boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}>
+      
+      {/* ── SETTINGS TITLE & HEADER ── */}
+      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <span style={{ fontSize: '11px', fontWeight: 'bold', background: 'rgba(99, 102, 241, 0.2)', color: '#818cf8', padding: '4px 14px', borderRadius: '20px', letterSpacing: '0.05em' }}>
+          ⚙️ PUSAT KONFIGURASI SAAS & SYSTEM
+        </span>
+        <h3 style={{ margin: '10px 0 6px 0', fontSize: '24px', fontWeight: 'bold', color: '#ffffff' }}>
+          Pengaturan Terpusat Platform
+        </h3>
+        <p style={{ color: '#94a3b8', margin: 0, fontSize: '13px' }}>
+          Kelola integrasi Google Cloud, Payment Gateway, Mailer SMTP, dan Keamanan Superadmin.
+        </p>
+      </div>
 
       {profileSuccessMsg && (
         <div 
@@ -65,478 +73,306 @@ export default function AdminSettings({
             display: 'flex', 
             alignItems: 'center', 
             justifyContent: 'space-between',
-            gap: '12px',
-            boxShadow: '0 4px 15px rgba(16, 185, 129, 0.15)',
-            transition: 'all 0.3s ease'
+            gap: '12px'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '500' }}>
-            <span style={{ fontSize: '16px' }}>✓</span>
+            <span>✓</span>
             <span>{profileSuccessMsg}</span>
           </div>
           {setProfileSuccessMsg && (
             <button
               type="button"
               onClick={() => setProfileSuccessMsg('')}
-              aria-label="Tutup Notifikasi"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#34d399',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                padding: '0 4px',
-                opacity: 0.8,
-                transition: 'opacity 0.2s ease'
-              }}
+              style={{ background: 'transparent', border: 'none', color: '#34d399', fontSize: '16px', cursor: 'pointer' }}
             >
-              ✕
+              &times;
             </button>
           )}
         </div>
       )}
 
       {profileErrorMsg && (
-        <div style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.25)', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontSize: '14px' }}>
-          ⚠️ {profileErrorMsg}
+        <div style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '12px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '14px' }}>
+          ❌ {profileErrorMsg}
         </div>
       )}
 
+      {/* ── CATEGORIZED SUB-TABS NAVIGATION ── */}
+      <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '28px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('integrations')}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontWeight: '700',
+            border: '1px solid',
+            borderColor: activeSubTab === 'integrations' ? '#818cf8' : 'rgba(255,255,255,0.08)',
+            background: activeSubTab === 'integrations' ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255,255,255,0.03)',
+            color: activeSubTab === 'integrations' ? '#ffffff' : '#94a3b8',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          🌐 Integrasi Google & Email
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('payments')}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontWeight: '700',
+            border: '1px solid',
+            borderColor: activeSubTab === 'payments' ? '#10b981' : 'rgba(255,255,255,0.08)',
+            background: activeSubTab === 'payments' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255,255,255,0.03)',
+            color: activeSubTab === 'payments' ? '#ffffff' : '#94a3b8',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          💳 Payment Gateway & QRIS
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('system')}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontWeight: '700',
+            border: '1px solid',
+            borderColor: activeSubTab === 'system' ? '#f59e0b' : 'rgba(255,255,255,0.08)',
+            background: activeSubTab === 'system' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255,255,255,0.03)',
+            color: activeSubTab === 'system' ? '#ffffff' : '#94a3b8',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          ⚙️ Sistem & Keamanan Superadmin
+        </button>
+      </div>
+
       <form onSubmit={handleSaveProfile}>
-        {/* ── MODUL 1: GOOGLE SIGN-IN & OAUTH INTEGRATION ── */}
-        <h4 style={{ margin: '0 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#10b981', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>🔑 Modul 1: Integrasi Google Sign-In Vendor</span>
-          <span style={{ fontSize: '10px', background: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>OAuth 2.0 Credentials</span>
-        </h4>
-        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '24px' }}>
-          {/* Minimalist Collapsible URL Helper */}
-          <details style={{ marginBottom: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '8px 12px', fontSize: '12px' }}>
-            <summary style={{ cursor: 'pointer', fontWeight: '600', color: '#a5b4fc', outline: 'none', userSelect: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>📋 Salin URL Google Cloud Console (Origins & Redirect URI)</span>
-            </summary>
-            <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#a1a1aa' }}>Origins: <code style={{ color: '#34d399', fontFamily: 'monospace' }}>{typeof window !== 'undefined' ? window.location.origin : 'https://domain-anda.com'}</code></span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-                    navigator.clipboard.writeText(origin);
-                    alert(`✓ Authorized JavaScript origins (${origin}) berhasil disalin!`);
-                  }}
-                  className="btn-secondary"
-                  style={{ padding: '2px 8px', fontSize: '10px', background: 'rgba(99,102,241,0.2)', color: '#a5b4fc' }}
-                >
-                  📋 Salin
-                </button>
-              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '6px 10px', borderRadius: '6px' }}>
-                <span style={{ fontSize: '11px', color: '#a1a1aa' }}>Redirect URI: <code style={{ color: '#fbbf24', fontFamily: 'monospace' }}>{(typeof window !== 'undefined' ? window.location.origin : 'https://domain-anda.com') + '/api/auth/google/callback'}</code></span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-                    const redirectUrl = `${origin}/api/auth/google/callback`;
-                    navigator.clipboard.writeText(redirectUrl);
-                    alert(`✓ Authorized redirect URIs (${redirectUrl}) berhasil disalin!`);
-                  }}
-                  className="btn-secondary"
-                  style={{ padding: '2px 8px', fontSize: '10px', background: 'rgba(251,191,36,0.2)', color: '#fde68a' }}
-                >
-                  📋 Salin
-                </button>
-              </div>
-            </div>
-          </details>
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* SUB-TAB 1: INTEGRASI GOOGLE & EMAIL SMTP                          */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {activeSubTab === 'integrations' && (
+          <div className="fade-in-up">
+            
+            {/* GOOGLE OAUTH SECTION */}
+            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+              🔑 Integrasi Google Cloud & OAuth 2.0 Studio
+            </h4>
 
-          {/* Conditional UI: Connected Badge vs Input Form */}
-          {googleClientId && googleClientSecret && !isEditingGoogleCredentials ? (
-            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '18px 20px', borderRadius: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: googleRefreshToken ? '#34d399' : '#fbbf24', boxShadow: googleRefreshToken ? '0 0 10px #34d399' : '0 0 10px #fbbf24' }} />
-                    <span style={{ fontSize: '15px', fontWeight: 'bold', color: googleRefreshToken ? '#34d399' : '#fbbf24' }}>
-                      {googleRefreshToken ? 'Google Master OAuth 2.0 100% Terhubung' : 'Kredensial Tersimpan — Menunggu Otorisasi OAuth'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '4px' }}>
-                    ⚡ Engine Google Drive API v3 & Sign-In Vendor Siap Digunakan.
-                  </div>
+                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>Kredensial Master Google OAuth 2.0</span>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#94a3b8' }}>Digunakan untuk Google Sign-in Vendor & sinkronisasi Google Drive Studio.</p>
                 </div>
-
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <a
-                    href="/api/admin/auth/google"
-                    className="btn-primary"
-                    style={{
-                      padding: '8px 14px',
-                      fontSize: '12px',
-                      background: googleRefreshToken ? 'rgba(16,185,129,0.2)' : 'linear-gradient(135deg, #10b981, #059669)',
-                      color: '#ffffff',
-                      border: googleRefreshToken ? '1px solid rgba(16,185,129,0.4)' : 'none',
-                      textDecoration: 'none',
-                      borderRadius: '8px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      fontWeight: 'bold'
-                    }}
-                  >
-                    {googleRefreshToken ? '🔄 Hubungkan Ulang OAuth' : '🔗 Hubungkan Google Master'}
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingGoogleCredentials(true)}
-                    className="btn-secondary"
-                    style={{ padding: '8px 12px', fontSize: '12px', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGoogleClientId('');
-                      setGoogleClientSecret('');
-                      setIsEditingGoogleCredentials(true);
-                    }}
-                    className="btn-secondary"
-                    style={{ padding: '8px 12px', fontSize: '12px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
-                  >
-                    🗑️ Putuskan
-                  </button>
-                </div>
-              </div>
-
-              {/* 3 Status Item Badges */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>1. Client ID Form</div>
-                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                    <span>✓ Terdaftar</span>
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                    {googleClientId ? `${googleClientId.substring(0, 12)}...` : '-'}
-                  </div>
-                </div>
-
-                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>2. Client Secret Form</div>
-                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                    <span>✓ Terdaftar</span>
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
-                    ••••••••7Gx3
-                  </div>
-                </div>
-
-                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: googleRefreshToken ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(251,191,36,0.3)' }}>
-                  <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>3. Token OAuth Master</div>
-                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: googleRefreshToken ? '#34d399' : '#fbbf24', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                    <span>{googleRefreshToken ? '✓ Terhubung' : '⚠️ Belum Terotentikasi'}</span>
-                  </div>
-                  <div style={{ fontSize: '10px', color: googleRefreshToken ? '#34d399' : '#a1a1aa', marginTop: '2px' }}>
-                    {googleRefreshToken ? 'Refresh Token Aktif' : 'Klik "Hubungkan Google Master"'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px', color: '#cbd5e1' }}>Google Client ID</label>
-                  <input
-                    type="text"
-                    className="input-text"
-                    placeholder="e.g. 12345...apps.googleusercontent.com"
-                    value={googleClientId}
-                    onChange={e => setGoogleClientId(e.target.value)}
-                    disabled={savingProfile}
-                  />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px', color: '#cbd5e1' }}>Google Client Secret</label>
-                  <input
-                    type="password"
-                    className="input-text"
-                    placeholder="e.g. GOCSPX-..."
-                    value={googleClientSecret}
-                    onChange={e => setGoogleClientSecret(e.target.value)}
-                    disabled={savingProfile}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontSize: '11px', color: '#71717a' }}>
-                  💡 Setelah Client ID & Secret diisi, simpan perubahan untuk mengaktifkan Google Sign-In.
+                <span style={{ fontSize: '11px', background: googleRefreshToken ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: googleRefreshToken ? '#34d399' : '#fbbf24', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  {googleRefreshToken ? '🟢 Terhubung (OAuth Active)' : '⚠️ Belum Terhubung'}
                 </span>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  {googleClientId && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingGoogleCredentials(false)}
-                      className="btn-secondary"
-                      style={{ padding: '10px 16px', fontSize: '13px' }}
-                    >
-                      Batal
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    className="btn-primary"
-                    disabled={savingProfile}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '10px 20px',
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
-                      border: 'none',
-                      borderRadius: '8px'
-                    }}
-                  >
-                    💾 {savingProfile ? 'Memproses...' : 'Simpan Kredensial Google'}
-                  </button>
-                </div>
               </div>
-            </>
-          )}
-        </div>
 
-        {/* ── MODUL 2: REKENING BANK & TOGGLE PAYMENT GATEWAY ── */}
-        <h4 style={{ margin: '24px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
-          💳 Modul 2: Pembayaran & Payment Gateway
-        </h4>
-
-        {/* Manual Bank Transfer Routing */}
-        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '16px' }}>
-          <div style={{ fontSize: '13px', fontWeight: '600', color: '#e4e4e7', marginBottom: '12px' }}>Tujuan Rekening Transfer Manual</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '12px' }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ fontSize: '12px' }}>Nama Bank</label>
-              <input
-                type="text"
-                className="input-text"
-                required
-                placeholder="Contoh: BCA (Bank Central Asia)"
-                value={bankName}
-                onChange={e => setBankName(e.target.value)}
-                disabled={savingProfile}
-              />
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ fontSize: '12px' }}>Nomor Rekening</label>
-              <input
-                type="text"
-                className="input-text"
-                required
-                placeholder="Contoh: 1234-5678-90"
-                value={bankAccountNumber}
-                onChange={e => setBankAccountNumber(e.target.value)}
-                disabled={savingProfile}
-              />
-            </div>
-          </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label" style={{ fontSize: '12px' }}>Atas Nama Rekening</label>
-            <input
-              type="text"
-              className="input-text"
-              required
-              placeholder="Contoh: PT Pick Your Photo"
-              value={bankAccountName}
-              onChange={e => setBankAccountName(e.target.value)}
-              disabled={savingProfile}
-            />
-          </div>
-        </div>
-
-        {/* Automatic Payment Gateway Toggle (Midtrans / Xendit) */}
-        <div style={{ background: 'rgba(99,102,241,0.03)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.1)', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <input
-                type="checkbox"
-                id="enablePaymentGateway"
-                checked={enablePaymentGateway}
-                onChange={e => setEnablePaymentGateway(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <label htmlFor="enablePaymentGateway" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#a5b4fc' }}>
-                Aktifkan Automatic Payment Gateway (Midtrans / Xendit)
-              </label>
-            </div>
-            <span style={{ fontSize: '10px', background: enablePaymentGateway ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)', color: enablePaymentGateway ? '#34d399' : '#71717a', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-              {enablePaymentGateway ? 'ONLINE GATEWAY ON' : 'MANUAL TRANSFER ONLY'}
-            </span>
-          </div>
-
-          {enablePaymentGateway && paymentGatewayClientKey && paymentGatewayServerKey && !isEditingPaymentGateway ? (
-            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-              {/* PAYMENT TEST ALERT BANNERS */}
-              {paymentTestStatus.success && (
-                <div style={{ background: 'rgba(52, 211, 153, 0.12)', border: '1px solid rgba(52, 211, 153, 0.3)', color: '#34d399', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{paymentTestStatus.success}</span>
-                  <button type="button" onClick={() => setPaymentTestStatus(prev => ({ ...prev, success: '' }))} style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
-                </div>
-              )}
-
-              {paymentTestStatus.error && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{paymentTestStatus.error}</span>
-                  <button type="button" onClick={() => setPaymentTestStatus(prev => ({ ...prev, error: '' }))} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
-                </div>
-              )}
-
-              <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '18px 20px', borderRadius: '12px', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#34d399', boxShadow: '0 0 10px #34d399' }} />
-                      <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399' }}>
-                        Payment Gateway ({paymentGatewayProvider.toUpperCase()}) 100% Terhubung & Aktif
-                      </span>
+              {!isEditingGoogleCredentials && googleClientId && googleClientSecret ? (
+                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block' }}>Google Client ID:</span>
+                      <strong style={{ color: '#ffffff', wordBreak: 'break-all' }}>{googleClientId.substring(0, 16)}...</strong>
                     </div>
-                    <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '4px' }}>
-                      ⚡ Kredensial tersimpan secara aman di database. Pembayaran vendor otomatis diproses.
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block' }}>Client Secret:</span>
+                      <strong style={{ color: '#34d399' }}>••••••••••••••••</strong>
                     </div>
                   </div>
-
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      disabled={paymentTestStatus.loading}
-                      onClick={async () => {
-                        setPaymentTestStatus({ loading: true, success: '', error: '' });
-                        try {
-                          const res = await fetch('/api/admin/payment/test', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              provider: paymentGatewayProvider,
-                              clientKey: paymentGatewayClientKey,
-                              serverKey: paymentGatewayServerKey,
-                              isProduction: false
-                            })
-                          });
-                          const data = await res.json();
-                          if (res.ok && data.success) {
-                            setPaymentTestStatus({ loading: false, success: data.message, error: '' });
-                            if (addToast) addToast(data.message, 'success');
-                          } else {
-                            const msg = data.message || 'Tes koneksi gagal. Periksa Server Key Anda.';
-                            setPaymentTestStatus({ loading: false, success: '', error: msg });
-                            if (addToast) addToast(msg, 'error');
-                          }
-                        } catch (err) {
-                          const msg = err.message || 'Terjadi kesalahan koneksi API.';
-                          setPaymentTestStatus({ loading: false, success: '', error: msg });
-                          if (addToast) addToast(msg, 'error');
-                        }
-                      }}
-                      style={{
-                        background: 'rgba(56, 189, 248, 0.12)',
-                        border: '1px solid rgba(56, 189, 248, 0.3)',
-                        color: '#38bdf8',
-                        padding: '8px 14px',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        cursor: paymentTestStatus.loading ? 'wait' : 'pointer'
-                      }}
-                    >
-                      {paymentTestStatus.loading ? '⏳ Memeriksa Koneksi...' : '🔍 Tes Koneksi API Midtrans'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingPaymentGateway(true)}
-                      className="btn-secondary"
-                      style={{ padding: '8px 14px', fontSize: '12px', background: 'rgba(99,102,241,0.15)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }}
-                    >
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <a href="/api/auth/google" style={{ fontSize: '12px', color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold' }}>
+                      🔄 Otorisasi Ulang OAuth ➔
+                    </a>
+                    <button type="button" onClick={() => setIsEditingGoogleCredentials(true)} className="btn-secondary" style={{ padding: '6px 14px', fontSize: '12px' }}>
                       ✏️ Edit Kredensial
                     </button>
-                    <button
-                      type="button"
-                      onClick={async (e) => {
-                        setEnablePaymentGateway(false);
-                        setIsEditingPaymentGateway(true);
-                        await handleSaveSettings(e);
-                        if (addToast) addToast('Payment Gateway dinonaktifkan.', 'info');
-                      }}
-                      className="btn-secondary"
-                      style={{ padding: '8px 14px', fontSize: '12px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)' }}
-                    >
-                      🗑️ Nonaktifkan
-                    </button>
                   </div>
                 </div>
-
-                {/* 3 Status Item Badges */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>1. Status Provider</div>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
-                      ✓ {paymentGatewayProvider.toUpperCase()} (Sandbox)
-                    </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Google Client ID</label>
+                    <input
+                      type="text"
+                      className="input-text"
+                      placeholder="733578075321-xxxxxx.apps.googleusercontent.com"
+                      value={googleClientId}
+                      onChange={e => setGoogleClientId(e.target.value)}
+                    />
                   </div>
-
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>2. Client Key</div>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
-                      ✓ Terdaftar
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '2px' }}>
-                      {paymentGatewayClientKey ? `${paymentGatewayClientKey.substring(0, 14)}...` : '-'}
-                    </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Google Client Secret</label>
+                    <input
+                      type="password"
+                      className="input-text"
+                      placeholder="GOCSPX-xxxxxxxxxxxxxx"
+                      value={googleClientSecret}
+                      onChange={e => setGoogleClientSecret(e.target.value)}
+                    />
                   </div>
-
-                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.2)' }}>
-                    <div style={{ fontSize: '10px', color: '#a1a1aa', fontWeight: '500' }}>3. Server Key</div>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#34d399', marginTop: '2px' }}>
-                      ✓ Terdaftar
-                    </div>
-                    <div style={{ fontSize: '10px', color: '#71717a', fontFamily: 'monospace', marginTop: '2px' }}>
-                      {paymentGatewayServerKey ? '••••••••' + paymentGatewayServerKey.slice(-4) : '-'}
-                    </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Master Drive Folder ID (Opsional)</label>
+                    <input
+                      type="text"
+                      className="input-text"
+                      placeholder="Google Drive Folder ID untuk Master Storage"
+                      value={googleMasterFolderId}
+                      onChange={e => setGoogleMasterFolderId(e.target.value)}
+                    />
                   </div>
+                  {isEditingGoogleCredentials && (
+                    <button type="button" onClick={() => setIsEditingGoogleCredentials(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '12px', alignSelf: 'flex-end' }}>
+                      Selesai Edit
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* EMAIL SMTP SECTION */}
+            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+              📧 Server Email Notifikasi Otomatis (SMTP Gmail)
+            </h4>
+
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>SMTP Host</label>
+                  <input type="text" className="input-text" value={smtpHost} onChange={e => setSmtpHost(e.target.value)} />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>SMTP Port</label>
+                  <input type="number" className="input-text" value={smtpPort} onChange={e => setSmtpPort(parseInt(e.target.value) || 465)} />
                 </div>
               </div>
 
-              {/* Webhook Callback Notification URL Helper */}
-              <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '12px 14px', borderRadius: '8px', fontSize: '12px' }}>
-                <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback (Otomatis Lunas):</div>
-                <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
-                  {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'}
-                </code>
-                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px' }}>
-                  * Salin URL di atas dan pasang di Dashboard Provider ({paymentGatewayProvider.toUpperCase()}) pada bagian <em>Notification / Webhook URL</em> agar akun vendor otomatis aktif saat pembayaran lunas.
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>Email Pengirim (Sender Email)</label>
+                  <input type="email" className="input-text" value={smtpEmail} onChange={e => setSmtpEmail(e.target.value)} />
                 </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>Password / App Password</label>
+                  <input type="password" className="input-text" value={smtpPassword} onChange={e => setSmtpPassword(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ margin: '0 0 16px 0' }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Nama Pengirim Email (Sender Name)</label>
+                <input type="text" className="input-text" value={smtpFromName} onChange={e => setSmtpFromName(e.target.value)} />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button
+                  type="button"
+                  disabled={testEmailStatus.loading || !smtpEmail || !smtpPassword}
+                  onClick={async (e) => {
+                    setTestEmailStatus({ loading: true, success: '', error: '' });
+                    try {
+                      const res = await fetch('/api/admin/smtp/test', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ targetEmail: smtpEmail, smtpEmail, smtpPassword, smtpHost, smtpPort, smtpFromName })
+                      });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        if (addToast) addToast(data.message || 'Email uji coba BERHASIL dikirim!', 'success');
+                      } else {
+                        if (addToast) addToast(data.message || 'Gagal mengirim email uji coba.', 'error');
+                      }
+                    } catch (err) {
+                      if (addToast) addToast(err.message, 'error');
+                    } finally {
+                      setTestEmailStatus({ loading: false, success: '', error: '' });
+                    }
+                  }}
+                  style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  {testEmailStatus.loading ? '⏳ Menguji...' : '📧 Tes Kirim Email'}
+                </button>
               </div>
             </div>
-          ) : enablePaymentGateway ? (
-            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-              {/* PAYMENT TEST ALERT BANNERS */}
-              {paymentTestStatus.success && (
-                <div style={{ background: 'rgba(52, 211, 153, 0.12)', border: '1px solid rgba(52, 211, 153, 0.3)', color: '#34d399', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{paymentTestStatus.success}</span>
-                  <button type="button" onClick={() => setPaymentTestStatus(prev => ({ ...prev, success: '' }))} style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
-                </div>
-              )}
 
-              {paymentTestStatus.error && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>{paymentTestStatus.error}</span>
-                  <button type="button" onClick={() => setPaymentTestStatus(prev => ({ ...prev, error: '' }))} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
-                </div>
-              )}
+          </div>
+        )}
 
-              <div className="form-group" style={{ marginBottom: '12px' }}>
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* SUB-TAB 2: PAYMENT GATEWAY & QRIS                                */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {activeSubTab === 'payments' && (
+          <div className="fade-in-up">
+            
+            {/* REKENING MANUAL */}
+            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+              🏦 Tujuan Rekening Transfer Manual Vendor
+            </h4>
+
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>Nama Bank</label>
+                  <input type="text" className="input-text" value={bankName} onChange={e => setBankName(e.target.value)} />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>Nomor Rekening</label>
+                  <input type="text" className="input-text" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} />
+                </div>
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Atas Nama Rekening</label>
+                <input type="text" className="input-text" value={bankAccountName} onChange={e => setBankAccountName(e.target.value)} />
+              </div>
+            </div>
+
+            {/* AUTOMATIC PAYMENT GATEWAY MODULE */}
+            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+              💳 Automatic Payment Gateway (Midtrans, Xendit, Tripay, Duitku)
+            </h4>
+
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id="enablePaymentGateway"
+                    checked={enablePaymentGateway}
+                    onChange={e => setEnablePaymentGateway(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="enablePaymentGateway" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: enablePaymentGateway ? '#34d399' : '#f87171' }}>
+                    Aktifkan Pembayaran Otomatis Payment Gateway
+                  </label>
+                </div>
+                <span style={{ fontSize: '11px', background: enablePaymentGateway ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: enablePaymentGateway ? '#34d399' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  {enablePaymentGateway ? '🟢 GATEWAY AKTIF' : '🔴 NONAKTIF'}
+                </span>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
                 <label className="form-label" style={{ fontSize: '12px' }}>Pilih Provider Payment Gateway</label>
                 <select
                   className="input-text"
@@ -546,521 +382,175 @@ export default function AdminSettings({
                 >
                   <option value="midtrans">Midtrans Snap API (QRIS, VA, GoPay, Card)</option>
                   <option value="xendit">Xendit Invoice API (QRIS, E-Wallet, VA)</option>
-                  <option value="tripay">Tripay Payment API (QRIS, VA, Alfamart/Indomaret)</option>
+                  <option value="tripay">Tripay Payment API (QRIS, VA, Alfamart)</option>
                   <option value="duitku">Duitku Pop-Up API (QRIS, VA, E-Wallet)</option>
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>
-                    {paymentGatewayProvider === 'tripay' || paymentGatewayProvider === 'duitku' ? 'Merchant Code / Code' : 'Client Key / Public Key'}
-                  </label>
-                  <input
-                    type="text"
-                    className="input-text"
-                    placeholder={paymentGatewayProvider === 'midtrans' ? 'e.g. SB-Mid-client-...' : 'Masukkan Client/Public Key atau Merchant Code'}
-                    value={paymentGatewayClientKey}
-                    onChange={e => setPaymentGatewayClientKey(e.target.value)}
-                  />
+                  <label className="form-label" style={{ fontSize: '12px' }}>Client Key / Public Key</label>
+                  <input type="text" className="input-text" value={paymentGatewayClientKey} onChange={e => setPaymentGatewayClientKey(e.target.value)} />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>
-                    {paymentGatewayProvider === 'xendit' ? 'Secret API Key' : 'Server Key / Secret Key / API Key'}
-                  </label>
-                  <input
-                    type="password"
-                    className="input-text"
-                    placeholder={paymentGatewayProvider === 'midtrans' ? 'e.g. SB-Mid-server-...' : 'Masukkan Server/Secret Key'}
-                    value={paymentGatewayServerKey}
-                    onChange={e => setPaymentGatewayServerKey(e.target.value)}
-                  />
+                  <label className="form-label" style={{ fontSize: '12px' }}>Server Key / Secret Key</label>
+                  <input type="password" className="input-text" value={paymentGatewayServerKey} onChange={e => setPaymentGatewayServerKey(e.target.value)} />
                 </div>
               </div>
 
-              {/* Webhook Callback Notification URL Helper */}
-              <div style={{ marginTop: '14px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '12px 14px', borderRadius: '8px', fontSize: '12px' }}>
-                <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback (Otomatis Lunas):</div>
+              {/* QRIS EXPIRATION MINUTES SETTING */}
+              <div className="form-group" style={{ background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)', padding: '14px', borderRadius: '10px', marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontSize: '12px', color: '#fbbf24', fontWeight: 'bold' }}>
+                  ⏱️ Batas Waktu Expired QRIS Pembayaran (Menit)
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1440"
+                    className="input-text"
+                    placeholder="15"
+                    value={qrisExpirationMinutes}
+                    onChange={e => setQrisExpirationMinutes && setQrisExpirationMinutes(parseInt(e.target.value) || 15)}
+                    style={{ background: 'rgba(0,0,0,0.4)', width: '110px', color: '#fbbf24', fontWeight: 'bold' }}
+                  />
+                  <span style={{ fontSize: '12px', color: '#e2e8f0', lineHeight: '1.4' }}>
+                    Menit (Default: <strong>15 Menit</strong>). Mengatur batas hitung mundur expired QRIS Midtrans & Database secara presisi.
+                  </span>
+                </div>
+              </div>
+
+              {/* WEBHOOK URL INFO */}
+              <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '12px 14px', borderRadius: '8px', fontSize: '12px', marginBottom: '16px' }}>
+                <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback:</div>
                 <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
                   {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'}
                 </code>
-                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '4px' }}>
-                  * Salin URL di atas dan pasang di Dashboard Provider ({paymentGatewayProvider.toUpperCase()}) pada bagian <em>Notification / Webhook URL</em> agar akun vendor otomatis aktif saat pembayaran lunas.
-                </div>
               </div>
 
-              {/* Dedicated Save Button & Test Connection Button */}
-              <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                  💡 Simpan kredensial untuk menghubungkan Payment Gateway ke database.
-                </span>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    disabled={paymentTestStatus.loading || !paymentGatewayServerKey}
-                    onClick={async () => {
-                      setPaymentTestStatus({ loading: true, success: '', error: '' });
-                      try {
-                        const res = await fetch('/api/admin/payment/test', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            provider: paymentGatewayProvider,
-                            clientKey: paymentGatewayClientKey,
-                            serverKey: paymentGatewayServerKey,
-                            isProduction: false
-                          })
-                        });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                          setPaymentTestStatus({ loading: false, success: data.message, error: '' });
-                          if (addToast) addToast(data.message, 'success');
-                        } else {
-                          const msg = data.message || 'Tes koneksi gagal. Periksa Server Key Anda.';
-                          setPaymentTestStatus({ loading: false, success: '', error: msg });
-                          if (addToast) addToast(msg, 'error');
-                        }
-                      } catch (err) {
-                        const msg = err.message || 'Terjadi kesalahan koneksi API.';
-                        setPaymentTestStatus({ loading: false, success: '', error: msg });
-                        if (addToast) addToast(msg, 'error');
-                      }
-                    }}
-                    style={{
-                      background: 'rgba(56, 189, 248, 0.12)',
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
-                      color: '#38bdf8',
-                      padding: '9px 14px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      cursor: paymentTestStatus.loading ? 'wait' : 'pointer'
-                    }}
-                  >
-                    {paymentTestStatus.loading ? '⏳ Memeriksa Koneksi...' : '🔍 Tes Koneksi API Midtrans'}
-                  </button>
-                  {paymentGatewayClientKey && paymentGatewayServerKey && (
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingPaymentGateway(false)}
-                      className="btn-secondary"
-                      style={{ padding: '9px 16px', fontSize: '12px' }}
-                    >
-                      Batal
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={async (e) => {
-                      await handleSaveSettings(e);
-                      setIsEditingPaymentGateway(false);
-                      if (addToast) addToast(`Kredensial Payment Gateway (${paymentGatewayProvider.toUpperCase()}) berhasil disimpan dan terhubung!`, 'success');
-                    }}
-                    disabled={savingProfile}
-                    className="btn-primary"
-                    style={{
-                      padding: '9px 18px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 8px rgba(16,185,129,0.3)'
-                    }}
-                  >
-                    💾 {savingProfile ? 'Menyimpan...' : 'Simpan & Tutup Form'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-
-        </div>
-
-
-        {/* Support Contacts */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">Email Support</label>
-            <input
-              type="email"
-              className="input-text"
-              required
-              placeholder="support@pickyourphoto.com"
-              value={contactEmail}
-              onChange={e => setContactEmail(e.target.value)}
-              disabled={savingProfile}
-            />
-          </div>
-          <div className="form-group" style={{ margin: 0 }}>
-            <label className="form-label">WhatsApp Support (WA)</label>
-            <input
-              type="text"
-              className="input-text"
-              required
-              placeholder="6281234567890"
-              value={contactWhatsapp}
-              onChange={e => setContactWhatsapp(e.target.value)}
-              disabled={savingProfile}
-            />
-          </div>
-        </div>
-
-        {/* ── MODUL 3: NOTIFIKASI EMAIL OTOMATIS (SMTP GMAIL) ── */}
-        <h4 style={{ margin: '24px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#38bdf8', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>📧 Modul 3: Notifikasi Email Otomatis (SMTP Gmail)</span>
-          <span style={{ fontSize: '10px', background: 'rgba(56,189,248,0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>Background Mailer</span>
-        </h4>
-
-        {/* TEST EMAIL ALERT BANNERS */}
-        {testEmailStatus.success && (
-          <div style={{ background: 'rgba(52, 211, 153, 0.12)', border: '1px solid rgba(52, 211, 153, 0.3)', color: '#34d399', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>✅ {testEmailStatus.success}</span>
-            <button type="button" onClick={() => setTestEmailStatus(prev => ({ ...prev, success: '' }))} style={{ background: 'none', border: 'none', color: '#34d399', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
-          </div>
-        )}
-
-        {testEmailStatus.error && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '10px 14px', borderRadius: '8px', marginBottom: '14px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span>❌ {testEmailStatus.error}</span>
-            <button type="button" onClick={() => setTestEmailStatus(prev => ({ ...prev, error: '' }))} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: '14px', padding: '0 4px' }}>✕</button>
-          </div>
-        )}
-
-        {smtpEmail && smtpPassword && !isEditingSmtp ? (
-          <div style={{ background: 'rgba(56, 189, 248, 0.04)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '16px 20px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#f4f4f5' }}>{smtpEmail}</span>
-                {smtpEnable ? (
-                  <span style={{ fontSize: '10px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                    🟢 Aktif & Otomatis Kirim
-                  </span>
-                ) : (
-                  <span style={{ fontSize: '10px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                    🔴 Nonaktif (Email Mati)
-                  </span>
-                )}
-              </div>
-              <div style={{ fontSize: '12px', color: '#a1a1aa' }}>
-                Pengirim: <strong>{smtpFromName}</strong> | Host: <strong>{smtpHost}:{smtpPort}</strong>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <button
-                type="button"
-                disabled={testEmailStatus.loading}
-                onClick={async (e) => {
-                  setTestEmailStatus({ loading: true, success: '', error: '' });
-                  try {
-                    const res = await fetch('/api/admin/smtp/test', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ 
-                        targetEmail: smtpEmail,
-                        smtpEmail,
-                        smtpPassword,
-                        smtpHost,
-                        smtpPort,
-                        smtpFromName
-                      })
-                    });
-                    const data = await res.json();
-                    if (res.ok && data.success) {
-                      const msg = data.message || `Email uji coba BERHASIL dikirim ke ${smtpEmail}! Cek Inbox / Spam.`;
-                      setTestEmailStatus({ loading: false, success: msg, error: '' });
-                      if (addToast) addToast(msg, 'success');
-                    } else {
-                      const errMsg = data.message || 'Gagal mengirim email uji coba. Periksa App Password SMTP Anda.';
-                      setTestEmailStatus({ loading: false, success: '', error: errMsg });
-                      if (addToast) addToast(errMsg, 'error');
-                    }
-                  } catch (err) {
-                    const errMsg = err.message || 'Terjadi kesalahan koneksi SMTP.';
-                    setTestEmailStatus({ loading: false, success: '', error: errMsg });
-                    if (addToast) addToast(errMsg, 'error');
-                  }
-                }}
-                style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: testEmailStatus.loading ? 'wait' : 'pointer' }}
-              >
-                {testEmailStatus.loading ? '⏳ Mengirim...' : '📧 Tes Kirim Email'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditingSmtp(true)}
-                style={{ background: 'rgba(255, 255, 255, 0.06)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#ffffff', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-              >
-                ✏️ Ubah Konfigurasi
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-              <input
-                type="checkbox"
-                id="smtp_enable"
-                checked={smtpEnable}
-                onChange={e => setSmtpEnable(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <label htmlFor="smtp_enable" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: '#f4f4f5' }}>
-                Aktifkan Pengiriman Email Persetujuan Otomatis ke Vendor
-              </label>
-            </div>
-
-            <details style={{ marginBottom: '16px', background: 'rgba(56,189,248,0.05)', border: '1px solid rgba(56,189,248,0.2)', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#bae6fd' }}>
-              <summary style={{ cursor: 'pointer', fontWeight: 'bold', outline: 'none' }}>
-                💡 Panduan Membuat Google App Password (16 Karakter)
-              </summary>
-              <ol style={{ margin: '8px 0 0 16px', padding: 0, lineHeight: '1.6' }}>
-                <li>Buka Akun Google Anda &rarr; Menu <strong>Keamanan (Security)</strong> &rarr; Aktifkan <strong>Verifikasi 2 Langkah (2FA)</strong>.</li>
-                <li>Cari menu <strong>Sandi Aplikasi (App Passwords)</strong> di kolom pencarian Akun Google.</li>
-                <li>Buat sandi baru (misal nama: <em>Pick Your Photo</em>) &rarr; Salin 16 karakter sandi ke kolom <strong>SMTP App Password</strong> di bawah.</li>
-              </ol>
-            </details>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Email Gmail Pengirim (SMTP User)</label>
-                <input
-                  type="email"
-                  className="input-text"
-                  placeholder="admin@pickyourphoto.com"
-                  value={smtpEmail}
-                  onChange={e => setSmtpEmail(e.target.value)}
-                  disabled={savingProfile}
-                />
-              </div>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Google App Password (16 Karakter)</label>
-                <input
-                  type="password"
-                  className="input-text"
-                  placeholder="•••• •••• •••• ••••"
-                  value={smtpPassword}
-                  onChange={e => setSmtpPassword(e.target.value)}
-                  disabled={savingProfile}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Nama Pengirim (Sender Name)</label>
-                <input
-                  type="text"
-                  className="input-text"
-                  placeholder="Pick Your Photo"
-                  value={smtpFromName}
-                  onChange={e => setSmtpFromName(e.target.value)}
-                  disabled={savingProfile}
-                />
-              </div>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>SMTP Host</label>
-                <input
-                  type="text"
-                  className="input-text"
-                  placeholder="smtp.gmail.com"
-                  value={smtpHost}
-                  onChange={e => setSmtpHost(e.target.value)}
-                  disabled={savingProfile}
-                />
-              </div>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>SMTP Port</label>
-                <input
-                  type="number"
-                  className="input-text"
-                  placeholder="465"
-                  value={smtpPort}
-                  onChange={e => setSmtpPort(parseInt(e.target.value) || 465)}
-                  disabled={savingProfile}
-                />
-              </div>
-            </div>
-
-            {/* SMTP Save & Test Action Footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <div>
-                {smtpEmail && smtpPassword ? (
-                  <span style={{ fontSize: '12px', color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 'bold' }}>
-                    ✓ Form Siap Disimpan
-                  </span>
-                ) : (
-                  <span style={{ fontSize: '11px', color: '#fbbf24' }}>
-                    ⚠️ Masukkan Email & App Password lalu simpan.
-                  </span>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                {smtpEmail && smtpPassword && (
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingSmtp(false)}
-                    className="btn-secondary"
-                    style={{ padding: '9px 16px', fontSize: '12px' }}
-                  >
-                    Batal
-                  </button>
-                )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                 <button
                   type="button"
-                  disabled={testEmailStatus.loading}
-                  onClick={async (e) => {
-                    if (!smtpEmail || !smtpPassword) {
-                      setTestEmailStatus({ loading: false, success: '', error: 'Isi Email & App Password SMTP terlebih dahulu.' });
-                      if (addToast) addToast('Isi Email & App Password SMTP terlebih dahulu.', 'error');
-                      return;
-                    }
-                    setTestEmailStatus({ loading: true, success: '', error: '' });
-                    
+                  disabled={paymentTestStatus.loading || !paymentGatewayServerKey}
+                  onClick={async () => {
+                    setPaymentTestStatus({ loading: true, success: '', error: '' });
                     try {
-                      const res = await fetch('/api/admin/smtp/test', {
+                      const res = await fetch('/api/admin/payment/test', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          targetEmail: smtpEmail,
-                          smtpEmail,
-                          smtpPassword,
-                          smtpHost,
-                          smtpPort,
-                          smtpFromName
-                        })
+                        body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: false })
                       });
                       const data = await res.json();
                       if (res.ok && data.success) {
-                        const msg = data.message || `Email uji coba BERHASIL dikirim ke ${smtpEmail}! Cek Inbox / Spam.`;
-                        setTestEmailStatus({ loading: false, success: msg, error: '' });
-                        if (addToast) addToast(msg, 'success');
-                        // Auto-save and close only when test succeeds!
-                        if (handleSaveProfile) await handleSaveProfile(e);
-                        setIsEditingSmtp(false);
+                        if (addToast) addToast(data.message || 'Koneksi Midtrans BERHASIL!', 'success');
                       } else {
-                        const errMsg = data.message || 'Gagal mengirim email uji coba. Periksa password SMTP Anda.';
-                        setTestEmailStatus({ loading: false, success: '', error: errMsg });
-                        if (addToast) addToast(errMsg, 'error');
+                        if (addToast) addToast(data.message || 'Tes koneksi gagal.', 'error');
                       }
                     } catch (err) {
-                      const errMsg = err.message || 'Terjadi kesalahan koneksi SMTP.';
-                      setTestEmailStatus({ loading: false, success: '', error: errMsg });
-                      if (addToast) addToast(errMsg, 'error');
+                      if (addToast) addToast(err.message, 'error');
+                    } finally {
+                      setPaymentTestStatus({ loading: false, success: '', error: '' });
                     }
                   }}
-                  style={{ background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '9px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: testEmailStatus.loading ? 'wait' : 'pointer', transition: 'all 0.2s ease' }}
+                  style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
                 >
-                  {testEmailStatus.loading ? '⏳ Menguji...' : '📧 Tes Kirim Email'}
+                  {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes API Midtrans'}
                 </button>
-                <button
-                  type="button"
-                  disabled={savingProfile}
-                  onClick={async (e) => {
-                    if (handleSaveProfile) await handleSaveProfile(e);
-                    setIsEditingSmtp(false);
-                    if (addToast) addToast('Pengaturan SMTP berhasil disimpan.', 'success');
-                  }}
-                  className="btn-primary"
-                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#ffffff', padding: '9px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)', transition: 'all 0.2s ease' }}
-                >
-                  💾 {savingProfile ? 'Menyimpan...' : 'Simpan & Tutup Form'}
-                </button>
-
               </div>
+
             </div>
+
           </div>
         )}
 
-        {/* ── MODUL 4: KONTROL OPERASIONAL PENDAFTARAN SAAS ── */}
-        <h4 style={{ margin: '24px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>⚙️ Modul 4: Kontrol Operasional Pendaftaran SaaS</span>
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* SUB-TAB 3: SISTEM & KEAMANAN SUPERADMIN                          */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {activeSubTab === 'system' && (
+          <div className="fade-in-up">
+            
+            {/* OPERATIONAL REGISTRATION CONTROL */}
+            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+              ⚙️ Kontrol Akses & Registration System
+            </h4>
 
-          <span style={{ fontSize: '11px', background: sysEnableReg ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: sysEnableReg ? '#34d399' : '#f87171', padding: '3px 10px', borderRadius: '10px', fontWeight: 'bold' }}>
-            {sysEnableReg ? '🟢 PENDAFTARAN DIBUKA' : '🔴 PENDAFTARAN DITUTUP (LOCKED)'}
-          </span>
-        </h4>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id="enable_registration"
+                    checked={sysEnableReg}
+                    onChange={e => setSysEnableReg(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableReg ? '#34d399' : '#f87171' }}>
+                    Buka Pendaftaran Vendor Baru (Public Registration)
+                  </label>
+                </div>
+                <span style={{ fontSize: '11px', background: sysEnableReg ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: sysEnableReg ? '#34d399' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  {sysEnableReg ? '🟢 REGISTRASI DIBUKA' : '🔴 REGISTRASI DITUTUP'}
+                </span>
+              </div>
 
-        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <input
-                type="checkbox"
-                id="enable_registration"
-                checked={sysEnableReg}
-                onChange={async (e) => {
-                  const newChecked = e.target.checked;
-                  setSysEnableReg(newChecked);
-                }}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableReg ? '#34d399' : '#f87171' }}>
-                Buka Pendaftaran Vendor Baru (Registration Open)
-              </label>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Batas Maksimal Vendor Aktif (Quota)</label>
+                <input
+                  type="number"
+                  className="input-text"
+                  placeholder="Kosongkan untuk tanpa batas quota"
+                  value={sysMaxQuota === null ? '' : sysMaxQuota}
+                  onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
+                />
+              </div>
             </div>
 
-            <button
-              type="button"
-              disabled={savingProfile}
-              onClick={async (e) => {
-                if (handleSaveProfile) await handleSaveProfile(e);
-                if (addToast) addToast(`Status Pendaftaran Vendor Baru berhasil disimpan: ${sysEnableReg ? 'DIBUKA' : 'DITUTUP'}!`, 'success');
-              }}
-              className="btn-primary"
-              style={{
-                padding: '8px 16px',
-                fontSize: '12px',
-                fontWeight: 'bold',
-                background: 'linear-gradient(135deg, #10b981, #059669)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              💾 {savingProfile ? 'Menyimpan...' : 'Simpan Status Pendaftaran'}
-            </button>
-          </div>
+            {/* SUPERADMIN PASSWORD CHANGE */}
+            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+              🔒 Keamanan Akun Superadmin
+            </h4>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label" style={{ fontSize: '12px' }}>Batas Maksimal Vendor Aktif (Quota)</label>
-              <input
-                type="number"
-                className="input-text"
-                placeholder="Kosongkan untuk tanpa batas"
-                value={sysMaxQuota === null ? '' : sysMaxQuota}
-                onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
-              />
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Ganti Password Master Superadmin</label>
+                <input
+                  type="password"
+                  className="input-text"
+                  placeholder="Masukkan password baru (Kosongkan jika tidak ingin mengganti)"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  disabled={savingProfile}
+                />
+              </div>
             </div>
+
           </div>
-        </div>
+        )}
 
-
-        {/* Password Reset Section */}
-        <h4 style={{ margin: '24px 0 12px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
-          🔒 Superadmin Password
-        </h4>
-        <div className="form-group" style={{ marginBottom: '28px' }}>
-          <label className="form-label">Ganti Password Baru</label>
-          <input
-            type="password"
-            className="input-text"
-            placeholder="Masukkan password baru (Kosongkan jika tidak ingin mengganti)"
-            value={newPassword}
-            onChange={e => setNewPassword(e.target.value)}
+        {/* ── STICKY/GLOBAL SAVE ALL SETTINGS BUTTON AT BOTTOM ── */}
+        <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            type="submit"
             disabled={savingProfile}
-          />
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button type="submit" className="btn-primary" disabled={savingProfile} style={{ padding: '12px 32px' }}>
-            {savingProfile ? 'Menyimpan...' : 'Simpan Seluruh Pengaturan DB'}
+            className="btn-primary"
+            style={{
+              padding: '12px 36px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 18px rgba(16, 185, 129, 0.3)'
+            }}
+          >
+            💾 {savingProfile ? 'Memproses Simpan...' : 'Simpan Seluruh Pengaturan Database'}
           </button>
         </div>
+
       </form>
+
     </div>
   );
 }

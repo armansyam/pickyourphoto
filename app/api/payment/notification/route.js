@@ -27,7 +27,8 @@ export async function POST(request) {
       return NextResponse.json({ message: verification.message }, { status: 400 });
     }
 
-    const { orderId, isPaid, isFailed } = verification;
+    const { orderId, isPaid, isFailed, transactionStatus } = verification;
+
 
     // Find payment transaction
     const transaction = db.prepare('SELECT * FROM payment_transactions WHERE orderId = ?').get(orderId);
@@ -68,8 +69,19 @@ export async function POST(request) {
           console.error('[Payment Webhook Email Error]:', err);
         });
       }
-    } else if (isFailed && transaction.status !== 'failed') {
-      db.prepare("UPDATE payment_transactions SET status = 'failed' WHERE id = ?").run(transaction.id);
+    } else if (isFailed) {
+      const isExpire = transactionStatus === 'expire';
+      const newTxStatus = isExpire ? 'expired' : 'failed';
+      db.prepare("UPDATE payment_transactions SET status = ? WHERE id = ?").run(newTxStatus, transaction.id);
+      try {
+        db.prepare("UPDATE payment_sessions SET status = ? WHERE orderId = ?").run(newTxStatus, orderId);
+      } catch (e) {}
+
+      // Move vendor to expired_draft / cancelled so candidate moves to Arsip sub-tab
+      const newVendorStatus = isExpire ? 'expired_draft' : 'cancelled';
+      db.prepare("UPDATE vendors SET status = ?, archivedAt = CURRENT_TIMESTAMP WHERE id = ? AND status != 'active'").run(newVendorStatus, transaction.vendorId);
+
+      console.log(`[Payment Webhook EXPIRED/FAILED] Vendor ID ${transaction.vendorId} dipindahkan ke Arsip (${newVendorStatus}).`);
     }
 
     return NextResponse.json({ success: true, message: 'Notification processed' });

@@ -34,14 +34,19 @@ export async function PUT(request) {
         const formData = await request.formData();
         const name = formData.get('name')?.toString();
         const brandName = formData.get('brandName')?.toString();
+        const rawWhatsapp = formData.get('whatsapp')?.toString() || '';
         const copyDelimiter = formData.get('copyDelimiter')?.toString() || ', ';
         const copyIncludeExt = parseInt(formData.get('copyIncludeExt')?.toString() || '0') || 0;
         const copySortOrder = formData.get('copySortOrder')?.toString() || 'name_asc';
         const logoFile = formData.get('logo'); // File object or null
 
         if (!name) {
-            return NextResponse.json({ message: 'Name is required.' }, { status: 400 });
+            return NextResponse.json({ message: 'Nama wajib diisi.' }, { status: 400 });
         }
+
+        let cleanWhatsapp = rawWhatsapp.replace(/\D/g, '');
+        if (cleanWhatsapp.startsWith('0')) cleanWhatsapp = '62' + cleanWhatsapp.slice(1);
+        if (cleanWhatsapp && !cleanWhatsapp.startsWith('62')) cleanWhatsapp = '62' + cleanWhatsapp;
 
         let brandLogoPath = null;
         
@@ -88,15 +93,15 @@ export async function PUT(request) {
 
         // Update database
         if (brandLogoPath) {
-            db.prepare('UPDATE vendors SET name = ?, brandName = ?, brandLogo = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ? WHERE id = ?')
-              .run(name, brandName || null, brandLogoPath, copyDelimiter, copyIncludeExt, copySortOrder, vendor.id);
+            db.prepare('UPDATE vendors SET name = ?, brandName = ?, whatsapp = ?, brandLogo = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ? WHERE id = ?')
+              .run(name, brandName || null, cleanWhatsapp || null, brandLogoPath, copyDelimiter, copyIncludeExt, copySortOrder, vendor.id);
         } else {
-            db.prepare('UPDATE vendors SET name = ?, brandName = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ? WHERE id = ?')
-              .run(name, brandName || null, copyDelimiter, copyIncludeExt, copySortOrder, vendor.id);
+            db.prepare('UPDATE vendors SET name = ?, brandName = ?, whatsapp = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ? WHERE id = ?')
+              .run(name, brandName || null, cleanWhatsapp || null, copyDelimiter, copyIncludeExt, copySortOrder, vendor.id);
         }
 
         // Get updated details
-        const updated = db.prepare('SELECT id, name, email, brandName, brandLogo, copyDelimiter, copyIncludeExt, copySortOrder FROM vendors WHERE id = ?').get(vendor.id);
+        const updated = db.prepare('SELECT id, name, email, brandName, brandLogo, copyDelimiter, copyIncludeExt, copySortOrder, whatsapp FROM vendors WHERE id = ?').get(vendor.id);
 
         return NextResponse.json({
             message: 'Profile branding updated successfully.',

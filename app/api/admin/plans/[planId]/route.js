@@ -11,7 +11,7 @@ async function handleUpdatePlan(request, params) {
 
         const { planId } = params;
         const body = await request.json();
-        const { name, maxProjects, price, projectExpireDays, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo } = body;
+        const { name, maxProjects, price, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo, allowRawSelector } = body;
 
         if (!name || maxProjects === undefined || price === undefined) {
             return NextResponse.json({ message: 'Name, max projects, and price are required.' }, { status: 400 });
@@ -27,8 +27,8 @@ async function handleUpdatePlan(request, params) {
             return NextResponse.json({ message: 'A plan with this name already exists.' }, { status: 409 });
         }
 
-        const updateStmt = db.prepare('UPDATE plans SET name = ?, maxProjects = ?, price = ?, projectExpireDays = ?, maxPhotosPerProject = ?, activePeriodDays = ?, status = ?, planType = ?, maxStorageMB = ?, allowCustomLogo = ? WHERE id = ?');
-        updateStmt.run(name, maxProjects, price, projectExpireDays || 180, maxPhotosPerProject || 0, activePeriodDays !== undefined ? activePeriodDays : 30, status || 'active', planType || 'limit', maxStorageMB || 51200, allowCustomLogo ? 1 : 0, planId);
+        const updateStmt = db.prepare('UPDATE plans SET name = ?, maxProjects = ?, price = ?, projectExpireDays = 0, maxPhotosPerProject = ?, activePeriodDays = ?, status = ?, planType = ?, maxStorageMB = ?, allowCustomLogo = ?, allowRawSelector = ? WHERE id = ?');
+        updateStmt.run(name, maxProjects, price, maxPhotosPerProject || 0, activePeriodDays !== undefined ? activePeriodDays : 30, status || 'active', planType || 'limit', maxStorageMB || 0, allowCustomLogo ? 1 : 0, allowRawSelector !== undefined ? (allowRawSelector ? 1 : 0) : 1, planId);
 
         const updateVendorsStmt = db.prepare('UPDATE vendors SET maxProjects = ? WHERE planId = ? AND role != ?');
         updateVendorsStmt.run(maxProjects, planId, 'admin');
@@ -36,6 +36,21 @@ async function handleUpdatePlan(request, params) {
         return NextResponse.json({ message: 'Plan settings updated successfully.' });
     } catch (error) {
         console.error('Failed to update plan:', error);
+        return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    }
+}
+
+export async function GET(request, { params }) {
+    try {
+        const currentUser = getAuthVendor();
+        if (!currentUser || currentUser.role !== 'admin') {
+            return NextResponse.json({ message: 'Forbidden.' }, { status: 403 });
+        }
+        const { planId } = params;
+        const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(planId);
+        if (!plan) return NextResponse.json({ message: 'Plan not found.' }, { status: 404 });
+        return NextResponse.json(plan);
+    } catch (error) {
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }

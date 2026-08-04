@@ -167,8 +167,13 @@ function LoginForm() {
 
 export default function LoginPage() {
     return (
-        <Suspense fallback={null}>
+        <Suspense fallback={
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#09090b', color: '#a5b4fc', fontFamily: 'system-ui, sans-serif' }}>
+                <div style={{ fontSize: '18px', fontWeight: 'bold' }}>Memuat Halaman Login...</div>
+            </div>
+        }>
             <LoginForm />
         </Suspense>
     );
 }
+

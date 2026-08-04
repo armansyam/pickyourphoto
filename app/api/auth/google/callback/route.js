@@ -16,7 +16,7 @@ export async function GET(request) {
         const redirectUri = `${origin}/api/auth/google/callback`;
 
         if (error || !code) {
-            return NextResponse.redirect(new URL('/login?error=Google authentication was cancelled.', origin));
+            return NextResponse.redirect(new URL('/login?error=' + encodeURIComponent(error || 'Google authentication was cancelled.'), origin));
         }
 
         const clientIdStmt = db.prepare("SELECT value FROM saas_settings WHERE key = 'google_client_id'").get();
@@ -26,7 +26,7 @@ export async function GET(request) {
         const clientSecret = clientSecretStmt?.value || process.env.GOOGLE_CLIENT_SECRET;
 
         if (!clientId || !clientSecret) {
-            return NextResponse.redirect(new URL('/login?error=Google OAuth settings incomplete in Admin Panel.', origin));
+            return NextResponse.redirect(new URL('/login?error=' + encodeURIComponent('Google OAuth settings incomplete in Admin Panel.'), origin));
         }
 
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -44,7 +44,7 @@ export async function GET(request) {
         const tokenData = await tokenRes.json();
         if (!tokenRes.ok || !tokenData.access_token) {
             console.error('Failed to exchange Google OAuth code:', tokenData);
-            return NextResponse.redirect(new URL('/login?error=Failed to exchange Google authentication code.', origin));
+            return NextResponse.redirect(new URL('/login?error=' + encodeURIComponent('Failed to exchange Google authentication code.'), origin));
         }
 
         const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -53,7 +53,7 @@ export async function GET(request) {
         const googleUser = await userRes.json();
 
         if (!googleUser.email) {
-            return NextResponse.redirect(new URL('/login?error=Email address not received from Google.', origin));
+            return NextResponse.redirect(new URL('/login?error=' + encodeURIComponent('Email address not received from Google.'), origin));
         }
 
         const email = googleUser.email.toLowerCase().trim();
@@ -78,20 +78,23 @@ export async function GET(request) {
                 name: vendor.name,
                 role: vendor.role
             });
-            setAuthCookie(token);
 
-            if (vendor.status === 'active') {
-                // Jika sudah terdaftar & aktif -> Masukkan ke Dashboard!
-                const redirectPath = action === 'register' ? '/dashboard?notice=already_registered' : '/dashboard';
-                return NextResponse.redirect(new URL(redirectPath, origin));
-            } else {
-                // Jika pendaftaran belum selesai / pending -> Arahkan kembali ke Langkah Pilih Paket untuk melanjutkannya!
-                return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(vendor.email)}`, origin));
-            }
+            const redirectPath = (vendor.status === 'active')
+                ? (action === 'register' ? '/dashboard?notice=already_registered' : '/dashboard')
+                : `/register?step=select-plan&email=${encodeURIComponent(vendor.email)}`;
+
+            const response = NextResponse.redirect(new URL(redirectPath, origin));
+            response.cookies.set('token', token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 24 * 60 * 60,
+                path: '/'
+            });
+            return response;
         }
 
         // New Vendor Registration via Google: Create a lead record with status='draft_plan'
-        // This allows Admin to track prospects who logged in via Google but haven't selected a plan yet.
         const defaultPasswordHash = await bcrypt.hash(Math.random().toString(36), 10);
         const defaultPlan = db.prepare("SELECT id, maxProjects FROM plans WHERE price > 0 ORDER BY price ASC LIMIT 1").get();
         const planId = defaultPlan?.id || 1;
@@ -101,12 +104,29 @@ export async function GET(request) {
             INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, resetRequested, createdAt) 
             VALUES (?, ?, ?, ?, ?, 'draft_plan', ?, ?, 'Google OAuth Lead', 0, CURRENT_TIMESTAMP)
         `);
-        insertStmt.run(name, email, '', defaultPasswordHash, 'vendor', maxProjects, planId);
+        const info = insertStmt.run(name, email, '', defaultPasswordHash, 'vendor', maxProjects, planId);
+        const newVendorId = info.lastInsertRowid;
 
-        return NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`, origin));
+        const token = generateToken({
+            id: newVendorId,
+            email: email,
+            name: name,
+            role: 'vendor'
+        });
+
+        const response = NextResponse.redirect(new URL(`/register?step=select-plan&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}`, origin));
+        response.cookies.set('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60,
+            path: '/'
+        });
+        return response;
 
     } catch (error) {
         console.error('Google OAuth callback error:', error);
-        return NextResponse.redirect(new URL('/login?error=Internal authentication failure.', getRequestOrigin(request)));
+        const fallbackOrigin = getRequestOrigin(request);
+        return NextResponse.redirect(new URL('/login?error=' + encodeURIComponent('Internal authentication failure.'), fallbackOrigin));
     }
 }

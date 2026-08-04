@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 
-export default function Error({ error, reset }) {
+export default function AdminError({ error, reset }) {
   useEffect(() => {
-    console.error('App Error Boundary caught an error:', error);
+    console.error('Admin Error Boundary caught an error:', error);
   }, [error]);
 
   return (
@@ -30,10 +30,10 @@ export default function Error({ error, reset }) {
       }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
         <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>
-          Terjadi Kesalahan Sistem
+          Terjadi Kesalahan Admin Panel
         </h2>
         <p style={{ color: '#a1a1aa', fontSize: '14px', marginBottom: '24px' }}>
-          {error?.message || 'Aplikasi mengalami kesalahan yang tidak terduga.'}
+          {error?.message || 'Admin Console mengalami kesalahan yang tidak terduga.'}
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
           <button
@@ -52,7 +52,7 @@ export default function Error({ error, reset }) {
             Coba Lagi
           </button>
           <a
-            href="/"
+            href="/admin"
             style={{
               background: 'rgba(255, 255, 255, 0.06)',
               color: '#ffffff',
@@ -64,7 +64,7 @@ export default function Error({ error, reset }) {
               textDecoration: 'none'
             }}
           >
-            Kembali ke Beranda
+            Kembali ke Admin Console
           </a>
         </div>
       </div>

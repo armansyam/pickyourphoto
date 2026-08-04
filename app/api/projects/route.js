@@ -6,7 +6,11 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // GET: List all projects for authenticated vendor
+
 export async function GET() {
     console.log("--> [API GET /api/projects] Request received");
     try {
@@ -65,8 +69,8 @@ export async function GET() {
                 copyIncludeExt: vendor.copyIncludeExt !== undefined ? vendor.copyIncludeExt : 0,
                 copySortOrder: vendor.copySortOrder || 'name_asc',
                 planType: vendor.planType || 'limit',
-                maxStorageMB: vendor.maxStorageMB || 0,
-                usedStorageBytes: vendor.usedStorageBytes || 0,
+                allowCustomLogo: vendor.allowCustomLogo === 1 || vendor.allowCustomLogo === true ? 1 : 0,
+                allowRawSelector: vendor.allowRawSelector !== undefined ? (vendor.allowRawSelector ? 1 : 0) : 1,
                 upgradeRequest: pendingRequest || null
             }
         });
@@ -231,22 +235,7 @@ async function runImportTask(projectId, folderId) {
 
         insertMany(files);
 
-        const planInfo = db.prepare(`
-            SELECT p.projectExpireDays 
-            FROM projects proj
-            JOIN vendors v ON proj.vendorId = v.id
-            JOIN plans p ON v.planId = p.id
-            WHERE proj.id = ?
-        `).get(projectId);
-
-        let expiresAt = null;
-        if (planInfo && planInfo.projectExpireDays > 0 && planInfo.projectExpireDays < 99999) {
-            const expireDate = new Date();
-            expireDate.setDate(expireDate.getDate() + planInfo.projectExpireDays);
-            expiresAt = expireDate.toISOString();
-        }
-
-        db.prepare('UPDATE projects SET status = ?, expiresAt = ? WHERE id = ?').run('pending_selection', expiresAt, projectId);
+        db.prepare('UPDATE projects SET status = ?, expiresAt = NULL WHERE id = ?').run('pending_selection', projectId);
         console.log(`--> [runImportTask Zero-Storage] Successfully completed import for project ${projectId} (${files.length} photos) with 0 Bytes server disk!`);
     } catch (fatalErr) {
         console.error(`[runImportTask Fatal Error] Uncaught error processing project ${projectId}:`, fatalErr);

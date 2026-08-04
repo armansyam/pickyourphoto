@@ -129,6 +129,10 @@ export async function DELETE(request, { params }) {
                 db.prepare('DELETE FROM projects WHERE vendorId = ?').run(vendorId);
             }
 
+            // Delete payment transactions & sessions
+            db.prepare('DELETE FROM payment_transactions WHERE vendorId = ?').run(vendorId);
+            db.prepare('DELETE FROM payment_sessions WHERE vendorId = ?').run(vendorId);
+
             // Delete subscription requests
             db.prepare('DELETE FROM subscription_requests WHERE vendorId = ?').run(vendorId);
 

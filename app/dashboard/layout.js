@@ -5,7 +5,13 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export default function DashboardLayout({ children }) {
-    const vendor = getAuthVendor();
+    let vendor = null;
+    try {
+        vendor = getAuthVendor();
+    } catch (err) {
+        console.error('[DashboardLayout Auth Exception]:', err);
+        redirect('/login');
+    }
 
     // Server-side redirect if not authenticated
     if (!vendor) {
@@ -16,6 +22,7 @@ export default function DashboardLayout({ children }) {
     if (vendor.role === 'admin') {
         redirect('/admin');
     }
+
 
     return (
         <div>

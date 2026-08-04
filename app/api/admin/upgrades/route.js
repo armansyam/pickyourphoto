@@ -19,7 +19,7 @@ export async function GET() {
                 v.email as vendorEmail,
                 v.expiresAt as currentExpiresAt,
                 p.name as planName,
-                p.projectExpireDays as planExpireDays,
+                p.activePeriodDays as planExpireDays,
                 p.maxProjects as planMaxProjects,
                 (SELECT name FROM plans WHERE id = v.planId) as currentPlanName
             FROM subscription_requests sr

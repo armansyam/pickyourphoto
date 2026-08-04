@@ -35,6 +35,26 @@ export async function POST(request) {
         // Fetch current plan details
         const currentPlan = db.prepare('SELECT * FROM plans WHERE id = ?').get(vendor.planId);
 
+        // Check active project count against target plan maxProjects
+        const activeCount = db.prepare("SELECT COUNT(*) as count FROM projects WHERE vendorId = ? AND status != 'archived'").get(vendor.id)?.count || 0;
+        if (activeCount > newPlan.maxProjects) {
+            return NextResponse.json({ 
+                message: `Arsip ${activeCount - newPlan.maxProjects} project terlebih dahulu untuk memilih paket ini (Batas: ${newPlan.maxProjects} project).` 
+            }, { status: 400 });
+        }
+
+        // Check renewal H-10 window for same plan renewal
+        if (planId === vendor.planId && vendor.expiresAt) {
+            const expires = new Date(vendor.expiresAt);
+            const now = new Date();
+            const daysRemaining = Math.max(0, Math.ceil((expires.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+            if (daysRemaining > 10) {
+                return NextResponse.json({ 
+                    message: `Perpanjangan hanya dapat dilakukan mulai H-10 sebelum expired (Sisa: ${daysRemaining} hari).` 
+                }, { status: 400 });
+            }
+        }
+
         // Calculate proration with smart tiered discount multiplier
         let proratedPrice = newPlan.price;
 

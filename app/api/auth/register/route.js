@@ -39,9 +39,11 @@ export async function POST(request) {
             rawPaymentMethod = formData.get('paymentMethod');
         }
 
-        if (!email || !whatsapp || !plan) {
-            return NextResponse.json({ message: 'Email, nomor WhatsApp, dan pilihan paket wajib diisi.' }, { status: 400 });
+        if (!email || !plan) {
+            return NextResponse.json({ message: 'Email dan pilihan paket wajib diisi.' }, { status: 400 });
         }
+        const finalWhatsapp = whatsapp ? whatsapp.trim() : '';
+
 
 
         // --- Registration Settings & Quota Check ---
@@ -74,10 +76,14 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Email sudah terdaftar. Silakan login.' }, { status: 409 });
         }
 
-        const checkWaStmt = db.prepare('SELECT id FROM vendors WHERE whatsapp = ?');
-        const existingWa = checkWaStmt.get(whatsapp);
-        if (existingWa) {
-            return NextResponse.json({ message: 'WhatsApp number already in use.' }, { status: 409 });
+        if (finalWhatsapp && finalWhatsapp.length > 5) {
+            const checkWaStmt = db.prepare("SELECT id, name, status FROM vendors WHERE whatsapp = ? AND status IN ('active', 'pending_payment') AND email != ?");
+            const existingWa = checkWaStmt.get(finalWhatsapp, email);
+            if (existingWa) {
+                return NextResponse.json({ 
+                    message: 'Nomor WhatsApp ini sudah terdaftar pada akun lain. Silakan gunakan nomor WhatsApp yang belum terdaftar.' 
+                }, { status: 409 });
+            }
         }
 
         // Lookup plan
@@ -131,13 +137,21 @@ export async function POST(request) {
 
         const initialStatus = isGateway ? 'pending_payment' : 'pending_manual';
 
-        if (existingVendor && (existingVendor.status === 'pending' || existingVendor.status === 'pending_payment' || existingVendor.status === 'pending_manual' || existingVendor.status === 'draft_plan')) {
+        if (existingVendor && existingVendor.status !== 'active') {
+            const hashedPassword = password ? await bcrypt.hash(password, 10) : existingVendor.password;
+            const vendorName = name || existingVendor.name || email.split('@')[0];
+
+            // Mark previous expired sessions as replaced so auto-cleanup worker does not re-archive
+            try {
+                db.prepare("UPDATE payment_sessions SET status = 'replaced' WHERE vendorId = ? AND status = 'expired'").run(existingVendor.id);
+            } catch (e) {}
+
             const updateStmt = db.prepare(`
                 UPDATE vendors 
-                SET whatsapp = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?
+                SET name = ?, whatsapp = ?, password = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?, archivedAt = NULL
                 WHERE id = ?
             `);
-            updateStmt.run(whatsapp, planDetails.id, planDetails.maxProjects, paymentProofPath, initialStatus, existingVendor.id);
+            updateStmt.run(vendorName, finalWhatsapp, hashedPassword, planDetails.id, planDetails.maxProjects, paymentProofPath, initialStatus, existingVendor.id);
 
             return NextResponse.json({ 
                 message: isGateway ? 'Registration submitted successfully. Waiting for QRIS payment.' : 'Registration submitted successfully. Waiting for admin approval.', 
@@ -151,7 +165,8 @@ export async function POST(request) {
             INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, resetRequested) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         `);
-        const info = insertStmt.run(name || email.split('@')[0], email, whatsapp, hashedPassword, 'vendor', initialStatus, planDetails.maxProjects, planDetails.id, paymentProofPath);
+        const info = insertStmt.run(name || email.split('@')[0], email, finalWhatsapp, hashedPassword, 'vendor', initialStatus, planDetails.maxProjects, planDetails.id, paymentProofPath);
+
 
         return NextResponse.json({ 
             message: isGateway ? 'Registration submitted successfully. Waiting for QRIS payment.' : 'Registration submitted successfully. Waiting for admin approval.', 

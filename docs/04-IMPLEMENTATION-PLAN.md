@@ -1,55 +1,145 @@
-# 📋 04. Rencana Implementasi Master (Plan 5 - Spam-Proof Onboarding)
+# 📋 04. Status Implementasi & Roadmap Fitur (Pick Your Photo)
 
-> **Dokumen Master Rencana Pengembangan & Roadmap Fitur SaaS**  
-> Lokasi: `docs/04-IMPLEMENTATION-PLAN.md`
+> **Dokumen Status Pengembangan & Rencana Fitur SaaS**  
+> Lokasi: `docs/04-IMPLEMENTATION-PLAN.md`  
+> **Terakhir diperbarui:** 2026-08-05 — mencerminkan status fitur aktual yang sudah berjalan
 
 ---
 
-## 🏛️ 1. Arsitektur Alur Onboarding Vendor (Spam-Proof & High Retention)
+## ✅ 1. Fitur yang Sudah Berjalan di Produksi
 
-```mermaid
-flowchart TD
-    Step1["Step 1: Klik 'Daftar dengan Google' di /register"] --> Step2["Step 2: Google Otorisasi Akun & Email"]
-    Step2 --> Step3["Step 3: Pilih Paket Langganan (Starter / Pro / Business)\n+ Transfer Pembayaran / Upload Bukti Bayar"]
-    Step3 --> Step4["Step 4: Status Akun = 'Pending Approval'\nVendor melihat Layar Tunggu + Tombol WA Admin"]
-    Step4 --> Step5["Step 5: Admin Cek Bukti & Klik 'Setujui' di Admin Panel (/admin)"]
-    Step5 --> Step6["Step 6: Akun Aktif! Vendor BISA LOGIN via Google 1-Klik"]
+### Onboarding & Autentikasi Vendor
+- [x] Registrasi vendor via form (nama, email, password, WA, pilih paket, upload bukti bayar)
+- [x] Status `pending` setelah daftar — tidak bisa login sebelum Admin approve
+- [x] Admin approve → vendor aktif, dapat login
+- [x] Free Trial 1x per vendor — lock via DB setelah digunakan
+- [x] Login vendor via cookie JWT (HTTP-Only)
+- [x] Login Admin via cookie JWT terpisah
+- [x] Halaman `/register` dengan multi-step form (pilih paket → upload bukti → konfirmasi)
+- [x] Redirect WA Admin dengan template pesan otomatis setelah registrasi
+
+### Google Drive Integration (Master OAuth)
+- [x] Setup Google OAuth Master di Admin Panel (tombol "Hubungkan Google Drive")
+- [x] Callback route `GET /api/admin/auth/google/callback` — simpan token ke `saas_settings`
+- [x] `lib/google-master-drive.js` — `getMasterDriveClient()` dengan cache 45 menit
+- [x] Auto-refresh token OAuth via event `tokens`
+- [x] `fetchFolderFilesMasterOAuth()` — rekursif subfolder hingga 5 level
+- [x] Filter otomatis: hanya file gambar (jpeg, png, webp, raw, heic, dll.)
+
+### Manajemen Proyek Vendor
+- [x] Buat proyek baru: nama, URL folder GDrive, max seleksi, nomor telepon klien, tema galeri
+- [x] Import metadata background (queue FIFO, max 1 concurrent)
+- [x] Status proyek: `importing` → `pending_selection` → `selection_done` → `archived`
+- [x] Stale import cleanup saat server start (reset `importing` → `failed`)
+- [x] Retry import proyek yang gagal
+- [x] Arsip proyek manual oleh vendor
+- [x] Reaktivasi proyek terarsip (`POST /api/projects/[projectId]/reactivate`)
+- [x] Bulk reaktivasi semua proyek terarsip (`POST /api/projects/reactivate-all`)
+
+### Proxy Gambar (Zero-Storage, Zero RAM)
+- [x] `GET /api/proxy/thumb/[fileId]?sz=w400` — thumbnail
+- [x] `GET /api/proxy/thumb/[fileId]/[filename]?sz=w1200` — full preview
+- [x] **True Pipe Stream** (`response.body`) — tidak ada `arrayBuffer()`, RAM ~0
+- [x] Fallback URL: `lh3.googleusercontent.com` → `drive.google.com/thumbnail`
+- [x] Cache-Control agresif: 7 hari browser, 30 hari Cloudflare CDN
+- [x] Validasi File ID via regex — cegah injection
+
+### Galeri Klien
+- [x] Akses via `accessKey` unik — tanpa login
+- [x] Grid foto dengan lazy loading
+- [x] Lightbox preview resolusi tinggi
+- [x] Seleksi foto dengan batas `maxSelection`
+- [x] Filter per kategori (subfolder Google Drive)
+- [x] Multiple tema galeri
+- [x] White-label logo studio (paket Pro & Business)
+- [x] Halaman konfirmasi setelah seleksi selesai
+- [x] Review panel: daftar foto terpilih sebelum submit
+
+### Fitur Salin Nama File (Lightroom Ready)
+- [x] Salin semua nama file terpilih dalam satu klik
+- [x] Konfigurasi delimiter: `, ` | ` ` | `\n` | custom
+- [x] Toggle include/exclude ekstensi file
+- [x] Sorting: nama A-Z, Z-A, urutan pilih, terbalik
+- [x] Preferensi tersimpan per-vendor di DB
+
+### Trial Galeri (Landing Page Demo)
+- [x] `/trial-gallery/[slug]` — galeri demo publik
+- [x] Konfigurasi limit trial di Admin Panel (`saas_settings`)
+- [x] Pembatasan: `trial_max_photos`, `trial_max_selection`, `trial_max_subfolders`
+- [x] Durasi trial dikonfigurasi Admin
+
+### Panel Admin
+- [x] Dashboard: statistik vendor, proyek, request pending
+- [x] Kelola vendor: detail, approve/reject, suspend/activate
+- [x] Kelola paket: tambah/edit/hapus paket
+- [x] Kelola subscription requests (upgrade & perpanjangan)
+- [x] Pengaturan SaaS: bank, WA, email, Google OAuth
+- [x] System settings: toggle registrasi/trial, kuota vendor, threshold disk
+- [x] Manajemen backup database
+- [x] Analytics pendapatan & aktivitas
+
+### Subscription & Pembayaran
+- [x] Vendor request upgrade/perpanjangan via form (pilih paket + upload bukti)
+- [x] Admin approve → vendor `expiresAt` diperpanjang 30 hari
+- [x] Notifikasi expiry di dashboard vendor (banner peringatan)
+- [x] Blokir buat proyek baru jika vendor expired
+
+---
+
+## 🔄 2. Alur Onboarding Vendor (Aktual)
+
+```
+/register
+    │
+    ├── Isi form: nama, email, password, WA
+    │
+    ├── Pilih paket (Starter / Pro Studio / Business Studio)
+    │
+    ├── Upload bukti transfer ATAU pilih Free Trial
+    │
+    ├── Submit → status vendor = 'pending'
+    │
+    ├── Redirect WA Admin dengan template pesan
+    │
+Admin Panel
+    │
+    └── Admin review → Klik "Setujui" → status = 'active', expiresAt = +30 hari
+                                      → vendor bisa login ke /dashboard
 ```
 
-> **Keunggulan Alur Spam-Proof**:  
-> Pengunjung yang hanya iseng klik Google Sign-In **TIDAK BISA masuk ke dashboard** sebelum memilih paket berlangganan & dikonfirmasi oleh Admin. Sistem 100% aman dari spamming akun fiktif!
+---
+
+## 🛣️ 3. Roadmap Fitur (Belum Diimplementasi)
+
+### Prioritas Tinggi
+- [ ] **Notifikasi email otomatis** H-7, H-3, H-0 sebelum `expiresAt` vendor (SMTP sudah siap di `saas_settings`)
+- [ ] **Auto-archive project** saat vendor expired (saat ini hanya akses diblokir, status belum diubah ke `archived`)
+- [ ] **Tombol "Aktifkan Kembali"** di kartu proyek berstatus `archived` pada dashboard vendor
+- [ ] **Tombol "Refresh Link Galeri"** setelah reaktivasi proyek
+- [ ] **Badge status visual** ("Aktif", "Kadaluarsa", "Diarsipkan") di kartu proyek dashboard vendor
+
+### Prioritas Sedang
+- [ ] **Notifikasi WhatsApp** via WA Business API (opsional, `contact_whatsapp` sudah tersedia)
+- [ ] **Watermark on-the-fly** menggunakan `sharp` pada gambar sebelum dikirim ke klien yang belum bayar
+- [ ] **Log audit reaktivasi** (siapa, kapan, project_id, status sebelum/sesudah)
+- [ ] **Halaman status impor real-time** (SSE/WebSocket untuk notif import selesai)
+
+### Prioritas Rendah (Enhancement)
+- [ ] **Metrik monitoring** jumlah project archived vs active per hari
+- [ ] **Swagger/OpenAPI** dokumentasi API lengkap
+- [ ] **Bulk action** vendor di Admin Panel
+- [ ] **Export data seleksi** per proyek (CSV)
 
 ---
 
-## 🎯 2. Poin-Poin Rencana Terakhir (Plan 5)
+## 🧪 4. Kriteria Verifikasi QA
 
-### 1. Integrasi Google Sign-In 1-Klik & Alur Pilih Paket (`/register`)
-- **Step 1**: Klik **"🌐 Daftar dengan Google"** (Mengambil Nama & Email otomatis).
-- **Step 2**: Pilih Paket Langganan (**Starter**, **Pro Studio**, **Business Studio**) & Unggah Bukti Bayar / Konfirmasi WhatsApp.
-- **Step 3**: Akun tersimpan dengan status `pending` + Tampilan Layar Verifikasi Ramah dengan link WhatsApp Admin.
-- **Step 4**: Setelah Admin klik **"Setujui Pendaftaran"** di Admin Panel, akun berubah menjadi `active` dan vendor bisa **Login 1-Klik via Google** di `/login`.
-
-### 2. Integrasi Instant Trial Widget pada Landing Page (`public/landing.html`)
-- **Tujuan**: Memungkinkan pengunjung Landing Page langsung mengetes galeri trial 1-jam instan dari Hero Section halaman depan.
-- **Tindakan**: Sisipkan container widget trial atau tombol modal trial yang terhubung dengan `/api/trial/create`.
-
-### 3. Tombol Otorisasi 1-Klik Google Master OAuth Admin (`components/admin/AdminSettings.jsx`)
-- **Tujuan**: Memudahkan Pemilik SaaS (Admin) menghubungkan akun Google Studio Master cukup dengan mengeklik tombol di Admin Panel.
-- **Tindakan**: Pasang tombol **"🔑 Hubungkan Akun Google Studio Master"** di `AdminSettings.jsx` yang mengarahkan Admin ke layar persetujuan Google Cloud.
-
-### 4. Tampilan White-Label Logo Studio di Galeri Klien (`app/gallery/`)
-- **Tujuan**: Menampilkan Logo Studio Vendor pada header galeri seleksi milik klien jika vendor berlangganan Paket Pro Studio / Business Studio (`allowCustomLogo === 1`).
-
----
-
-## 🚀 3. Tahapan Instruksi Rilis & Verifikasi
-
-1. **Vendor Onboarding & Google Auth Routes**:
-   - `app/api/auth/google/route.js` (Auth URL Generator).
-   - `app/api/auth/google/callback/route.js` (Fetch profile Google, handle `choose-plan` & status `pending`).
-   - `app/(auth)/register/page.js` & `login/page.js` (Integrasi tombol Google Sign-In + Onboarding 4-Step).
-2. **Admin Master OAuth Callback Route**:
-   - `app/api/admin/auth/google/route.js` & `callback/route.js` untuk admin master drive connection.
-3. **Landing Page Trial Widget & Custom Logo Check**:
-   - Sisipkan `TrialWidget` di `public/landing.html`.
-   - Update header galeri klien untuk render `vendor.logoUrl` jika `allowCustomLogo === 1`.
+| Skenario | Expected Result |
+|---|---|
+| Admin buka Kelola Paket | Tampil 3 paket, semua "30 hari", foto "Unlimited" |
+| Vendor buat proyek + import folder besar | Tidak ada error kapasitas, import berhasil |
+| Vendor expired → buat proyek | 403 "masa aktif berakhir" |
+| Klien buka galeri expired | 403 "galeri diarsipkan/tidak aktif" |
+| Renewal approved → reaktivasi proyek | Status `archived` → `pending_selection`, galeri bisa dibuka |
+| Import file ID besar di proxy | RAM server tidak naik signifikan (pipe stream) |
+| Registrasi Free Trial ke-2 | Diblokir sistem (1x only) |

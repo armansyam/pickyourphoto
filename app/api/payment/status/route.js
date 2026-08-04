@@ -7,19 +7,27 @@ import { getPaymentGatewayConfig } from '@/lib/payment-gateway';
 import { sendVendorApprovalEmail } from '@/lib/mailer';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
-    const orderId = searchParams.get('orderId');
+    let orderId = searchParams.get('orderId');
+    const vendorId = searchParams.get('vendorId');
+
+    if (!orderId && vendorId) {
+      const tx = db.prepare('SELECT orderId FROM payment_transactions WHERE vendorId = ? ORDER BY id DESC LIMIT 1').get(vendorId);
+      if (tx) orderId = tx.orderId;
+    }
 
     if (!orderId) {
-      return NextResponse.json({ message: 'orderId wajib diisi.' }, { status: 400 });
+      return NextResponse.json({ message: 'orderId atau vendorId wajib diisi.' }, { status: 400 });
     }
 
     let transaction = db.prepare('SELECT * FROM payment_transactions WHERE orderId = ?').get(orderId);
     if (!transaction) {
-      return NextResponse.json({ paid: false, message: 'Transaksi tidak ditemukan.' });
+      return NextResponse.json({ paid: false, message: 'Transaksi pembayaran tidak ditemukan.' });
     }
 
     // If not marked paid yet, check live status from Midtrans API directly
@@ -75,6 +83,26 @@ export async function GET(request) {
               }
 
               transaction.status = 'paid';
+            } else if (txStatus === 'expire' || txStatus === 'cancel' || txStatus === 'deny') {
+              const newTxStatus = txStatus === 'expire' ? 'expired' : 'cancelled';
+              db.prepare("UPDATE payment_transactions SET status = ? WHERE id = ?").run(newTxStatus, transaction.id);
+              try {
+                db.prepare("UPDATE payment_sessions SET status = ? WHERE orderId = ?").run(newTxStatus, orderId);
+              } catch (e) {}
+
+              // Update vendor status to move candidate to Arsip sub-tab
+              const newVendorStatus = txStatus === 'expire' ? 'expired_draft' : 'cancelled';
+              db.prepare("UPDATE vendors SET status = ?, archivedAt = CURRENT_TIMESTAMP WHERE id = ? AND status != 'active'").run(newVendorStatus, transaction.vendorId);
+
+              console.log(`[Live Midtrans Check EXPIRED] Vendor ID ${transaction.vendorId} status set to ${newVendorStatus}`);
+              transaction.status = newTxStatus;
+
+              return NextResponse.json({
+                paid: false,
+                status: newTxStatus,
+                expired: true,
+                message: txStatus === 'expire' ? 'Transaksi QRIS ini telah KEDALUWARSA (Expired) oleh Midtrans. Akun dipindahkan ke Arsip.' : 'Transaksi telah dibatalkan/ditolak oleh Midtrans.'
+              });
             }
           }
         } catch (midErr) {
@@ -103,10 +131,11 @@ export async function GET(request) {
         response.cookies.set('token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          sameSite: 'lax',
           maxAge: 60 * 60 * 24, // 1 day
           path: '/',
         });
+
 
         return response;
       }
