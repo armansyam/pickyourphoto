@@ -110,6 +110,18 @@ export default function AdminTrialControl({ addToast }) {
             setEnableFlashPromo(s.enable_flash_promo === 1 || s.enable_flash_promo === true);
             setFlashDiscountPercent(s.flash_promo_discount_percent || 20);
             setFlashEndsAt(s.flash_promo_ends_at || '');
+            if (s.flash_promo_duration_hours) {
+                setSelectedDurationHours(s.flash_promo_duration_hours);
+            } else if (s.flash_promo_ends_at) {
+                const diffMs = new Date(s.flash_promo_ends_at).getTime() - Date.now();
+                if (diffMs > 0) {
+                    const hoursRemaining = Math.round(diffMs / (1000 * 60 * 60));
+                    const closest = [6, 12, 24, 48].reduce((prev, curr) => 
+                        Math.abs(curr - hoursRemaining) < Math.abs(prev - hoursRemaining) ? curr : prev
+                    );
+                    setSelectedDurationHours(closest);
+                }
+            }
             setFlashTitle(s.flash_promo_title || '⚡ FLASH SALE PROMO');
             setFlashBannerText(s.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!');
         } catch (err) {
@@ -138,6 +150,7 @@ export default function AdminTrialControl({ addToast }) {
                 enable_flash_promo: overrides.enable_flash_promo !== undefined ? overrides.enable_flash_promo : enableFlashPromo,
                 flash_promo_discount_percent: overrides.flash_promo_discount_percent ?? flashDiscountPercent,
                 flash_promo_ends_at: overrides.flash_promo_ends_at ?? flashEndsAt,
+                flash_promo_duration_hours: overrides.flash_promo_duration_hours ?? selectedDurationHours,
                 flash_promo_title: overrides.flash_promo_title ?? flashTitle,
                 flash_promo_banner_text: overrides.flash_promo_banner_text ?? flashBannerText,
             };
@@ -405,7 +418,7 @@ export default function AdminTrialControl({ addToast }) {
                                                 setSelectedDurationHours(hours);
                                                 const ends = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
                                                 setFlashEndsAt(ends);
-                                                handleSave({ flash_promo_ends_at: ends });
+                                                handleSave({ flash_promo_duration_hours: hours, flash_promo_ends_at: ends });
                                             }}
                                             style={{
                                                 padding: '6px 14px',

@@ -31,7 +31,14 @@
 
 ---
 
-### 🟢 4. Export Rekap Seleksi Klien ke CSV/Excel (Optional / Reporting)
+### 🟢 4. Email Notifikasi Pendaftaran Vendor ke Admin (Long-Term)
+- **Tujuan:** Admin SaaS mendapat notifikasi email instant saat ada fotografer baru yang mendaftar atau melakukan pembayaran QRIS/Manual.
+- **Konsep Arsitektur:**
+  - Sisipkan pemicu `sendAdminNotificationEmail(newVendor)` di `app/api/auth/register/route.js` dan `app/api/payment/notification/route.js`.
+
+---
+
+### 🟢 5. Export Rekap Seleksi Klien ke CSV/Excel (Long-Term)
 - **Tujuan:** Vendor studio foto dapat mengunduh daftar nama foto terpilih klien dalam bentuk file CSV untuk dibuka di Microsoft Excel atau Lightroom.
 - **Konsep Arsitektur:**
   - Endpoint: `GET /api/projects/[projectId]/export-csv`

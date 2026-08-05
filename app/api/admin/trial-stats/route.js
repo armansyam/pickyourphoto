@@ -60,7 +60,7 @@ export async function GET() {
         saasRows.forEach(r => { saasMap[r.key] = r.value; });
 
         // system_settings for trial control & flash promo
-        const sysSetting = db.prepare("SELECT enable_free_trial, trial_expiration_minutes, max_vendor_quota, enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at, flash_promo_title, flash_promo_banner_text FROM system_settings WHERE id = 1").get() || {};
+        const sysSetting = db.prepare("SELECT enable_free_trial, trial_expiration_minutes, max_vendor_quota, enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at, flash_promo_duration_hours, flash_promo_title, flash_promo_banner_text FROM system_settings WHERE id = 1").get() || {};
 
         return NextResponse.json({
             stats: {
@@ -85,6 +85,7 @@ export async function GET() {
                 enable_flash_promo: sysSetting.enable_flash_promo ?? 0,
                 flash_promo_discount_percent: sysSetting.flash_promo_discount_percent ?? 20,
                 flash_promo_ends_at: sysSetting.flash_promo_ends_at || null,
+                flash_promo_duration_hours: sysSetting.flash_promo_duration_hours ?? 24,
                 flash_promo_title: sysSetting.flash_promo_title || '⚡ FLASH SALE PROMO',
                 flash_promo_banner_text: sysSetting.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!',
             }
@@ -116,6 +117,7 @@ export async function PATCH(request) {
             enable_flash_promo,
             flash_promo_discount_percent,
             flash_promo_ends_at,
+            flash_promo_duration_hours,
             flash_promo_title,
             flash_promo_banner_text
         } = body;
@@ -124,6 +126,14 @@ export async function PATCH(request) {
         const current = db.prepare("SELECT * FROM system_settings WHERE id = 1").get();
         if (!current) return NextResponse.json({ message: 'Settings not found' }, { status: 404 });
 
+        let targetEndsAt = current.flash_promo_ends_at;
+        if (flash_promo_ends_at !== undefined) {
+            targetEndsAt = flash_promo_ends_at;
+        } else if (flash_promo_duration_hours !== undefined) {
+            const durHours = Math.max(1, parseInt(flash_promo_duration_hours) || 24);
+            targetEndsAt = new Date(Date.now() + durHours * 60 * 60 * 1000).toISOString();
+        }
+
         db.prepare(`
             UPDATE system_settings 
             SET enable_free_trial = ?, 
@@ -131,6 +141,7 @@ export async function PATCH(request) {
                 enable_flash_promo = ?,
                 flash_promo_discount_percent = ?,
                 flash_promo_ends_at = ?,
+                flash_promo_duration_hours = ?,
                 flash_promo_title = ?,
                 flash_promo_banner_text = ?,
                 updated_at = CURRENT_TIMESTAMP
@@ -140,7 +151,8 @@ export async function PATCH(request) {
             trial_expiration_minutes !== undefined ? Math.max(1, parseInt(trial_expiration_minutes) || 30) : current.trial_expiration_minutes,
             enable_flash_promo !== undefined ? (enable_flash_promo ? 1 : 0) : (current.enable_flash_promo || 0),
             flash_promo_discount_percent !== undefined ? Math.max(1, Math.min(90, parseInt(flash_promo_discount_percent) || 20)) : (current.flash_promo_discount_percent || 20),
-            flash_promo_ends_at !== undefined ? flash_promo_ends_at : current.flash_promo_ends_at,
+            targetEndsAt,
+            flash_promo_duration_hours !== undefined ? Math.max(1, parseInt(flash_promo_duration_hours) || 24) : (current.flash_promo_duration_hours || 24),
             flash_promo_title !== undefined ? flash_promo_title : (current.flash_promo_title || '⚡ FLASH SALE PROMO'),
             flash_promo_banner_text !== undefined ? flash_promo_banner_text : (current.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!')
         );
