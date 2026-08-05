@@ -36,9 +36,16 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Paket berlangganan tidak ditemukan.' }, { status: 404 });
     }
 
-    // Generate unique orderId
-    const orderId = `ORDER-${Date.now()}-${vendor.id}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const amount = (customAmount && customAmount > 0) ? customAmount : plan.price;
+    // Calculate amount considering active Flash Sale Promo
+    let amount = (customAmount && customAmount > 0) ? customAmount : plan.price;
+    if (!customAmount && plan.price > 0) {
+      const settings = db.prepare("SELECT enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at FROM system_settings WHERE id = 1").get() || {};
+      const promoEnds = settings.flash_promo_ends_at ? new Date(settings.flash_promo_ends_at) : null;
+      if (settings.enable_flash_promo === 1 && promoEnds && promoEnds > new Date()) {
+        const pct = settings.flash_promo_discount_percent || 20;
+        amount = Math.round(plan.price * (1 - pct / 100));
+      }
+    }
 
 
     const paymentResult = await createPayment({

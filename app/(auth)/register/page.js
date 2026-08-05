@@ -69,9 +69,10 @@ export default function RegisterPage() {
                 const res = await fetch('/api/plans');
                 if (res.ok) {
                     const data = await res.json();
-                    setPlans(data);
-                    if (data.length > 0) {
-                        const firstLimit = data.find(p => p.planType === 'limit') || data[0];
+                    const plansList = Array.isArray(data) ? data : (data.plans || []);
+                    setPlans(plansList);
+                    if (plansList.length > 0) {
+                        const firstLimit = plansList.find(p => p.planType === 'limit') || plansList[0];
                         setSelectedTab(firstLimit.planType || 'limit');
                     }
                 }
@@ -943,10 +944,22 @@ export default function RegisterPage() {
 
                                                                              <div style={{ textAlign: 'center' }}>
                                                                                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>{p.name}</h3>
-                                                                                 <div style={{ fontSize: '26px', fontWeight: '850', color: '#fbbf24', marginBottom: '4px' }}>
-                                                                                     Rp {p.price ? p.price.toLocaleString('id-ID') : '0'}
-                                                                                     <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}> / {p.activePeriodDays} hari</span>
-                                                                                 </div>
+                                                                                  {p.discountedPrice && p.discountedPrice < p.originalPrice ? (
+                                                                                      <div>
+                                                                                          <div style={{ fontSize: '13px', color: '#94a3b8', textDecoration: 'line-through' }}>
+                                                                                              Rp {p.originalPrice ? p.originalPrice.toLocaleString('id-ID') : '0'}
+                                                                                          </div>
+                                                                                          <div style={{ fontSize: '26px', fontWeight: '850', color: '#ef4444', marginBottom: '4px' }}>
+                                                                                              Rp {p.discountedPrice ? p.discountedPrice.toLocaleString('id-ID') : '0'}
+                                                                                              <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}> / {p.activePeriodDays} hari</span>
+                                                                                          </div>
+                                                                                      </div>
+                                                                                  ) : (
+                                                                                      <div style={{ fontSize: '26px', fontWeight: '850', color: '#fbbf24', marginBottom: '4px' }}>
+                                                                                          Rp {p.price ? p.price.toLocaleString('id-ID') : '0'}
+                                                                                          <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}> / {p.activePeriodDays} hari</span>
+                                                                                      </div>
+                                                                                  )}
                                                                              </div>
 
                                                                              <div style={{

@@ -59,8 +59,8 @@ export async function GET() {
         const saasMap = {};
         saasRows.forEach(r => { saasMap[r.key] = r.value; });
 
-        // system_settings for trial control
-        const sysSetting = db.prepare("SELECT enable_free_trial, trial_expiration_minutes, max_vendor_quota FROM system_settings WHERE id = 1").get() || {};
+        // system_settings for trial control & flash promo
+        const sysSetting = db.prepare("SELECT enable_free_trial, trial_expiration_minutes, max_vendor_quota, enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at, flash_promo_title, flash_promo_banner_text FROM system_settings WHERE id = 1").get() || {};
 
         return NextResponse.json({
             stats: {
@@ -82,6 +82,11 @@ export async function GET() {
                 trial_max_subfolders: parseInt(saasMap.trial_max_subfolders || '1'),
                 trial_cta_text: saasMap.trial_cta_text || '',
                 trial_cta_subtext: saasMap.trial_cta_subtext || '',
+                enable_flash_promo: sysSetting.enable_flash_promo ?? 0,
+                flash_promo_discount_percent: sysSetting.flash_promo_discount_percent ?? 20,
+                flash_promo_ends_at: sysSetting.flash_promo_ends_at || null,
+                flash_promo_title: sysSetting.flash_promo_title || '⚡ FLASH SALE PROMO',
+                flash_promo_banner_text: sysSetting.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!',
             }
         });
     } catch (error) {
@@ -90,7 +95,7 @@ export async function GET() {
     }
 }
 
-// PATCH: Save trial settings dynamically
+// PATCH: Save trial & flash promo settings dynamically
 export async function PATCH(request) {
     try {
         const currentUser = getAuthVendor();
@@ -108,6 +113,11 @@ export async function PATCH(request) {
             trial_max_subfolders,
             trial_cta_text,
             trial_cta_subtext,
+            enable_flash_promo,
+            flash_promo_discount_percent,
+            flash_promo_ends_at,
+            flash_promo_title,
+            flash_promo_banner_text
         } = body;
 
         // Update system_settings
@@ -116,11 +126,23 @@ export async function PATCH(request) {
 
         db.prepare(`
             UPDATE system_settings 
-            SET enable_free_trial = ?, trial_expiration_minutes = ?, updated_at = CURRENT_TIMESTAMP
+            SET enable_free_trial = ?, 
+                trial_expiration_minutes = ?, 
+                enable_flash_promo = ?,
+                flash_promo_discount_percent = ?,
+                flash_promo_ends_at = ?,
+                flash_promo_title = ?,
+                flash_promo_banner_text = ?,
+                updated_at = CURRENT_TIMESTAMP
             WHERE id = 1
         `).run(
             enable_free_trial !== undefined ? (enable_free_trial ? 1 : 0) : current.enable_free_trial,
-            trial_expiration_minutes !== undefined ? Math.max(1, parseInt(trial_expiration_minutes) || 30) : current.trial_expiration_minutes
+            trial_expiration_minutes !== undefined ? Math.max(1, parseInt(trial_expiration_minutes) || 30) : current.trial_expiration_minutes,
+            enable_flash_promo !== undefined ? (enable_flash_promo ? 1 : 0) : (current.enable_flash_promo || 0),
+            flash_promo_discount_percent !== undefined ? Math.max(1, Math.min(90, parseInt(flash_promo_discount_percent) || 20)) : (current.flash_promo_discount_percent || 20),
+            flash_promo_ends_at !== undefined ? flash_promo_ends_at : current.flash_promo_ends_at,
+            flash_promo_title !== undefined ? flash_promo_title : (current.flash_promo_title || '⚡ FLASH SALE PROMO'),
+            flash_promo_banner_text !== undefined ? flash_promo_banner_text : (current.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!')
         );
 
         // Update saas_settings
@@ -141,7 +163,7 @@ export async function PATCH(request) {
         if (trial_cta_subtext !== undefined) toUpdate.push(['trial_cta_subtext', trial_cta_subtext]);
         if (toUpdate.length > 0) updateMany(toUpdate);
 
-        return NextResponse.json({ success: true, message: 'Trial settings berhasil disimpan.' });
+        return NextResponse.json({ success: true, message: 'Trial & Flash Sale settings berhasil disimpan.' });
     } catch (error) {
         console.error('[Trial Settings PATCH Error]:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

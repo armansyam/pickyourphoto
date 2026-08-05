@@ -316,8 +316,16 @@
       </div>
       <a href="/login" style="font-size:14.5px;color:var(--muted);font-weight:500;" data-i18n="nav.masuk">Masuk</a>
     </div>
-  </nav>
-</header>
+  <!-- FLASH SALE TOP BANNER -->
+<div id="flashSaleTopBanner" style="display: none; background: linear-gradient(90deg, #ef4444, #dc2626, #b91c1c); color: #ffffff; padding: 10px 20px; font-size: 13px; font-weight: 700; text-align: center; position: sticky; top: 0; z-index: 60; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);">
+  <span id="flashSaleTitle">⚡ FLASH SALE PROMO</span> — <span id="flashSaleText">Diskon Spesial Paket Berlangganan!</span> 
+  <span style="background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 20px; margin-left: 10px; font-family: var(--mono); color: #fbbf24; border: 1px solid rgba(251,191,36,0.4);" id="flashSaleTimer">
+    00:00:00
+  </span>
+</div>
+
+<!-- NAV -->
+<header>
 
 <main class="wrap">
 
@@ -1433,19 +1441,53 @@
   document.querySelectorAll('.lang-btn').forEach(function(btn){btn.addEventListener('click',function(){applyLang(btn.dataset.lang);});});
   applyLang('id');
 
-  // Dynamic sync subscription plans from database API
+  // Dynamic sync subscription plans & Flash Sale from database API
   fetch('/api/plans')
     .then(function(res) { return res.json(); })
-    .then(function(plans) {
+    .then(function(data) {
+      var plans = Array.isArray(data) ? data : (data.plans || []);
+      var flashPromo = data.flashPromo || {};
+
+      // Flash Sale Banner Setup
+      if (flashPromo.active && flashPromo.endsAt) {
+        var banner = document.getElementById('flashSaleTopBanner');
+        var timerEl = document.getElementById('flashSaleTimer');
+        var titleEl = document.getElementById('flashSaleTitle');
+        var textEl = document.getElementById('flashSaleText');
+        if (banner && timerEl) {
+          banner.style.display = 'block';
+          if (titleEl) titleEl.innerText = flashPromo.title || '⚡ FLASH SALE PROMO (' + flashPromo.discountPercent + '% OFF)';
+          if (textEl) textEl.innerText = flashPromo.bannerText || 'Diskon Paket Berlangganan!';
+          
+          function updateTimer() {
+            var diff = new Date(flashPromo.endsAt).getTime() - new Date().getTime();
+            if (diff <= 0) {
+              banner.style.display = 'none';
+              return;
+            }
+            var h = Math.floor(diff / (1000 * 60 * 60));
+            var m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            var s = Math.floor((diff % (1000 * 60)) / 1000);
+            timerEl.innerText = (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s);
+          }
+          updateTimer();
+          setInterval(updateTimer, 1000);
+        }
+      }
+
       if (Array.isArray(plans) && plans.length > 0) {
         var grid = document.getElementById('landingTierGrid');
         if (!grid) return;
         grid.innerHTML = plans.map(function(p) {
           var isFeatured = p.name.toLowerCase().includes('pro');
-          var priceFormatted = 'Rp ' + Number(p.price).toLocaleString('id-ID');
+          var isDiscounted = p.discountedPrice && p.discountedPrice < p.originalPrice;
+          var priceFormatted = isDiscounted 
+            ? '<span style="text-decoration: line-through; opacity: 0.6; font-size: 15px; margin-right: 6px;">Rp ' + Number(p.originalPrice).toLocaleString('id-ID') + '</span> <span style="color: #ef4444;">Rp ' + Number(p.discountedPrice).toLocaleString('id-ID') + '</span>'
+            : 'Rp ' + Number(p.price).toLocaleString('id-ID');
+          
           var period = p.activePeriodDays || 30;
           return '<div class="tier ' + (isFeatured ? 'featured' : '') + '">' +
-            (isFeatured ? '<span class="tier-badge">PALING DIPILIH</span>' : '') +
+            (isDiscounted ? '<span class="tier-badge" style="background: linear-gradient(135deg, #ef4444, #dc2626);">⚡ DISKON ' + p.discountPercent + '%</span>' : (isFeatured ? '<span class="tier-badge">PALING DIPILIH</span>' : '')) +
             '<div class="tier-name">' + p.name + '</div>' +
             '<div style="font-size: 22px; font-weight: 850; color: ' + (isFeatured ? '#fbbf24' : 'var(--brass-bright)') + '; margin-bottom: 4px;">' + priceFormatted + ' <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ ' + period + ' hari</span></div>' +
             '<div class="tier-note">' + (p.name.includes('Starter') ? 'Cocok untuk fotografer pemula / freelance' : (isFeatured ? 'Untuk fotografer profesional & tim studio' : 'Untuk studio besar & vendor volume tinggi')) + '</div>' +
@@ -1456,7 +1498,7 @@
               '<li>Integrasi Langsung Google Drive</li>' +
               (p.allowCustomLogo ? '<li style="color: #818cf8; font-weight: bold;">Custom Logo Studio (White-Label)</li>' : '<li style="color: var(--muted-dark);">Logo Default Platform</li>') +
             '</ul>' +
-            '<a href="/register?planId=' + p.id + '" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: ' + (isFeatured ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)') + '; color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Pilih Paket &rarr;</a>' +
+            '<a href="/register?planId=' + p.id + '" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: ' + (isDiscounted ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : (isFeatured ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)')) + '; color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">' + (isDiscounted ? 'Klaim Diskon ' + p.discountPercent + '% &rarr;' : 'Pilih Paket &rarr;') + '</a>' +
           '</div>';
         }).join('');
       }

@@ -77,6 +77,13 @@ export default function AdminTrialControl({ addToast }) {
     const [ctaText, setCtaText] = useState('');
     const [ctaSubtext, setCtaSubtext] = useState('');
 
+    // Flash Promo Discount Engine States
+    const [enableFlashPromo, setEnableFlashPromo] = useState(false);
+    const [flashDiscountPercent, setFlashDiscountPercent] = useState(20);
+    const [flashEndsAt, setFlashEndsAt] = useState('');
+    const [flashTitle, setFlashTitle] = useState('⚡ FLASH SALE PROMO');
+    const [flashBannerText, setFlashBannerText] = useState('Diskon Spesial Paket Berlangganan!');
+
     const [activePreset, setActivePreset] = useState(null);
     const [confirmFlash, setConfirmFlash] = useState(false);
 
@@ -98,6 +105,12 @@ export default function AdminTrialControl({ addToast }) {
             setPreviewPhotos(s.trial_preview_photos || 12);
             setCtaText(s.trial_cta_text || '');
             setCtaSubtext(s.trial_cta_subtext || '');
+
+            setEnableFlashPromo(s.enable_flash_promo === 1 || s.enable_flash_promo === true);
+            setFlashDiscountPercent(s.flash_promo_discount_percent || 20);
+            setFlashEndsAt(s.flash_promo_ends_at || '');
+            setFlashTitle(s.flash_promo_title || '⚡ FLASH SALE PROMO');
+            setFlashBannerText(s.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!');
         } catch (err) {
             addToast?.('❌ ' + err.message, 'error');
         } finally {
@@ -121,6 +134,11 @@ export default function AdminTrialControl({ addToast }) {
                 trial_preview_photos: overrides.trial_preview_photos ?? previewPhotos,
                 trial_cta_text: overrides.trial_cta_text ?? ctaText,
                 trial_cta_subtext: overrides.trial_cta_subtext ?? ctaSubtext,
+                enable_flash_promo: overrides.enable_flash_promo !== undefined ? overrides.enable_flash_promo : enableFlashPromo,
+                flash_promo_discount_percent: overrides.flash_promo_discount_percent ?? flashDiscountPercent,
+                flash_promo_ends_at: overrides.flash_promo_ends_at ?? flashEndsAt,
+                flash_promo_title: overrides.flash_promo_title ?? flashTitle,
+                flash_promo_banner_text: overrides.flash_promo_banner_text ?? flashBannerText,
             };
             const res = await fetch('/api/admin/trial-stats', {
                 method: 'PATCH',
@@ -275,6 +293,150 @@ export default function AdminTrialControl({ addToast }) {
                             )}
                         </div>
                     ))}
+                </div>
+            </div>
+
+            {/* ── ⚡ FLASH SALE & DISCOUNT ENGINE CARD ── */}
+            <div style={{
+                background: enableFlashPromo ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%)' : 'rgba(255,255,255,0.02)',
+                border: `1px solid ${enableFlashPromo ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255,255,255,0.07)'}`,
+                borderRadius: '14px',
+                padding: '22px',
+                marginBottom: '20px',
+                transition: 'all 0.3s'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: enableFlashPromo ? '#f87171' : '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>⚡ Flash Sale & Engine Diskon Otomatis</span>
+                        </h4>
+                        <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#a1a1aa' }}>
+                            Potong harga paket berlangganan secara dinamis dan aktifkan countdown timer di Landing Page & Checkout.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            const newStatus = !enableFlashPromo;
+                            setEnableFlashPromo(newStatus);
+                            if (newStatus && !flashEndsAt) {
+                                const defaultEnds = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                                setFlashEndsAt(defaultEnds);
+                                handleSave({ enable_flash_promo: true, flash_promo_ends_at: defaultEnds });
+                            } else {
+                                handleSave({ enable_flash_promo: newStatus });
+                            }
+                        }}
+                        style={{
+                            padding: '8px 18px',
+                            borderRadius: '10px',
+                            border: 'none',
+                            background: enableFlashPromo ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'rgba(255,255,255,0.08)',
+                            color: enableFlashPromo ? '#ffffff' : '#a1a1aa',
+                            fontWeight: '700',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            boxShadow: enableFlashPromo ? '0 4px 14px rgba(239, 68, 68, 0.35)' : 'none'
+                        }}
+                    >
+                        {enableFlashPromo ? '🔥 FLASH SALE AKTIF' : '⚪ FLASH SALE MATI'}
+                    </button>
+                </div>
+
+                <div style={{ opacity: enableFlashPromo ? 1 : 0.45, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#f87171', marginBottom: '8px' }}>
+                                🏷️ Persentase Diskon (%)
+                            </label>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                {[10, 20, 30, 40, 50].map(pct => (
+                                    <button
+                                        key={pct}
+                                        type="button"
+                                        disabled={!enableFlashPromo}
+                                        onClick={() => {
+                                            setFlashDiscountPercent(pct);
+                                            handleSave({ flash_promo_discount_percent: pct });
+                                        }}
+                                        style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '8px',
+                                            border: flashDiscountPercent === pct ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
+                                            background: flashDiscountPercent === pct ? 'rgba(239,68,68,0.25)' : 'rgba(0,0,0,0.2)',
+                                            color: flashDiscountPercent === pct ? '#f87171' : '#a1a1aa',
+                                            fontSize: '12px',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        {pct}% Diskon
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '8px' }}>
+                                ⏳ Durasi Promo Kilat
+                            </label>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                {[6, 12, 24, 48].map(hours => (
+                                    <button
+                                        key={hours}
+                                        type="button"
+                                        disabled={!enableFlashPromo}
+                                        onClick={() => {
+                                            const ends = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+                                            setFlashEndsAt(ends);
+                                            handleSave({ flash_promo_ends_at: ends });
+                                        }}
+                                        style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '8px',
+                                            border: '1px solid rgba(251,191,36,0.3)',
+                                            background: 'rgba(251,191,36,0.1)',
+                                            color: '#fbbf24',
+                                            fontSize: '12px',
+                                            fontWeight: 'bold',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        +{hours} Jam
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '14px' }}>
+                        <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px' }}>
+                            💡 Simulator Harga Terpotong (Live Real-Time)
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', fontSize: '12px' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
+                                <div style={{ color: '#94a3b8' }}>Starter Plan (Rp 49k)</div>
+                                <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
+                                    Rp {Math.round(49000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
+                                </div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
+                                <div style={{ color: '#94a3b8' }}>Pro Studio (Rp 129k)</div>
+                                <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
+                                    Rp {Math.round(129000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
+                                </div>
+                            </div>
+                            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
+                                <div style={{ color: '#94a3b8' }}>Business Studio (Rp 249k)</div>
+                                <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
+                                    Rp {Math.round(249000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
