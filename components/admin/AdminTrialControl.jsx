@@ -83,6 +83,7 @@ export default function AdminTrialControl({ addToast }) {
     const [flashEndsAt, setFlashEndsAt] = useState('');
     const [flashTitle, setFlashTitle] = useState('⚡ FLASH SALE PROMO');
     const [flashBannerText, setFlashBannerText] = useState('Diskon Spesial Paket Berlangganan!');
+    const [selectedDurationHours, setSelectedDurationHours] = useState(24);
 
     const [activePreset, setActivePreset] = useState(null);
     const [confirmFlash, setConfirmFlash] = useState(false);
@@ -380,33 +381,49 @@ export default function AdminTrialControl({ addToast }) {
 
                         <div>
                             <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '8px' }}>
-                                ⏳ Durasi Promo Kilat
+                                ⏳ Durasi Promo Kilat {flashEndsAt && (
+                                    <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal', marginLeft: '6px' }}>
+                                        ({(() => {
+                                            const diff = new Date(flashEndsAt).getTime() - Date.now();
+                                            if (diff <= 0) return 'Expired';
+                                            const h = Math.floor(diff / (1000 * 60 * 60));
+                                            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                                            return `Sisa: ${h}j ${m}m`;
+                                        })()})
+                                    </span>
+                                )}
                             </label>
                             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                {[6, 12, 24, 48].map(hours => (
-                                    <button
-                                        key={hours}
-                                        type="button"
-                                        disabled={!enableFlashPromo}
-                                        onClick={() => {
-                                            const ends = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
-                                            setFlashEndsAt(ends);
-                                            handleSave({ flash_promo_ends_at: ends });
-                                        }}
-                                        style={{
-                                            padding: '6px 12px',
-                                            borderRadius: '8px',
-                                            border: '1px solid rgba(251,191,36,0.3)',
-                                            background: 'rgba(251,191,36,0.1)',
-                                            color: '#fbbf24',
-                                            fontSize: '12px',
-                                            fontWeight: 'bold',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        +{hours} Jam
-                                    </button>
-                                ))}
+                                {[6, 12, 24, 48].map(hours => {
+                                    const isSelected = selectedDurationHours === hours;
+                                    return (
+                                        <button
+                                            key={hours}
+                                            type="button"
+                                            disabled={!enableFlashPromo}
+                                            onClick={() => {
+                                                setSelectedDurationHours(hours);
+                                                const ends = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+                                                setFlashEndsAt(ends);
+                                                handleSave({ flash_promo_ends_at: ends });
+                                            }}
+                                            style={{
+                                                padding: '6px 14px',
+                                                borderRadius: '8px',
+                                                border: isSelected ? '1px solid #fbbf24' : '1px solid rgba(251,191,36,0.3)',
+                                                background: isSelected ? '#fbbf24' : 'rgba(251,191,36,0.1)',
+                                                color: isSelected ? '#000000' : '#fbbf24',
+                                                fontSize: '12px',
+                                                fontWeight: '850',
+                                                cursor: enableFlashPromo ? 'pointer' : 'not-allowed',
+                                                transition: 'all 0.15s ease',
+                                                boxShadow: isSelected ? '0 2px 10px rgba(251,191,36,0.35)' : 'none'
+                                            }}
+                                        >
+                                            +{hours} Jam
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
