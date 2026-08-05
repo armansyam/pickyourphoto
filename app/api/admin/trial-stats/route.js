@@ -137,10 +137,18 @@ export async function PATCH(request) {
         let finalEnableTrial = enable_free_trial !== undefined ? (enable_free_trial ? 1 : 0) : current.enable_free_trial;
         let finalEnableFlash = enable_flash_promo !== undefined ? (enable_flash_promo ? 1 : 0) : (current.enable_flash_promo || 0);
 
-        // Mutual Exclusivity: Flash Sale ON forces Free Trial OFF, and vice versa
+        // Campaign Transition Rules:
+        // 1. Activating Flash Sale automatically turns Free Trial OFF
+        // 2. Deactivating Flash Sale automatically restores Free Trial to ON
+        // 3. Activating Free Trial automatically turns Flash Sale OFF
         if (enable_flash_promo === true || enable_flash_promo === 1) {
             finalEnableFlash = 1;
             finalEnableTrial = 0;
+        } else if (enable_flash_promo === false || enable_flash_promo === 0) {
+            finalEnableFlash = 0;
+            if (enable_free_trial === undefined) {
+                finalEnableTrial = 1; // Default fallback to active free trial
+            }
         } else if (enable_free_trial === true || enable_free_trial === 1) {
             finalEnableTrial = 1;
             finalEnableFlash = 0;
