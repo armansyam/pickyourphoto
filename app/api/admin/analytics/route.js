@@ -144,7 +144,7 @@ export async function GET() {
         // Get database file size
         let dbSizeBytes = 0;
         try {
-            const dbPath = path.join(process.cwd(), 'database.db');
+            const dbPath = path.join(process.cwd(), 'data', 'database.db');
             if (fs.existsSync(dbPath)) {
                 dbSizeBytes = fs.statSync(dbPath).size;
             }
@@ -177,24 +177,6 @@ export async function GET() {
             }
         } catch (backupErr) {
             console.error('Failed to get last backup time:', backupErr);
-        }
-
-        // Trigger auto backup if enabled and interval elapsed
-        if (settings.enable_auto_backup === 1) {
-            const now = Date.now();
-            const intervalMs = settings.backup_interval_hours * 60 * 60 * 1000;
-            if (now - lastBackupMs > intervalMs) {
-                console.log(`[Auto Backup Triggered] Last backup was at: ${lastBackupTime}. Running backups...`);
-                
-                exec('bash scripts/backup-db.sh', (err, stdout) => {
-                    if (err) console.error('[Auto Backup DB Error]', err);
-                    else console.log('[Auto Backup DB Success]', stdout);
-                });
-                exec('bash scripts/backup-photos.sh', (err, stdout) => {
-                    if (err) console.error('[Auto Backup Photos Error]', err);
-                    else console.log('[Auto Backup Photos Success]', stdout);
-                });
-            }
         }
 
         // 4. Get vendors whose subscription is expiring within 7 days
