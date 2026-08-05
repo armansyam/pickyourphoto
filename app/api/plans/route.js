@@ -6,8 +6,8 @@ export async function GET() {
         const stmt = db.prepare("SELECT id, name, maxProjects, price, maxPhotosPerProject, activePeriodDays, allowCustomLogo, allowRawSelector, status, planType FROM plans WHERE status = 'active' ORDER BY price ASC");
         const rawPlans = stmt.all();
 
-        // Check system_settings for active Flash Sale Promo
-        const settings = db.prepare("SELECT enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at, flash_promo_title, flash_promo_banner_text FROM system_settings WHERE id = 1").get() || {};
+        // Check system_settings for active Flash Sale Promo and Free Trial status
+        const settings = db.prepare("SELECT enable_free_trial, enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at, flash_promo_title, flash_promo_banner_text FROM system_settings WHERE id = 1").get() || {};
 
         const now = new Date();
         const promoEnds = settings.flash_promo_ends_at ? new Date(settings.flash_promo_ends_at) : null;
@@ -33,6 +33,7 @@ export async function GET() {
 
         return NextResponse.json({
             plans,
+            enableFreeTrial: settings.enable_free_trial !== 0,
             flashPromo: {
                 active: isFlashPromoActive,
                 discountPercent,

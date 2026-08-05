@@ -1451,13 +1451,13 @@
       var flashPromo = data.flashPromo || {};
 
       // Flash Sale Banner & Hero CTA Setup
-      if (flashPromo.active && flashPromo.endsAt) {
-        var banner = document.getElementById('flashSaleTopBanner');
-        var timerEl = document.getElementById('flashSaleTimer');
-        var titleEl = document.getElementById('flashSaleTitle');
-        var textEl = document.getElementById('flashSaleText');
-        var heroCta = document.getElementById('heroTrialCtaLink');
+      var banner = document.getElementById('flashSaleTopBanner');
+      var timerEl = document.getElementById('flashSaleTimer');
+      var titleEl = document.getElementById('flashSaleTitle');
+      var textEl = document.getElementById('flashSaleText');
+      var heroCta = document.getElementById('heroTrialCtaLink');
 
+      if (flashPromo.active && flashPromo.endsAt && new Date(flashPromo.endsAt) > new Date()) {
         if (heroCta) {
           heroCta.href = '#pricing';
           heroCta.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
@@ -1472,11 +1472,17 @@
           function updateTimer() {
             var diff = new Date(flashPromo.endsAt).getTime() - new Date().getTime();
             if (diff <= 0) {
-              banner.style.display = 'none';
+              if (banner) banner.style.display = 'none';
               if (heroCta) {
-                heroCta.href = '#trial-box';
-                heroCta.style.background = 'linear-gradient(135deg, #6366f1, #9333ea)';
-                heroCta.innerHTML = '⚡ Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;';
+                if (data.enableFreeTrial !== false) {
+                  heroCta.href = '#trial-box';
+                  heroCta.style.background = 'linear-gradient(135deg, #6366f1, #9333ea)';
+                  heroCta.innerHTML = '⚡ Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;';
+                } else {
+                  heroCta.href = '/register';
+                  heroCta.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+                  heroCta.innerHTML = 'Daftar &rarr;';
+                }
               }
               return;
             }
@@ -1487,6 +1493,19 @@
           }
           updateTimer();
           setInterval(updateTimer, 1000);
+        }
+      } else {
+        if (banner) banner.style.display = 'none';
+        if (heroCta) {
+          if (data.enableFreeTrial !== false) {
+            heroCta.href = '#trial-box';
+            heroCta.style.background = 'linear-gradient(135deg, #6366f1, #9333ea)';
+            heroCta.innerHTML = '⚡ Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;';
+          } else {
+            heroCta.href = '/register';
+            heroCta.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+            heroCta.innerHTML = 'Daftar &rarr;';
+          }
         }
       }
 
