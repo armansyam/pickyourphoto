@@ -71,29 +71,34 @@ export default function RegisterPage() {
     // Free plan removed from registration — use trial gallery on landing page instead
 
     useEffect(() => {
+        let isMounted = true;
         const checkRegStatus = async () => {
             try {
                 const res = await fetch('/api/register/status', { cache: 'no-store' });
-
                 if (res.ok) {
                     const data = await res.json();
-                    setRegStatus(data);
+                    if (isMounted) setRegStatus(data);
                 }
             } catch (err) {
                 console.error('Failed to check registration status:', err);
             } finally {
-                setCheckingStatus(false);
+                if (isMounted) setCheckingStatus(false);
             }
         };
+
+        const timeout = setTimeout(() => {
+            if (isMounted) setCheckingStatus(false);
+        }, 2500);
+
         const fetchPlans = async () => {
             try {
                 const res = await fetch('/api/plans');
                 if (res.ok) {
                     const data = await res.json();
                     const plansList = Array.isArray(data) ? data : (data.plans || []);
-                    setPlans(plansList);
-                    if (data.flashPromo) setFlashPromoInfo(data.flashPromo);
-                    if (plansList.length > 0) {
+                    if (isMounted) setPlans(plansList);
+                    if (data.flashPromo && isMounted) setFlashPromoInfo(data.flashPromo);
+                    if (plansList.length > 0 && isMounted) {
                         const firstLimit = plansList.find(p => p.planType === 'limit') || plansList[0];
                         setSelectedTab(firstLimit.planType || 'limit');
                     }
@@ -107,7 +112,7 @@ export default function RegisterPage() {
                 const res = await fetch('/api/settings');
                 if (res.ok) {
                     const data = await res.json();
-                    setSettings(data);
+                    if (isMounted) setSettings(data);
                 }
             } catch (err) {
                 console.error('Failed to load SaaS settings:', err);
@@ -119,15 +124,21 @@ export default function RegisterPage() {
 
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
-            // NOTE: status=pending means awaiting admin approval (no payment),
-            // NOT payment success. Do NOT call setSuccess here.
-            // Payment success is triggered only via payment polling in NativeQrisDisplay.
+            const targetPlanId = urlParams.get('planId');
+            if (targetPlanId && isMounted) {
+                setPlan(targetPlanId);
+            }
             if (urlParams.get('step') === 'select-plan') {
                 const userEmail = urlParams.get('email');
-                if (userEmail) setEmail(userEmail);
-                setStep(2);
+                if (userEmail && isMounted) setEmail(userEmail);
+                if (isMounted) setStep(2);
             }
         }
+
+        return () => {
+            isMounted = false;
+            clearTimeout(timeout);
+        };
     }, []);
 
     const [pendingOrder, setPendingOrder] = useState(null);
