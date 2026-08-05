@@ -13,7 +13,7 @@
 - [x] Registrasi via QRIS — vendor `pending_payment`, aktivasi otomatis via webhook
 - [x] Rate limit registrasi: 5 percobaan/60 detik per IP
 - [x] Re-register vendor non-aktif: update data tanpa buat akun baru
-- [x] Blokir WA duplikat (`active`/`pending_payment`)
+- [x] Nomor WA diizinkan sama untuk registrasi berbayar multi-brand (Email adalah satu-satunya identifier unik)
 - [x] Blokir harga 0 di form registrasi (trial hanya via landing page)
 - [x] Status `pending_manual` → Admin approve → `active`
 - [x] Status `pending_payment` → webhook QRIS → `active` + email notifikasi
@@ -21,9 +21,13 @@
 ### Email Notifikasi (SMTP via `lib/mailer.js`)
 - [x] Email aktivasi akun (`sendVendorApprovalEmail`) — HTML premium, dark mode
 - [x] Email penolakan akun (`sendVendorRejectionEmail`) — dengan keterangan alasan
+- [x] Email peringatan masa aktif (H-3 & H-1 `sendSubscriptionExpiringWarningEmail`)
+- [x] Email win-back akun kedaluwarsa (`sendVendorAccountExpiredEmail`)
+- [x] Email konfirmasi perpanjangan & upgrade paket (`sendVendorRenewalConfirmationEmail` & `sendVendorUpgradeConfirmationEmail`)
+- [x] Email peringatan galeri klien H-2 (`sendClientGalleryExpiringWarningEmail`)
 - [x] Email uji coba SMTP (`sendTestEmail`) — bisa dikirim dari Admin Panel Settings
 - [x] SMTP dikonfigurasi di Admin Panel → tersimpan di `saas_settings`
-- [x] Trigger email: webhook payment lunas + Admin manual approve
+- [x] Trigger email: daemon `lib/db.js` + webhook payment + Admin manual approve
 
 ### Google Drive Integration (Master OAuth)
 - [x] Koneksi Google OAuth Master dari Admin Panel (tombol hubungkan → callback)
@@ -94,7 +98,7 @@
 
 ### Panel Superadmin
 - [x] Analytics: MRR/ARR, trend 6 bulan, trial stats, top vendor, activity feed
-- [x] Auto-backup: trigger `scripts/backup-db.sh` + `scripts/backup-photos.sh`
+- [x] Auto-backup: eksekusi otonom mandiri via daemon `lib/db.js` (60s loop) memanggil `scripts/backup-db.sh` & `scripts/backup-photos.sh`
 - [x] Kelola vendor: list, approve, suspend, detail, status Midtrans auto-sync
 - [x] Kelola paket: CRUD + `allowCustomLogo`, `allowRawSelector`
 - [x] Kelola upgrade: approve/reject `subscription_requests`, proration

@@ -118,15 +118,14 @@ Vendor mengisi form registrasi di /register
 
 ---
 
-## 🎯 Roadmap & Rencana Fitur Mendatang
+## 🎯 Status Fitur & Roadmap
 
-| Fitur | Prioritas | Keterangan & Status |
+| Fitur | Kategori | Keterangan & Status |
 |---|---|---|
-| **Email Expiry H-7, H-3, H-0** | 🔴 Tinggi | Pengingat otomatis sebelum masa aktif vendor berakhir (Engine SMTP siap) |
-| **Badge Status Visual Dashboard** | 🔴 Tinggi | Visualisasi warna status proyek (`Aktif`, `Selesai`, `Diarsipkan`, `Gagal`) |
-| **Polling Import Real-Time** | 🟡 Sedang | Indikator progres impor folder Google Drive secara real-time |
-| **Email Registrasi ke Admin** | 🟢 Rendah | Email pemberitahuan otomatis ke Admin SaaS saat ada vendor baru |
-| **Export Rekap Seleksi CSV** | 🟢 Rendah | Unduh daftar nama foto terpilih klien dalam format CSV/Excel |
+| **Email Expiry (H-3, H-1, H-0)** | 🔴 Core Mailer | ✅ **Selesai** — Otomatis dikirim via daemon `lib/db.js` & `lib/mailer.js` |
+| **Badge Status Visual Dashboard** | 🎨 UI Dashboard | ✅ **Selesai** — Visualisasi status proyek (`Aktif`, `Selesai`, `Diarsipkan`, `Gagal`) |
+| **Google Drive Direct Scanner** | ⚡ Zero-Storage | ✅ **Selesai** — Instan scan via Direct OAuth 2.0 API (RAM ~0 Byte) |
+| **Export Rekap Seleksi CSV** | 📊 Reporting | 🟢 Fitur Tambahan — Unduh daftar nama foto terpilih klien dalam format CSV |
 
 > Rincian lengkap rencana pengembangan dapat dibaca pada berkas [`docs/PLAN_FITUR_BARU.md`](docs/PLAN_FITUR_BARU.md) & [`docs/04-IMPLEMENTATION-PLAN.md`](docs/04-IMPLEMENTATION-PLAN.md).
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
+import fs from 'fs';
+import path from 'path';
 
 // GET: Retrieve system settings and SaaS settings (Admin only)
 export async function GET() {
@@ -19,9 +21,50 @@ export async function GET() {
             saasSettings[row.key] = row.value;
         });
 
+        // Compute last backup timestamp and info from backups/ folder
+        let lastBackupTime = 'Belum pernah';
+        let lastBackupFileName = null;
+        let lastBackupSizeFormatted = null;
+
+        try {
+            const backupsDir = path.join(process.cwd(), 'backups');
+            if (fs.existsSync(backupsDir)) {
+                const files = fs.readdirSync(backupsDir)
+                    .filter(f => f.endsWith('.db'))
+                    .map(f => {
+                        const stat = fs.statSync(path.join(backupsDir, f));
+                        return { name: f, time: stat.mtimeMs, size: stat.size };
+                    })
+                    .sort((a, b) => b.time - a.time);
+
+                if (files.length > 0) {
+                    const latest = files[0];
+                    const dateObj = new Date(latest.time);
+                    const dateStr = dateObj.toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    const timeStr = dateObj.toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    lastBackupTime = `${dateStr}, ${timeStr} WIB`;
+                    lastBackupFileName = latest.name;
+                    lastBackupSizeFormatted = (latest.size / 1024).toFixed(1) + ' KB';
+                }
+            }
+        } catch (backupErr) {
+            console.error('Failed to get last backup info:', backupErr);
+        }
+
         return NextResponse.json({
             ...settings,
-            saasSettings
+            saasSettings,
+            lastBackupTime,
+            lastBackupFileName,
+            lastBackupSizeFormatted
         });
     } catch (error) {
         console.error('Failed to get system settings:', error);

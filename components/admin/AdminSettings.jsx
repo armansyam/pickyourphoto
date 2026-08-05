@@ -30,6 +30,9 @@ export default function AdminSettings({
   sysMaxQuota, setSysMaxQuota,
   sysEnableBackup, setSysEnableBackup,
   sysBackupInterval, setSysBackupInterval,
+  lastBackupTime = 'Belum pernah',
+  lastBackupFileName = null,
+  lastBackupSizeFormatted = null,
   savingProfile,
   profileSuccessMsg,
   setProfileSuccessMsg,
@@ -548,6 +551,38 @@ export default function AdminSettings({
                 </span>
               </div>
 
+              {/* Info Status Backup Terakhir (System Log) */}
+              <div style={{
+                background: 'rgba(99, 102, 241, 0.08)',
+                border: '1px solid rgba(99, 102, 241, 0.25)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    🕒 Backup Terakhir (System Log)
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginTop: '3px' }}>
+                    {lastBackupTime || 'Belum pernah'}
+                  </div>
+                </div>
+
+                {lastBackupFileName && (
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>Berkas Backup Terakhir:</div>
+                    <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#34d399', fontWeight: 'bold' }}>
+                      {lastBackupFileName} {lastBackupSizeFormatted ? `(${lastBackupSizeFormatted})` : ''}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="form-group" style={{ margin: 0, opacity: sysEnableBackup ? 1 : 0.4, transition: 'opacity 0.2s' }}>
                 <label className="form-label" style={{ fontSize: '12px' }}>Interval Backup (Jam)</label>
                 <input
@@ -562,7 +597,7 @@ export default function AdminSettings({
                   style={{ maxWidth: '200px' }}
                 />
                 <p style={{ fontSize: '11px', color: '#64748b', margin: '6px 0 0 0' }}>
-                  Backup berjalan otomatis via <code>scripts/backup-db.sh</code> saat analitik dimuat.
+                  Backup berjalan otomatis secara otonom di background daemon server (<code>lib/db.js</code>).
                   File backup tersimpan di folder <code>backups/</code> di server.
                 </p>
               </div>

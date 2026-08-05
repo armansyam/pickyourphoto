@@ -106,6 +106,23 @@ export async function PUT(request) {
             const updateReq = db.prepare("UPDATE subscription_requests SET status = 'approved' WHERE id = ?");
             updateReq.run(id);
 
+            // Dispatch automated SMTP confirmation email to vendor
+            try {
+                const { sendVendorRenewalConfirmationEmail, sendVendorUpgradeConfirmationEmail } = require('@/lib/mailer');
+                const fullVendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(upgradeReq.vendorId);
+                const isRenewal = (vendor && vendor.planId === upgradeReq.planId);
+                const formattedExp = expiresAt ? expiresAt.split('T')[0] : '';
+                
+                if (isRenewal) {
+                    sendVendorRenewalConfirmationEmail(fullVendor, plan, formattedExp, 'Transfer Bank Manual (Dikonfirmasi Admin)').catch(() => {});
+                } else {
+                    const oldPlanRow = vendor?.planId ? db.prepare('SELECT name FROM plans WHERE id = ?').get(vendor.planId) : null;
+                    sendVendorUpgradeConfirmationEmail(fullVendor, oldPlanRow?.name || 'Paket Sebelumnya', plan, formattedExp, 'Transfer Bank Manual (Dikonfirmasi Admin)').catch(() => {});
+                }
+            } catch (mailErr) {
+                console.error('[Admin Upgrade Manual Mailer Error]:', mailErr);
+            }
+
             return NextResponse.json({ message: 'Permintaan upgrade berhasil disetujui.' });
 
         } else if (action === 'reject') {

@@ -53,7 +53,7 @@ expired (otomatis via autoCheckVendorSubscriptionExpiry)
 **Aturan Registrasi:**
 - Rate limit: 5 percobaan / 60 detik per IP
 - Duplikat email: jika status bukan `active` → data diupdate (re-register)
-- Duplikat WA: blokir jika WA sudah terdaftar di akun `active` atau `pending_payment`
+- Nomor WhatsApp: Diizinkan sama (Email adalah satu-satunya identifier unik akun agar vendor berbayar dapat mendaftarkan beberapa brand studio menggunakan nomor WA bisnis yang sama)
 - Harga = 0 diblokir dari registrasi (trial hanya via landing page)
 - Quota vendor: `max_vendor_quota` di `system_settings` (NULL = unlimited)
 - Registrasi bisa ditutup: `enable_registration = 0`

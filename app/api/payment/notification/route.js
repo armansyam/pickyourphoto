@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { verifyPaymentWebhook } from '@/lib/payment-gateway';
-import { sendVendorApprovalEmail } from '@/lib/mailer';
+import { sendVendorApprovalEmail, sendVendorRenewalConfirmationEmail, sendVendorUpgradeConfirmationEmail } from '@/lib/mailer';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +50,11 @@ export async function POST(request) {
       const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
 
       if (vendor && plan) {
+        const wasActive = vendor.status === 'active';
+        const isRenewal = wasActive && vendor.planId === plan.id;
+        const isUpgrade = wasActive && vendor.planId !== plan.id;
+        const oldPlanRow = isUpgrade ? db.prepare('SELECT name FROM plans WHERE id = ?').get(vendor.planId) : null;
+
         // Calculate new expiration date (Today + activePeriodDays)
         const expDate = new Date();
         expDate.setDate(expDate.getDate() + (plan.activePeriodDays || 30));
@@ -64,10 +69,15 @@ export async function POST(request) {
 
         console.log(`[Payment Webhook SUCCESS] Vendor ${vendor.name} (${vendor.email}) berhasil diaktivasi otomatis untuk paket ${plan.name}!`);
 
-        // Trigger automated approval email notification to vendor
-        sendVendorApprovalEmail({ ...vendor, status: 'active' }, plan).catch(err => {
-          console.error('[Payment Webhook Email Error]:', err);
-        });
+        // Trigger automated email notification based on transaction type
+        const updatedVendor = { ...vendor, status: 'active', expiresAt };
+        if (isRenewal) {
+          sendVendorRenewalConfirmationEmail(updatedVendor, plan, expiresAt, 'Midtrans QRIS / GoPay (Otomatis)').catch(() => {});
+        } else if (isUpgrade) {
+          sendVendorUpgradeConfirmationEmail(updatedVendor, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'Midtrans QRIS / GoPay (Otomatis)').catch(() => {});
+        } else {
+          sendVendorApprovalEmail(updatedVendor, plan).catch(() => {});
+        }
       }
     } else if (isFailed) {
       const isExpire = transactionStatus === 'expire';

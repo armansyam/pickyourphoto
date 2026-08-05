@@ -95,8 +95,11 @@ export default function AdminDashboard({ adminUser }) {
     const [sysEnableTrial, setSysEnableTrial] = useState(true);
     const [sysMaxQuota, setSysMaxQuota] = useState(null);
     const [sysTrialExpirationMinutes, setSysTrialExpirationMinutes] = useState(30);
-    const [sysEnableBackup, setSysEnableBackup] = useState(false);
+    const [sysEnableBackup, setSysEnableBackup] = useState(true);
     const [sysBackupInterval, setSysBackupInterval] = useState(6);
+    const [lastBackupTime, setLastBackupTime] = useState('Belum pernah');
+    const [lastBackupFileName, setLastBackupFileName] = useState(null);
+    const [lastBackupSizeFormatted, setLastBackupSizeFormatted] = useState(null);
 
     // Modal Vendor States
     const [editingVendor, setEditingVendor] = useState(null);
@@ -195,10 +198,11 @@ export default function AdminDashboard({ adminUser }) {
                 const data = await res.json();
                 setSysEnableReg(data.enable_registration === 1);
                 setSysEnableTrial(data.enable_free_trial === 1);
-                setSysMaxQuota(data.max_vendor_quota);
-                setSysTrialExpirationMinutes(data.trial_expiration_minutes || (data.trial_expiration_hours ? data.trial_expiration_hours * 60 : 30));
                 setSysEnableBackup(data.enable_auto_backup === 1);
                 setSysBackupInterval(data.backup_interval_hours);
+                if (data.lastBackupTime) setLastBackupTime(data.lastBackupTime);
+                if (data.lastBackupFileName) setLastBackupFileName(data.lastBackupFileName);
+                if (data.lastBackupSizeFormatted) setLastBackupSizeFormatted(data.lastBackupSizeFormatted);
 
                 if (data.saasSettings) {
                     if (data.saasSettings.bank_name) setBankName(data.saasSettings.bank_name);
@@ -617,6 +621,9 @@ export default function AdminDashboard({ adminUser }) {
                             sysMaxQuota={sysMaxQuota} setSysMaxQuota={setSysMaxQuota}
                             sysEnableBackup={sysEnableBackup} setSysEnableBackup={setSysEnableBackup}
                             sysBackupInterval={sysBackupInterval} setSysBackupInterval={setSysBackupInterval}
+                            lastBackupTime={lastBackupTime}
+                            lastBackupFileName={lastBackupFileName}
+                            lastBackupSizeFormatted={lastBackupSizeFormatted}
                             savingProfile={savingProfile}
                             profileSuccessMsg={profileSuccessMsg}
                             setProfileSuccessMsg={setProfileSuccessMsg}

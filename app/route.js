@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
+import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
 import { getRequestOrigin } from '@/lib/url';

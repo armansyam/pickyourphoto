@@ -47,9 +47,8 @@ export async function POST(request) {
 
 
         // --- Registration Settings & Quota Check ---
-        const settings = db.prepare("SELECT * FROM system_settings WHERE id = 1").get() || {
+        const settings = db.prepare("SELECT enable_registration, max_vendor_quota FROM system_settings WHERE id = 1").get() || {
             enable_registration: 1,
-            enable_free_trial: 1,
             max_vendor_quota: null
         };
 
@@ -74,16 +73,6 @@ export async function POST(request) {
 
         if (existingVendor && existingVendor.status === 'active') {
             return NextResponse.json({ message: 'Email sudah terdaftar. Silakan login.' }, { status: 409 });
-        }
-
-        if (finalWhatsapp && finalWhatsapp.length > 5) {
-            const checkWaStmt = db.prepare("SELECT id, name, status FROM vendors WHERE whatsapp = ? AND status IN ('active', 'pending_payment') AND email != ?");
-            const existingWa = checkWaStmt.get(finalWhatsapp, email);
-            if (existingWa) {
-                return NextResponse.json({ 
-                    message: 'Nomor WhatsApp ini sudah terdaftar pada akun lain. Silakan gunakan nomor WhatsApp yang belum terdaftar.' 
-                }, { status: 409 });
-            }
         }
 
         // Lookup plan
