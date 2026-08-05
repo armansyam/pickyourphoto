@@ -55,8 +55,19 @@ export async function POST(request) {
             }
         }
 
+        // Check active Flash Sale Promo for target plan price
+        let targetPlanPrice = newPlan.price;
+        if (newPlan.price > 0) {
+            const settings = db.prepare("SELECT enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at FROM system_settings WHERE id = 1").get() || {};
+            const promoEnds = settings.flash_promo_ends_at ? new Date(settings.flash_promo_ends_at) : null;
+            if (settings.enable_flash_promo === 1 && promoEnds && promoEnds > new Date()) {
+                const pct = settings.flash_promo_discount_percent || 20;
+                targetPlanPrice = Math.round(newPlan.price * (1 - pct / 100));
+            }
+        }
+
         // Calculate proration with smart tiered discount multiplier
-        let proratedPrice = newPlan.price;
+        let proratedPrice = targetPlanPrice;
 
         if (currentPlan && newPlan.price > currentPlan.price && currentPlan.price > 0 && vendor.expiresAt) {
             const expires = new Date(vendor.expiresAt);
@@ -85,7 +96,7 @@ export async function POST(request) {
 
                 const rawUnusedValue = (currentPlan.price / planDuration) * diffDays;
                 const discountValue = Math.round(rawUnusedValue * prorationFactor);
-                proratedPrice = Math.max(0, newPlan.price - discountValue);
+                proratedPrice = Math.max(0, targetPlanPrice - discountValue);
             }
         }
 

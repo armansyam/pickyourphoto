@@ -25,6 +25,27 @@ export default function RegisterPage() {
     const [regStatus, setRegStatus] = useState({ registration_open: true, free_trial_available: true, reason_closed: null });
     const [checkingStatus, setCheckingStatus] = useState(true);
     const [paymentMethod, setPaymentMethod] = useState('');
+    const [flashPromoInfo, setFlashPromoInfo] = useState(null);
+    const [countdownText, setCountdownText] = useState('00:00:00');
+
+    useEffect(() => {
+        if (flashPromoInfo && flashPromoInfo.active && flashPromoInfo.endsAt) {
+            const updateTimer = () => {
+                const diff = new Date(flashPromoInfo.endsAt).getTime() - new Date().getTime();
+                if (diff <= 0) {
+                    setCountdownText('00:00:00');
+                    return;
+                }
+                const h = Math.floor(diff / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+                setCountdownText(`${h < 10 ? '0' + h : h}:${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`);
+            };
+            updateTimer();
+            const interval = setInterval(updateTimer, 1000);
+            return () => clearInterval(interval);
+        }
+    }, [flashPromoInfo]);
 
     const isGatewayEnabled = settings?.enable_payment_gateway === '1' || settings?.enable_payment_gateway === 'true';
 
@@ -71,6 +92,7 @@ export default function RegisterPage() {
                     const data = await res.json();
                     const plansList = Array.isArray(data) ? data : (data.plans || []);
                     setPlans(plansList);
+                    if (data.flashPromo) setFlashPromoInfo(data.flashPromo);
                     if (plansList.length > 0) {
                         const firstLimit = plansList.find(p => p.planType === 'limit') || plansList[0];
                         setSelectedTab(firstLimit.planType || 'limit');
@@ -364,6 +386,14 @@ export default function RegisterPage() {
                     }
                 }
             `}</style>
+            {flashPromoInfo && flashPromoInfo.active && (
+                <div style={{ width: '100%', maxWidth: step === 1 ? '400px' : '940px', marginBottom: '16px', background: 'linear-gradient(90deg, #ef4444, #dc2626)', color: '#ffffff', padding: '12px 18px', borderRadius: '14px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', boxShadow: '0 4px 16px rgba(239,68,68,0.35)', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)', boxSizing: 'border-box' }}>
+                    ⚡ {flashPromoInfo.title || 'FLASH SALE PROMO'} ({flashPromoInfo.discountPercent}% OFF) — {flashPromoInfo.bannerText || 'Diskon Spesial!'}
+                    <span style={{ background: 'rgba(0,0,0,0.3)', padding: '4px 12px', borderRadius: '20px', marginLeft: '10px', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', fontFamily: 'monospace', display: 'inline-block', marginTop: '4px' }}>
+                        ⏳ {countdownText}
+                    </span>
+                </div>
+            )}
             <div className="glass-card register-glass-card" style={{ width: '100%', maxWidth: step === 1 ? '400px' : '940px', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)' }}>
 
                 {success ? (
@@ -670,7 +700,20 @@ export default function RegisterPage() {
                                                             <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', marginBottom: '8px' }}>📦 PAKET SAAS YANG DIPILIH</div>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                                                 <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>{selPlan.name}</span>
-                                                                <span style={{ color: '#fbbf24', fontWeight: '850', fontSize: '17px' }}>Rp {selPlan.price ? selPlan.price.toLocaleString('id-ID') : '0'}</span>
+                                                                {selPlan.discountedPrice && selPlan.discountedPrice < selPlan.originalPrice ? (
+                                                                    <div style={{ textAlign: 'right' }}>
+                                                                        <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '12px', marginRight: '6px' }}>
+                                                                            Rp {selPlan.originalPrice ? selPlan.originalPrice.toLocaleString('id-ID') : '0'}
+                                                                        </span>
+                                                                        <span style={{ color: '#ef4444', fontWeight: '850', fontSize: '17px' }}>
+                                                                            Rp {selPlan.discountedPrice ? selPlan.discountedPrice.toLocaleString('id-ID') : '0'}
+                                                                        </span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span style={{ color: '#fbbf24', fontWeight: '850', fontSize: '17px' }}>
+                                                                        Rp {selPlan.price ? selPlan.price.toLocaleString('id-ID') : '0'}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             
                                                             <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
