@@ -134,6 +134,18 @@ export async function PATCH(request) {
             targetEndsAt = new Date(Date.now() + durHours * 60 * 60 * 1000).toISOString();
         }
 
+        let finalEnableTrial = enable_free_trial !== undefined ? (enable_free_trial ? 1 : 0) : current.enable_free_trial;
+        let finalEnableFlash = enable_flash_promo !== undefined ? (enable_flash_promo ? 1 : 0) : (current.enable_flash_promo || 0);
+
+        // Mutual Exclusivity: Flash Sale ON forces Free Trial OFF, and vice versa
+        if (enable_flash_promo === true || enable_flash_promo === 1) {
+            finalEnableFlash = 1;
+            finalEnableTrial = 0;
+        } else if (enable_free_trial === true || enable_free_trial === 1) {
+            finalEnableTrial = 1;
+            finalEnableFlash = 0;
+        }
+
         db.prepare(`
             UPDATE system_settings 
             SET enable_free_trial = ?, 
@@ -147,9 +159,9 @@ export async function PATCH(request) {
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = 1
         `).run(
-            enable_free_trial !== undefined ? (enable_free_trial ? 1 : 0) : current.enable_free_trial,
+            finalEnableTrial,
             trial_expiration_minutes !== undefined ? Math.max(1, parseInt(trial_expiration_minutes) || 30) : current.trial_expiration_minutes,
-            enable_flash_promo !== undefined ? (enable_flash_promo ? 1 : 0) : (current.enable_flash_promo || 0),
+            finalEnableFlash,
             flash_promo_discount_percent !== undefined ? Math.max(1, Math.min(90, parseInt(flash_promo_discount_percent) || 20)) : (current.flash_promo_discount_percent || 20),
             targetEndsAt,
             flash_promo_duration_hours !== undefined ? Math.max(1, parseInt(flash_promo_duration_hours) || 24) : (current.flash_promo_duration_hours || 24),

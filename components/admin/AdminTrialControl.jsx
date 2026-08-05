@@ -218,8 +218,10 @@ export default function AdminTrialControl({ addToast }) {
                 {/* MASTER ON/OFF */}
                 <button
                     onClick={() => {
-                        setEnableTrial(!enableTrial);
-                        handleSave({ enable_free_trial: !enableTrial });
+                        const nextTrial = !enableTrial;
+                        setEnableTrial(nextTrial);
+                        if (nextTrial) setEnableFlashPromo(false);
+                        handleSave({ enable_free_trial: nextTrial, enable_flash_promo: nextTrial ? false : enableFlashPromo });
                     }}
                     disabled={saving}
                     style={{
@@ -334,12 +336,13 @@ export default function AdminTrialControl({ addToast }) {
                         onClick={() => {
                             const newStatus = !enableFlashPromo;
                             setEnableFlashPromo(newStatus);
+                            if (newStatus) setEnableTrial(false);
                             if (newStatus && !flashEndsAt) {
-                                const defaultEnds = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+                                const defaultEnds = new Date(Date.now() + selectedDurationHours * 60 * 60 * 1000).toISOString();
                                 setFlashEndsAt(defaultEnds);
-                                handleSave({ enable_flash_promo: true, flash_promo_ends_at: defaultEnds });
+                                handleSave({ enable_flash_promo: true, enable_free_trial: false, flash_promo_ends_at: defaultEnds, flash_promo_duration_hours: selectedDurationHours });
                             } else {
-                                handleSave({ enable_flash_promo: newStatus });
+                                handleSave({ enable_flash_promo: newStatus, enable_free_trial: newStatus ? false : enableTrial });
                             }
                         }}
                         style={{
