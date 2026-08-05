@@ -7,6 +7,7 @@ export default function AdminSettings({
   googleClientSecret, setGoogleClientSecret,
   googleMasterFolderId, setGoogleMasterFolderId,
   googleRefreshToken,
+  googleMasterAccountEmail,
 
   newPassword, setNewPassword,
   bankName, setBankName,
@@ -189,28 +190,61 @@ export default function AdminSettings({
                   <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>Kredensial Master Google OAuth 2.0</span>
                   <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#94a3b8' }}>Digunakan untuk Google Sign-in Vendor & sinkronisasi Google Drive Studio.</p>
                 </div>
-                <span style={{ fontSize: '11px', background: googleRefreshToken ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: googleRefreshToken ? '#34d399' : '#fbbf24', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
-                  {googleRefreshToken ? '🟢 Terhubung (OAuth Active)' : '⚠️ Belum Terhubung'}
+                <span style={{ fontSize: '11px', background: googleRefreshToken ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: googleRefreshToken ? '#34d399' : '#fbbf24', padding: '4px 12px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  {googleRefreshToken ? '🟢 OAuth Active' : '⚠️ Belum Terhubung'}
                 </span>
               </div>
 
               {!isEditingGoogleCredentials && googleClientId && googleClientSecret ? (
-                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '12px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
                     <div>
-                      <span style={{ color: '#94a3b8', display: 'block' }}>Google Client ID:</span>
-                      <strong style={{ color: '#ffffff', wordBreak: 'break-all' }}>{googleClientId.substring(0, 16)}...</strong>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Google Client ID:</span>
+                      <strong style={{ color: '#ffffff', wordBreak: 'break-all', fontFamily: 'monospace' }}>{googleClientId.substring(0, 24)}...</strong>
                     </div>
                     <div>
-                      <span style={{ color: '#94a3b8', display: 'block' }}>Client Secret:</span>
-                      <strong style={{ color: '#34d399' }}>••••••••••••••••</strong>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Client Secret:</span>
+                      <strong style={{ color: '#34d399', letterSpacing: '2px' }}>••••••••••••••••</strong>
                     </div>
                   </div>
-                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <a href="/api/auth/google" style={{ fontSize: '12px', color: '#38bdf8', textDecoration: 'none', fontWeight: 'bold' }}>
-                      🔄 Otorisasi Ulang OAuth ➔
-                    </a>
-                    <button type="button" onClick={() => setIsEditingGoogleCredentials(true)} className="btn-secondary" style={{ padding: '6px 14px', fontSize: '12px' }}>
+
+                  <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                    <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '10px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', fontWeight: '700' }}>
+                          Akun Master Terhubung
+                        </span>
+                        <strong style={{ color: googleMasterAccountEmail ? '#38bdf8' : '#fbbf24', fontSize: '13px' }}>
+                          {googleMasterAccountEmail || 'Belum Terhubung'}
+                        </strong>
+                      </div>
+                      <a 
+                        href="/api/admin/auth/google" 
+                        style={{ 
+                          fontSize: '11px', 
+                          color: '#ffffff', 
+                          background: 'linear-gradient(135deg, #0284c7, #0369a1)', 
+                          padding: '6px 14px', 
+                          borderRadius: '8px', 
+                          textDecoration: 'none', 
+                          fontWeight: '700',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 2px 10px rgba(2, 132, 199, 0.35)',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        🔄 Ganti Akun ➔
+                      </a>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      onClick={() => setIsEditingGoogleCredentials(true)} 
+                      className="btn-secondary" 
+                      style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
+                    >
                       ✏️ Edit Kredensial
                     </button>
                   </div>
@@ -235,16 +269,6 @@ export default function AdminSettings({
                       placeholder="GOCSPX-xxxxxxxxxxxxxx"
                       value={googleClientSecret}
                       onChange={e => setGoogleClientSecret(e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '12px' }}>Master Drive Folder ID (Opsional)</label>
-                    <input
-                      type="text"
-                      className="input-text"
-                      placeholder="Google Drive Folder ID untuk Master Storage"
-                      value={googleMasterFolderId}
-                      onChange={e => setGoogleMasterFolderId(e.target.value)}
                     />
                   </div>
                   {isEditingGoogleCredentials && (

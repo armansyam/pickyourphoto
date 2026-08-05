@@ -7,6 +7,7 @@ import AdminVendors from '@/components/admin/AdminVendors';
 import AdminPlans from '@/components/admin/AdminPlans';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminTrialControl from '@/components/admin/AdminTrialControl';
+import AdminStoragePool from '@/components/admin/AdminStoragePool';
 
 export default function AdminDashboard({ adminUser }) {
     const [activeTab, setActiveTab] = useState('analytics'); // 'analytics', 'inquiry', 'vendors', 'plans', 'trial', 'settings'
@@ -69,6 +70,7 @@ export default function AdminDashboard({ adminUser }) {
     const [googleClientSecret, setGoogleClientSecret] = useState('');
     const [googleMasterFolderId, setGoogleMasterFolderId] = useState('');
     const [googleRefreshToken, setGoogleRefreshToken] = useState('');
+    const [googleMasterAccountEmail, setGoogleMasterAccountEmail] = useState('');
 
 
     // Payment Gateway Toggle States
@@ -214,6 +216,7 @@ export default function AdminDashboard({ adminUser }) {
                     if (data.saasSettings.google_client_secret) setGoogleClientSecret(data.saasSettings.google_client_secret);
                     if (data.saasSettings.google_master_folder_id) setGoogleMasterFolderId(data.saasSettings.google_master_folder_id);
                     if (data.saasSettings.google_refresh_token) setGoogleRefreshToken(data.saasSettings.google_refresh_token);
+                    if (data.saasSettings.google_master_account_email) setGoogleMasterAccountEmail(data.saasSettings.google_master_account_email);
 
 
                     if (data.saasSettings.enable_payment_gateway) setEnablePaymentGateway(data.saasSettings.enable_payment_gateway === '1' || data.saasSettings.enable_payment_gateway === 'true');
@@ -598,6 +601,7 @@ export default function AdminDashboard({ adminUser }) {
                             googleClientSecret={googleClientSecret} setGoogleClientSecret={setGoogleClientSecret}
                             googleMasterFolderId={googleMasterFolderId} setGoogleMasterFolderId={setGoogleMasterFolderId}
                             googleRefreshToken={googleRefreshToken}
+                            googleMasterAccountEmail={googleMasterAccountEmail}
 
                             newPassword={newPassword} setNewPassword={setNewPassword}
                             bankName={bankName} setBankName={setBankName}
@@ -702,9 +706,31 @@ export default function AdminDashboard({ adminUser }) {
                             >
                                 🎯 Trial Control
                             </button>
+
+                            <button
+                                onClick={() => handleTabChange('storage-pool')}
+                                style={{
+                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    background: activeTab === 'storage-pool' ? 'linear-gradient(135deg, #059669, #047857)' : 'transparent',
+                                    color: activeTab === 'storage-pool' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                    boxShadow: activeTab === 'storage-pool' ? '0 4px 12px rgba(16,185,129,0.3)' : 'none'
+                                }}
+                            >
+                                💾 Operasional Storage Pool
+                            </button>
                         </div>
 
                         {/* Render Modular View Components */}
+                        {activeTab === 'storage-pool' && (
+                            <AdminStoragePool
+                                googleClientId={googleClientId}
+                                googleClientSecret={googleClientSecret}
+                                googleMasterAccountEmail={googleMasterAccountEmail}
+                                googleRefreshToken={googleRefreshToken}
+                            />
+                        )}
+
                         {activeTab === 'analytics' && (
                             <AdminOverview 
                                 analyticsData={analytics} 

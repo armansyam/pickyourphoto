@@ -21,6 +21,26 @@ export async function GET() {
             saasSettings[row.key] = row.value;
         });
 
+        // Dynamically fetch and cache connected Google account email if not yet cached in DB
+        if (!saasSettings.google_master_account_email && (saasSettings.google_refresh_token || saasSettings.google_client_id)) {
+            try {
+                const { getMasterDriveClient } = await import('@/lib/google-master-drive.js');
+                const drive = getMasterDriveClient();
+                if (drive) {
+                    const aboutRes = await drive.about.get({ fields: 'user' });
+                    if (aboutRes?.data?.user?.emailAddress) {
+                        const accountEmail = aboutRes.data.user.emailAddress;
+                        saasSettings.google_master_account_email = accountEmail;
+                        try {
+                            db.prepare("INSERT OR REPLACE INTO saas_settings (key, value) VALUES ('google_master_account_email', ?)").run(accountEmail);
+                        } catch (e) {}
+                    }
+                }
+            } catch (err) {
+                console.warn('[Admin Settings API] Dynamic Google email resolution skipped:', err.message);
+            }
+        }
+
         // Compute last backup timestamp and info from backups/ folder
         let lastBackupTime = 'Belum pernah';
         let lastBackupFileName = null;

@@ -20,6 +20,7 @@ export async function GET(request) {
         }
 
         const origin = getRequestOrigin(request);
+        // Use the authorized redirect URI registered in Google Cloud Console
         const redirectUri = `${origin}/api/admin/auth/google/callback`;
 
         const scopes = [
@@ -28,11 +29,12 @@ export async function GET(request) {
             'https://www.googleapis.com/auth/userinfo.profile'
         ].join(' ');
 
-        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`;
+        // Pass state=worker to differentiate Worker Account OAuth from Master OAuth
+        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent&state=worker`;
 
         return NextResponse.redirect(googleAuthUrl);
     } catch (error) {
-        console.error('Admin Google auth init error:', error);
+        console.error('Admin Google Worker auth init error:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
     }
 }
