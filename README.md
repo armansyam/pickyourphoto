@@ -1,5 +1,11 @@
 # Pick-Your-Photo — Self-Hosted SaaS Platform for Photographers
 
+> 📚 **DOKUMENTASI KEMAJUAN & BLUEPRINT PROYEK TERKINI**:
+> Sebelum memulai sesi baru atau mengerjakan fitur, **WAJIB MEMERIKSA FOLDER [`docs/`](docs/README.md)**.
+> Lihat **[`docs/README.md`](docs/README.md)** untuk membaca indeks dokumentasi, status pengerjaan fitur terkini, dan panduan berkas aktif!
+
+---
+
 **Pick-Your-Photo** adalah platform SaaS mandiri yang dirancang khusus untuk memudahkan fotografer (vendor) mengelola proses seleksi foto bersama klien secara online, dengan sistem berlangganan berbasis paket, manajemen galeri Zero-Storage, sortir file RAW lokal, dan integrasi Google Drive.
 
 ---
