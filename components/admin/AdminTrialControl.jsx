@@ -34,8 +34,8 @@ const PRESETS = [
     },
     {
         id: 'flash',
-        label: '⚡ Flash Promo',
-        desc: 'Matikan trial → paksa langsung daftar.',
+        label: '🔒 Direct Sales (Matikan Trial)',
+        desc: 'Matikan trial gratis → paksa langsung daftar berbayar.',
         color: '#ef4444',
         settings: { enable_free_trial: false, trial_expiration_minutes: 30, raw_sorter_trial_limit: 3 },
     },
