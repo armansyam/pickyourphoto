@@ -118,6 +118,20 @@ Vendor mengisi form registrasi di /register
 
 ---
 
+## 🎯 Roadmap & Rencana Fitur Mendatang
+
+| Fitur | Prioritas | Keterangan & Status |
+|---|---|---|
+| **Email Expiry H-7, H-3, H-0** | 🔴 Tinggi | Pengingat otomatis sebelum masa aktif vendor berakhir (Engine SMTP siap) |
+| **Badge Status Visual Dashboard** | 🔴 Tinggi | Visualisasi warna status proyek (`Aktif`, `Selesai`, `Diarsipkan`, `Gagal`) |
+| **Polling Import Real-Time** | 🟡 Sedang | Indikator progres impor folder Google Drive secara real-time |
+| **Email Registrasi ke Admin** | 🟢 Rendah | Email pemberitahuan otomatis ke Admin SaaS saat ada vendor baru |
+| **Export Rekap Seleksi CSV** | 🟢 Rendah | Unduh daftar nama foto terpilih klien dalam format CSV/Excel |
+
+> Rincian lengkap rencana pengembangan dapat dibaca pada berkas [`docs/PLAN_FITUR_BARU.md`](docs/PLAN_FITUR_BARU.md) & [`docs/04-IMPLEMENTATION-PLAN.md`](docs/04-IMPLEMENTATION-PLAN.md).
+
+---
+
 ## 📖 Dokumentasi Teknis Terstruktur
 
 | Dokumen | Deskripsi & Isi |
@@ -126,8 +140,11 @@ Vendor mengisi form registrasi di /register
 | [`docs/02-DATABASE-AND-SECURITY.md`](docs/02-DATABASE-AND-SECURITY.md) | Skema tabel SQLite, indeks, migrasi, dan standar keamanan |
 | [`docs/03-DEPLOYMENT-GUIDE.md`](docs/03-DEPLOYMENT-GUIDE.md) | Panduan deployment LXC, PM2, Docker, Nginx, dan SSL |
 | [`docs/04-IMPLEMENTATION-PLAN.md`](docs/04-IMPLEMENTATION-PLAN.md) | Status fitur berjalan, roadmap prioritas, & audit history |
+| [`docs/PLAN_FITUR_BARU.md`](docs/PLAN_FITUR_BARU.md) | Rencana & rincian fitur baru mendatang |
 | [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md) | Dokumentasi API endpoint terperinci (Auth, Proxy, Payment, RAW Selector) |
 
 ---
 
 *Dikelola oleh: **AGY (Antigravity)** — Tim AMS Development*
+
+
