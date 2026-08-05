@@ -1497,7 +1497,7 @@
       } else {
         if (banner) banner.style.display = 'none';
         if (heroCta) {
-          if (data.enableFreeTrial !== false) {
+          if (data.enableFreeTrial !== false && !flashPromo.active) {
             heroCta.href = '#trial-box';
             heroCta.style.background = 'linear-gradient(135deg, #6366f1, #9333ea)';
             heroCta.innerHTML = '⚡ Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;';
@@ -1506,6 +1506,16 @@
             heroCta.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
             heroCta.innerHTML = '🔥 Lihat Paket Berlangganan &rarr;';
           }
+        }
+      }
+
+      // Hide or Show Trial Box Section Dynamically
+      var trialBoxSection = document.getElementById('trial-box');
+      if (trialBoxSection) {
+        if (data.enableFreeTrial === false || (flashPromo.active && flashPromo.endsAt && new Date(flashPromo.endsAt) > new Date())) {
+          trialBoxSection.style.display = 'none';
+        } else {
+          trialBoxSection.style.display = 'block';
         }
       }
 
@@ -1528,9 +1538,10 @@
             '<ul>' +
               '<li>Maksimal ' + p.maxProjects + ' Project Aktif</li>' +
               '<li>Maksimal ' + (p.maxPhotosPerProject > 0 ? p.maxPhotosPerProject + ' Foto / Project' : 'Tanpa Batas Foto / Project') + '</li>' +
-              '<li>Masa Simpan Galeri ' + (p.projectExpireDays >= 999 ? 'Permanen / ' + period + ' Hari' : p.projectExpireDays + ' Hari') + '</li>' +
+              '<li>Masa Simpan Galeri ' + period + ' Hari Aktif</li>' +
               '<li>Integrasi Langsung Google Drive</li>' +
               (p.allowCustomLogo ? '<li style="color: #818cf8; font-weight: bold;">Custom Logo Studio (White-Label)</li>' : '<li style="color: var(--muted-dark);">Logo Default Platform</li>') +
+              (p.allowRawSelector ? '<li style="color: #10b981; font-weight: bold;">⚡ Fitur 1-Klik Auto-Sorter / Selector File RAW</li>' : '<li style="color: var(--muted-dark);">Fitur RAW Selector Nonaktif</li>') +
             '</ul>' +
             '<a href="/register?planId=' + p.id + '" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: ' + (isDiscounted ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : (isFeatured ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)')) + '; color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">' + (isDiscounted ? 'Klaim Diskon ' + p.discountPercent + '% &rarr;' : 'Pilih Paket &rarr;') + '</a>' +
           '</div>';
