@@ -36,9 +36,16 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Paket berlangganan tidak ditemukan.' }, { status: 404 });
     }
 
+    // Import auth helper to verify caller session if customAmount is requested
+    const { getAuthVendor } = await import('@/lib/auth');
+    const authUser = getAuthVendor();
+
     // Calculate amount considering active Flash Sale Promo
-    let amount = (customAmount && customAmount > 0) ? customAmount : plan.price;
-    if (!customAmount && plan.price > 0) {
+    // customAmount is strictly reserved for Admin manual testing or authorized prorated upgrades
+    const allowCustom = authUser && (authUser.role === 'admin' || authUser.id === vendorId);
+    let amount = (customAmount && customAmount > 0 && allowCustom) ? customAmount : plan.price;
+
+    if (plan.price > 0 && (!customAmount || !allowCustom)) {
       const settings = db.prepare("SELECT enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at FROM system_settings WHERE id = 1").get() || {};
       const promoEnds = settings.flash_promo_ends_at ? new Date(settings.flash_promo_ends_at) : null;
       if (settings.enable_flash_promo === 1 && promoEnds && promoEnds > new Date()) {
