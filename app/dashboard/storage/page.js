@@ -125,6 +125,9 @@ export default function VendorStorageManagerPage() {
     return Math.max(10000, Math.round((price / 30) * daysRemaining));
   };
 
+  const isOverQuota = vendorData?.isOverQuota;
+  const hasAddon = vendorData?.hasStorageAddon || quotaBytes > 0;
+
   return (
     <div style={{ minHeight: '100vh', background: '#09090b', color: '#f4f4f5', padding: '24px', fontFamily: "'Inter', sans-serif" }}>
       {/* Toast Notification */}
