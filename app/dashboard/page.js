@@ -2364,7 +2364,36 @@ export default function DashboardPage() {
 
                         {!selectedUpgradePlan ? (
                             <>
-                                    })}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                                    {upgradeTab === 'limit' ? (
+                                        availablePlans.map(p => (
+                                            <div key={p.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                                <div>
+                                                    <h3 style={{ margin: '0 0 4px 0', fontSize: '16px' }}>{p.name}</h3>
+                                                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#818cf8', marginBottom: '12px' }}>
+                                                        Rp {p.price?.toLocaleString('id-ID')} <span style={{ fontSize: '11px', color: '#a1a1aa' }}>/ bln</span>
+                                                    </div>
+                                                </div>
+                                                <button className="btn-primary" onClick={() => setSelectedUpgradePlan(p)} style={{ width: '100%', fontSize: '12px', padding: '8px' }}>
+                                                    Pilih Paket
+                                                </button>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        availableAddonPlans.map(a => (
+                                            <div key={a.id} style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                                <div>
+                                                    <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#34d399' }}>{a.name}</h3>
+                                                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', marginBottom: '12px' }}>
+                                                        Rp {a.price?.toLocaleString('id-ID')} <span style={{ fontSize: '11px', color: '#a1a1aa' }}>/ bln</span>
+                                                    </div>
+                                                </div>
+                                                <button className="btn-primary" onClick={() => setSelectedUpgradePlan({ ...a, isAddon: true })} style={{ width: '100%', fontSize: '12px', padding: '8px', background: 'linear-gradient(135deg, #059669, #047857)' }}>
+                                                    Pilih Add-On
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
                                     <button className="btn-secondary" onClick={() => setShowUpgradeModal(false)}>Tutup</button>
