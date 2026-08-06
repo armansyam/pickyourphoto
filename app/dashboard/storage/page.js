@@ -101,16 +101,16 @@ export default function VendorStorageManagerPage() {
     }
   };
 
+  const formatIDR = (amount) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
+  };
+
   const formatBytes = (bytes) => {
     if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const formatIDR = (amount) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount);
   };
 
   const usedBytes = vendorData?.usedStorageBytes || 0;
@@ -120,250 +120,316 @@ export default function VendorStorageManagerPage() {
   const hasAddon = vendorData?.hasStorageAddon || quotaBytes > 0;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8">
+    <div style={{ minHeight: '100vh', background: '#09090b', color: '#f4f4f5', padding: '24px', fontFamily: "'Inter', sans-serif" }}>
       {/* Toast Notification */}
       {notification.show && (
-        <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl backdrop-blur-md border text-sm font-semibold transition-all duration-300 ${
-          notification.type === 'error'
-            ? 'bg-rose-950/80 border-rose-500/50 text-rose-200'
-            : 'bg-emerald-950/80 border-emerald-500/50 text-emerald-200'
-        }`}>
+        <div style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          zIndex: 9999,
+          padding: '12px 20px',
+          borderRadius: '12px',
+          backdropFilter: 'blur(16px)',
+          border: notification.type === 'error' ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(52,211,153,0.4)',
+          background: notification.type === 'error' ? 'rgba(239,68,68,0.15)' : 'rgba(52,211,153,0.15)',
+          color: notification.type === 'error' ? '#f87171' : '#34d399',
+          fontSize: '13px',
+          fontWeight: '600',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+        }}>
           {notification.message}
         </div>
       )}
 
       {/* Main Container */}
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Navigation Breadcrumb */}
-        <div className="flex items-center justify-between">
+      <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        {/* Header Bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <Link href="/dashboard" className="text-xs font-medium text-slate-400 hover:text-indigo-400 transition">
-              ← Kembali ke Dashboard Utama
+            <Link href="/dashboard" style={{ fontSize: '12px', color: '#818cf8', textDecoration: 'none', fontWeight: '500' }}>
+              &larr; Kembali ke Dashboard Utama
             </Link>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mt-1 bg-gradient-to-r from-indigo-400 via-sky-300 to-emerald-400 bg-clip-text text-transparent">
+            <h1 style={{ margin: '6px 0 4px 0', fontSize: '26px', fontWeight: '800', background: 'linear-gradient(135deg, #818cf8, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               📁 Cloud Storage Manager
             </h1>
-            <p className="text-slate-400 text-xs md:text-sm mt-1">
-              Kelola kapasitas penyimpanan cloud dedicated studio & kuota penyimpanan galeri klien.
+            <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa' }}>
+              Kelola kapasitas penyimpanan cloud dedicated studio & kuota galeri klien.
             </p>
           </div>
 
           {hasAddon && (
             <button
               onClick={() => setShowAddonModal(true)}
-              className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-xs md:text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center gap-2"
+              style={{
+                padding: '10px 18px',
+                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '12px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(99,102,241,0.3)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
             >
               <span>📦</span> Tambah Kuota Storage
             </button>
           )}
         </div>
 
-        {/* Kondisi 1: UPSELL PREVIEW PAGE (Vendor Belum Memiliki Add-On) */}
+        {/* LOADING STATE */}
+        {loading && (
+          <div style={{ padding: '60px 0', textAlign: 'center', color: '#a1a1aa', fontSize: '14px' }}>
+            Memuat data Cloud Storage...
+          </div>
+        )}
+
+        {/* KONDISI 1: VENDOR BELUM MEMILIKI ADD-ON (UPSELL PREVIEW) */}
         {!loading && !hasAddon && (
-          <div className="space-y-8">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+            
             {/* Hero Upsell Banner */}
-            <div className="bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-950 border border-indigo-500/30 backdrop-blur-2xl rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden text-center md:text-left flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="space-y-4 max-w-2xl">
-                <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-full text-xs font-bold uppercase tracking-wider">
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(16,185,129,0.05))',
+              border: '1px solid rgba(99,102,241,0.2)',
+              borderRadius: '20px',
+              padding: '32px',
+              display: 'flex',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '24px',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.3)'
+            }}>
+              <div style={{ flex: 1, minWidth: '280px' }}>
+                <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.3)' }}>
                   ✨ Fitur Premium Studio Cloud
                 </span>
-                <h2 className="text-3xl md:text-4xl font-black text-white leading-tight">
+                <h2 style={{ margin: '14px 0 10px 0', fontSize: '24px', fontWeight: '800', color: '#ffffff', lineHeight: '1.3' }}>
                   Simpan Ribuan Foto Langsung di Cloud SaaS Pick Your Photo 🚀
                 </h2>
-                <p className="text-slate-300 text-sm md:text-base leading-relaxed">
-                  Tingkatkan kenyamanan kerja studio Anda tanpa perlu khawatir ruang penyimpanan lokal penuh. Dapatkan dedicated Cloud Storage berkecepatan tinggi dengan proteksi aman & fitur manajemen folder instan.
+                <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa', lineHeight: '1.6' }}>
+                  Tingkatkan kenyamanan kerja studio Anda tanpa khawatir ruang penyimpanan lokal penuh. Dedicated Cloud Storage berkecepatan tinggi dengan proteksi aman & manajemen folder instan.
                 </p>
-                <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-300 pt-2">
-                  <span className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
-                    <span className="text-emerald-400">✓</span> High-Speed Pipe Stream
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '16px', fontSize: '12px', color: '#e4e4e7' }}>
+                  <span style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 10px', borderRadius: '8px' }}>
+                    <strong style={{ color: '#34d399' }}>✓</strong> High-Speed Pipe Stream
                   </span>
-                  <span className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
-                    <span className="text-emerald-400">✓</span> Single Expiry Date Integration
+                  <span style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 10px', borderRadius: '8px' }}>
+                    <strong style={{ color: '#34d399' }}>✓</strong> Single Expiry Integration
                   </span>
-                  <span className="flex items-center gap-1.5 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
-                    <span className="text-emerald-400">✓</span> Glassmorphism Lock Protection
+                  <span style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', padding: '4px 10px', borderRadius: '8px' }}>
+                    <strong style={{ color: '#34d399' }}>✓</strong> Glassmorphism Lock
                   </span>
                 </div>
               </div>
 
-              <div className="w-full md:w-auto text-center">
-                <div className="bg-slate-900/90 border border-indigo-500/40 rounded-2xl p-6 shadow-2xl space-y-3">
-                  <span className="text-xs text-indigo-300 font-bold uppercase tracking-wider block">Mulai dari Hanya</span>
-                  <div className="text-3xl font-black text-amber-400">
-                    Rp 49.000 <span className="text-xs text-slate-400 font-normal">/bulan</span>
-                  </div>
-                  <button
-                    onClick={() => setShowAddonModal(true)}
-                    className="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 via-sky-600 to-emerald-600 hover:from-indigo-500 hover:to-emerald-500 text-white font-bold text-sm rounded-xl shadow-xl shadow-indigo-600/30 transition-all transform hover:-translate-y-0.5"
-                  >
-                    Pilih Paket Storage ➔
-                  </button>
+              <div style={{ background: 'rgba(24,24,27,0.8)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '16px', padding: '24px', textAlign: 'center', minWidth: '220px' }}>
+                <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '600', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Mulai Dari Hanya</span>
+                <div style={{ fontSize: '26px', fontWeight: '800', color: '#fbbf24', marginBottom: '14px' }}>
+                  Rp 49.000 <span style={{ fontSize: '12px', color: '#71717a', fontWeight: '400' }}>/ bln</span>
                 </div>
+                <button
+                  onClick={() => setShowAddonModal(true)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 16px',
+                    background: 'linear-gradient(135deg, #10b981, #059669)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(16,185,129,0.3)'
+                  }}
+                >
+                  Pilih Paket Storage &rarr;
+                </button>
               </div>
             </div>
 
             {/* Showcase Dynamic Cards */}
-            <div className="space-y-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <div>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>📦</span> Pilihan Paket Add-On Cloud Storage
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {addonPlans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="bg-slate-900/60 border border-slate-800 hover:border-indigo-500/50 backdrop-blur-xl rounded-2xl p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:shadow-indigo-500/10 group"
-                  >
-                    <div className="space-y-4">
-                      <span className="text-xs font-bold uppercase tracking-wider text-indigo-400">
-                        {plan.name}
-                      </span>
-                      <div className="text-3xl font-black text-white group-hover:text-indigo-300 transition">
-                        {formatBytes(plan.quotaBytes)}
-                      </div>
-                      <div className="text-2xl font-bold text-amber-400">
-                        {formatIDR(plan.price)}
-                        <span className="text-xs text-slate-400 font-normal"> / bulan</span>
-                      </div>
-                      <ul className="text-xs text-slate-300 space-y-2 pt-2 border-t border-slate-800">
-                        <li className="flex items-center gap-2">
-                          <span className="text-emerald-400">✓</span> Kuota Storage Dedicated Studio
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="text-emerald-400">✓</span> Unlimited High-Res Photos
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <span className="text-emerald-400">✓</span> Auto Prorated Billing
-                        </li>
-                      </ul>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setSelectedPlanId(plan.id);
-                        setShowAddonModal(true);
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+                {addonPlans.map((plan) => {
+                  const quotaGb = plan.quotaBytes ? (plan.quotaBytes / (1024 * 1024 * 1024)).toFixed(0) : '0';
+                  return (
+                    <div
+                      key={plan.id}
+                      style={{
+                        background: 'rgba(255,255,255,0.02)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justify: 'space-between',
+                        gap: '16px',
+                        transition: 'all 0.2s ease'
                       }}
-                      className="mt-6 w-full py-2.5 bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white font-bold text-xs rounded-xl border border-slate-700 hover:border-indigo-500 transition-all"
                     >
-                      Aktifkan Sekarang
-                    </button>
-                  </div>
-                ))}
+                      <div>
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          {plan.name}
+                        </span>
+                        <div style={{ fontSize: '26px', fontWeight: '800', color: '#ffffff', margin: '8px 0 4px 0' }}>
+                          {quotaGb} GB
+                        </div>
+                        <div style={{ fontSize: '18px', fontWeight: '700', color: '#34d399', marginBottom: '14px' }}>
+                          Rp {Number(plan.price).toLocaleString('id-ID')}
+                          <span style={{ fontSize: '11px', color: '#71717a', fontWeight: '400' }}> / bulan</span>
+                        </div>
+
+                        <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '12px', color: '#a1a1aa', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <li><strong style={{ color: '#34d399' }}>✓</strong> Kuota Storage Dedicated Studio</li>
+                          <li><strong style={{ color: '#34d399' }}>✓</strong> Unlimited High-Res Photos</li>
+                          <li><strong style={{ color: '#34d399' }}>✓</strong> Auto Prorated Billing</li>
+                        </ul>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setSelectedPlanId(plan.id);
+                          setShowAddonModal(true);
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '10px',
+                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '10px',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Aktifkan Sekarang
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         )}
 
-        {/* Kondisi 2: STORAGE MANAGER ACTIVE PAGE (Vendor Memiliki Add-On) */}
+        {/* KONDISI 2: VENDOR MEMILIKI ADD-ON ACTIVE */}
         {!loading && hasAddon && (
-          <>
-            {/* Quota Progress Meter Card */}
-            <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-xl rounded-2xl p-6 shadow-xl relative overflow-hidden">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            
+            {/* Quota Meter Card */}
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: '16px', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs uppercase tracking-wider font-semibold text-slate-400">Penggunaan Storage Cloud</span>
-                    <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-bold">
-                      {vendorData?.activeAddon?.name || 'Add-On Aktif'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#a1a1aa', fontWeight: '600' }}>Penggunaan Storage Cloud</span>
+                    <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)', padding: '2px 8px', borderRadius: '10px', fontWeight: '700' }}>
+                      {vendorData?.activeAddon?.name || 'Add-On Storage Aktif'}
                     </span>
                   </div>
-                  <div className="text-2xl md:text-3xl font-black text-white mt-1">
-                    {formatBytes(usedBytes)} <span className="text-slate-500 font-normal text-lg">/ {formatBytes(quotaBytes)}</span>
+                  <div style={{ fontSize: '24px', fontWeight: '800', color: '#ffffff', marginTop: '6px' }}>
+                    {formatBytes(usedBytes)} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>/ {formatBytes(quotaBytes)}</span>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className={`text-xl font-bold ${usagePercent >= 90 ? 'text-rose-400' : usagePercent >= 70 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '22px', fontWeight: '800', color: usagePercent >= 90 ? '#f87171' : usagePercent >= 70 ? '#fbbf24' : '#34d399' }}>
                     {usagePercent}%
-                  </span>
-                  <span className="text-slate-400 text-xs block">Kapasitas Terpakai</span>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#71717a' }}>Kapasitas Terpakai</span>
                 </div>
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-slate-800/80 rounded-full h-3.5 mt-4 p-0.5 overflow-hidden border border-slate-700/50">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${
-                    usagePercent >= 90
-                      ? 'bg-gradient-to-r from-amber-500 to-rose-500'
-                      : 'bg-gradient-to-r from-indigo-500 via-sky-400 to-emerald-400'
-                  }`}
-                  style={{ width: `${Math.max(2, usagePercent)}%` }}
-                />
+              <div style={{ width: '100%', background: 'rgba(255,255,255,0.06)', borderRadius: '10px', height: '10px', marginTop: '16px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  borderRadius: '10px',
+                  width: `${Math.max(2, usagePercent)}%`,
+                  background: usagePercent >= 90 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : 'linear-gradient(90deg, #6366f1, #34d399)',
+                  transition: 'all 0.4s ease'
+                }} />
               </div>
 
-              {/* Alert Banner Over-Quota */}
               {isOverQuota && (
-                <div className="mt-4 p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl flex items-start gap-3 text-rose-200 text-xs">
-                  <span className="text-lg">⚠️</span>
-                  <div className="flex-1">
-                    <span className="font-bold block text-sm text-rose-300">Penggunaan Storage Melampaui Batas!</span>
-                    Fitur upload foto baru saat ini dikunci. Harap hapus beberapa folder proyek di bawah untuk mengosongkan storage atau tingkatkan paket Add-On Storage Anda.
-                  </div>
-                  <button
-                    onClick={() => setShowAddonModal(true)}
-                    className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition"
-                  >
-                    Upgrade Storage
-                  </button>
+                <div style={{ marginTop: '16px', padding: '12px 16px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', color: '#f87171', fontSize: '12px' }}>
+                  <strong>⚠️ Penggunaan Storage Melampaui Batas!</strong> Harap hapus beberapa folder proyek di bawah untuk mengosongkan storage atau tingkatkan paket Add-On Storage Anda.
                 </div>
               )}
             </div>
 
             {/* Folders Management Section */}
-            <div className="bg-slate-900/60 border border-slate-800 backdrop-blur-xl rounded-2xl p-6 shadow-xl space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                  <span>📂</span> Daftar Folder Cloud Proyek Klien ({projects.length})
-                </h2>
-              </div>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px' }}>
+              <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>📂</span> Daftar Folder Cloud Proyek Klien ({projects.length})
+              </h3>
 
               {projects.length === 0 ? (
-                <div className="py-12 text-center text-slate-500 text-sm bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
+                <div style={{ padding: '40px', textAlign: 'center', color: '#71717a', fontSize: '13px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)' }}>
                   Belum ada folder proyek di cloud storage. Buat proyek galeri baru dari Dashboard Utama.
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300 border-collapse">
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                     <thead>
-                      <tr className="border-b border-slate-800 text-slate-400 font-semibold uppercase text-[11px]">
-                        <th className="py-3 px-4">Nama Folder / Proyek</th>
-                        <th className="py-3 px-4">Jumlah Foto</th>
-                        <th className="py-3 px-4">Ukuran Storage</th>
-                        <th className="py-3 px-4">Status Proyek</th>
-                        <th className="py-3 px-4 text-right">Aksi</th>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', color: '#a1a1aa', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <th style={{ padding: '12px 14px' }}>Nama Folder / Proyek</th>
+                        <th style={{ padding: '12px 14px' }}>Jumlah Foto</th>
+                        <th style={{ padding: '12px 14px' }}>Ukuran Storage</th>
+                        <th style={{ padding: '12px 14px' }}>Status Proyek</th>
+                        <th style={{ padding: '12px 14px', textAlign: 'right' }}>Aksi</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody>
                       {projects.map((proj) => (
-                        <tr key={proj.id} className="hover:bg-slate-800/30 transition">
-                          <td className="py-3.5 px-4 font-semibold text-white">
-                            <div className="flex items-center gap-2">
-                              <span className="text-amber-400 text-base">📁</span>
-                              <span>{proj.name}</span>
-                            </div>
+                        <tr key={proj.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                          <td style={{ padding: '14px', fontWeight: '600', color: '#ffffff' }}>
+                            📁 {proj.name}
                           </td>
-                          <td className="py-3.5 px-4 text-slate-300 font-medium">
+                          <td style={{ padding: '14px', color: '#a1a1aa' }}>
                             {proj.photoCount || 0} Foto
                           </td>
-                          <td className="py-3.5 px-4 font-mono text-indigo-300">
+                          <td style={{ padding: '14px', color: '#818cf8', fontWeight: '600' }}>
                             {formatBytes(proj.totalSizeBytes || 0)}
                           </td>
-                          <td className="py-3.5 px-4">
-                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                              proj.status === 'completed'
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                                : proj.status === 'archived'
-                                ? 'bg-rose-500/10 text-rose-400 border-rose-500/30'
-                                : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
-                            }`}>
-                              {proj.status === 'completed' ? 'Selesai Dipilih' : proj.status === 'archived' ? 'Diarsipkan' : 'Aktif Seleksi'}
+                          <td style={{ padding: '14px' }}>
+                            <span style={{
+                              fontSize: '10px',
+                              padding: '3px 8px',
+                              borderRadius: '10px',
+                              fontWeight: '700',
+                              background: proj.status === 'completed' ? 'rgba(52,211,153,0.15)' : 'rgba(99,102,241,0.15)',
+                              color: proj.status === 'completed' ? '#34d399' : '#818cf8'
+                            }}>
+                              {proj.status === 'completed' ? 'Selesai Dipilih' : 'Aktif Seleksi'}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-right space-x-2">
+                          <td style={{ padding: '14px', textAlign: 'right' }}>
                             <button
                               onClick={() => handleDeleteFolder(proj.id, proj.name)}
                               disabled={actionLoading}
-                              className="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-lg text-xs transition font-semibold"
+                              style={{
+                                padding: '6px 12px',
+                                background: 'rgba(239,68,68,0.1)',
+                                color: '#f87171',
+                                border: '1px solid rgba(239,68,68,0.2)',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                cursor: 'pointer',
+                                fontWeight: '600'
+                              }}
                             >
                               🗑️ Hapus Folder
                             </button>
@@ -375,75 +441,71 @@ export default function VendorStorageManagerPage() {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
 
       {/* Addon Modal Selection */}
       {showAddonModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-3xl w-full p-6 md:p-8 space-y-6 relative shadow-2xl">
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={() => setShowAddonModal(false)}>
+          <div style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', maxWidth: '640px', width: '100%', padding: '28px', position: 'relative', boxShadow: '0 20px 50px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
             <button
               onClick={() => setShowAddonModal(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-white text-xl font-bold"
+              style={{ position: 'absolute', top: '18px', right: '18px', background: 'transparent', border: 'none', color: '#a1a1aa', fontSize: '18px', cursor: 'pointer' }}
             >
               ✕
             </button>
 
-            <div>
-              <h3 className="text-xl md:text-2xl font-black text-white bg-gradient-to-r from-indigo-400 to-sky-400 bg-clip-text text-transparent">
-                📦 Tambah Kuota Cloud Storage
-              </h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Pilih paket Add-On Storage sesuai kebutuhan kapasitas studio Anda. Masa aktif disesuaikan otomatis dengan Paket Utama.
-              </p>
-            </div>
+            <h3 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: '800', color: '#ffffff' }}>
+              📦 Pilih Paket Add-On Cloud Storage
+            </h3>
+            <p style={{ margin: '0 0 20px 0', fontSize: '12px', color: '#a1a1aa' }}>
+              Pilih kapasitas storage dedicated studio Anda. Pembayaran disesuaikan secara prorata.
+            </p>
 
-            {/* Dynamic Addon Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {addonPlans.map((plan) => (
-                <div
-                  key={plan.id}
-                  onClick={() => setSelectedPlanId(plan.id)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer relative ${
-                    selectedPlanId === plan.id
-                      ? 'bg-indigo-950/40 border-indigo-500 ring-2 ring-indigo-500/50 shadow-lg shadow-indigo-500/20'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-bold text-white text-base">{plan.name}</h4>
-                      <span className="text-xs text-slate-400">Kapasitas {formatBytes(plan.quotaBytes)}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+              {addonPlans.map((plan) => {
+                const isSelected = selectedPlanId === plan.id;
+                const quotaGb = plan.quotaBytes ? (plan.quotaBytes / (1024 * 1024 * 1024)).toFixed(0) : '0';
+                return (
+                  <div
+                    key={plan.id}
+                    onClick={() => setSelectedPlanId(plan.id)}
+                    style={{
+                      padding: '16px 18px',
+                      borderRadius: '14px',
+                      background: isSelected ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.02)',
+                      border: `1.5px solid ${isSelected ? '#6366f1' : 'rgba(255,255,255,0.08)'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#ffffff' }}>{plan.name}</h4>
+                      {isSelected && <span style={{ color: '#818cf8', fontWeight: '800', fontSize: '12px' }}>✓ Terpilih</span>}
                     </div>
-                    <span className="text-indigo-400 text-lg font-bold">
-                      {formatIDR(plan.price)} <span className="text-[10px] text-slate-500 font-normal">/bln</span>
-                    </span>
+                    <div style={{ fontSize: '20px', fontWeight: '800', color: '#34d399', margin: '8px 0 2px 0' }}>
+                      {quotaGb} GB
+                    </div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#fbbf24' }}>
+                      {formatIDR(plan.price)} <span style={{ fontSize: '10px', color: '#71717a', fontWeight: '400' }}>/ bln</span>
+                    </div>
                   </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-                    <span>⚡ Instant Activation</span>
-                    {selectedPlanId === plan.id && (
-                      <span className="text-indigo-400 font-bold flex items-center gap-1">
-                        ✓ Terpilih
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
               <button
                 onClick={() => setShowAddonModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition"
+                style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.06)', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}
               >
                 Batal
               </button>
               <button
                 onClick={() => selectedPlanId && handleSubscribeAddon(selectedPlanId)}
                 disabled={!selectedPlanId || actionLoading}
-                className="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 transition disabled:opacity-50"
+                style={{ padding: '8px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
               >
                 {actionLoading ? 'Memproses...' : 'Aktifkan Paket Terpilih'}
               </button>
