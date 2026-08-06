@@ -35,6 +35,8 @@ export default function VendorStorageManagerPage() {
       } catch (e) {}
     }, 3000);
     return () => clearInterval(interval);
+  }, [paymentModalData]);
+
   const fetchStorageData = async () => {
     try {
       setLoading(true);
