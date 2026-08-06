@@ -116,8 +116,14 @@ export default function VendorStorageManagerPage() {
   const usedBytes = vendorData?.usedStorageBytes || 0;
   const quotaBytes = vendorData?.addonStorageQuotaBytes || 0;
   const usagePercent = quotaBytes > 0 ? Math.min(100, Math.round((usedBytes / quotaBytes) * 100)) : (usedBytes > 0 ? 100 : 0);
-  const isOverQuota = vendorData?.isOverQuota;
-  const hasAddon = vendorData?.hasStorageAddon || quotaBytes > 0;
+  const daysRemaining = vendorData?.expiresAt 
+    ? Math.max(1, Math.min(30, Math.ceil((new Date(vendorData.expiresAt) - new Date()) / (1000 * 60 * 60 * 24))))
+    : 30;
+
+  const getProratedPrice = (price) => {
+    if (!price) return 0;
+    return Math.max(10000, Math.round((price / 30) * daysRemaining));
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#09090b', color: '#f4f4f5', padding: '24px', fontFamily: "'Inter', sans-serif" }}>
@@ -286,15 +292,22 @@ export default function VendorStorageManagerPage() {
                         <div style={{ fontSize: '26px', fontWeight: '800', color: '#ffffff', margin: '8px 0 4px 0' }}>
                           {quotaGb} GB
                         </div>
-                        <div style={{ fontSize: '18px', fontWeight: '700', color: '#34d399', marginBottom: '14px' }}>
+                        <div style={{ fontSize: '18px', fontWeight: '700', color: '#34d399', marginBottom: '8px' }}>
                           Rp {Number(plan.price).toLocaleString('id-ID')}
                           <span style={{ fontSize: '11px', color: '#71717a', fontWeight: '400' }}> / bulan</span>
                         </div>
 
+                        {daysRemaining < 30 && (
+                          <div style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: '8px', padding: '6px 10px', marginBottom: '12px', fontSize: '11px', color: '#34d399' }}>
+                            🏷️ <strong>Bayar Prorata Sisa {daysRemaining} Hari:</strong><br/>
+                            <strong style={{ fontSize: '13px' }}>Rp {getProratedPrice(plan.price).toLocaleString('id-ID')}</strong>
+                          </div>
+                        )}
+
                         <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '12px', color: '#a1a1aa', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                           <li><strong style={{ color: '#34d399' }}>✓</strong> Kuota Storage Dedicated Studio</li>
                           <li><strong style={{ color: '#34d399' }}>✓</strong> Unlimited High-Res Photos</li>
-                          <li><strong style={{ color: '#34d399' }}>✓</strong> Auto Prorated Billing</li>
+                          <li><strong style={{ color: '#34d399' }}>✓</strong> Dynamic Daily Prorated Billing</li>
                         </ul>
                       </div>
 
@@ -490,6 +503,12 @@ export default function VendorStorageManagerPage() {
                     <div style={{ fontSize: '13px', fontWeight: '700', color: '#fbbf24' }}>
                       {formatIDR(plan.price)} <span style={{ fontSize: '10px', color: '#71717a', fontWeight: '400' }}>/ bln</span>
                     </div>
+
+                    {daysRemaining < 30 && (
+                      <div style={{ marginTop: '6px', fontSize: '11px', color: '#34d399', fontWeight: '600' }}>
+                        🏷️ Prorata Sisa {daysRemaining} Hari: {formatIDR(getProratedPrice(plan.price))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
