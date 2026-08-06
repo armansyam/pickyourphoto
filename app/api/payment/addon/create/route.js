@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { createPayment, getPaymentGatewayConfig } from '@/lib/payment-gateway';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'pick-your-photo-secret-key-2026';
 
@@ -31,7 +32,7 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Pilih paket Add-On Storage terlebih dahulu.' }, { status: 400 });
     }
 
-    const vendor = db.prepare('SELECT id, name, email, status, expiresAt FROM vendors WHERE id = ?').get(session.id);
+    const vendor = db.prepare('SELECT id, name, email, whatsapp, status, expiresAt FROM vendors WHERE id = ?').get(session.id);
     if (!vendor) {
       return NextResponse.json({ success: false, error: 'Data vendor tidak ditemukan.' }, { status: 404 });
     }
@@ -58,13 +59,56 @@ export async function POST(req) {
     // Kalkulasi harga prorata
     const proratedPrice = Math.max(10000, Math.round((addonPlan.price / 30) * remainingDays));
 
-    // Catat histori subskripsi add-on & update kuota vendor
+    const config = getPaymentGatewayConfig();
+    
+    // 1. JIKA PAYMENT GATEWAY MIDTRANS AKTIF -> BUAT INVOICE PAYMENT MIDTRANS
+    if (config && config.enabled) {
+      const orderId = `ADDON-${vendor.id}-${addonPlan.id}-${Date.now()}`;
+
+      const paymentResult = await createPayment({
+        orderId,
+        amount: proratedPrice,
+        vendorName: vendor.name,
+        vendorEmail: vendor.email,
+        vendorPhone: vendor.whatsapp || '',
+        planName: `Add-On ${addonPlan.name}`,
+      });
+
+      const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 15;
+      const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000).toISOString();
+      const qrUrl = paymentResult.qrUrl || paymentResult.redirectUrl || '';
+
+      // Catat histori transaksi di payment_transactions & payment_sessions
+      db.prepare(`
+        INSERT INTO payment_transactions (orderId, vendorId, planId, addonPlanId, amount, provider, status, paymentUrl, transactionType, rawResponse)
+        VALUES (?, ?, 0, ?, ?, ?, 'pending', ?, 'addon', ?)
+      `).run(orderId, vendor.id, addonPlan.id, proratedPrice, config.provider, paymentResult.redirectUrl || '', JSON.stringify(paymentResult.raw || {}));
+
+      db.prepare(`
+        INSERT INTO payment_sessions (orderId, vendorId, planId, addonPlanId, amount, status, paymentMethod, qrUrl, expiresAt, transactionType, rawResponse)
+        VALUES (?, ?, 0, ?, ?, 'pending', 'qris', ?, ?, 'addon', ?)
+      `).run(orderId, vendor.id, addonPlan.id, proratedPrice, qrUrl, expiresAt, JSON.stringify(paymentResult.raw || {}));
+
+      return NextResponse.json({
+        success: true,
+        isPaymentRequired: true,
+        orderId,
+        amount: proratedPrice,
+        qrUrl,
+        paymentUrl: paymentResult.redirectUrl || '',
+        expiresAt,
+        addonName: addonPlan.name,
+        remainingDays,
+        message: 'Invoice pembayaran Add-On Storage berhasil dibuat. Silakan selesaikan pembayaran.'
+      });
+    }
+
+    // 2. FALLBACK / DEV MODE (Bila Payment Gateway dinonaktifkan): Langsung aktifkan kuota
     db.prepare(`
       INSERT INTO storage_addon_subscriptions (vendorId, addonPlanId, price, proratedPrice, status)
       VALUES (?, ?, ?, ?, 'active')
     `).run(vendor.id, addonPlan.id, addonPlan.price, proratedPrice);
 
-    // Update vendor storage quota & addon status
     db.prepare(`
       UPDATE vendors 
       SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
@@ -73,6 +117,7 @@ export async function POST(req) {
 
     return NextResponse.json({
       success: true,
+      isPaymentRequired: false,
       message: `Berhasil mendaftar ${addonPlan.name}. Kuota storage sebesar ${formatBytes(addonPlan.quotaBytes)} telah diaktifkan.`,
       summary: {
         addonName: addonPlan.name,

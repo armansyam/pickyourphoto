@@ -13,11 +13,28 @@ export default function VendorStorageManagerPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
+  const [paymentModalData, setPaymentModalData] = useState(null);
+
   useEffect(() => {
     fetchStorageData();
     fetchAddonPlans();
   }, []);
 
+  // Poll payment status if payment modal is open
+  useEffect(() => {
+    if (!paymentModalData?.orderId) return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/payment/status?orderId=${paymentModalData.orderId}`);
+        const data = await res.json();
+        if (data.status === 'paid' || data.status === 'completed' || data.paid) {
+          showToast('Pembayaran Add-On Storage Berhasil! Kuota storage telah diaktifkan.', 'success');
+          setPaymentModalData(null);
+          fetchStorageData();
+        }
+      } catch (e) {}
+    }, 3000);
+    return () => clearInterval(interval);
   const fetchStorageData = async () => {
     try {
       setLoading(true);
@@ -88,9 +105,15 @@ export default function VendorStorageManagerPage() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(data.message, 'success');
-        setShowAddonModal(false);
-        fetchStorageData();
+        if (data.isPaymentRequired) {
+          setShowAddonModal(false);
+          setPaymentModalData(data);
+          showToast('Invoice pembayaran berhasil dibuat. Silakan scan QRIS untuk menyelesaikan.', 'success');
+        } else {
+          showToast(data.message, 'success');
+          setShowAddonModal(false);
+          fetchStorageData();
+        }
       } else {
         showToast(data.error || 'Gagal mengaktifkan paket Add-On Storage.', 'error');
       }
@@ -530,6 +553,70 @@ export default function VendorStorageManagerPage() {
                 style={{ padding: '8px 20px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
               >
                 {actionLoading ? 'Memproses...' : 'Aktifkan Paket Terpilih'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Midtrans QRIS Payment Modal for Add-On Storage */}
+      {paymentModalData && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={() => setPaymentModalData(null)}>
+          <div style={{ background: '#18181b', border: '1px solid rgba(52,211,153,0.3)', borderRadius: '24px', maxWidth: '480px', width: '100%', padding: '28px', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.7)', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
+            <button
+              onClick={() => setPaymentModalData(null)}
+              style={{ position: 'absolute', top: '18px', right: '18px', background: 'transparent', border: 'none', color: '#a1a1aa', fontSize: '18px', cursor: 'pointer' }}
+            >
+              ✕
+            </button>
+
+            <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(52,211,153,0.15)', color: '#34d399', padding: '4px 12px', borderRadius: '12px', border: '1px solid rgba(52,211,153,0.3)' }}>
+              ⚡ Pembayaran Add-On Storage
+            </span>
+
+            <h3 style={{ margin: '14px 0 6px 0', fontSize: '22px', fontWeight: '800', color: '#ffffff' }}>
+              Scan QRIS untuk Mengaktifkan
+            </h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#a1a1aa' }}>
+              {paymentModalData.addonName} &bull; Total Prorata: <strong style={{ color: '#fbbf24' }}>{formatIDR(paymentModalData.amount)}</strong>
+            </p>
+
+            {/* QRIS Image Container */}
+            {paymentModalData.qrUrl ? (
+              <div style={{ background: '#ffffff', padding: '16px', borderRadius: '16px', display: 'inline-block', marginBottom: '16px', border: '2px dashed #6366f1' }}>
+                <img
+                  src={`/api/payment/qr-image?url=${encodeURIComponent(paymentModalData.qrUrl)}`}
+                  alt="QRIS Payment Code"
+                  style={{ width: '220px', height: '220px', display: 'block' }}
+                />
+              </div>
+            ) : paymentModalData.paymentUrl ? (
+              <div style={{ margin: '20px 0' }}>
+                <a
+                  href={paymentModalData.paymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'inline-block', padding: '12px 24px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#ffffff', textDecoration: 'none', borderRadius: '12px', fontWeight: '700', fontSize: '13px' }}
+                >
+                  🚀 Buka Halaman Pembayaran Midtrans &rarr;
+                </a>
+              </div>
+            ) : null}
+
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '12px', fontSize: '11px', color: '#a1a1aa', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div>Order ID: <span style={{ color: '#818cf8', fontFamily: 'monospace' }}>{paymentModalData.orderId}</span></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#34d399', fontWeight: '600', marginTop: '4px' }}>
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#34d399', animation: 'pulse 1.5s infinite' }} />
+                Mengecek status pembayaran secara otomatis...
+              </div>
+            </div>
+
+            <div style={{ marginTop: '18px' }}>
+              <button
+                onClick={() => setPaymentModalData(null)}
+                style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.06)', color: '#a1a1aa', border: 'none', borderRadius: '10px', fontSize: '12px', cursor: 'pointer' }}
+              >
+                Tutup Sesi Pembayaran
               </button>
             </div>
           </div>

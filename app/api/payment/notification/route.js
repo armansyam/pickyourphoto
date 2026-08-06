@@ -49,7 +49,24 @@ export async function POST(request) {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
       const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
 
-      if (vendor && plan) {
+      // Handle Add-On Storage activation
+      if (transaction.transactionType === 'addon' || transaction.addonPlanId > 0) {
+        const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(transaction.addonPlanId);
+        if (vendor && addonPlan) {
+          db.prepare(`
+            INSERT INTO storage_addon_subscriptions (vendorId, addonPlanId, price, proratedPrice, status)
+            VALUES (?, ?, ?, ?, 'active')
+          `).run(vendor.id, addonPlan.id, addonPlan.price, transaction.amount);
+
+          db.prepare(`
+            UPDATE vendors 
+            SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
+            WHERE id = ?
+          `).run(addonPlan.quotaBytes, addonPlan.id, vendor.id);
+
+          console.log(`[Payment Webhook SUCCESS] Vendor ${vendor.name} (${vendor.email}) Add-On Storage ${addonPlan.name} (${formatBytes(addonPlan.quotaBytes)}) berhasil diaktivasi!`);
+        }
+      } else if (vendor && plan) {
         const wasActive = vendor.status === 'active';
         const isRenewal = wasActive && vendor.planId === plan.id;
         const isUpgrade = wasActive && vendor.planId !== plan.id;
