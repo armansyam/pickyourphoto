@@ -50,6 +50,7 @@ Berikut adalah direktori lengkap berkas dokumentasi di dalam folder `docs/`:
 | Nama Berkas | Deskripsi & Isi Utama | Status Berkas |
 | :--- | :--- | :--- |
 | **[`Plan_Storage_Addon_Architecture.md`](Plan_Storage_Addon_Architecture.md)** | **Cetak Biru Utama (Master Blueprint V6.0)** untuk arsitektur Multi-Worker Storage Pool, alur 1-klik OAuth, skema SQL, peta API, dan Master Task List. | 🟢 **Aktif (V6.0)** |
+| **[`05-STORAGE-ADDON-SPECIFICATION.md`](05-STORAGE-ADDON-SPECIFICATION.md)** | **Spesifikasi Aturan Bisnis & Teknis Add-On Storage**: Struktur harga, single expiry date, lock screen overlay, dan folder cleanup. | 🟢 **Aktif (06 Ags 2026)** |
 | **[`README.md`](README.md)** | Berkas ini (Indeks Dokumentasi & Status Sesi Terkini). | 🟢 **Aktif** |
 
 ---

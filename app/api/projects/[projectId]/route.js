@@ -43,18 +43,18 @@ export async function GET(request, { params }) {
             return NextResponse.json({ message: 'Unauthorized access.' }, { status: 401 });
         }
 
-        // 3. Check Photographer subscription expiry and project archived status for Client access
+        // 3. Check Photographer subscription expiry and project status
+        let isLocked = false;
+        let lockReason = '';
         if (isClient) {
             if (project.status === 'archived') {
-                return NextResponse.json({ 
-                    message: 'Galeri ini telah diarsipkan dan tidak lagi dapat diakses oleh klien.' 
-                }, { status: 403 });
+                isLocked = true;
+                lockReason = 'Galeri ini telah diarsipkan dan tidak lagi dapat diakses oleh klien.';
             }
-            const getVendorInfo = db.prepare('SELECT expiresAt FROM vendors WHERE id = ?').get(project.vendorId);
-            if (getVendorInfo && getVendorInfo.expiresAt && new Date() > new Date(getVendorInfo.expiresAt)) {
-                return NextResponse.json({ 
-                    message: 'Galeri ini sementara tidak aktif karena masa berlaku paket fotografer telah berakhir. Silakan hubungi fotografer Anda.' 
-                }, { status: 403 });
+            const getVendorInfo = db.prepare('SELECT expiresAt, status FROM vendors WHERE id = ?').get(project.vendorId);
+            if (getVendorInfo && (getVendorInfo.status === 'expired' || (getVendorInfo.expiresAt && new Date() > new Date(getVendorInfo.expiresAt)))) {
+                isLocked = true;
+                lockReason = 'Masa simpan cloud galeri foto ini sedang ditangguhkan. Silakan hubungi Studio Fotografer Anda untuk mengaktifkan kembali akses galeri.';
             }
         }
 
@@ -109,11 +109,14 @@ export async function GET(request, { params }) {
                 expiresAt: project.expiresAt,
                 isProjectExpired,
                 filesDeleted,
+                isLocked,
+                lockReason,
                 createdAt: project.createdAt
             },
             vendorBranding: {
                 brandName: vendorBranding.brandName || '',
-                brandLogo: vendorBranding.brandLogo || ''
+                brandLogo: vendorBranding.brandLogo || '',
+                whatsapp: vendorBranding.whatsapp || ''
             },
             client: clientInfo,
             photos
