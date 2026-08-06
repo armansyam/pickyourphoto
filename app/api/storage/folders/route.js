@@ -36,7 +36,7 @@ export async function GET() {
     // Ambil daftar proyek (folder) milik vendor beserta hitung total foto & estimasi ukuran
     const projects = db.prepare(`
       SELECT 
-        p.id, p.name, p.slug, p.status, p.createdAt, p.gdriveUrl, p.gdriveFolderId,
+        p.id, p.name, p.slug, p.status, p.createdAt, p.folderUrl,
         COUNT(ph.id) as photoCount,
         COALESCE(SUM(ph.fileSizeBytes), 0) as totalSizeBytes
       FROM projects p
