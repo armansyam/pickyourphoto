@@ -254,64 +254,6 @@ export default function AdminTrialControl({ addToast }) {
                 <StatCard icon="📈" label="Konversi" value={`${stats?.conversionRate ?? 0}%`} sub="Trial → pilih foto" color="#a855f7" />
             </div>
 
-            {/* ── PEAK SEASON PRESETS ── */}
-            <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: '14px',
-                padding: '22px',
-                marginBottom: '20px',
-            }}>
-                <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: '700', color: '#f4f4f5' }}>
-                    ⚡ Peak Season Presets
-                </h4>
-                <p style={{ margin: '0 0 16px', color: '#71717a', fontSize: '13px' }}>
-                    Terapkan sekaligus — durasi & limit RAW Sorter langsung tersimpan.
-                </p>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                    {PRESETS.map(preset => (
-                        <div key={preset.id}>
-                            <button
-                                onClick={() => applyPreset(preset)}
-                                disabled={saving}
-                                style={{
-                                    padding: '10px 16px',
-                                    borderRadius: '10px',
-                                    border: `1px solid ${activePreset === preset.id ? preset.color : 'rgba(255,255,255,0.1)'}`,
-                                    background: activePreset === preset.id
-                                        ? `linear-gradient(135deg, ${preset.color}22, ${preset.color}11)`
-                                        : 'rgba(255,255,255,0.03)',
-                                    color: activePreset === preset.id ? preset.color : '#a1a1aa',
-                                    fontWeight: '600',
-                                    fontSize: '13px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    textAlign: 'left',
-                                    minWidth: '140px',
-                                }}
-                                title={preset.desc}
-                            >
-                                <div>{preset.label}</div>
-                                <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '3px', fontWeight: '400' }}>{preset.desc}</div>
-                            </button>
-                            {preset.id === 'flash' && confirmFlash && (
-                                <div style={{ marginTop: '8px', fontSize: '12px', color: '#f87171', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
-                                    ⚠️ Ini akan <strong>matikan trial</strong>!<br />
-                                    <button
-                                        onClick={() => applyPreset({ ...preset, _confirmed: true })}
-                                        style={{ marginTop: '6px', padding: '4px 10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                                    >Ya, Nonaktifkan Trial</button>
-                                    <button
-                                        onClick={() => setConfirmFlash(false)}
-                                        style={{ marginLeft: '6px', padding: '4px 10px', background: 'rgba(255,255,255,0.08)', color: '#a1a1aa', border: 'none', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}
-                                    >Batal</button>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
             {/* ── ⚡ FLASH SALE & DISCOUNT ENGINE CARD ── */}
             <div style={{
                 background: enableFlashPromo ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%)' : 'rgba(255,255,255,0.02)',
@@ -471,6 +413,64 @@ export default function AdminTrialControl({ addToast }) {
                         </div>
                     </div>
 
+                </div>
+            </div>
+
+            {/* ── PEAK SEASON PRESETS ── */}
+            <div style={{
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: '14px',
+                padding: '22px',
+                marginBottom: '20px',
+            }}>
+                <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: '700', color: '#f4f4f5' }}>
+                    ⚡ Peak Season Presets
+                </h4>
+                <p style={{ margin: '0 0 16px', color: '#71717a', fontSize: '13px' }}>
+                    Terapkan sekaligus — durasi & limit RAW Sorter langsung tersimpan.
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    {PRESETS.map(preset => (
+                        <div key={preset.id}>
+                            <button
+                                onClick={() => applyPreset(preset)}
+                                disabled={saving}
+                                style={{
+                                    padding: '10px 16px',
+                                    borderRadius: '10px',
+                                    border: `1px solid ${activePreset === preset.id ? preset.color : 'rgba(255,255,255,0.1)'}`,
+                                    background: activePreset === preset.id
+                                        ? `linear-gradient(135deg, ${preset.color}22, ${preset.color}11)`
+                                        : 'rgba(255,255,255,0.03)',
+                                    color: activePreset === preset.id ? preset.color : '#a1a1aa',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    textAlign: 'left',
+                                    minWidth: '140px',
+                                }}
+                                title={preset.desc}
+                            >
+                                <div>{preset.label}</div>
+                                <div style={{ fontSize: '11px', opacity: 0.7, marginTop: '3px', fontWeight: '400' }}>{preset.desc}</div>
+                            </button>
+                            {preset.id === 'flash' && confirmFlash && (
+                                <div style={{ marginTop: '8px', fontSize: '12px', color: '#f87171', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '8px 12px' }}>
+                                    ⚠️ Ini akan <strong>matikan trial</strong>!<br />
+                                    <button
+                                        onClick={() => applyPreset({ ...preset, _confirmed: true })}
+                                        style={{ marginTop: '6px', padding: '4px 10px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                    >Ya, Nonaktifkan Trial</button>
+                                    <button
+                                        onClick={() => setConfirmFlash(false)}
+                                        style={{ marginLeft: '6px', padding: '4px 10px', background: 'rgba(255,255,255,0.08)', color: '#a1a1aa', border: 'none', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}
+                                    >Batal</button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
             </div>
 
