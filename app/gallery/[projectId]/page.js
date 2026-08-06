@@ -322,6 +322,59 @@ export default function ClientGalleryPage({ params }) {
     return (
         <div className={`gtheme gtheme-${themeKey}`} style={{ ...vars, background: 'var(--bg)', minHeight: '100vh', paddingBottom: '150px', fontFamily: 'var(--font-body)', color: 'var(--text)' }}>
 
+            {/* Glassmorphism Lock Overlay for Expired Vendor / Addon Storage Expiry */}
+            {project?.isLocked && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 99999,
+                    background: 'rgba(9, 9, 11, 0.85)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '24px'
+                }}>
+                    <div style={{
+                        background: 'rgba(24, 24, 27, 0.95)',
+                        border: '1.5px solid rgba(251, 191, 36, 0.4)',
+                        borderRadius: '24px',
+                        maxWidth: '480px',
+                        width: '100%',
+                        padding: '36px 28px',
+                        textAlign: 'center',
+                        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)'
+                    }}>
+                        <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔒</div>
+                        <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '4px 12px', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
+                            AKSES GALERI DITANGGUHKAN
+                        </span>
+                        <h2 style={{ margin: '14px 0 10px 0', fontSize: '22px', fontWeight: '800', color: '#ffffff' }}>
+                            GALERI TERKUNCI SEMENTARA
+                        </h2>
+                        <p style={{ fontSize: '13px', color: '#d4d4d8', lineHeight: '1.6', margin: '0 0 20px 0' }}>
+                            {project.lockReason || 'Masa simpan cloud galeri foto ini sedang ditangguhkan. Foto Anda tersimpan aman. Silakan hubungi Studio Fotografer Anda untuk mengaktifkan kembali akses galeri.'}
+                        </p>
+                        {branding && (branding.brandName || branding.whatsapp) && (
+                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '14px', fontSize: '12px', color: '#a1a1aa', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div>📸 Studio Fotografi: <strong style={{ color: '#ffffff' }}>{branding.brandName || 'Studio Vendor'}</strong></div>
+                                {branding.whatsapp && (
+                                    <a
+                                        href={`https://wa.me/${branding.whatsapp.replace(/[^0-9]/g, '')}?text=Halo%20${encodeURIComponent(branding.brandName || '')},%20akses%20galeri%20proyek%20${encodeURIComponent(project.name)}%20saat%20ini%20terkunci.%20Mohon%20bantuannya.`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '10px', padding: '8px 16px', background: '#22c55e', color: '#ffffff', textDecoration: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '12px' }}
+                                    >
+                                        💬 Hubungi Studio Via WhatsApp
+                                    </a>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {branding && (branding.brandName || branding.brandLogo) && (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', paddingTop: '64px', marginBottom: '8px' }}>
                     {branding.brandLogo && <img src={branding.brandLogo} alt="Brand Logo" style={{ maxHeight: '55px', maxWidth: '140px', objectFit: 'contain' }} />}
