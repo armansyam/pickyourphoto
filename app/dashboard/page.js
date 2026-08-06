@@ -2364,37 +2364,233 @@ export default function DashboardPage() {
 
                         {!selectedUpgradePlan ? (
                             <>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-                                    {upgradeTab === 'limit' ? (
-                                        availablePlans.map(p => (
-                                            <div key={p.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                                <div>
-                                                    <h3 style={{ margin: '0 0 4px 0', fontSize: '16px' }}>{p.name}</h3>
-                                                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#818cf8', marginBottom: '12px' }}>
-                                                        Rp {p.price?.toLocaleString('id-ID')} <span style={{ fontSize: '11px', color: '#a1a1aa' }}>/ bln</span>
+                                {upgradeTab === 'limit' ? (
+                                    <>
+                                        <p style={{ margin: '0 0 20px 0', color: '#a1a1aa', fontSize: '13px', lineHeight: '1.5' }}>
+                                            Pilih paket berlangganan studio Anda. Sisa nilai paket lama Anda akan otomatis memotong harga paket baru secara proporsional (*tukar-tambah hemat*).
+                                        </p>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: availablePlans.length > 2 ? 'repeat(auto-fit, minmax(220px, 1fr))' : 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                                            {availablePlans.filter(plan => plan.price > 0 || vendorDetails?.planId === plan.id).map(plan => {
+                                                const isCurrentPlan = vendorDetails?.planId === plan.id;
+                                                const { discount, total } = getProrationDetails(plan);
+                                                const daysRemaining = vendorDetails?.expiresAt 
+                                                    ? Math.max(0, Math.ceil((new Date(vendorDetails.expiresAt) - new Date()) / (1000 * 60 * 60 * 24)))
+                                                    : 0;
+
+                                                return (
+                                                    <div key={plan.id} style={{
+                                                        background: isCurrentPlan ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
+                                                        border: `1.5px solid ${isCurrentPlan ? '#6366f1' : 'rgba(255,255,255,0.08)'}`,
+                                                        borderRadius: '16px',
+                                                        padding: '22px 20px',
+                                                        position: 'relative',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justify: 'space-between',
+                                                        boxShadow: isCurrentPlan ? '0 4px 20px rgba(99,102,241,0.2)' : 'none',
+                                                        transition: 'all 0.2s ease'
+                                                    }}>
+                                                        <div>
+                                                            {isCurrentPlan ? (
+                                                                <div style={{ position: 'absolute', top: '-11px', right: '14px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: 'white', fontSize: '10px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: '0 2px 8px rgba(99,102,241,0.4)' }}>
+                                                                    ✓ Paket Anda
+                                                                </div>
+                                                            ) : plan.name.toLowerCase().includes('pro') ? (
+                                                                <div style={{ position: 'absolute', top: '-11px', right: '14px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: '#000', fontSize: '10px', fontWeight: '800', padding: '3px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.5px', boxShadow: '0 2px 8px rgba(251,191,36,0.4)' }}>
+                                                                    ★ BEST SELLER
+                                                                </div>
+                                                            ) : null}
+
+                                                            <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7' }}>{plan.name}</h3>
+                                                            <div style={{ margin: '0 0 16px 0' }}>
+                                                                <span style={{ fontSize: '24px', fontWeight: '800', color: isCurrentPlan ? '#818cf8' : '#ffffff' }}>
+                                                                    {plan.price === 0 ? 'Gratis' : `Rp ${Number(plan.price).toLocaleString('id-ID')}`}
+                                                                </span>
+                                                                <span style={{ fontSize: '12px', color: '#a1a1aa', marginLeft: '4px' }}>
+                                                                    / {plan.activePeriodDays || 30} hari
+                                                                </span>
+                                                            </div>
+                                                            
+                                                            {!isCurrentPlan && discount > 0 && (
+                                                                <div style={{ background: 'rgba(52,211,153,0.08)', borderRadius: '10px', padding: '10px 12px', marginBottom: '16px', fontSize: '11px', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
+                                                                    🏷️ <strong>Tukar-Tambah Hemat:</strong><br/>
+                                                                    <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>Rp {plan.price.toLocaleString('id-ID')}</span>{' '}
+                                                                    <strong style={{ fontSize: '13px', color: '#34d399' }}>Rp {total.toLocaleString('id-ID')}</strong><br/>
+                                                                    <span style={{ fontSize: '10px', color: '#a1a1aa' }}>(Hemat Rp {discount.toLocaleString('id-ID')} dari sisa {getProrationDetails(plan).daysRemaining} hari)</span>
+                                                                </div>
+                                                            )}
+
+                                                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '12px', color: '#a1a1aa', lineHeight: '2.2' }}>
+                                                                <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span>📁</span> Maksimal <strong style={{ color: '#f4f4f5' }}>{plan.maxProjects >= 99999 ? 'Unlimited' : plan.maxProjects} project</strong>
+                                                                </li>
+                                                                <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span>📷</span> Foto <strong style={{ color: '#34d399' }}>Unlimited</strong> / project
+                                                                </li>
+                                                                <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span>⏳</span> Masa Aktif Akun: <strong style={{ color: '#f4f4f5' }}>{plan.activePeriodDays || 30} hari</strong>
+                                                                </li>
+                                                                <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span>🎨</span> Logo Studio Sendiri: {plan.allowCustomLogo === 1 || plan.allowCustomLogo === true || plan.name.includes('Pro') || plan.name.includes('Business') ? (
+                                                                        <strong style={{ color: '#34d399' }}>Bisa Logo Sendiri</strong>
+                                                                    ) : (
+                                                                        <strong style={{ color: '#71717a' }}>Logo Platform Standard</strong>
+                                                                    )}
+                                                                </li>
+                                                                <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    {plan.allowRawSelector === undefined || plan.allowRawSelector === 1 || plan.allowRawSelector === true ? (
+                                                                        <><span>⚡</span> Fitur RAW Selector: <strong style={{ color: '#34d399' }}>Aktif</strong></>
+                                                                    ) : (
+                                                                        <><span>🔒</span> Fitur RAW Selector: <strong style={{ color: '#71717a' }}>Nonaktif (Upgrade Pro)</strong></>
+                                                                    )}
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+
+                                                        {isCurrentPlan ? (
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (vendorDetails?.upgradeRequest) {
+                                                                        addToast('Permintaan perpanjangan sedang diproses.', 'warning');
+                                                                        return;
+                                                                    }
+                                                                    if (daysRemaining > 10) {
+                                                                        addToast(`Perpanjangan hanya dapat dilakukan mulai H-10 sebelum expired (Sisa: ${daysRemaining} hari).`, 'warning');
+                                                                        return;
+                                                                    }
+                                                                    setSelectedUpgradePlan(plan);
+                                                                }}
+                                                                className="btn-primary"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    padding: '10px',
+                                                                    textAlign: 'center',
+                                                                    background: daysRemaining > 10 ? 'rgba(255,255,255,0.08)' : 'linear-gradient(135deg, #fbbf24, #f59e0b)',
+                                                                    color: daysRemaining > 10 ? '#71717a' : '#000000',
+                                                                    borderRadius: '10px',
+                                                                    fontWeight: '700',
+                                                                    fontSize: '12px',
+                                                                    cursor: daysRemaining > 10 ? 'not-allowed' : 'pointer',
+                                                                    boxShadow: daysRemaining > 10 ? 'none' : '0 4px 12px rgba(251,191,36,0.3)',
+                                                                    border: 'none'
+                                                                }}
+                                                            >
+                                                                {daysRemaining > 10 ? `🔒 Perpanjang (Sisa ${daysRemaining} Hari)` : '🔄 Perpanjang Paket Ini'}
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => {
+                                                                    if (vendorDetails?.upgradeRequest) {
+                                                                        addToast('Permintaan upgrade sedang diproses.', 'warning');
+                                                                        return;
+                                                                    }
+                                                                    const activeCount = projects.filter(p => p.status !== 'archived').length;
+                                                                    if (activeCount > plan.maxProjects) {
+                                                                        addToast(`Arsip ${activeCount - plan.maxProjects} project terlebih dahulu untuk memilih paket ini (Batas: ${plan.maxProjects} project).`, 'warning');
+                                                                        return;
+                                                                    }
+                                                                    setSelectedUpgradePlan(plan);
+                                                                }}
+                                                                className="btn-primary"
+                                                                style={{
+                                                                    width: '100%',
+                                                                    padding: '10px',
+                                                                    textAlign: 'center',
+                                                                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                                                    color: '#ffffff',
+                                                                    borderRadius: '10px',
+                                                                    fontWeight: '700',
+                                                                    fontSize: '12px',
+                                                                    cursor: 'pointer',
+                                                                    border: 'none',
+                                                                    boxShadow: '0 4px 12px rgba(99,102,241,0.25)'
+                                                                }}
+                                                            >
+                                                                🚀 Pilih & Upgrade
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                </div>
-                                                <button className="btn-primary" onClick={() => setSelectedUpgradePlan(p)} style={{ width: '100%', fontSize: '12px', padding: '8px' }}>
-                                                    Pilih Paket
-                                                </button>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        availableAddonPlans.map(a => (
-                                            <div key={a.id} style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                                                <div>
-                                                    <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#34d399' }}>{a.name}</h3>
-                                                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', marginBottom: '12px' }}>
-                                                        Rp {a.price?.toLocaleString('id-ID')} <span style={{ fontSize: '11px', color: '#a1a1aa' }}>/ bln</span>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p style={{ margin: '0 0 20px 0', color: '#a1a1aa', fontSize: '13px', lineHeight: '1.5' }}>
+                                            Pilih paket Add-On Storage Cloud untuk menambah kapasitas penyimpanan foto studio Anda secara fleksibel.
+                                        </p>
+
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                                            {availableAddonPlans.map(addon => {
+                                                const isCurrentAddon = vendorDetails?.addonPlanId === addon.id;
+                                                const quotaGb = addon.quotaBytes ? (addon.quotaBytes / (1024 * 1024 * 1024)).toFixed(0) : '0';
+                                                return (
+                                                    <div key={addon.id} style={{
+                                                        background: isCurrentAddon ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.02)',
+                                                        border: `1.5px solid ${isCurrentAddon ? '#34d399' : 'rgba(52,211,153,0.2)'}`,
+                                                        borderRadius: '16px',
+                                                        padding: '22px 20px',
+                                                        position: 'relative',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justify: 'space-between',
+                                                        transition: 'all 0.2s ease'
+                                                    }}>
+                                                        <div>
+                                                            {isCurrentAddon && (
+                                                                <div style={{ position: 'absolute', top: '-11px', right: '14px', background: 'linear-gradient(135deg, #10b981, #059669)', color: 'white', fontSize: '10px', fontWeight: '700', padding: '3px 10px', borderRadius: '20px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                                                    ✓ Add-On Aktif
+                                                                </div>
+                                                            )}
+
+                                                            <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7' }}>{addon.name}</h3>
+                                                            <div style={{ margin: '0 0 16px 0' }}>
+                                                                <span style={{ fontSize: '24px', fontWeight: '800', color: '#34d399' }}>
+                                                                    Rp {Number(addon.price).toLocaleString('id-ID')}
+                                                                </span>
+                                                                <span style={{ fontSize: '12px', color: '#a1a1aa', marginLeft: '4px' }}>
+                                                                    / bulan
+                                                                </span>
+                                                            </div>
+
+                                                            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '12px', color: '#a1a1aa', lineHeight: '2.2' }}>
+                                                                <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span>💾</span> Kapasitas Tambahan: <strong style={{ color: '#34d399' }}>{quotaGb} GB Storage</strong>
+                                                                </li>
+                                                                <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span>⚡</span> Direct Stream Pipe & Speed Cloud
+                                                                </li>
+                                                                <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    <span>⏳</span> Masa Aktif: mengikuti Paket Utama Studio
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+
+                                                        <a
+                                                            href="/dashboard/storage"
+                                                            style={{
+                                                                width: '100%',
+                                                                padding: '10px',
+                                                                textAlign: 'center',
+                                                                background: isCurrentAddon ? 'rgba(52,211,153,0.15)' : 'linear-gradient(135deg, #10b981, #059669)',
+                                                                color: '#ffffff',
+                                                                borderRadius: '10px',
+                                                                fontWeight: '700',
+                                                                fontSize: '12px',
+                                                                textDecoration: 'none',
+                                                                boxSizing: 'border-box',
+                                                                display: 'block'
+                                                            }}
+                                                        >
+                                                            {isCurrentAddon ? '⚙️ Kelola di Storage' : '⚡ Pilih Add-On Storage'}
+                                                        </a>
                                                     </div>
-                                                </div>
-                                                <button className="btn-primary" onClick={() => setSelectedUpgradePlan({ ...a, isAddon: true })} style={{ width: '100%', fontSize: '12px', padding: '8px', background: 'linear-gradient(135deg, #059669, #047857)' }}>
-                                                    Pilih Add-On
-                                                </button>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </>
+                                )}
                                 <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
                                     <button className="btn-secondary" onClick={() => setShowUpgradeModal(false)}>Tutup</button>
                                 </div>
