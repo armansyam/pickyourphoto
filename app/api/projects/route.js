@@ -19,17 +19,20 @@ export async function GET() {
         if (!vendor) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
-        // Get projects with image count and selection status
+        // Get projects with image count and selection status (Optimized JOIN)
         const stmt = db.prepare(`
             SELECT 
                 p.*,
-                (SELECT COUNT(*) FROM photos WHERE projectId = p.id) as totalPhotos,
+                COUNT(DISTINCT ph.id) as totalPhotos,
                 c.accessKey as clientAccessKey,
                 c.clientPhone as clientPhone,
-                (SELECT COUNT(DISTINCT s.photoId) FROM selections s JOIN clients cl ON s.clientId = cl.id WHERE cl.projectId = p.id) as selectedPhotosCount
+                COUNT(DISTINCT s.id) as selectedPhotosCount
             FROM projects p
+            LEFT JOIN photos ph ON ph.projectId = p.id
             LEFT JOIN clients c ON c.projectId = p.id
+            LEFT JOIN selections s ON s.clientId = c.id
             WHERE p.vendorId = ?
+            GROUP BY p.id
             ORDER BY p.createdAt DESC
         `);
         const allProjects = stmt.all(vendor.id).map(p => {

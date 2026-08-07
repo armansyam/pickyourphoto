@@ -289,14 +289,16 @@ export default function DashboardPage() {
     }, [enablePaymentGateway, paymentGatewayClientKey, paymentGatewayIsProduction]);
 
 
-    // Polling effect if any project has "importing" status
+    // Smart polling effect if any project has "importing" status (Pauses when tab hidden)
     useEffect(() => {
         const hasImporting = projects.some(p => p.status === 'importing');
         if (!hasImporting) return;
 
         const interval = setInterval(() => {
-            fetchProjects();
-        }, 4000); // Poll every 4 seconds
+            if (typeof document !== 'undefined' && !document.hidden) {
+                fetchProjects();
+            }
+        }, 6000);
 
         return () => clearInterval(interval);
     }, [projects]);
@@ -307,18 +309,6 @@ export default function DashboardPage() {
         window.addEventListener('openUpgradeModal', handler);
         return () => window.removeEventListener('openUpgradeModal', handler);
     }, []);
-
-    // Auto-polling background status check for importing projects
-    useEffect(() => {
-        const hasImporting = projects.some(p => p.status === 'importing');
-        if (!hasImporting) return;
-
-        const interval = setInterval(() => {
-            fetchProjects();
-        }, 3000);
-
-        return () => clearInterval(interval);
-    }, [projects]);
 
     // Create Project
     const handleCreateProject = async (e) => {

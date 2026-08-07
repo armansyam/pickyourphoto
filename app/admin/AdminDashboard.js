@@ -283,11 +283,13 @@ export default function AdminDashboard({ adminUser }) {
         fetchSystemSettings();
         fetchDiskStats();
 
-        // Silent real-time auto polling every 5 seconds for inquiries & vendors
+        // Smart real-time auto polling every 15 seconds (Pauses when tab is hidden)
         const interval = setInterval(() => {
-            fetchData(true);
-            fetchAnalytics();
-        }, 5000);
+            if (typeof document !== 'undefined' && !document.hidden) {
+                fetchData(true);
+                fetchAnalytics();
+            }
+        }, 15000);
 
         return () => clearInterval(interval);
     }, []);
