@@ -14,6 +14,7 @@ export default function VendorStorageManagerPage() {
   const [notification, setNotification] = useState({ show: false, message: '', type: 'success' });
 
   const [paymentModalData, setPaymentModalData] = useState(null);
+  const [folderSearchQuery, setFolderSearchQuery] = useState('');
 
   useEffect(() => {
     fetchStorageData();
@@ -124,6 +125,19 @@ export default function VendorStorageManagerPage() {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleClosePaymentModal = async () => {
+    if (paymentModalData?.orderId) {
+      try {
+        fetch('/api/payment/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: paymentModalData.orderId })
+        }).catch(() => {});
+      } catch (e) {}
+    }
+    setPaymentModalData(null);
   };
 
   const formatIDR = (amount) => {
@@ -413,9 +427,31 @@ export default function VendorStorageManagerPage() {
 
             {/* Folders Management Section */}
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '24px' }}>
-              <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>📂</span> Daftar Folder Cloud Proyek Klien ({projects.length})
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>📂</span> Daftar Folder Cloud Proyek Klien ({projects.length})
+                </h3>
+
+                {projects.length > 0 && (
+                  <div style={{ position: 'relative', minWidth: '220px' }}>
+                    <input
+                      type="text"
+                      placeholder="🔍 Cari nama folder..."
+                      value={folderSearchQuery}
+                      onChange={e => setFolderSearchQuery(e.target.value)}
+                      style={{
+                        padding: '6px 12px',
+                        background: 'rgba(0,0,0,0.3)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '8px',
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        width: '100%'
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
 
               {projects.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: '#71717a', fontSize: '13px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.08)' }}>
@@ -434,7 +470,7 @@ export default function VendorStorageManagerPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {projects.map((proj) => (
+                      {projects.filter(p => !folderSearchQuery || p.name.toLowerCase().includes(folderSearchQuery.toLowerCase())).map((proj) => (
                         <tr key={proj.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                           <td style={{ padding: '14px', fontWeight: '600', color: '#ffffff' }}>
                             📁 {proj.name}
@@ -563,10 +599,10 @@ export default function VendorStorageManagerPage() {
 
       {/* Midtrans QRIS Payment Modal for Add-On Storage */}
       {paymentModalData && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={() => setPaymentModalData(null)}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={handleClosePaymentModal}>
           <div style={{ background: '#18181b', border: '1px solid rgba(52,211,153,0.3)', borderRadius: '24px', maxWidth: '480px', width: '100%', padding: '28px', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.7)', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
             <button
-              onClick={() => setPaymentModalData(null)}
+              onClick={handleClosePaymentModal}
               style={{ position: 'absolute', top: '18px', right: '18px', background: 'transparent', border: 'none', color: '#a1a1aa', fontSize: '18px', cursor: 'pointer' }}
             >
               ✕
@@ -615,7 +651,7 @@ export default function VendorStorageManagerPage() {
 
             <div style={{ marginTop: '18px' }}>
               <button
-                onClick={() => setPaymentModalData(null)}
+                onClick={handleClosePaymentModal}
                 style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.06)', color: '#a1a1aa', border: 'none', borderRadius: '10px', fontSize: '12px', cursor: 'pointer' }}
               >
                 Tutup Sesi Pembayaran

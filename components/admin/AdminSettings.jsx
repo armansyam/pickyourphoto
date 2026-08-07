@@ -281,9 +281,26 @@ export default function AdminSettings({
             </div>
 
             {/* EMAIL SMTP SECTION */}
-            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
-              📧 Server Email Notifikasi Otomatis (SMTP Gmail)
-            </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+                📧 Server Email Notifikasi Otomatis (SMTP Gmail)
+              </h4>
+              <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '12px', background: (smtpEnable && smtpEmail && smtpPassword) ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)', color: (smtpEnable && smtpEmail && smtpPassword) ? '#34d399' : '#fbbf24', border: (smtpEnable && smtpEmail && smtpPassword) ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(251,191,36,0.3)' }}>
+                {(smtpEnable && smtpEmail && smtpPassword) ? '🟢 SMTP Aktif' : '⚠️ SMTP Belum Aktif'}
+              </span>
+            </div>
+
+            {(!smtpEnable || !smtpEmail || !smtpPassword) && (
+              <div style={{ background: 'rgba(251, 191, 36, 0.12)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', fontSize: '13px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '18px' }}>⚠️</span>
+                <div>
+                  <strong>Server SMTP Email Belum Aktif / Dikonfigurasi!</strong>
+                  <div style={{ fontSize: '11px', color: '#d4d4d8', marginTop: '2px' }}>
+                    Email notifikasi persetujuan vendor, perpanjangan paket, dan peringatan tenggang storage (H-15 & H-3) akan ditangguhkan sampai kredensial Email & App Password Gmail diisi dan disimpan.
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>

@@ -489,7 +489,7 @@ export default function ClientGalleryPage({ params }) {
                                         return (
                                             <div key={photo.id} className={`photo-card ${isSelected ? 'is-selected' : ''}`} onClick={() => handleToggleSelect(photo.id)}>
                                                 <div className="photo-card-frame">
-                                                    <img src={photo.thumbnailPath} alt={`Frame ${index + 1}`} loading="lazy" />
+                                                    <img src={photo.thumbnailPath} alt={`Frame ${index + 1}`} loading="lazy" decoding="async" />
 
                                                     {themeKey === 'contactSheet' && (
                                                         <>

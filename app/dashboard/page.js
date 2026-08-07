@@ -1705,7 +1705,10 @@ export default function DashboardPage() {
                                     onChange={(e) => setNewFolderUrl(e.target.value)}
                                     disabled={importing}
                                 />
-                                <span style={{ fontSize: '11px', color: '#71717a' }}>Pastikan setelan berbagi folder telah diatur ke "Siapa saja yang memiliki link dapat melihat".</span>
+                                <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '6px', fontSize: '11px', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span>💡</span>
+                                    <span><strong>Petunjuk Google Drive:</strong> Pastikan izin akses folder telah diubah ke <em>"Siapa saja yang memiliki link (Anyone with the link)"</em> agar foto dapat di-stream di galeri.</span>
+                                </div>
                             </div>
  
                             <div className="form-group">
