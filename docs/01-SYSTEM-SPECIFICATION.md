@@ -156,14 +156,12 @@ Sistem Add-On Cloud Storage bersifat dinamis dan dapat disesuaikan kebutuhan fot
 
 ---
 
-## 🚀 5. Roadmap Fitur Masa Depan (Long-Term Roadmap)
+## 🚀 5. Fitur Laporan Keuangan Admin & Evaluasi Roadmap
 
-Berikut adalah panduan fitur opsional untuk pengambangan jangka panjang ([`docs/PLAN_FITUR_BARU.md`](file:///Users/armansyam/Documents/Project%20AmsDev/pick-your-photo/docs/PLAN_FITUR_BARU.md)):
-
-1. **🟢 Notifikasi Email Pendaftaran Vendor ke Admin (Long-Term):**  
-   Admin SaaS mendapat notifikasi email instan saat ada fotografer baru yang mendaftar atau melakukan transaksi pembayaran.
-2. **🟢 Ekspor Rekap Seleksi Foto Klien ke CSV/Excel (Long-Term):**  
-   Vendor dapat mengunduh daftar nama foto terpilih klien dalam berkas format `.csv` untuk langsung diimpor ke Adobe Lightroom atau Microsoft Excel.
+1. **🟢 Ekspor Laporan Keuangan Admin (CSV / Excel — ✅ SELESAI & AKTIF):**  
+   Superadmin dapat mengunduh berkas laporan transaksi pendapatan langganan paket utama dan Add-On Storage dalam format `.csv` melalui tombol **`📊 Unduh Laporan Keuangan (CSV)`** di Admin Dashboard.
+2. **❌ Email Alert Admin & CSV Seleksi Vendor (DIBATALKAN):**  
+   Email alert pendaftaran dibatalkan karena Admin sudah memiliki widget notifikasi real-time di dashboard. Rekap CSV seleksi vendor dibatalkan karena fitur RAW Selector lokal dan copy file name 1-klik sudah memenuhi kebutuhan fotografer.
 
 ---
 

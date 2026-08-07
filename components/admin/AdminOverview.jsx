@@ -98,10 +98,31 @@ export default function AdminOverview({ analyticsData, diskStats }) {
       }}>
         {/* Left Side: Hero Pendapatan */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', fontSize: '11px', padding: '4px 10px', borderRadius: '12px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               💰 Total Pendapatan Langganan Studio
             </span>
+            <a
+              href="/api/admin/financial-report/export-csv"
+              download
+              title="Unduh Laporan Transaksi Keuangan ke Format CSV / Excel"
+              style={{
+                background: 'rgba(52, 211, 153, 0.15)',
+                border: '1px solid rgba(52, 211, 153, 0.35)',
+                color: '#34d399',
+                padding: '5px 12px',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: '700',
+                textDecoration: 'none',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.15)'
+              }}
+            >
+              📊 Unduh Laporan Keuangan (CSV)
+            </a>
           </div>
 
           <div style={{ fontSize: '36px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.5px', margin: '4px 0 8px 0' }}>
