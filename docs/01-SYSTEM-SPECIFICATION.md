@@ -1,21 +1,22 @@
-# 📘 01. Spesifikasi Sistem, Visi & Arsitektur (Pick Your Photo)
+# 📘 01. Spesifikasi Master Sistem, Visi & Arsitektur (Pick Your Photo)
 
-> **Dokumen Resmi Spesifikasi Platform SaaS Pick Your Photo**  
+> **Dokumen Resmi Spesifikasi Terpadu Platform SaaS Pick Your Photo**  
 > Lokasi: `docs/01-SYSTEM-SPECIFICATION.md`  
-> **Terakhir diperbarui:** 2026-08-05 — berdasarkan pembacaan menyeluruh seluruh kode produksi
+> **Terakhir diperbarui:** 07 Agustus 2026 — *Konsolidasi Terpadu Seluruh Modul, Blueprint Add-On Storage 6.1 & Audit Logika*
 
 ---
 
-## 🎯 1. Visi & Misi
+## 🎯 1. Visi, Misi & Arsitektur Utama
 
 ### Visi
 Menjadi platform SaaS nomor satu bagi fotografer profesional untuk berkolaborasi dengan klien dalam memilih foto terbaik secara instan, aman, dan elegan — sekaligus meningkatkan nilai profesionalisme brand mereka di mata klien.
 
-### Misi
+### Misi & Pilar Utama Arsitektur
 1. **Menghilangkan Kerumitan Manual:** Mengotomatisasi proses seleksi foto yang sebelumnya dilakukan via WhatsApp/spreadsheet.
-2. **Zero-Storage Architecture:** Import metadata langsung dari Google Drive tanpa menyimpan byte foto di disk server.
-3. **Keamanan & Privasi:** Galeri klien diproteksi access key unik; URL Google CDN tidak pernah terekspos ke browser.
-4. **Skalabilitas:** Pengelolaan banyak proyek dengan antrian import, Cloudflare CDN caching, dan True Pipe Stream.
+2. **Zero-Storage Direct Stream Architecture:** Import metadata foto secara langsung dari Google Drive tanpa menyimpan byte fisik foto di disk server.
+3. **Multi-Tenant Add-On Cloud Storage:** Menyediakan opsi kapasitas cloud storage tambahan dengan harga prorata harian yang transparan dan fleksibel.
+4. **Keamanan & Privasi:** Galeri klien diproteksi access key unik; URL Google CDN tidak pernah terekspos ke browser client.
+5. **Skalabilitas:** Pengelolaan banyak proyek dengan antrian import, Cloudflare CDN caching 30-hari, dan True Pipe Stream.
 
 ---
 
@@ -23,244 +24,147 @@ Menjadi platform SaaS nomor satu bagi fotografer profesional untuk berkolaborasi
 
 | Peran | Akses | Deskripsi |
 |---|---|---|
-| **Superadmin** | `/admin` | Pemilik SaaS — kelola vendor, paket, pembayaran, setting sistem |
-| **Vendor (Fotografer)** | `/dashboard` | Pelanggan aktif — buat galeri, import GDrive, bagikan ke klien |
-| **Klien** | `/gallery/[id]?key=xxx` | Penerima galeri — pilih foto, tidak perlu daftar akun |
-| **Pengunjung Trial** | `/trial-gallery/[slug]` | Demo galeri publik dari landing page, tanpa akun |
+| **Superadmin** | `/admin` | Pemilik SaaS — kelola vendor, paket utama, Add-On storage, payment gateway, setting sistem, & audit pool |
+| **Vendor (Fotografer)** | `/dashboard` & `/dashboard/storage` | Pelanggan aktif — buat galeri, kelola storage cloud, perpanjang Add-On, bagikan link galeri ke klien |
+| **Klien** | `/gallery/[id]?key=xxx` | Penerima galeri — pilih foto favorit, tidak perlu mendaftar akun |
+| **Pengunjung Trial** | `/trial-gallery/[slug]` | Demo galeri publik dari landing page tanpa perlu daftar akun |
 
 ---
 
-## ⚡ 3. Fitur Utama (Core Features)
+## ⚡ 3. Spesifikasi Fitur Utama (Core Features)
 
-### 3.1. Sistem Langganan SaaS (Multi-Tier Subscription)
+### 3.1. Sistem Langganan SaaS Utama (Multi-Tier Subscription)
 
-**3 Paket Aktif (semua 30 hari, foto unlimited):**
+**3 Paket Utama Aktif (Masa Aktif 30 Hari):**
 
-| Paket | Maks. Proyek | Harga/Bulan | Custom Logo | RAW Selector |
+| Paket Utama | Maks. Proyek | Harga / Bulan | Custom Logo | RAW Selector |
 |---|---|---|---|---|
-| **Starter Plan** | 5 | Rp 49.000 | ❌ | ❌ |
-| **Pro Studio Plan** | 20 | Rp 129.000 | ✅ | ❌ |
-| **Business Studio Plan** | 50 | Rp 249.000 | ✅ | ✅ |
+| **Starter Plan** | 5 Proyek | Rp 49.000 | ❌ | ❌ |
+| **Pro Studio Plan** | 20 Proyek | Rp 129.000 | ✅ | ❌ |
+| **Business Studio Plan** | 50 Proyek | Rp 249.000 | ✅ | ✅ |
 
 **Vendor Status Lifecycle:**
 ```
-draft_plan → pending_payment (QRIS) → active
-           → pending_manual (transfer) → active (Admin approve)
+draft_plan → pending_payment (QRIS) ──→ active (webhook paid)
+           → pending_manual (transfer) ──→ active (Admin approve)
 expired_draft / cancelled / suspended
-expired (otomatis via autoCheckVendorSubscriptionExpiry)
+expired (otomatis via autoCheckVendorSubscriptionExpiry saat login/request)
 ```
 
-**Aturan Registrasi:**
-- Rate limit: 5 percobaan / 60 detik per IP
-- Duplikat email: jika status bukan `active` → data diupdate (re-register)
-- Nomor WhatsApp: Diizinkan sama (Email adalah satu-satunya identifier unik akun agar vendor berbayar dapat mendaftarkan beberapa brand studio menggunakan nomor WA bisnis yang sama)
-- Harga = 0 diblokir dari registrasi (trial hanya via landing page)
-- Quota vendor: `max_vendor_quota` di `system_settings` (NULL = unlimited)
-- Registrasi bisa ditutup: `enable_registration = 0`
-
-**Proration Upgrade:**
-- Upgrade ke paket lebih tinggi → harga dikurangi sisa nilai paket saat ini
-- Faktor diskon: 100% (top tier), 85% (dipakai ≤7 hari), 70% (standar)
-- Perpanjangan paket sama: hanya bisa H-10 sebelum expired
-- Renewal yang disetujui Admin → `expiresAt` akumulatif (tambah dari tanggal expired sebelumnya jika belum lewat)
-
-**Auto-Expire (lib/vendor-status.js):**
-- `autoCheckVendorSubscriptionExpiry()` dipanggil tiap login/request auth
-- Vendor `active` yang `expiresAt < now` → status `expired`
-- Project aktif vendor expired → status `archived`
-
-### 3.2. Google Drive Importer (Zero-Storage, Master OAuth)
-
-**Metode:** Google OAuth 2.0 Master — satu akun Google "Studio Master" Admin SaaS.
-
-**Alur Import Background:**
-1. Vendor paste URL folder GDrive → `parseFolderId()` ekstrak ID
-2. Project dibuat dengan status `importing`, client record dibuat
-3. `processImagesInBackground()` → `addToImportQueue()` (FIFO, max 1 concurrent)
-4. `runImportTask()` → `fetchFolderFilesMasterOAuth(folderId, category, depth)`:
-   - Rekursif hingga **depth 5** (subfolder bertingkat)
-   - Filter file: `image/*` MIME type + ekstensi RAW (`.cr2`, `.cr3`, `.arw`, `.nef`, `.dng`, `.raw`, `.heic`, dll.)
-   - Pagination: `pageSize=200` per request
-5. Metadata disimpan ke `photos`: `originalPath` = `/api/proxy/thumb/{id}/{name}?sz=w1200`, `thumbnailPath` = `?sz=w400`
-6. Project status → `pending_selection` (sukses) / `failed` (error)
-7. Saat server restart: project stuck di `importing` → otomatis direset ke `failed`
-
-**Error handling OAuth:**
-- 404 → "Folder tidak ditemukan"
-- 403 → "Akses ditolak, folder harus publik"
-- 401 → "OAuth kadaluarsa, hubungkan ulang di Admin Panel"
-
-**GDrive client caching:** `getMasterDriveClient()` cache 45 menit dalam memory (`cachedDriveClient`). Token baru otomatis disimpan ke `saas_settings` via event `tokens`.
-
-### 3.3. Proxy Gambar — True Pipe Stream (Zero RAM)
-
-**Route:** `GET /api/proxy/thumb/[fileId]?sz={size}` dan `/api/proxy/thumb/[fileId]/[filename]?sz={size}`
-
-**Implementasi:**
-- Source URL: `https://lh3.googleusercontent.com/d/{fileId}={sz}` (primer)
-- Fallback: `https://drive.google.com/thumbnail?id={fileId}&sz={sz}`
-- Response body: `ReadableStream` (`response.body`) langsung ke client — **tidak ada `arrayBuffer()`**
-- RAM server: ~0 MB per gambar (streaming pipe)
-- URL Google tidak pernah terekspos ke browser client
-
-**Cache headers:**
-```
-Cache-Control: public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400
-CDN-Cache-Control: public, max-age=2592000
-Cloudflare-CDN-Cache-Control: public, max-age=2592000
-X-Proxy-Source: drive-pipe
-```
-
-**Validasi:** File ID divalidasi regex `/^[a-zA-Z0-9_-]{10,}$/` sebelum diproses.
-
-### 3.4. Galeri Klien (Client Selection Portal)
-
-- **Akses:** Via `accessKey` (32 hex random) di URL — tanpa login
-- **Blokir akses klien jika:** project `archived` ATAU vendor `expiresAt < now`
-- **Foto:** Semua foto proyek ditampilkan + tanda `isSelected` per klien
-- **Seleksi:** `POST /api/projects/[id]/select?key=xxx` — atomic transaction SQLite
-  - Validasi: `maxSelection` limit, project tidak expired, semua `photoId` milik project
-  - Clear seleksi lama → insert seleksi baru → update status project → `completed`
-- **Branding:** `brandName`, `brandLogo` dari vendor (tampil jika `allowCustomLogo = 1`)
-- **Tema galeri:** Kolom `galleryTheme` di `projects` table
-
-### 3.5. Trial Galeri Publik (Landing Page Demo)
-
-**Route:** `POST /api/trial/create` → buat trial gallery  
-**Route:** `GET /trial-gallery/[slug]` → tampil trial gallery  
-
-**Alur:**
-1. Pengunjung input URL GDrive + judul di landing page
-2. Server panggil `fetchFolderFiles()` (bukan Master OAuth — endpoint publik)
-3. File dikelompokkan per subfolder/kategori
-4. **Tab terbuka** (jumlah = `trial_max_subfolders`): foto asli hingga `trial_max_photos` per tab
-5. **Tab terkunci** (sisanya): entry marker `{ _isLocked: true, _count: N }` — tanpa file ID asli
-6. Disimpan ke `trial_galleries` table, dengan `expiresAt = now + trial_expiration_minutes`
-7. Logo studio bisa diupload (base64, maks 2MB encoded)
-8. Slug unik: `{judul-slug}-{4-hex-random}`
-
-**Batasan dikonfigurasi Admin (`saas_settings`):**
-- `trial_max_photos` — maks. foto per tab terbuka (default: 50)
-- `trial_max_selection` — maks. foto bisa dipilih (default: 10)
-- `trial_max_subfolders` — maks. tab terbuka (default: 1)
-- `trial_expiration_minutes` — durasi trial (default: dari `system_settings`)
-
-### 3.6. RAW Selector (Sortir File RAW Lokal)
-
-**Arsitektur: 100% client-side, 0 upload ke server.**
-
-- **Hook:** `hooks/useRawSorter.js` — engine scan + match + copy/move via **File System Access API**
-- **Komponen:** `components/RawSorterDrawer.jsx` — drawer slide-in dengan log terminal & progress bar
-- **API:** `GET /api/projects/[id]/selected-files` → array nama file terpilih klien
-
-**Akses per paket:**
-- Starter: ❌ Tombol terkunci (upgrade prompt)
-- Pro & Business: ✅ Penuh
-- Trial: ✅ Terbatas (`raw_sorter_trial_limit` file pertama saja)
-
-**Logika pencocokan:** Strip ekstensi dari nama file galeri → match case-insensitive dengan file di folder lokal → copy/move RAW ke folder tujuan.
-
-**Browser support:** Chrome 86+ / Edge 86+ saja (File System Access API).
-
-### 3.7. Payment Gateway QRIS
-
-**Arsitektur:** Multi-provider dispatcher terpusat di `lib/payment-gateway/index.js`.
-
-| Provider | Driver |
-|---|---|
-| **Midtrans** (default) | Snap API + Core API status check |
-| **Xendit** | Invoice API |
-| **Tripay** | Channel API |
-| **Duitku** | Payment API |
-
-**Alur pembayaran:**
-1. `POST /api/payment/create` → buat transaksi, simpan ke `payment_transactions` + `payment_sessions`
-2. Vendor status → `pending_payment`
-3. UI polling `GET /api/payment/status` setiap 3-5 detik
-4. Payment gateway kirim webhook ke `POST /api/payment/notification`
-5. Verifikasi signature (SHA512 untuk Midtrans) → aktivasi vendor otomatis
-6. `GET /api/payment/status` mendeteksi `paid` → set cookie JWT → redirect `/dashboard`
-
-**Auto-cleanup (setInterval 60 detik di `lib/db.js`):**
-- Session `pending` yang `expiresAt < now` → status `expired`
-- Vendor `pending_payment` tanpa session `paid/pending` → `expired_draft`
-- `draft_plan` leads lebih dari 48 jam → dihapus otomatis
-
-**Rate limit `/api/payment/create`:** 5 request / 60 detik per IP.
-
-### 3.8. Panel Superadmin
-
-**Tab-tab di Admin Panel:**
-- **Dashboard/Analytics:** MRR, ARR, vendor aktif/pending/expired, proyek, seleksi, trend 6-bulan, trial stats, top vendor by photos
-- **Kelola Vendor:** List semua vendor + auto-sync status Midtrans untuk `pending_payment`, approve/suspend/detail
-- **Kelola Paket:** CRUD paket (nama, harga, maks. proyek, `allowCustomLogo`, `allowRawSelector`)
-- **Kelola Upgrade:** Approve/reject `subscription_requests`, lihat bukti transfer, ringkasan pending total
-- **Pengaturan:** Bank, WA, email, Google OAuth Master connect, SMTP, payment gateway config
-- **System Settings:** Toggle registrasi, toggle trial, kuota vendor, threshold disk, auto backup
-- **Trial Control:** Preset konfigurasi trial (Relaxed/Standard/Aggressive/Ultra/Disabled)
-
-**Auto-backup (triggered dari analytics route):**
-- Jika `enable_auto_backup = 1` dan interval elapsed → jalankan `bash scripts/backup-db.sh` dan `bash scripts/backup-photos.sh`
+**Aturan Akumulasi Renewal & Prorata Upgrade Paket Utama:**
+- **Perpanjangan Paket Sama (Renewal):** Hari diakumulasikan dari tanggal kedaluwarsa lama jika belum lewat (`expiresAt = oldExpiresAt + activePeriodDays`), sehingga sisa hari vendor **tidak pernah hangus**.
+- **Upgrade Paket Utama:** Harga dikurangi sisa nilai prorata harian paket lama.
 
 ---
 
-## 🔄 4. Lifecycle Status Lengkap
+### 3.2. Add-On Cloud Storage Engine & Prorata Pricing (Blueprint 6.1)
 
-### Vendor Status
-```
-draft_plan (pilih paket di form) 
-    ├── pending_payment (QRIS) ──→ active (webhook paid)
-    │                          ──→ expired_draft (QRIS timeout/cancel)
-    │                          ──→ cancelled (dibatalkan)
-    ├── pending_manual (transfer) ──→ active (Admin approve)
-    └── [setelah aktif]
-           active ──→ expired (autoCheckVendorSubscriptionExpiry)
-           active ──→ suspended (Admin suspend manual)
-```
+Sistem Add-On Cloud Storage bersifat dinamis dan dapat disesuaikan kebutuhan fotografer:
 
-### Project Status
-```
-importing ──→ pending_selection ──→ selection_done (alias completed)
-                                ──→ archived (vendor expired / manual)
-failed (import GDrive gagal → bisa retry)
-```
+**Paket Add-On Storage Aktif (`addon_plans`):**
+| Nama Paket Add-On | Kapasitas Storage | Harga / Bulan |
+|---|---|---|
+| **Add-On 25GB** | 25 GB | Rp 15.000 |
+| **Add-On 50GB** | 50 GB | Rp 25.000 |
+| **Add-On 100GB** | 100 GB | Rp 45.000 |
+| **Add-On 200GB** | 200 GB | Rp 85.000 |
 
-### Payment Session Status
-```
-pending ──→ paid (webhook/polling)
-        ──→ expired (auto-cleanup 60s / Midtrans status expire)
-        ──→ cancelled (user cancel)
-        ──→ replaced (sesi lama saat vendor re-register)
-```
+**Aturan Prorata Harian Add-On Storage:**
+- **Co-Terming Expiration:** Masa berlaku Add-On Storage **selalu diselaraskan (*co-terminous*)** dengan tanggal kedaluwarsa Paket Utama vendor (`expiresAt`).
+- **Kalkulasi Harga Prorata:**
+  $$\text{Harga Prorata} = \max\left(10.000,\, \text{Round}\left( \frac{\text{Harga Addon}}{30} \times \text{Sisa Hari Paket Utama} \right)\right)$$
+- **Instant Quota Expansion:** Kuota storage (`addonStorageQuotaBytes`) diperbarui seketika saat Notifikasi Callback Midtrans QRIS bernilai `paid`.
 
 ---
 
-## 🔧 5. Stack Teknologi
+### 3.3. Proteksi Galeri Klien: Glassmorphism Lock Overlay 🔒 & Grace Period
+
+- **Proteksi Galeri Klien:**
+  Saat vendor/storage kedaluwarsa, galeri klien di `/gallery/[projectId]` menampilkan efek **Glassmorphism Lock Overlay 🔒** dengan pesan *"GALERI TERKUNCI SEMENTARA"* dan tombol hubungi studio via WhatsApp.
+- **Garansi Keamanan Berkas Foto:** Berkas foto **TIDAK DIHAPUS** selama masa tenggang (*Grace Period*) 30 hari. Saat vendor memperpanjang storage, galeri otomatis terbuka instan.
+- **Auto-Cleanup Background Daemon (`lib/db.js`):**
+  Daemon background di Node.js mengeksekusi pembersihan otomatis setiap 60 detik:
+  1. Memeriksa vendor yang storage-nya kedaluwarsa $>30$ hari.
+  2. Menghapus berkas foto fisik untuk *garbage collection* jika melebihi masa tenggang 30 hari.
+  3. Mengirim email peringatan otomatis di H-15 dan H-3 via SMTP.
+
+---
+
+### 3.4. Multi-Tenant Storage Metering (`usedStorageBytes`) & Google Drive Size Ingestion
+
+- **Presisi Pengukuran Storage:**
+  - Google Drive API list (`lib/google-master-drive.js`) menyertakan parameter `size`: `fields: 'nextPageToken, files(id, name, mimeType, size)'`.
+  - Berkas foto diindeks dengan ukuran byte asli (`fileSizeBytes`).
+  - Total byte foto proyek diakumulasikan ke kolom `usedStorageBytes` milik vendor di tabel `vendors`.
+  - Hapus proyek/folder mengembalikan kuota secara instan (`usedStorageBytes - totalBytes`).
+- **Capacity Meter Visual:** Progress bar di `/dashboard/storage` berubah warna secara dinamis menjadi merah saat penggunaan mencapai $\ge 90\%$.
+
+---
+
+### 3.5. Google Drive Importer (Zero-Storage, Master OAuth)
+
+- **Metode:** Google OAuth 2.0 Master — menggunakan akun Google Studio Master Admin SaaS.
+- **Alur Import Background:**
+  1. Vendor memasukkan URL folder Google Drive $\rightarrow$ `parseFolderId()` mengurai ID folder.
+  2. Proyek dibuat dengan status `importing`.
+  3. `processImagesInBackground()` $\rightarrow$ `addToImportQueue()` (FIFO, max 1 concurrent).
+  4. Pemindaian rekursif hingga **depth 5** (subfolder bertingkat).
+  5. Memetakan foto & file RAW (`.cr2`, `.cr3`, `.arw`, `.nef`, `.dng`, `.heic`, dll.).
+  6. Simpan metadata foto: `originalPath` = `/api/proxy/thumb/{id}/{name}?sz=w1200`, `thumbnailPath` = `?sz=w400`.
+
+---
+
+### 3.6. Proxy Media Stream (True Pipe Stream — Zero RAM)
+
+- **Route:** `GET /api/proxy/thumb/[fileId]`
+- **Response Stream:** Direct `ReadableStream` (`response.body`) tanpa memuat file ke RAM server (`arrayBuffer()`).
+- **CDN Caching Header:**
+  ```http
+  Cache-Control: public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400
+  CDN-Cache-Control: public, max-age=2592000
+  Cloudflare-CDN-Cache-Control: public, max-age=2592000
+  ```
+
+---
+
+### 3.7. Payment Gateway QRIS & Pembatalan Transaksi Atomik
+
+- **Provider:** Midtrans Snap + Core API QRIS dengan Notifikasi Webhook Signature Hash SHA512 (`SHA512(orderId + statusCode + grossAmount + ServerKey)`).
+- **Pembatalan Transaksi QRIS Atomik:** Panggilan `/api/payment/cancel` memperbarui status di tabel `payment_sessions` dan `payment_transactions` menjadi `'cancelled'` secara bersamaan.
+
+---
+
+### 3.8. Panel Superadmin (`/admin`)
+
+- **Modul Pengaturan:** Integrasi Google Cloud OAuth, SMTP Mailer, Midtrans Payment Gateway, & System Quota.
+- **Kelola Add-On Plans:** Superadmin dapat mengubah harga, status, dan kuota Add-On Storage secara real-time.
+- **Indicator SMTP Warning Badge:** Badge visual `🟢 SMTP Aktif` / `⚠️ SMTP Belum Aktif` memberikan kepastian status mailer pada Admin Panel.
+
+---
+
+## 🔧 4. Tech Stack Produksi
 
 | Layer | Teknologi | Versi |
 |---|---|---|
 | **Framework** | Next.js (App Router) | 14.2.3 |
-| **Runtime** | Node.js | v18/v20 LTS |
-| **Database** | SQLite via `better-sqlite3` | 11.x |
-| **Auth** | JWT via `jsonwebtoken` | 9.x |
-| **Google API** | `googleapis` (Drive API v3) | 140.x |
-| **Password** | `bcryptjs` | 3.x |
-| **Email** | `nodemailer` (SMTP) | 9.x |
-| **Process Manager** | PM2 | — |
-| **Container** | Docker + docker-compose | — |
-| **CDN** | Cloudflare (cache 30 hari) | — |
-| **Payment Gateway** | Midtrans Snap + Core API | — |
+| **Runtime** | Node.js | v24.16.0 LTS |
+| **Database** | SQLite via `better-sqlite3` | 11.x (WAL Mode) |
+| **Auth** | JWT via `jsonwebtoken` | 9.x (httpOnly) |
+| **Google Drive API** | `googleapis` (Drive API v3) | 140.x |
+| **Email Mailer** | `nodemailer` (SMTP Gmail) | 9.x |
+| **Payment Gateway** | Midtrans QRIS API | Core API |
 
 ---
 
-## 💎 6. Nilai Jual Utama (USP)
+## 🚀 5. Roadmap Fitur Masa Depan (Long-Term Roadmap)
 
-| USP | Detail Teknis |
-|---|---|
-| **Zero-Storage** | 0 byte foto di server — hanya metadata di SQLite |
-| **Master OAuth** | Satu akun Google untuk semua vendor |
-| **True Pipe Stream** | RAM ~0 saat ribuan foto concurrent |
-| **Lightroom Ready** | Salin nama file → filter langsung di Lightroom |
-| **RAW Selector** | Match & pindah file RAW lokal tanpa upload ke server |
-| **QRIS Otomatis** | Aktivasi vendor instan via payment webhook |
-| **White-Label** | Logo studio di halaman galeri klien (Pro/Business) |
+Berikut adalah panduan fitur opsional untuk pengambangan jangka panjang ([`docs/PLAN_FITUR_BARU.md`](file:///Users/armansyam/Documents/Project%20AmsDev/pick-your-photo/docs/PLAN_FITUR_BARU.md)):
+
+1. **🟢 Notifikasi Email Pendaftaran Vendor ke Admin (Long-Term):**  
+   Admin SaaS mendapat notifikasi email instan saat ada fotografer baru yang mendaftar atau melakukan transaksi pembayaran.
+2. **🟢 Ekspor Rekap Seleksi Foto Klien ke CSV/Excel (Long-Term):**  
+   Vendor dapat mengunduh daftar nama foto terpilih klien dalam berkas format `.csv` untuk langsung diimpor ke Adobe Lightroom atau Microsoft Excel.
+
+---
+
+*Spesifikasi Master Sistem ini disusun secara resmi sebagai rujukan tunggal pengoperasian SaaS Pick Your Photo.*
