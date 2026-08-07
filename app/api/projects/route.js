@@ -223,20 +223,28 @@ async function runImportTask(projectId, folderId) {
 
         const insertPhoto = db.prepare('INSERT INTO photos (projectId, originalPath, thumbnailPath, watermarkedPath, fileSizeBytes, category) VALUES (?, ?, ?, ?, ?, ?)');
 
+        let totalImportedBytes = 0;
         const insertMany = db.transaction((photosList) => {
             for (const file of photosList) {
                 const cleanName = file.name || `photo_${file.id}.jpg`;
                 const categoryName = file.category || '';
+                const sizeBytes = parseInt(file.size) || 0;
+                totalImportedBytes += sizeBytes;
                 const thumbPath = `/api/proxy/thumb/${file.id}/${encodeURIComponent(cleanName)}?sz=w400`;
                 const origPath = `/api/proxy/thumb/${file.id}/${encodeURIComponent(cleanName)}?sz=w1200`;
-                insertPhoto.run(projectId, origPath, thumbPath, origPath, 0, categoryName);
+                insertPhoto.run(projectId, origPath, thumbPath, origPath, sizeBytes, categoryName);
             }
         });
 
         insertMany(files);
 
+        // Update vendor usedStorageBytes
+        if (totalImportedBytes > 0 && project.vendorId) {
+            db.prepare('UPDATE vendors SET usedStorageBytes = usedStorageBytes + ? WHERE id = ?').run(totalImportedBytes, project.vendorId);
+        }
+
         db.prepare('UPDATE projects SET status = ?, expiresAt = NULL WHERE id = ?').run('pending_selection', projectId);
-        console.log(`--> [runImportTask Zero-Storage] Successfully completed import for project ${projectId} (${files.length} photos) with 0 Bytes server disk!`);
+        console.log(`--> [runImportTask Zero-Storage] Successfully completed import for project ${projectId} (${files.length} photos, ${totalImportedBytes} bytes)!`);
     } catch (fatalErr) {
         console.error(`[runImportTask Fatal Error] Uncaught error processing project ${projectId}:`, fatalErr);
         try {

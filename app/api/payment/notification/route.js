@@ -72,8 +72,12 @@ export async function POST(request) {
         const isUpgrade = wasActive && vendor.planId !== plan.id;
         const oldPlanRow = isUpgrade ? db.prepare('SELECT name FROM plans WHERE id = ?').get(vendor.planId) : null;
 
-        // Calculate new expiration date (Today + activePeriodDays)
-        const expDate = new Date();
+        // Calculate new expiration date (Accumulate remaining days if active)
+        const now = new Date();
+        let expDate = now;
+        if (vendor.expiresAt && new Date(vendor.expiresAt) > now) {
+          expDate = new Date(vendor.expiresAt);
+        }
         expDate.setDate(expDate.getDate() + (plan.activePeriodDays || 30));
         const expiresAt = expDate.toISOString().split('T')[0];
 

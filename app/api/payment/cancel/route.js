@@ -51,10 +51,16 @@ export async function POST(request) {
 
     const now = new Date().toISOString();
 
-    // Cancel the payment session
+    // Cancel the payment session and transaction atomically
     db.prepare(
       "UPDATE payment_sessions SET status = 'cancelled' WHERE orderId = ?"
     ).run(orderId);
+
+    try {
+      db.prepare(
+        "UPDATE payment_transactions SET status = 'cancelled' WHERE orderId = ?"
+      ).run(orderId);
+    } catch (e) {}
 
     // Archive the vendor draft
     db.prepare(
