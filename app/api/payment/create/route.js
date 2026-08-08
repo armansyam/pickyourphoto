@@ -55,6 +55,20 @@ export async function POST(request) {
     }
 
 
+    // Generate unique orderId (was missing — caused ReferenceError on every request)
+    const orderId = `ORDER-${Date.now()}-${vendor.id}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+
+    // Step 1: Mark any old pending sessions as 'replaced' BEFORE creating new one
+    // (prevents race condition where two pending sessions coexist briefly)
+    try {
+      db.prepare(`
+        UPDATE payment_sessions 
+        SET status = 'replaced' 
+        WHERE vendorId = ? AND status = 'pending' AND expiresAt <= CURRENT_TIMESTAMP
+      `).run(vendor.id);
+    } catch (e) {}
+
+    // Step 2: Create new payment via gateway
     const paymentResult = await createPayment({
       orderId,
       amount,
@@ -87,32 +101,24 @@ export async function POST(request) {
     const qrUrl = paymentResult.qrUrl || paymentResult.redirectUrl || '';
     db.prepare(`
       INSERT INTO payment_sessions (orderId, vendorId, planId, amount, status, paymentMethod, qrUrl, expiresAt, rawResponse)
-      VALUES (?, ?, ?, ?, 'pending', 'qris', ?, ?, ?)
+      VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?)
     `).run(
       orderId,
       vendor.id,
       plan.id,
       amount,
+      config.provider,
       qrUrl,
       expiresAt,
       JSON.stringify(paymentResult.raw || {})
     );
 
-    // Update vendor status back to pending_payment and clear archivedAt
+    // Step 4: Update vendor status to pending_payment and clear archivedAt
     db.prepare(`
       UPDATE vendors 
       SET status = 'pending_payment', archivedAt = NULL, planId = ? 
       WHERE id = ?
     `).run(plan.id, vendor.id);
-
-    // Mark old expired pending sessions as replaced
-    try {
-      db.prepare(`
-        UPDATE payment_sessions 
-        SET status = 'replaced' 
-        WHERE vendorId = ? AND status = 'pending' AND expiresAt <= CURRENT_TIMESTAMP
-      `).run(vendor.id);
-    } catch (e) {}
 
     return NextResponse.json({
       success: true,

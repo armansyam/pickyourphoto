@@ -12,6 +12,21 @@ function LoginForm() {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        const checkExistingSession = async () => {
+            try {
+                const res = await fetch('/api/vendor/profile');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.id) {
+                        window.location.href = '/dashboard';
+                    }
+                }
+            } catch {
+                // Sesi kosong, tetap di halaman login
+            }
+        };
+        checkExistingSession();
+
         const urlError = searchParams?.get('error');
         if (urlError) {
             setError(decodeURIComponent(urlError));

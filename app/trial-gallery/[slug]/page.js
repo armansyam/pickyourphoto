@@ -963,8 +963,9 @@ export default function TrialGalleryPage({ params }) {
                 onContextMenu={(e) => e.preventDefault()}
                 onDragStart={(e) => e.preventDefault()}
               />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '70px', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.6) 50%, transparent 100%)', pointerEvents: 'none', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: '12px', color: '#a5b4fc', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1.5px', textTransform: 'uppercase', userSelect: 'none', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
-                ⚡ TRIAL PREVIEW &bull; PICK YOUR PHOTO
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)', pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '20px 16px 16px 16px', color: '#a5b4fc', fontSize: '13px', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', userSelect: 'none', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
+                <span style={{ fontSize: '14px', color: '#ffffff', textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>⚡ TRIAL PREVIEW</span>
+                <span style={{ fontSize: '11px', color: '#a5b4fc', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>PICK YOUR PHOTO</span>
               </div>
             </div>
 

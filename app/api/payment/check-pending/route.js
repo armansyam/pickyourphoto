@@ -58,7 +58,7 @@ export async function GET(request) {
             const expiredSession = db.prepare(`
                 SELECT orderId, planId, amount, paymentMethod, expiresAt
                 FROM payment_sessions 
-                WHERE vendorId = ? AND (status = 'pending' OR status = 'replaced') AND expiresAt <= CURRENT_TIMESTAMP 
+                WHERE vendorId = ? AND status = 'pending' AND expiresAt <= CURRENT_TIMESTAMP 
                 ORDER BY id DESC LIMIT 1
             `).get(vendor.id);
 

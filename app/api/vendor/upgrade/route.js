@@ -80,7 +80,7 @@ export async function POST(request) {
                 const daysUsed = Math.max(0, planDuration - diffDays);
 
                 // Determine if target plan is the highest tier active plan
-                const maxPlanPrice = db.prepare('SELECT MAX(price) as maxPrice FROM plans WHERE status = "active"').get()?.maxPrice || 0;
+                const maxPlanPrice = db.prepare("SELECT MAX(price) as maxPrice FROM plans WHERE status = 'active'").get()?.maxPrice || 0;
                 const isTopTierPlan = newPlan.price >= maxPlanPrice;
 
                 // Smart proration credit factor:

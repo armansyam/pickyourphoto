@@ -59,27 +59,79 @@ export async function GET(request) {
                 db.prepare("UPDATE payment_sessions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE orderId = ?").run(orderId);
               } catch (e) {}
 
-              // Activate vendor account
+              // Activate vendor account / Add-On storage
               const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
-              const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
 
-              if (vendor && plan) {
-                const expDate = new Date();
-                expDate.setDate(expDate.getDate() + (plan.activePeriodDays || 30));
-                const expiresAt = expDate.toISOString().split('T')[0];
+              if (transaction.transactionType === 'addon' || transaction.addonPlanId) {
+                let targetQuotaBytes = 0;
+                let addonPlanIdToStore = transaction.addonPlanId;
+                let planName = 'Add-On Storage';
 
-                db.prepare(`
-                  UPDATE vendors 
-                  SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?
-                  WHERE id = ?
-                `).run(plan.id, expiresAt, plan.maxProjects, vendor.id);
+                if (transaction.addonPlanId === 'custom' || String(transaction.addonPlanId).includes('custom')) {
+                  planName = 'Custom Storage';
+                  try {
+                    const rawObj = JSON.parse(transaction.rawResponse || '{}');
+                    if (rawObj.customQuotaBytes) {
+                      targetQuotaBytes = parseInt(rawObj.customQuotaBytes, 10);
+                    }
+                  } catch (e) {}
 
-                console.log(`[Live Midtrans Check SUCCESS] Vendor ${vendor.name} (${vendor.email}) activated & sending approval email...`);
+                  if (!targetQuotaBytes) {
+                    targetQuotaBytes = 60 * 1024 * 1024 * 1024;
+                  }
+                } else {
+                  const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(transaction.addonPlanId);
+                  if (addonPlan) {
+                    targetQuotaBytes = addonPlan.quotaBytes;
+                    addonPlanIdToStore = addonPlan.id;
+                    planName = addonPlan.name;
+                  }
+                }
 
-                // Send email notification to vendor!
-                sendVendorApprovalEmail({ ...vendor, status: 'active' }, plan).catch(err => {
-                  console.error('[Live Payment Status Email Error]:', err);
-                });
+                if (vendor && targetQuotaBytes > 0) {
+                  db.prepare(`
+                    INSERT INTO storage_addon_subscriptions (vendorId, addonPlanId, price, proratedPrice, status)
+                    VALUES (?, ?, ?, ?, 'active')
+                  `).run(vendor.id, addonPlanIdToStore || 'custom', transaction.amount, transaction.amount);
+
+                  db.prepare(`
+                    UPDATE vendors 
+                    SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
+                    WHERE id = ?
+                  `).run(targetQuotaBytes, addonPlanIdToStore || 'custom', vendor.id);
+
+                  if (!vendor.driveRootFolderId) {
+                    try {
+                      const { createVendorRootFolder } = await import('@/lib/google-master-drive.js');
+                      const root = await createVendorRootFolder(vendor.email, vendor.name);
+                      db.prepare('UPDATE vendors SET driveRootFolderId = ? WHERE id = ?').run(root.folderId, vendor.id);
+                    } catch (err) {
+                      console.warn('[Root Folder Creation Error]:', err.message);
+                    }
+                  }
+
+                  console.log(`[Live Midtrans Status SUCCESS] Vendor ${vendor.name} Add-On Storage ${planName} activated!`);
+                }
+              } else {
+                const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
+                if (vendor && plan) {
+                  const expDate = new Date();
+                  expDate.setDate(expDate.getDate() + (plan.activePeriodDays || 30));
+                  const expiresAt = expDate.toISOString().split('T')[0];
+
+                  db.prepare(`
+                    UPDATE vendors 
+                    SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?
+                    WHERE id = ?
+                  `).run(plan.id, expiresAt, plan.maxProjects, vendor.id);
+
+                  console.log(`[Live Midtrans Check SUCCESS] Vendor ${vendor.name} (${vendor.email}) activated & sending approval email...`);
+
+                  // Send email notification to vendor!
+                  sendVendorApprovalEmail({ ...vendor, status: 'active' }, plan).catch(err => {
+                    console.error('[Live Payment Status Email Error]:', err);
+                  });
+                }
               }
 
               transaction.status = 'paid';
@@ -116,9 +168,8 @@ export async function GET(request) {
     if (transaction.status === 'paid') {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
       if (vendor) {
-        // Generate auth session token using standard 24h helper
-        const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email });
-
+        // Generate auth session token using standard helper with role
+        const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
 
         const response = NextResponse.json({
           paid: true,
@@ -132,7 +183,7 @@ export async function GET(request) {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
-          maxAge: 60 * 60 * 24, // 1 day
+          maxAge: 24 * 60 * 60,
           path: '/',
         });
 

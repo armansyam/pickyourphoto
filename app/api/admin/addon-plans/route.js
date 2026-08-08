@@ -1,24 +1,15 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { getAuthVendor } from '@/lib/auth';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'pick-your-photo-secret-key-2026';
-
-function verifyAdminSession() {
-  const token = cookies().get('token')?.value;
-  if (!token) return null;
-  try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    if (decoded.role !== 'admin') return null;
-    return decoded;
-  } catch {
-    return null;
-  }
+function verifyAdmin() {
+  const user = getAuthVendor();
+  if (!user || user.role !== 'admin') return null;
+  return user;
 }
 
 export async function GET() {
-  const admin = verifyAdminSession();
+  const admin = verifyAdmin();
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Akses ditolak. Sesi admin tidak valid.' }, { status: 401 });
   }
@@ -32,7 +23,7 @@ export async function GET() {
 }
 
 export async function POST(req) {
-  const admin = verifyAdminSession();
+  const admin = verifyAdmin();
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Akses ditolak.' }, { status: 401 });
   }
@@ -57,7 +48,7 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
-  const admin = verifyAdminSession();
+  const admin = verifyAdmin();
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Akses ditolak.' }, { status: 401 });
   }
@@ -83,7 +74,7 @@ export async function PUT(req) {
 }
 
 export async function DELETE(req) {
-  const admin = verifyAdminSession();
+  const admin = verifyAdmin();
   if (!admin) {
     return NextResponse.json({ success: false, error: 'Akses ditolak.' }, { status: 401 });
   }

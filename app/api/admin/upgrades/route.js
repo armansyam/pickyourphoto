@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
 import db from '@/lib/db';
+import { sendVendorRenewalConfirmationEmail, sendVendorUpgradeConfirmationEmail } from '@/lib/mailer';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,13 +19,14 @@ export async function GET() {
                 v.name as vendorName, 
                 v.email as vendorEmail,
                 v.expiresAt as currentExpiresAt,
-                p.name as planName,
+                COALESCE(ap.name, p.name, 'Add-On Storage') as planName,
                 p.activePeriodDays as planExpireDays,
                 p.maxProjects as planMaxProjects,
                 (SELECT name FROM plans WHERE id = v.planId) as currentPlanName
             FROM subscription_requests sr
             JOIN vendors v ON sr.vendorId = v.id
-            JOIN plans p ON sr.planId = p.id
+            LEFT JOIN plans p ON sr.planId = p.id
+            LEFT JOIN addon_plans ap ON sr.addonPlanId = ap.id
             ORDER BY sr.createdAt DESC
         `);
         const requests = stmt.all();
@@ -72,6 +74,29 @@ export async function PUT(request) {
         }
 
         if (action === 'approve') {
+            // Handle Add-On Storage Approval
+            if (upgradeReq.requestType === 'addon' || (upgradeReq.addonPlanId && upgradeReq.addonPlanId > 0)) {
+                const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(upgradeReq.addonPlanId);
+                if (!addonPlan) {
+                    return NextResponse.json({ message: 'Paket Add-On Storage tujuan tidak ditemukan.' }, { status: 404 });
+                }
+
+                db.prepare(`
+                  INSERT INTO storage_addon_subscriptions (vendorId, addonPlanId, price, proratedPrice, status)
+                  VALUES (?, ?, ?, ?, 'active')
+                `).run(upgradeReq.vendorId, addonPlan.id, addonPlan.price, upgradeReq.proratedPrice);
+
+                db.prepare(`
+                  UPDATE vendors 
+                  SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
+                  WHERE id = ?
+                `).run(addonPlan.quotaBytes, addonPlan.id, upgradeReq.vendorId);
+
+                db.prepare("UPDATE subscription_requests SET status = 'approved' WHERE id = ?").run(id);
+
+                return NextResponse.json({ message: `Permintaan Add-On Storage (${addonPlan.name}) berhasil disetujui!` });
+            }
+
             // Get target plan info
             const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(upgradeReq.planId);
             if (!plan) {
@@ -108,7 +133,6 @@ export async function PUT(request) {
 
             // Dispatch automated SMTP confirmation email to vendor
             try {
-                const { sendVendorRenewalConfirmationEmail, sendVendorUpgradeConfirmationEmail } = require('@/lib/mailer');
                 const fullVendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(upgradeReq.vendorId);
                 const isRenewal = (vendor && vendor.planId === upgradeReq.planId);
                 const formattedExp = expiresAt ? expiresAt.split('T')[0] : '';

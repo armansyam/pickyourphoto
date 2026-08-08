@@ -8,6 +8,7 @@ export default function AdminSettings({
   googleMasterFolderId, setGoogleMasterFolderId,
   googleRefreshToken,
   googleMasterAccountEmail,
+  maxUploadConcurrencyThreads = 4, setMaxUploadConcurrencyThreads,
 
   newPassword, setNewPassword,
   bankName, setBankName,
@@ -34,6 +35,8 @@ export default function AdminSettings({
   lastBackupTime = 'Belum pernah',
   lastBackupFileName = null,
   lastBackupSizeFormatted = null,
+  customStoragePricePerGb = 1250, setCustomStoragePricePerGb,
+  workerStorageWarningThresholdGb = 10, setWorkerStorageWarningThresholdGb,
   savingProfile,
   profileSuccessMsg,
   setProfileSuccessMsg,
@@ -278,6 +281,27 @@ export default function AdminSettings({
                   )}
                 </div>
               )}
+
+              {/* MAX UPLOAD CONCURRENCY THREADS CONFIGURATION */}
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <label className="form-label" style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>
+                  ⚙️ Maksimal Thread Worker Upload Serentak (Parallel Concurrency):
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    className="input-text"
+                    style={{ width: '120px', fontWeight: 'bold', color: '#818cf8' }}
+                    value={maxUploadConcurrencyThreads || 4}
+                    onChange={e => setMaxUploadConcurrencyThreads && setMaxUploadConcurrencyThreads(parseInt(e.target.value) || 1)}
+                  />
+                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                    Thread paralel simultan (Default: <strong>4</strong>). Maksimal dibatasi hingga jumlah Akun Worker aktif yang tersedia.
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* EMAIL SMTP SECTION */}
@@ -546,6 +570,33 @@ export default function AdminSettings({
                   value={sysMaxQuota === null ? '' : sysMaxQuota}
                   onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
                 />
+              </div>
+              <div className="form-group" style={{ margin: '16px 0 0 0' }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Tarif Custom Storage per GB / Bulan (Rp)</label>
+                <input
+                  type="number"
+                  className="input-text"
+                  placeholder="Default: 1250 (Rp 1.250 / GB)"
+                  value={customStoragePricePerGb}
+                  onChange={e => setCustomStoragePricePerGb(parseInt(e.target.value) || 1250)}
+                />
+                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                  Tarif grosir dinamis per GB / bulan yang digunakan pada kalkulator slider Custom Storage vendor.
+                </p>
+              </div>
+
+              <div className="form-group" style={{ margin: '16px 0 0 0' }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Ambang Batas Peringatan Worker Storage (GB)</label>
+                <input
+                  type="number"
+                  className="input-text"
+                  placeholder="Default: 10 (Warn saat sisa <= 10 GB)"
+                  value={workerStorageWarningThresholdGb}
+                  onChange={e => setWorkerStorageWarningThresholdGb(parseInt(e.target.value) || 10)}
+                />
+                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                  Pemicu notifikasi peringatan dini di Admin Panel untuk segera menambah akun Master Drive Worker baru.
+                </p>
               </div>
             </div>
 

@@ -5,6 +5,14 @@ import { sendVendorApprovalEmail, sendVendorRenewalConfirmationEmail, sendVendor
 
 export const dynamic = 'force-dynamic';
 
+// Helper: format bytes to human-readable string (was missing — caused ReferenceError in Add-On webhook log)
+function formatBytes(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+}
+
 export async function POST(request) {
   try {
     const rawBody = await request.text();
@@ -50,21 +58,55 @@ export async function POST(request) {
       const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
 
       // Handle Add-On Storage activation
-      if (transaction.transactionType === 'addon' || transaction.addonPlanId > 0) {
-        const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(transaction.addonPlanId);
-        if (vendor && addonPlan) {
+      if (transaction.transactionType === 'addon' || transaction.addonPlanId) {
+        let targetQuotaBytes = 0;
+        let addonPlanIdToStore = transaction.addonPlanId;
+        let planName = 'Add-On Storage';
+
+        if (transaction.addonPlanId === 'custom' || String(transaction.addonPlanId).includes('custom')) {
+          planName = 'Custom Storage';
+          try {
+            const rawObj = JSON.parse(transaction.rawResponse || '{}');
+            if (rawObj.customQuotaBytes) {
+              targetQuotaBytes = parseInt(rawObj.customQuotaBytes, 10);
+            }
+          } catch (e) {}
+
+          if (!targetQuotaBytes) {
+            targetQuotaBytes = 60 * 1024 * 1024 * 1024;
+          }
+        } else {
+          const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(transaction.addonPlanId);
+          if (addonPlan) {
+            targetQuotaBytes = addonPlan.quotaBytes;
+            addonPlanIdToStore = addonPlan.id;
+            planName = addonPlan.name;
+          }
+        }
+
+        if (vendor && targetQuotaBytes > 0) {
           db.prepare(`
             INSERT INTO storage_addon_subscriptions (vendorId, addonPlanId, price, proratedPrice, status)
             VALUES (?, ?, ?, ?, 'active')
-          `).run(vendor.id, addonPlan.id, addonPlan.price, transaction.amount);
+          `).run(vendor.id, addonPlanIdToStore || 'custom', transaction.amount, transaction.amount);
 
           db.prepare(`
             UPDATE vendors 
             SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
             WHERE id = ?
-          `).run(addonPlan.quotaBytes, addonPlan.id, vendor.id);
+          `).run(targetQuotaBytes, addonPlanIdToStore || 'custom', vendor.id);
 
-          console.log(`[Payment Webhook SUCCESS] Vendor ${vendor.name} (${vendor.email}) Add-On Storage ${addonPlan.name} (${formatBytes(addonPlan.quotaBytes)}) berhasil diaktivasi!`);
+          if (!vendor.driveRootFolderId) {
+            try {
+              const { createVendorRootFolder } = await import('@/lib/google-master-drive.js');
+              const root = await createVendorRootFolder(vendor.email, vendor.name);
+              db.prepare('UPDATE vendors SET driveRootFolderId = ? WHERE id = ?').run(root.folderId, vendor.id);
+            } catch (err) {
+              console.warn('[Root Folder Creation Error]:', err.message);
+            }
+          }
+
+          console.log(`[Payment Webhook SUCCESS] Vendor ${vendor.name} (${vendor.email}) Add-On Storage ${planName} (${targetQuotaBytes} bytes) berhasil diaktivasi!`);
         }
       } else if (vendor && plan) {
         const wasActive = vendor.status === 'active';

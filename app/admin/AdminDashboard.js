@@ -71,6 +71,11 @@ export default function AdminDashboard({ adminUser }) {
     const [googleMasterFolderId, setGoogleMasterFolderId] = useState('');
     const [googleRefreshToken, setGoogleRefreshToken] = useState('');
     const [googleMasterAccountEmail, setGoogleMasterAccountEmail] = useState('');
+    const [maxUploadConcurrencyThreads, setMaxUploadConcurrencyThreads] = useState(4);
+
+    // Custom Storage & Worker Capacity Warning Threshold States
+    const [customStoragePricePerGb, setCustomStoragePricePerGb] = useState(1250);
+    const [workerStorageWarningThresholdGb, setWorkerStorageWarningThresholdGb] = useState(10);
 
 
     // Payment Gateway Toggle States
@@ -217,6 +222,7 @@ export default function AdminDashboard({ adminUser }) {
                     if (data.saasSettings.google_master_folder_id) setGoogleMasterFolderId(data.saasSettings.google_master_folder_id);
                     if (data.saasSettings.google_refresh_token) setGoogleRefreshToken(data.saasSettings.google_refresh_token);
                     if (data.saasSettings.google_master_account_email) setGoogleMasterAccountEmail(data.saasSettings.google_master_account_email);
+                    if (data.saasSettings.max_upload_concurrency_threads) setMaxUploadConcurrencyThreads(parseInt(data.saasSettings.max_upload_concurrency_threads) || 4);
 
 
                     if (data.saasSettings.enable_payment_gateway) setEnablePaymentGateway(data.saasSettings.enable_payment_gateway === '1' || data.saasSettings.enable_payment_gateway === 'true');
@@ -230,7 +236,8 @@ export default function AdminDashboard({ adminUser }) {
                     if (data.saasSettings.smtp_port) setSmtpPort(data.saasSettings.smtp_port);
                     if (data.saasSettings.smtp_email) setSmtpEmail(data.saasSettings.smtp_email);
                     if (data.saasSettings.smtp_password) setSmtpPassword(data.saasSettings.smtp_password);
-                    if (data.saasSettings.smtp_from_name) setSmtpFromName(data.saasSettings.smtp_from_name);
+                    if (data.saasSettings.custom_storage_price_per_gb) setCustomStoragePricePerGb(parseInt(data.saasSettings.custom_storage_price_per_gb) || 1250);
+                    if (data.saasSettings.worker_storage_warning_threshold_gb) setWorkerStorageWarningThresholdGb(parseInt(data.saasSettings.worker_storage_warning_threshold_gb) || 10);
                 }
             }
         } catch (err) {
@@ -252,8 +259,12 @@ export default function AdminDashboard({ adminUser }) {
 
     const handleTabChange = (tabKey) => {
         setActiveTab(tabKey);
+        // Refresh relevant data when switching tabs
         if (tabKey === 'analytics') {
             fetchAnalytics();
+        }
+        if (tabKey === 'vendors' || tabKey === 'inquiry') {
+            fetchData();
         }
         if (typeof window !== 'undefined') {
             window.location.hash = tabKey;
@@ -264,11 +275,12 @@ export default function AdminDashboard({ adminUser }) {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const hash = window.location.hash.replace('#', '');
-            if (['analytics', 'vendors', 'plans', 'trial', 'settings'].includes(hash)) {
+            const validTabs = ['analytics', 'vendors', 'plans', 'trial', 'settings', 'inquiry', 'storage-pool'];
+            if (validTabs.includes(hash)) {
                 setActiveTab(hash);
             } else {
                 const savedTab = localStorage.getItem('admin_active_tab');
-                if (savedTab && ['analytics', 'vendors', 'plans', 'trial', 'settings'].includes(savedTab)) {
+                if (savedTab && validTabs.includes(savedTab)) {
                     setActiveTab(savedTab);
                 }
             }
@@ -352,6 +364,7 @@ export default function AdminDashboard({ adminUser }) {
                         google_client_id: googleClientId,
                         google_client_secret: googleClientSecret,
                         google_master_folder_id: googleMasterFolderId,
+                        max_upload_concurrency_threads: String(maxUploadConcurrencyThreads || 4),
                         enable_payment_gateway: enablePaymentGateway ? '1' : '0',
                         payment_gateway_provider: paymentGatewayProvider,
                         payment_gateway_client_key: paymentGatewayClientKey,
@@ -362,7 +375,9 @@ export default function AdminDashboard({ adminUser }) {
                         smtp_port: smtpPort ? String(smtpPort) : '465',
                         smtp_email: smtpEmail,
                         smtp_password: smtpPassword,
-                        smtp_from_name: smtpFromName
+                        smtp_from_name: smtpFromName,
+                        custom_storage_price_per_gb: String(customStoragePricePerGb || 1250),
+                        worker_storage_warning_threshold_gb: String(workerStorageWarningThresholdGb || 10)
                     }
                 })
             });
@@ -528,6 +543,54 @@ export default function AdminDashboard({ adminUser }) {
         }
     };
 
+    // Handler: Cancel QRIS payment session from Inquiry tab
+    const handleCancelQris = async (vendor) => {
+        try {
+            // Get the latest pending session for this vendor
+            const res = await fetch(`/api/payment/check-pending?email=${encodeURIComponent(vendor.email)}`);
+            const data = await res.json();
+            const orderId = data.orderId;
+            if (!orderId) {
+                addToast('Tidak ada sesi QRIS aktif untuk dibatalkan.', 'error');
+                return;
+            }
+            const cancelRes = await fetch('/api/payment/cancel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, vendorId: vendor.id }),
+            });
+            if (cancelRes.ok) {
+                addToast(`Sesi QRIS vendor ${vendor.name} berhasil dibatalkan.`, 'success');
+                fetchData();
+            } else {
+                const errData = await cancelRes.json();
+                addToast(errData.message || 'Gagal membatalkan sesi QRIS.', 'error');
+            }
+        } catch (err) {
+            addToast(err.message || 'Terjadi kesalahan.', 'error');
+        }
+    };
+
+    // Handler: Regenerate QRIS for archived vendor
+    const handleRegenerateQris = async (vendor) => {
+        try {
+            const res = await fetch('/api/payment/regenerate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vendorId: vendor.id, planId: vendor.planId }),
+            });
+            if (res.ok) {
+                addToast(`QRIS baru berhasil dibuat untuk vendor ${vendor.name}.`, 'success');
+                fetchData();
+            } else {
+                const errData = await res.json();
+                addToast(errData.message || 'Gagal membuat QRIS baru.', 'error');
+            }
+        } catch (err) {
+            addToast(err.message || 'Terjadi kesalahan.', 'error');
+        }
+    };
+
     return (
         <div style={{ background: '#09090b', color: '#f4f4f5', minHeight: '100vh', width: '100%', paddingBottom: '40px' }}>
             {/* Header */}
@@ -604,6 +667,7 @@ export default function AdminDashboard({ adminUser }) {
                             googleMasterFolderId={googleMasterFolderId} setGoogleMasterFolderId={setGoogleMasterFolderId}
                             googleRefreshToken={googleRefreshToken}
                             googleMasterAccountEmail={googleMasterAccountEmail}
+                            maxUploadConcurrencyThreads={maxUploadConcurrencyThreads} setMaxUploadConcurrencyThreads={setMaxUploadConcurrencyThreads}
 
                             newPassword={newPassword} setNewPassword={setNewPassword}
                             bankName={bankName} setBankName={setBankName}
@@ -755,6 +819,8 @@ export default function AdminDashboard({ adminUser }) {
                                 setVendorToDelete={setVendorToDelete}
                                 setActiveProofUrl={setActiveProofUrl}
                                 handleToggleVendorStatus={handleToggleVendorStatus}
+                                onCancelQris={handleCancelQris}
+                                onRegenerateQris={handleRegenerateQris}
                                 refetchVendors={fetchData}
                             />
                         )}

@@ -27,6 +27,22 @@ export default function RegisterPage() {
     const [paymentMethod, setPaymentMethod] = useState('');
     const [flashPromoInfo, setFlashPromoInfo] = useState(null);
     const [countdownText, setCountdownText] = useState('00:00:00');
+    useEffect(() => {
+        const checkExistingSession = async () => {
+            try {
+                const res = await fetch('/api/vendor/profile');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.id) {
+                        window.location.href = '/dashboard';
+                    }
+                }
+            } catch {
+                // Sesi kosong, tetap di halaman register
+            }
+        };
+        checkExistingSession();
+    }, []);
 
     useEffect(() => {
         if (flashPromoInfo && flashPromoInfo.active && flashPromoInfo.endsAt) {
@@ -820,9 +836,9 @@ export default function RegisterPage() {
                                                         <div className="form-group" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.05)', padding: '14px', borderRadius: '10px', marginTop: '6px' }}>
                                                             <span style={{ fontSize: '12px', color: '#a1a1aa', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Tujuan Transfer Pembayaran:</span>
                                                             <div style={{ fontSize: '13px', color: '#f4f4f5', lineHeight: '1.6' }}>
-                                                                <div>Bank: <strong>{settings?.bank_name || 'BCA (Bank Central Asia)'}</strong></div>
-                                                                <div>No. Rekening: <strong style={{ color: '#818cf8', fontSize: '14px' }}>{settings?.bank_account_number || '1234-5678-90'}</strong></div>
-                                                                <div>Atas Nama: <strong>{settings?.bank_account_name || 'PT Pick Your Photo'}</strong></div>
+                                                                <div>Bank: <strong>{settings?.bank_name || 'Belum dikonfigurasi Admin'}</strong></div>
+                                                                <div>No. Rekening: <strong style={{ color: '#818cf8', fontSize: '14px' }}>{settings?.bank_account_number || '-'}</strong></div>
+                                                                <div>Atas Nama: <strong>{settings?.bank_account_name || '-'}</strong></div>
                                                                 {settings?.contact_email && (
                                                                     <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
                                                                         Hubungi: {settings.contact_email} {settings.contact_whatsapp && ` | WA: +${settings.contact_whatsapp}`}

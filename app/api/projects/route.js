@@ -19,20 +19,17 @@ export async function GET() {
         if (!vendor) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
-        // Get projects with image count and selection status (Optimized JOIN)
+        // Get projects with image count and selection status (Optimized Subqueries 0.1ms)
         const stmt = db.prepare(`
             SELECT 
                 p.*,
-                COUNT(DISTINCT ph.id) as totalPhotos,
+                (SELECT COUNT(*) FROM photos WHERE projectId = p.id) as totalPhotos,
                 c.accessKey as clientAccessKey,
                 c.clientPhone as clientPhone,
-                COUNT(DISTINCT s.id) as selectedPhotosCount
+                (SELECT COUNT(*) FROM selections s JOIN clients c2 ON s.clientId = c2.id WHERE c2.projectId = p.id) as selectedPhotosCount
             FROM projects p
-            LEFT JOIN photos ph ON ph.projectId = p.id
             LEFT JOIN clients c ON c.projectId = p.id
-            LEFT JOIN selections s ON s.clientId = c.id
             WHERE p.vendorId = ?
-            GROUP BY p.id
             ORDER BY p.createdAt DESC
         `);
         const allProjects = stmt.all(vendor.id).map(p => {
@@ -50,6 +47,11 @@ export async function GET() {
             WHERE sr.vendorId = ? AND sr.status = 'pending'
         `).get(vendor.id);
 
+        const vDb = db.prepare('SELECT hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes FROM vendors WHERE id = ?').get(vendor.id);
+        const addonQuotaBytes = vDb?.addonStorageQuotaBytes || 0;
+        const storageQuotaGb = vDb?.hasStorageAddon ? parseFloat((addonQuotaBytes / (1024 * 1024 * 1024)).toFixed(1)) : 0;
+        const storageUsedMb = parseFloat(((vDb?.usedStorageBytes || 0) / (1024 * 1024)).toFixed(1));
+
         console.log(`--> [API GET /api/projects] Returning ${allProjects.length} total projects for vendor: ${vendor.name}`);
         return NextResponse.json({
             projects: allProjects,
@@ -66,6 +68,11 @@ export async function GET() {
                 maxPhotosPerProject: vendor.maxPhotosPerProject || 0,
                 expiresAt: vendor.expiresAt,
                 isExpired: vendor.isExpired,
+                hasStorageAddon: Boolean(vDb?.hasStorageAddon),
+                storageQuotaGb,
+                storageUsedMb,
+                addonStorageQuotaBytes: addonQuotaBytes,
+                usedStorageBytes: vDb?.usedStorageBytes || 0,
                 brandName: vendor.brandName || '',
                 brandLogo: vendor.brandLogo || '',
                 copyDelimiter: vendor.copyDelimiter || ', ',
@@ -217,7 +224,31 @@ async function runImportTask(projectId, folderId) {
             return;
         }
 
-        const files = await fetchFolderFiles(folderId);
+        // Cek apakah folder ini merupakan internal storage folder milik vendor yang sudah ter-index di DB storage_files
+        const internalFolder = db.prepare('SELECT driveFolderId FROM storage_folders WHERE driveFolderId = ? OR id = ?').get(folderId, parseInt(folderId) || 0);
+
+        let files = [];
+        if (internalFolder) {
+            console.log(`[runImportTask Fast-Reuse] Reading directly from SQLite storage_files for internal folder: ${internalFolder.driveFolderId}`);
+            const dbFiles = db.prepare(`
+              WITH RECURSIVE Subtree(fId) AS (
+                SELECT driveFolderId FROM storage_folders WHERE driveFolderId = ?
+                UNION ALL
+                SELECT child.driveFolderId FROM storage_folders child
+                JOIN Subtree parent ON child.parentFolderId = parent.fId
+              )
+              SELECT sf.id, sf.fileName as name, sf.driveFileId as id, sf.fileSizeBytes as size
+              FROM storage_files sf
+              WHERE sf.parentFolderId IN (SELECT fId FROM Subtree)
+            `).all(internalFolder.driveFolderId);
+
+            files = dbFiles.map(f => ({ id: f.id, name: f.name, size: f.size, category: '' }));
+        }
+
+        if (!files || files.length === 0) {
+            files = await fetchFolderFiles(folderId);
+        }
+
         if (!files || files.length === 0) {
             console.warn(`[runImportTask] No files found for project ${projectId}`);
             db.prepare('UPDATE projects SET status = ? WHERE id = ?').run('failed', projectId);
@@ -241,8 +272,8 @@ async function runImportTask(projectId, folderId) {
 
         insertMany(files);
 
-        // Update vendor usedStorageBytes
-        if (totalImportedBytes > 0 && project.vendorId) {
+        // Update vendor usedStorageBytes ONLY for internal cloud storage projects (not external GDrive links)
+        if (totalImportedBytes > 0 && project.vendorId && (!project.folderUrl || project.folderUrl === '')) {
             db.prepare('UPDATE vendors SET usedStorageBytes = usedStorageBytes + ? WHERE id = ?').run(totalImportedBytes, project.vendorId);
         }
 

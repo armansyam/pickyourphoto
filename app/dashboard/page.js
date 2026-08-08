@@ -56,7 +56,14 @@ const normalizeWhatsappNumber = (rawNumber) => {
     return cleaned;
 };
 
-
+const formatBytes = (bytes, decimals = 2) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
 
 export default function DashboardPage() {
     const [projects, setProjects] = useState([]);
@@ -81,6 +88,12 @@ export default function DashboardPage() {
     const [clientPhone, setClientPhone] = useState('');
     const [galleryTheme, setGalleryTheme] = useState('default');
     const [showCreateThemePicker, setShowCreateThemePicker] = useState(false);
+
+    // Opsi Sumber Media Proyek (Internal Cloud Storage vs Google Drive Eksternal)
+    const [projectSourceType, setProjectSourceType] = useState('internal'); // 'internal' | 'external'
+    const [internalFoldersList, setInternalFoldersList] = useState([]);
+    const [selectedInternalFolderId, setSelectedInternalFolderId] = useState('');
+    const [loadingInternalFolders, setLoadingInternalFolders] = useState(false);
 
     // Edit project settings states
     const [editingProject, setEditingProject] = useState(null);
@@ -205,16 +218,28 @@ export default function DashboardPage() {
         };
     };
 
-    // Fetch projects
-    const fetchProjects = async () => {
-        const safetyTimer = setTimeout(() => {
+    // Instant Render Memory Cache
+    const fetchProjects = async (silentRevalidate = false) => {
+        if (!silentRevalidate && typeof window !== 'undefined' && window._vendorDashboardCache) {
+            const cached = window._vendorDashboardCache;
+            setProjects(cached.projects || []);
+            if (cached.vendor) {
+                setVendorDetails(cached.vendor);
+                setVendorName(cached.vendor.name || '');
+                setBrandName(cached.vendor.brandName || '');
+                setBrandLogoPreview(cached.vendor.brandLogo || '');
+                if (cached.vendor.copyDelimiter !== undefined) setCopyDelimiter(cached.vendor.copyDelimiter);
+                if (cached.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(cached.vendor.copyIncludeExt);
+                if (cached.vendor.copySortOrder !== undefined) setCopySortOrder(cached.vendor.copySortOrder);
+            }
             setLoading(false);
-        }, 600);
+        }
 
         try {
             const res = await fetch('/api/projects', { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
+                if (typeof window !== 'undefined') window._vendorDashboardCache = data;
                 setProjects(data.projects || []);
                 if (data.vendor) {
                     setVendorDetails(data.vendor);
@@ -224,9 +249,6 @@ export default function DashboardPage() {
                     if (data.vendor.copyDelimiter !== undefined) setCopyDelimiter(data.vendor.copyDelimiter);
                     if (data.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(data.vendor.copyIncludeExt);
                     if (data.vendor.copySortOrder !== undefined) setCopySortOrder(data.vendor.copySortOrder);
-
-
-
                 }
             } else {
                 console.warn('fetchProjects: response not ok', res.status);
@@ -234,20 +256,89 @@ export default function DashboardPage() {
         } catch (err) {
             console.error('Error fetching projects:', err);
         } finally {
-            clearTimeout(safetyTimer);
             setLoading(false);
         }
     };
 
+    const fetchInternalFolders = async () => {
+        try {
+            setLoadingInternalFolders(true);
+            const res = await fetch('/api/storage/files?folderId=root');
+            const data = await res.json();
+            if (data.success && data.subFolders) {
+                setInternalFoldersList(data.subFolders || []);
+            }
+        } catch {
+        } finally {
+            setLoadingInternalFolders(false);
+        }
+    };
+
+    const handleSelectInternalFolder = (folderDriveId) => {
+        setSelectedInternalFolderId(folderDriveId);
+        const found = internalFoldersList.find(f => (f.driveFolderId || f.id) === folderDriveId);
+        if (found) {
+            setNewProjectName(found.name);
+            const gdriveUrl = found.webViewLink || `https://drive.google.com/drive/folders/${found.driveFolderId || found.id}`;
+            setNewFolderUrl(gdriveUrl);
+        }
+    };
 
     useEffect(() => {
-        // Parallelkan semua fetch awal agar tidak sequential
+        if (showCreateModal) {
+            if (vendorDetails?.hasStorageAddon) {
+                setProjectSourceType('internal');
+            } else {
+                setProjectSourceType('external');
+            }
+            fetchInternalFolders();
+        }
+    }, [showCreateModal, vendorDetails]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const folderId = urlParams.get('createProjectFolderId');
+            const folderName = urlParams.get('createProjectName');
+            if (folderId && folderName) {
+                setProjectSourceType('internal');
+                setSelectedInternalFolderId(folderId);
+                setNewProjectName(decodeURIComponent(folderName));
+                setNewFolderUrl(`https://drive.google.com/drive/folders/${folderId}`);
+                setShowCreateModal(true);
+                window.history.replaceState({}, '', '/dashboard');
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && projects.length > 0) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const openId = urlParams.get('openProjectId');
+            const editId = urlParams.get('editProjectId');
+            if (openId) {
+                const targetProj = projects.find(p => String(p.id) === String(openId));
+                if (targetProj) {
+                    handleViewDetails(targetProj);
+                    window.history.replaceState({}, '', '/dashboard');
+                }
+            } else if (editId) {
+                const targetProj = projects.find(p => String(p.id) === String(editId));
+                if (targetProj) {
+                    handleOpenEditProject(targetProj);
+                    window.history.replaceState({}, '', '/dashboard');
+                }
+            }
+        }
+    }, [projects]);
+
+
+    useEffect(() => {
+        // Parallelkan semua fetch awal agar tidak sequential + caching memory
         fetchProjects();
-        Promise.all([
-            fetch('/api/settings').then(r => r.json()).catch(() => ({})),
-            fetch('/api/plans').then(r => r.json()).catch(() => ({})),
-            fetch('/api/addon-plans').then(r => r.json()).catch(() => ({}))
-        ]).then(([s, p, addonRes]) => {
+
+        if (globalThis._saasSettingsCache && globalThis._saasPlansCache) {
+            const s = globalThis._saasSettingsCache;
             setAdminWhatsapp(s.contact_whatsapp || '');
             setBankSettings({
                 bankName: s.bank_name || '',
@@ -258,17 +349,44 @@ export default function DashboardPage() {
             setEnablePaymentGateway(isGw);
             setPaymentGatewayClientKey(s.payment_gateway_client_key || '');
             setPaymentGatewayIsProduction(s.payment_gateway_is_production === '1');
+            setAvailablePlans(globalThis._saasPlansCache || []);
+            if (globalThis._saasAddonPlansCache) setAvailableAddonPlans(globalThis._saasAddonPlansCache);
             if (isGw) {
                 setUpgradePaymentMethod('gateway');
             } else {
                 setUpgradePaymentMethod('manual');
             }
-            const plansList = Array.isArray(p) ? p : (p?.plans || []);
-            setAvailablePlans(plansList);
-            if (addonRes?.success && Array.isArray(addonRes.plans)) {
-                setAvailableAddonPlans(addonRes.plans);
-            }
-        });
+        } else {
+            Promise.all([
+                fetch('/api/settings').then(r => r.json()).catch(() => ({})),
+                fetch('/api/plans').then(r => r.json()).catch(() => ({})),
+                fetch('/api/addon-plans').then(r => r.json()).catch(() => ({}))
+            ]).then(([s, p, addonRes]) => {
+                globalThis._saasSettingsCache = s;
+                const plansList = Array.isArray(p) ? p : (p?.plans || []);
+                globalThis._saasPlansCache = plansList;
+                const addonList = addonRes?.success && Array.isArray(addonRes.plans) ? addonRes.plans : [];
+                globalThis._saasAddonPlansCache = addonList;
+
+                setAdminWhatsapp(s.contact_whatsapp || '');
+                setBankSettings({
+                    bankName: s.bank_name || '',
+                    bankAccountNumber: s.bank_account_number || '',
+                    bankAccountName: s.bank_account_name || ''
+                });
+                const isGw = s.enable_payment_gateway === '1' || s.enable_payment_gateway === 'true';
+                setEnablePaymentGateway(isGw);
+                setPaymentGatewayClientKey(s.payment_gateway_client_key || '');
+                setPaymentGatewayIsProduction(s.payment_gateway_is_production === '1');
+                setAvailablePlans(plansList);
+                setAvailableAddonPlans(addonList);
+                if (isGw) {
+                    setUpgradePaymentMethod('gateway');
+                } else {
+                    setUpgradePaymentMethod('manual');
+                }
+            });
+        }
     }, []);
 
     // Dynamically inject Midtrans Snap script if Payment Gateway is enabled
@@ -728,14 +846,17 @@ export default function DashboardPage() {
         window.open(`/gallery/${project.id}?key=${project.clientAccessKey}`, '_blank');
     };
 
-    // Send Gallery Link via WhatsApp
+    // Send Gallery Link via WhatsApp to Client using Direct WhatsApp API
     const handleSendWhatsApp = (project) => {
         const link = `${window.location.origin}/gallery/${project.id}?key=${project.clientAccessKey}`;
-        const phone = (project.clientPhone || '').replace(/\D/g, '');
+        let rawPhone = (project.clientPhone || '').replace(/\D/g, '');
+        if (rawPhone.startsWith('0')) {
+            rawPhone = '62' + rawPhone.slice(1);
+        }
         const message = `Halo! Berikut link galeri foto *${project.name}* untuk Anda:\n\n${link}\n\nSilakan pilih foto favorit Anda melalui link di atas. Terima kasih! 📸`;
-        const waUrl = phone 
-            ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
-            : `https://wa.me/?text=${encodeURIComponent(message)}`;
+        const waUrl = rawPhone 
+            ? `https://api.whatsapp.com/send?phone=${rawPhone}&text=${encodeURIComponent(message)}`
+            : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
         window.open(waUrl, '_blank');
     };
 
@@ -980,7 +1101,7 @@ export default function DashboardPage() {
             </div>
 
             {/* ── PLAN INFO CARDS ── */}
-            {vendorDetails && (
+            {vendorDetails ? (
                 <div className="dashboard-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
 
                     <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
@@ -989,18 +1110,18 @@ export default function DashboardPage() {
                             {projects.length} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>/ {vendorDetails.maxProjects || '∞'} Project</span>
                         </p>
                     </div>
-                    <div style={{ background: vendorDetails.storageQuotaGb ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)', border: `1px solid ${vendorDetails.storageQuotaGb ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)'}`, borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ background: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)', border: `1px solid ${(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)'}`, borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
-                            <p style={{ margin: 0, fontSize: '11px', color: vendorDetails.storageQuotaGb ? '#34d399' : '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
-                                {vendorDetails.storageQuotaGb ? 'Sisa Cloud Storage' : 'Status Server Storage'}
+                            <p style={{ margin: 0, fontSize: '11px', color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
+                                {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '⚡ Dedicated Storage Aktif' : 'Status Server Storage'}
                             </p>
-                            <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: vendorDetails.storageQuotaGb ? '#e4e4e7' : '#34d399' }}>
-                                {vendorDetails.storageQuotaGb 
-                                    ? `${Math.max(0, (vendorDetails.storageQuotaGb - ((vendorDetails.storageUsedMb || 0) / 1024))).toFixed(1)} GB`
+                            <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#e4e4e7' : '#34d399' }}>
+                                {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) 
+                                    ? `${((vendorDetails.storageUsedMb || 0) / 1024 < 0.1 ? (vendorDetails.storageUsedMb || 0).toFixed(1) + ' MB' : ((vendorDetails.storageUsedMb || 0) / 1024).toFixed(1) + ' GB')}`
                                     : 'Zero-Storage ⚡'
                                 }
                                 <span style={{ fontSize: '12px', color: '#71717a', fontWeight: '400', marginLeft: '6px' }}>
-                                    {vendorDetails.storageQuotaGb 
+                                    {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0)
                                         ? `/ ${vendorDetails.storageQuotaGb} GB`
                                         : '(0 Byte Server)'
                                     }
@@ -1011,7 +1132,7 @@ export default function DashboardPage() {
                             href="/dashboard/storage"
                             style={{
                                 marginTop: '10px',
-                                color: vendorDetails.storageQuotaGb ? '#34d399' : '#fbbf24',
+                                color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24',
                                 fontSize: '11px',
                                 fontWeight: '600',
                                 textDecoration: 'none',
@@ -1020,7 +1141,7 @@ export default function DashboardPage() {
                                 gap: '4px'
                             }}
                         >
-                            ⚡ Beli / Kelola Add-On Storage &rarr;
+                            {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '📁 Kelola Dedicated Storage →' : '⚡ Beli Add-On Storage →'}
                         </Link>
                     </div>
                     <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
@@ -1031,6 +1152,30 @@ export default function DashboardPage() {
                                 : 'Aktif'
                             }
                         </p>
+                    </div>
+                </div>
+            ) : (
+                <div className="dashboard-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#818cf8', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#818cf8', animation: 'pulse 1s infinite ease-in-out' }}></span>
+                            <span>Membaca Kuota Project...</span>
+                        </div>
+                        <div style={{ marginTop: '8px', height: '20px', width: '60%', background: 'rgba(99,102,241,0.15)', borderRadius: '6px', animation: 'pulse 1.2s infinite ease-in-out' }} />
+                    </div>
+                    <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#34d399', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#34d399', animation: 'pulse 1s infinite ease-in-out' }}></span>
+                            <span>Membaca Status Storage...</span>
+                        </div>
+                        <div style={{ marginTop: '8px', height: '20px', width: '70%', background: 'rgba(52,211,153,0.15)', borderRadius: '6px', animation: 'pulse 1.2s infinite ease-in-out' }} />
+                    </div>
+                    <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#34d399', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#34d399', animation: 'pulse 1s infinite ease-in-out' }}></span>
+                            <span>Membaca Masa Aktif Akun...</span>
+                        </div>
+                        <div style={{ marginTop: '8px', height: '20px', width: '50%', background: 'rgba(52,211,153,0.15)', borderRadius: '6px', animation: 'pulse 1.2s infinite ease-in-out' }} />
                     </div>
                 </div>
             )}
@@ -1671,6 +1816,133 @@ export default function DashboardPage() {
                         )}
  
                         <form onSubmit={handleCreateProject}>
+                            {/* ── SEGMENTED TAB SWITCHER UNTUK SUMBER PROYEK ── */}
+                            <div style={{ marginBottom: '20px' }}>
+                                <label className="form-label" style={{ marginBottom: '8px', fontSize: '13px', color: '#e4e4e7', fontWeight: '700' }}>
+                                    Sumber Folder Foto Proyek
+                                </label>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setProjectSourceType('internal');
+                                            if (internalFoldersList.length > 0 && !selectedInternalFolderId) {
+                                                handleSelectInternalFolder(internalFoldersList[0].driveFolderId || internalFoldersList[0].id);
+                                            }
+                                        }}
+                                        style={{
+                                            padding: '10px 12px',
+                                            borderRadius: '9px',
+                                            border: 'none',
+                                            background: projectSourceType === 'internal' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                            color: projectSourceType === 'internal' ? '#ffffff' : '#a1a1aa',
+                                            fontSize: '12px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <span>☁️ Dedicated Cloud</span>
+                                        {vendorDetails?.hasStorageAddon && (
+                                            <span style={{ fontSize: '9px', background: '#34d399', color: '#000', padding: '1px 6px', borderRadius: '8px', fontWeight: '800' }}>AKTIF</span>
+                                        )}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setProjectSourceType('external')}
+                                        style={{
+                                            padding: '10px 12px',
+                                            borderRadius: '9px',
+                                            border: 'none',
+                                            background: projectSourceType === 'external' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                            color: projectSourceType === 'external' ? '#ffffff' : '#a1a1aa',
+                                            fontSize: '12px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <span>🔗 GDrive Eksternal</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* CONDITIONAL INPUT FIELDS BASED ON SOURCE TYPE */}
+                            {projectSourceType === 'internal' ? (
+                                <div className="form-group" style={{ marginBottom: '20px' }}>
+                                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>Pilih Folder Studio dari Dedicated Cloud</span>
+                                        {loadingInternalFolders && <span style={{ fontSize: '11px', color: '#818cf8' }}>⚡ Memuat folder...</span>}
+                                    </label>
+
+                                    {!vendorDetails?.hasStorageAddon ? (
+                                        <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '14px 16px', fontSize: '12px', color: '#fbbf24', lineHeight: '1.5' }}>
+                                            🔒 <strong>Dedicated Storage Belum Aktif:</strong> Anda belum berlangganan Paket Add-On Cloud Storage.
+                                            <div style={{ marginTop: '8px' }}>
+                                                <Link href="/dashboard/storage" style={{ color: '#ffffff', fontWeight: '700', textDecoration: 'underline' }}>
+                                                    ⚡ Beli Paket Add-On Storage &rarr;
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ) : internalFoldersList.length === 0 ? (
+                                        <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px dashed rgba(99,102,241,0.25)', borderRadius: '10px', padding: '16px', textAlign: 'center', fontSize: '12px', color: '#a1a1aa' }}>
+                                            Belum ada folder proyek di Cloud Storage Anda.<br/>
+                                            <Link href="/dashboard/storage" style={{ marginTop: '8px', display: 'inline-block', color: '#818cf8', fontWeight: '700', textDecoration: 'underline' }}>
+                                                📁 Buat atau Unggah Folder di Cloud Storage &rarr;
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <select
+                                                className="input-text"
+                                                required
+                                                value={selectedInternalFolderId}
+                                                onChange={(e) => handleSelectInternalFolder(e.target.value)}
+                                                disabled={importing}
+                                                style={{ color: '#ffffff', background: 'rgba(0,0,0,0.4)', padding: '12px 14px', fontSize: '13px', cursor: 'pointer' }}
+                                            >
+                                                <option value="">-- Pilih Folder Proyek Studio --</option>
+                                                {internalFoldersList.map((folder) => (
+                                                    <option key={folder.id || folder.driveFolderId} value={folder.driveFolderId || folder.id}>
+                                                        📁 {folder.name} ({folder.fileCount || 0} Berkas - {formatBytes(folder.totalSizeBytes || 0)})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <span style={{ fontSize: '11px', color: '#34d399', marginTop: '6px', display: 'block' }}>
+                                                ✓ Folder terpilih otomatis dihubungkan ke Dedicated Storage kecepatan tinggi.
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="form-group">
+                                    <label className="form-label">Link Folder Google Drive Eksternal</label>
+                                    <input
+                                        type="url"
+                                        className="input-text"
+                                        required
+                                        placeholder="https://drive.google.com/drive/folders/..."
+                                        value={newFolderUrl}
+                                        onChange={(e) => setNewFolderUrl(e.target.value)}
+                                        disabled={importing}
+                                    />
+                                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '6px', fontSize: '11px', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span>💡</span>
+                                        <span><strong>Petunjuk Google Drive:</strong> Pastikan izin akses folder telah diubah ke <em>"Siapa saja yang memiliki link (Anyone with the link)"</em> agar foto dapat di-stream di galeri.</span>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="form-group">
                                 <label className="form-label">Nama Project</label>
                                 <input
@@ -1682,23 +1954,6 @@ export default function DashboardPage() {
                                     onChange={(e) => setNewProjectName(e.target.value)}
                                     disabled={importing}
                                 />
-                            </div>
- 
-                            <div className="form-group">
-                                <label className="form-label">Link Folder Google Drive</label>
-                                <input
-                                    type="url"
-                                    className="input-text"
-                                    required
-                                    placeholder="https://drive.google.com/drive/folders/..."
-                                    value={newFolderUrl}
-                                    onChange={(e) => setNewFolderUrl(e.target.value)}
-                                    disabled={importing}
-                                />
-                                <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '6px', fontSize: '11px', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span>💡</span>
-                                    <span><strong>Petunjuk Google Drive:</strong> Pastikan izin akses folder telah diubah ke <em>"Siapa saja yang memiliki link (Anyone with the link)"</em> agar foto dapat di-stream di galeri.</span>
-                                </div>
                             </div>
  
                             <div className="form-group">

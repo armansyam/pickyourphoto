@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getAuthVendor } from '@/lib/auth';
-import { createPayment } from '@/lib/payment-gateway';
+import { createPayment, getPaymentGatewayConfig } from '@/lib/payment-gateway';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,12 +69,13 @@ export async function POST(request) {
       planName: plan.name,
     });
 
+    const config = getPaymentGatewayConfig();
     // Record new payment session (2-hour expiry)
     const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
     db.prepare(`
       INSERT INTO payment_sessions (orderId, vendorId, planId, amount, status, paymentMethod, expiresAt)
-      VALUES (?, ?, ?, ?, 'pending', 'qris', ?)
-    `).run(orderId, vendorId, planId, plan.price, expiresAt);
+      VALUES (?, ?, ?, ?, 'pending', ?, ?)
+    `).run(orderId, vendorId, planId, plan.price, config.provider, expiresAt);
 
     console.log(`[Payment Regenerate] New session ${orderId} created for vendor ${vendor.email} (${plan.name})`);
 

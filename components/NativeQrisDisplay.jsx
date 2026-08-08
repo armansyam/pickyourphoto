@@ -66,6 +66,37 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
         return () => clearInterval(poll);
     }, [pendingOrder?.orderId, isExpired, paidSuccess]);
 
+    // Dynamically load Midtrans snap.js script if missing on current page
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        if (window.snap) return;
+
+        const loadSnapScript = async () => {
+            try {
+                const res = await fetch('/api/settings');
+                const s = await res.json();
+                const clientKey = s.payment_gateway_client_key || '';
+                const isProd = s.payment_gateway_is_production === '1' || s.payment_gateway_is_production === true;
+                
+                const snapUrl = isProd
+                    ? 'https://app.midtrans.com/snap/snap.js'
+                    : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
+                if (!document.querySelector(`script[src="${snapUrl}"]`)) {
+                    const script = document.createElement('script');
+                    script.src = snapUrl;
+                    if (clientKey) script.setAttribute('data-client-key', clientKey);
+                    script.async = true;
+                    document.body.appendChild(script);
+                }
+            } catch (e) {
+                console.error('[NativeQrisDisplay] Failed to load Midtrans Snap script:', e);
+            }
+        };
+
+        loadSnapScript();
+    }, []);
+
     // Snap embed
     useEffect(() => {
         if (!pendingOrder?.token || snapEmbedDone.current || paidSuccess) return;
@@ -73,7 +104,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
         let isMounted = true;
         const tryEmbed = () => {
             if (!isMounted) return;
-            if (typeof window !== 'undefined' && window.snap) {
+            if (typeof window !== 'undefined' && window.snap && typeof window.snap.embed === 'function') {
                 snapEmbedDone.current = true;
                 try {
                     if (typeof window.snap.hide === 'function') {
@@ -183,7 +214,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                     <div style={{ width: '100%', maxWidth: '380px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
                             <div style={{ fontSize: '12px', fontWeight: '700', color: '#e2e8f0' }}>Pick Your Photo</div>
-                            <div style={{ fontSize: '10px', color: '#64748b' }}>{pendingOrder.planName} — <strong style={{ color: '#34d399' }}>Rp {(pendingOrder.planPrice || 0).toLocaleString('id-ID')}</strong></div>
+                            <div style={{ fontSize: '10px', color: '#64748b' }}>{pendingOrder.planName || pendingOrder.addonName || 'Add-On Storage'} — <strong style={{ color: '#34d399' }}>Rp {(pendingOrder.planPrice || pendingOrder.amount || pendingOrder.proratedPrice || 0).toLocaleString('id-ID')}</strong></div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                             <img src="/qris-logo.svg" alt="QRIS" onError={e => e.target.src = '/qris-logo.png'} style={{ height: '18px', width: 'auto' }} />
@@ -219,8 +250,16 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                                 )}
                             </div>
                         )}
-                        {/* Snap Embed Target */}
-                        <div id="midtrans-snap-embed" style={{ width: '100%', minHeight: '680px' }} />
+                        {/* Snap Embed Target with Direct Fallback Iframe */}
+                        <div id="midtrans-snap-embed" style={{ width: '100%', minHeight: '600px' }}>
+                          {(pendingOrder?.paymentUrl || pendingOrder?.redirectUrl) && (
+                            <iframe
+                              src={pendingOrder.paymentUrl || pendingOrder.redirectUrl}
+                              style={{ width: '100%', height: '620px', border: 'none', borderRadius: '12px', background: '#ffffff' }}
+                              title="Midtrans QRIS Payment"
+                            />
+                          )}
+                        </div>
                         <style jsx global>{`
                             #midtrans-snap-embed {
                                 width: 100% !important;

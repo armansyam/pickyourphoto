@@ -210,7 +210,7 @@ export async function GET() {
 
         const expiredVendorsCount = db.prepare(`
             SELECT COUNT(*) as count FROM vendors 
-            WHERE role = 'vendor' AND (expiresAt < datetime('now') OR status = 'inactive')
+            WHERE role = 'vendor' AND (status IN ('expired', 'suspended') OR (expiresAt IS NOT NULL AND expiresAt < datetime('now')))
         `).get()?.count || 0;
 
         // Check Google OAuth & SMTP status accurately from saas_settings & process.env

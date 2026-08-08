@@ -89,7 +89,7 @@ export async function GET(request, { params }) {
         }
 
         // Get Vendor Branding Info
-        const vendorBranding = db.prepare('SELECT brandName, brandLogo FROM vendors WHERE id = ?').get(project.vendorId) || {};
+        const vendorBranding = db.prepare('SELECT brandName, brandLogo, whatsapp FROM vendors WHERE id = ?').get(project.vendorId) || {};
         const isProjectExpired = project.expiresAt ? (new Date() > new Date(project.expiresAt)) : false;
         
         let filesDeleted = project.filesDeleted || 0;

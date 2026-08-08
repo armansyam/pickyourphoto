@@ -17,6 +17,10 @@ export async function POST(request, { params }) {
             return NextResponse.json({ message: 'Selected photos must be an array of IDs.' }, { status: 400 });
         }
 
+        if (photoIds.length === 0) {
+            return NextResponse.json({ message: 'Silakan pilih minimal 1 foto sebelum menyimpan seleksi Anda.' }, { status: 400 });
+        }
+
         // 1. Authorize Client
         const getClient = db.prepare('SELECT id FROM clients WHERE projectId = ? AND accessKey = ?');
         const client = getClient.get(projectId, clientKey);

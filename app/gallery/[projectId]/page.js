@@ -616,29 +616,35 @@ export default function ClientGalleryPage({ params }) {
                         <div style={{ position: 'relative', display: 'inline-flex', overflow: 'hidden', borderRadius: '12px' }} onClick={e => e.stopPropagation()}>
                             <img src={photos[activeLightboxIndex].originalPath} alt="Preview" style={{ maxHeight: '74vh', maxWidth: '85vw', objectFit: 'contain', userSelect: 'none', display: 'block' }} />
                             
-                            {/* SLEEK SMOOTH BLACK GRADIENT BRANDING OVERLAY (NO HEAVY BLUR) */}
+                            {/* SLEEK SMOOTH BLACK GRADIENT BRANDING OVERLAY (100% DEAD CENTER VERTICAL STACK) */}
                             <div style={{
                                 position: 'absolute',
                                 bottom: 0,
                                 left: 0,
                                 right: 0,
-                                height: '76px',
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.65) 50%, rgba(0,0,0,0.15) 82%, transparent 100%)',
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)',
                                 pointerEvents: 'none',
                                 display: 'flex',
-                                alignItems: 'flex-end',
+                                flexDirection: 'column',
+                                alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: '12px',
-                                padding: '0 20px 14px 20px',
+                                gap: '6px',
+                                padding: '24px 16px 18px 16px',
                                 borderBottomLeftRadius: '12px',
                                 borderBottomRightRadius: '12px'
                             }}>
                                 {branding?.brandLogo ? (
-                                    <img src={branding.brandLogo} alt={branding.brandName || 'Studio Logo'} style={{ height: '32px', maxWidth: '130px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }} />
-                                ) : null}
-                                <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: '700', letterSpacing: '1.5px', textTransform: 'uppercase', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', pointerEvents: 'auto' }}>
+                                        <img src={branding.brandLogo} alt={branding.brandName || 'Studio Logo'} style={{ height: '36px', maxWidth: '180px', objectFit: 'contain', display: 'block', margin: '0 auto', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.9))' }} />
+                                    </div>
+                                ) : (
+                                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '800', margin: '0 auto', pointerEvents: 'auto' }}>
+                                        {(branding?.brandName || project?.name || 'S').charAt(0)}
+                                    </div>
+                                )}
+                                <div style={{ color: '#ffffff', fontSize: '14px', fontWeight: '800', letterSpacing: '0.5px', textAlign: 'center', textShadow: '0 2px 8px rgba(0,0,0,0.9)', width: '100%', margin: 0, pointerEvents: 'auto' }}>
                                     {branding?.brandName || project?.name || 'STUDIO PHOTOGRAPHY'}
-                                </span>
+                                </div>
                             </div>
                         </div>
                         <button onClick={handleNextImage} className="lightbox-nav lightbox-nav-right">&#10095;</button>
@@ -1102,9 +1108,9 @@ export default function ClientGalleryPage({ params }) {
                 .confirm-thumb-remove { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--danger); color: white; border: none; font-size: 12px; cursor: pointer; }
 
                 /* ── Lightbox ── */
-                :global(.lightbox-nav) { position: absolute; background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 44px; height: 44px; font-size: 18px; cursor: pointer; z-index: 10; }
-                :global(.lightbox-nav-left) { left: 16px; }
-                :global(.lightbox-nav-right) { right: 16px; }
+                :global(.lightbox-nav) { position: fixed; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; width: 52px; height: 52px; font-size: 24px; cursor: pointer; z-index: 100001; backdrop-filter: blur(12px); display: flex; alignItems: center; justifyContent: center; transition: all 0.2s ease; }
+                :global(.lightbox-nav-left) { left: 24px; }
+                :global(.lightbox-nav-right) { right: 24px; }
                 :global(.lightbox-filmstrip) { display: flex; gap: 6px; max-width: 90vw; overflow-x: auto; padding: 4px; }
                 :global(.lightbox-filmstrip-thumb) { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 5px; overflow: hidden; border: 2px solid transparent; opacity: 0.5; background: none; padding: 0; cursor: pointer; }
                 :global(.lightbox-filmstrip-thumb img) { width: 100%; height: 100%; object-fit: cover; display: block; }

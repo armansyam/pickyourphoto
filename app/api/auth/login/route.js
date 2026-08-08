@@ -44,8 +44,16 @@ export async function POST(request) {
         }
 
         // Account status validations
-        if (vendor.status === 'pending') {
+        if (vendor.status === 'pending' || vendor.status === 'pending_manual') {
             return NextResponse.json({ message: 'Pendaftaran Anda sedang menunggu konfirmasi/persetujuan dari administrator.' }, { status: 401 });
+        }
+
+        if (vendor.status === 'pending_payment') {
+            return NextResponse.json({ message: 'Pendaftaran Anda belum menyelesaikan pembayaran QRIS. Silakan cek status pendaftaran di halaman utama.' }, { status: 401 });
+        }
+
+        if (vendor.status === 'expired_draft' || vendor.status === 'cancelled' || vendor.status === 'rejected') {
+            return NextResponse.json({ message: 'Sesi pendaftaran Anda telah kedaluwarsa atau ditolak. Silakan mendaftar kembali.' }, { status: 401 });
         }
 
         if (vendor.status === 'suspended') {
