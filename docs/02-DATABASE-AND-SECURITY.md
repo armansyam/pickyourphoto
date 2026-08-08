@@ -193,8 +193,16 @@ CREATE TABLE saas_settings (
 | `contact_whatsapp` | Nomor WA admin (format 62xxx) |
 | `google_client_id` | Google OAuth Client ID |
 | `google_client_secret` | Google OAuth Client Secret |
-| `google_refresh_token` | Google OAuth Refresh Token (Master) |
+| `google_refresh_token` | Google OAuth Refresh Token (Master Index) |
 | `google_access_token` | Access token aktif (auto-refresh) |
+| `current_master_cluster_id` | ID Folder Master Cluster aktif di Google Drive API |
+| `current_master_cluster_count` | Jumlah folder vendor dalam cluster aktif |
+| `master_cluster_name` | Nama dinamis folder Master Cluster (`[PICK-YOUR-PHOTO] Platform Master Storage Cluster A`) |
+| `master_parent_folder_id` | ID Folder Induk Wadah Master di Google Drive (default: `root`) |
+| `vendor_folder_naming_template` | Format templat nama folder vendor (`📁 [STORAGE DEDICATED] {vendor_name} ({vendor_email})`) |
+| `custom_storage_price_per_gb` | Tarif per GB paket storage custom (default: `1250`) |
+| `worker_storage_warning_threshold_gb` | Batas peringatan sisa ruang worker (default: `2` GB) |
+| `max_upload_concurrency_threads` | Batas dasar jalur thread unggah paralel per vendor (default: `4`) |
 | `smtp_host` / `smtp_port` | Konfigurasi SMTP email |
 | `smtp_user` / `smtp_pass` | Kredensial SMTP |
 | `smtp_enable` | `'true'` / `'false'` |

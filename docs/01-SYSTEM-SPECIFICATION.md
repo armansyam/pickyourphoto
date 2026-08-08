@@ -57,23 +57,22 @@ expired (otomatis via autoCheckVendorSubscriptionExpiry saat login/request)
 
 ---
 
-### 3.2. Add-On Cloud Storage Engine & Prorata Pricing (Blueprint 6.1)
+### 3.2. Add-On Cloud Storage Engine & Enterprise Custom Storage (50GB - 200GB)
 
 Sistem Add-On Cloud Storage bersifat dinamis dan dapat disesuaikan kebutuhan fotografer:
 
-**Paket Add-On Storage Aktif (`addon_plans`):**
+**Paket Add-On Storage Aktif (`addon_plans` & Custom Storage Enterprise):**
 | Nama Paket Add-On | Kapasitas Storage | Harga / Bulan |
 |---|---|---|
-| **Add-On 25GB** | 25 GB | Rp 15.000 |
-| **Add-On 50GB** | 50 GB | Rp 25.000 |
-| **Add-On 100GB** | 100 GB | Rp 45.000 |
-| **Add-On 200GB** | 200 GB | Rp 85.000 |
+| **Drive 10 GB** | 10 GB | Rp 29.000 |
+| **Drive 25 GB** | 25 GB | Rp 49.000 |
+| **Drive 50 GB** | 50 GB | Rp 89.000 |
+| **Custom Enterprise (50-200GB)** | 50 GB – 200 GB | Rp 1.250 / GB |
 
-**Aturan Prorata Harian Add-On Storage:**
+**Aturan Prorata Harian & Upgrade Add-On Storage:**
 - **Co-Terming Expiration:** Masa berlaku Add-On Storage **selalu diselaraskan (*co-terminous*)** dengan tanggal kedaluwarsa Paket Utama vendor (`expiresAt`).
-- **Kalkulasi Harga Prorata:**
-  $$\text{Harga Prorata} = \max\left(10.000,\, \text{Round}\left( \frac{\text{Harga Addon}}{30} \times \text{Sisa Hari Paket Utama} \right)\right)$$
-- **Instant Quota Expansion:** Kuota storage (`addonStorageQuotaBytes`) diperbarui seketika saat Notifikasi Callback Midtrans QRIS bernilai `paid`.
+- **Prorata Upgrade Add-On Custom:** Vendor yang meng-upgrade kuota custom dari kuota sebelumnya hanya membayar selisih GB tambahan ($\text{Selisih GB} \times \text{Rp } 1.250$).
+- **Instant Quota Expansion:** Kuota storage (`addonStorageQuotaBytes`) diperbarui seketika saat Notifikasi Callback Midtrans QRIS / Polling Pending bernilai `paid`.
 
 ---
 
