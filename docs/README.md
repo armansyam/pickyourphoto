@@ -1,64 +1,26 @@
-# 📚 Indeks Dokumentasi & Status Sesi Terkini (Session Entry Point)
+# 📚 Dokumentasi Resmi Pick Your Photo SaaS Platform
 
-**Aplikasi:** pick-your-photo (SaaS Galeri Seleksi Foto Klien)  
-**Terakhir Diperbarui:** 5 Agustus 2026  
-**Status Sesi Aktif:** 🟢 **FASE 2 SELESAI (FASE 3 TERJADWAL)**
+Selamat datang di pusat dokumentasi resmi arsitektur dan sistem platform **Pick Your Photo SaaS**. Seluruh dokumen di bawah ini selalu diperbarui secara berkala sesuai dengan standar pengembangan terkini.
 
 ---
 
-## 🚀 1. Status Sesi Terkini (Latest Active Session Status)
+## 📑 Daftar Dokumen Utama
 
-> [!IMPORTANT]
-> **DOKUMEN UTAMA SESI AKTIF saat ini adalah: [`Plan_Storage_Addon_Architecture.md`](Plan_Storage_Addon_Architecture.md)**  
-> Setiap kali membuka sesi baru, AI Agent & Developer **WAJIB membaca berkas ini terlebih dahulu** untuk mengetahui posisi kemajuan pengerjaan proyek!
+1. [**`01-SYSTEM-SPECIFICATION.md`**](./01-SYSTEM-SPECIFICATION.md)  
+   *Spesifikasi Arsitektur Sistem Utama, Fitur SaaS, Peran Pengguna (Admin vs Vendor), dan Fitur Ekspor Laporan Keuangan.*
 
-| Parameter Sesi | Detail Terkini |
-| :--- | :--- |
-| **Fitur yang Sedang Dibangun** | **Add-On Cloud Storage Pool Mandiri (Multi-Worker Google Drive Cluster)** |
-| **Versi Blueprint Terkini** | **Blueprint V6.0 (Master Task List & Verification Gate)** |
-| **Progress Terakhir** | **FASE 1 & FASE 2 SELESAI & TERUJI 100%** |
-| **Langkah Selanjutnya** | **FASE 3:** Pembangunan Vendor Dedicated File Manager UI (`/dashboard/storage`) |
+2. [**`02-DATABASE-AND-SECURITY.md`**](./02-DATABASE-AND-SECURITY.md)  
+   *Skema Basis Data SQLite3, Tabel SaaS Settings, Transaksi Pembayaran, dan Sistem Keamanan Authentication.*
 
----
+3. [**`03-DEPLOYMENT-GUIDE.md`**](./03-DEPLOYMENT-GUIDE.md)  
+   *Panduan Peluncuran Produksi (Deploy) Menggunakan Node.js, PM2, Nginx, dan Pengaturan Google Drive API Token.*
 
-## 📋 2. Ringkasan Task Progress Terbaru
+4. [**`04-MASTER-STORAGE-SPECIFICATION.md`**](./04-MASTER-STORAGE-SPECIFICATION.md)  
+   *Spesifikasi Lengkap Infrastruktur Cloud Storage Pool: Enterprise Custom Storage (50-200GB), Auto Payment Activation, Live Google Drive API Move & Rename, Capacity Load Balancing, serta Dynamic Latency Governor (Turbo Upload 8-10 Thread).*
 
-### 📍 FASE 1: Pondasi Database & Admin Operational Console (SELESAI ✅)
-* [x] **Task 1.1:** Migrasi Skema Database (`master_drive_accounts`, kolom kuota `vendors` & `photos`) — *(Selesai & Teruji ✅)*
-* [x] **Task 1.2:** Auto-Migrasi Akun Master OAuth (`amsvisualphotography@gmail.com` ke `role = 'master_index'`) — *(Selesai & Teruji ✅)*
-* [x] **Task 1.3:** Backend API Route Manager (`/api/admin/drive-pool` & `/api/admin/drive-pool/[id]`) — *(Selesai & Teruji ✅)*
-* [x] **Task 1.4:** UI Tab Mandiri Admin Console (`💾 Operasional Storage Pool`) — *(Selesai & Teruji ✅)*
-* [x] **Task 1.5:** Verifikasi Build Next.js (`npm run build` PASS 100%) — *(Selesai & Teruji ✅)*
-
-### 📍 FASE 2: Alur Penambahan Worker Accounts via 1-Click OAuth Popup (SELESAI ✅)
-* [x] **Task 2.1:** Callback Route API khusus Worker OAuth (`/api/admin/auth/google/worker/callback`) yang otomatis menyimpan Worker ke DB & menyetol izin sharing. — *(Selesai & Teruji ✅)*
-* [x] **Task 2.2:** Integrasi tombol `[ ➕ Tambah Akun Worker Storage Baru ]` ke OAuth Callback. — *(Selesai & Teruji ✅)*
-* [x] **Task 2.3:** Pengujian & Verifikasi Tambah Worker Baru (1-Click OAuth Test). — *(Selesai & Teruji ✅)*
-
-### 📍 FASE 3: Vendor Dedicated File Manager UI (`📁 Cloud Storage Manager`) (TERJADWAL ⏳)
-* [ ] **Task 3.1:** Halaman Dashboard Tab Baru Vendor `/dashboard/storage` (Google Drive Clone UI).
-* [ ] **Task 3.2:** Backend API Route `/api/storage/folders` (`GET`, `POST`, `DELETE`).
-* [ ] **Task 3.3:** Isolasi Multi-Tenant Scope (`vendorId = session.vendorId`).
-* [ ] **Task 3.4:** Pengujian UI Vendor Storage Tab.
+5. [**`API_DOCUMENTATION.md`**](./API_DOCUMENTATION.md)  
+   *Dokumentasi Lengkap SELURUH API Endpoint (Auth, Admin, Storage, Payment Gateway Midtrans, dan Project).*
 
 ---
 
-## 🗂️ 3. Daftar Berkas Dokumentasi dalam Folder `docs/`
-
-Berikut adalah direktori lengkap berkas dokumentasi di dalam folder `docs/`:
-
-| Nama Berkas | Deskripsi & Isi Utama | Status Berkas |
-| :--- | :--- | :--- |
-| **[`Plan_Storage_Addon_Architecture.md`](Plan_Storage_Addon_Architecture.md)** | **Cetak Biru Utama (Master Blueprint V6.0)** untuk arsitektur Multi-Worker Storage Pool, alur 1-klik OAuth, skema SQL, peta API, dan Master Task List. | 🟢 **Aktif (V6.0)** |
-| **[`05-STORAGE-ADDON-SPECIFICATION.md`](05-STORAGE-ADDON-SPECIFICATION.md)** | **Spesifikasi Aturan Bisnis & Teknis Add-On Storage**: Struktur harga, single expiry date, lock screen overlay, dan folder cleanup. | 🟢 **Aktif (06 Ags 2026)** |
-| **[`README.md`](README.md)** | Berkas ini (Indeks Dokumentasi & Status Sesi Terkini). | 🟢 **Aktif** |
-
----
-
-## 📜 4. Standard Operating Procedure (SOP Dokumentasi)
-
-Setiap AI Agent atau Developer yang bekerja di repositori ini **WAJIB mematuhi 3 Aturan SOP Dokumentasi**:
-
-1. **Memeriksa `docs/README.md` Pertama Kali:** Sebelum mulai koding atau berdiskusi di sesi baru, selalu baca `docs/README.md` dan dokumen aktif yang ditunjuk untuk memahami status terkini.
-2. **Pengujian Sebelum Centang (Task Verification Gate):** Setiap task wajib dites dan diverifikasi lulus 100% sebelum mengubah checklist `[ ]` menjadi `[x] ✅ Selesai`.
-3. **Pembaruan Otomatis Dokumentasi:** Setiap kali menyelesaikan sebuah pengerjaan/milestone, Agent **WAJIB secara otomatis memperbarui status, tanggal, dan riwayat di berkas `docs/` serta mengupdate `docs/README.md`** sebelum mengakhiri sesi.
+> **Catatan Pengembang:** Dokumen lama yang usang (*fragmented plans*) telah dibersihkan dan dikonsolidasikan ke dalam struktur dokumentasi master di atas.
