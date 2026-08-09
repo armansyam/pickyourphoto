@@ -1079,26 +1079,65 @@ export default function AdminDashboard({ adminUser }) {
 
                                     {isGateway ? (
                                         <div style={{
-                                            background: isPaid ? 'rgba(16, 185, 129, 0.08)' : 'rgba(251, 191, 36, 0.08)',
-                                            border: `1px solid ${isPaid ? 'rgba(16, 185, 129, 0.25)' : 'rgba(251, 191, 36, 0.25)'}`,
+                                            background: 'rgba(255,255,255,0.02)',
+                                            border: `1px solid ${isPaid ? 'rgba(16, 185, 129, 0.3)' : 'rgba(251, 191, 36, 0.3)'}`,
                                             borderRadius: '12px',
                                             padding: '20px',
-                                            marginBottom: '20px',
-                                            textAlign: 'center'
+                                            marginBottom: '20px'
                                         }}>
-                                            <div style={{ fontSize: '32px', marginBottom: '10px' }}>{isPaid ? '✅' : '⏳'}</div>
-                                            <h4 style={{ margin: '0 0 6px 0', color: isPaid ? '#34d399' : '#fbbf24', fontSize: '16px', fontWeight: '700' }}>
-                                                {isPaid ? 'Pembayaran Otomatis via QRIS Gateway' : 'Menunggu Pembayaran QRIS Gateway'}
-                                            </h4>
-                                            <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '1.5' }}>
-                                                {isPaid 
-                                                    ? 'Transaksi ini telah diverifikasi & dilunasi secara otomatis oleh sistem Midtrans Snap API. Vendor tidak perlu mengunggah foto bukti fisik.'
-                                                    : 'Vendor memilih pembayaran via QRIS Gateway, namun transaksi saat ini belum dikonfirmasi lunas oleh sistem Midtrans. Akun akan aktif secara otomatis begitu vendor menyelesaikan pembayaran.'}
-                                            </p>
-                                            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '12px', borderRadius: '8px', fontSize: '12px', color: '#e4e4e7', display: 'inline-block', textAlign: 'left', width: '100%' }}>
-                                                <div>• <strong>Status Verifikasi:</strong> <span style={{ color: isPaid ? '#34d399' : '#fbbf24', fontWeight: 'bold' }}>{isPaid ? 'LUNAS (SETTLEMENT)' : 'BELUM DIBAYAR (MENUNGGU PEMBAYARAN QRIS)'}</span></div>
-                                                <div>• <strong>Metode Bayar:</strong> QRIS / E-Wallet / Virtual Account</div>
-                                                <div>• <strong>Pengaktifan Akun:</strong> {isPaid ? 'Instan Otomatis System' : 'Otomatis Saat Pembayaran Lunas'}</div>
+                                            <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                                                <div style={{ fontSize: '32px', marginBottom: '8px' }}>{isPaid ? '✅' : '⏳'}</div>
+                                                <h4 style={{ margin: '0 0 4px 0', color: isPaid ? '#34d399' : '#fbbf24', fontSize: '16px', fontWeight: '700' }}>
+                                                    {isPaid ? 'Rincian Pembayaran QRIS Lunas' : 'Menunggu Pembayaran QRIS'}
+                                                </h4>
+                                                <p style={{ margin: 0, fontSize: '12px', color: '#a1a1aa' }}>
+                                                    {isPaid 
+                                                        ? 'Transaksi ini telah diverifikasi & dilunasi secara otomatis via QRIS. Akun vendor aktif instan.'
+                                                        : 'Vendor memilih pembayaran via QRIS. Menunggu transaksi diselesaikan oleh vendor.'}
+                                                </p>
+                                            </div>
+
+                                            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '16px', fontSize: '13px', color: '#e4e4e7' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px dashed rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                                                    <span style={{ color: '#a1a1aa' }}>• Vendor:</span>
+                                                    <strong style={{ color: '#ffffff' }}>{activeProofUrl.name || 'Vendor'} ({activeProofUrl.email || '–'})</strong>
+                                                </div>
+                                                {activeProofUrl.orderId && (
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                        <span style={{ color: '#a1a1aa' }}>• No. Order / Invoice:</span>
+                                                        <strong style={{ color: '#818cf8', fontFamily: 'monospace' }}>{activeProofUrl.orderId}</strong>
+                                                    </div>
+                                                )}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                    <span style={{ color: '#a1a1aa' }}>• Metode Pembayaran:</span>
+                                                    <strong style={{ color: '#38bdf8' }}>QRIS Otomatis</strong>
+                                                </div>
+                                                {activeProofUrl.planName && (
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                        <span style={{ color: '#a1a1aa' }}>• Paket Utama:</span>
+                                                        <strong style={{ color: '#fbbf24' }}>{activeProofUrl.planName}</strong>
+                                                    </div>
+                                                )}
+                                                {activeProofUrl.addonPlanId && (
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                        <span style={{ color: '#a1a1aa' }}>• Storage Add-On:</span>
+                                                        <strong style={{ color: '#38bdf8' }}>
+                                                            {activeProofUrl.addonPlanId === 'addon-10gb' ? 'Drive 10 GB Extra (+10 GB)' : activeProofUrl.addonPlanId === 'addon-25gb' ? 'Drive 25 GB Extra (+25 GB)' : 'Drive 50 GB Extra (+50 GB)'}
+                                                        </strong>
+                                                    </div>
+                                                )}
+                                                {activeProofUrl.amount > 0 && (
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+                                                        <span style={{ color: '#a1a1aa' }}>• Total Dibayar:</span>
+                                                        <strong style={{ color: '#fbbf24', fontSize: '14px' }}>Rp {Number(activeProofUrl.amount).toLocaleString('id-ID')}</strong>
+                                                    </div>
+                                                )}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+                                                    <span style={{ color: '#a1a1aa' }}>• Status Verifikasi:</span>
+                                                    <span style={{ color: isPaid ? '#34d399' : '#fbbf24', fontWeight: 'bold' }}>
+                                                        {isPaid ? '🟢 LUNAS / SETTLEMENT (AUTOMATIC)' : '⏳ MENUNGGU PEMBAYARAN'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (!proofStr.match(/\.(jpg|jpeg|png|webp)($|\?)/i) && !proofStr.startsWith('/')) ? (
