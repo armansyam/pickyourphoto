@@ -2,7 +2,7 @@
 
 > **Dokumen Resmi Arsitektur Basis Data & Keamanan SaaS**  
 > Lokasi: `docs/02-DATABASE-AND-SECURITY.md`  
-> **Terakhir diperbarui:** 2026-08-05 — disesuaikan dengan skema `lib/db.js` aktual
+> **Terakhir diperbarui:** 10 Agustus 2026 — *Sinkronisasi pasca-audit: Tambah tabel `payment_transactions`, `payment_sessions`, `addon_plans`, `master_drive_accounts` & kolom baru `subscription_requests`*
 
 ---
 
@@ -10,6 +10,8 @@
 
 Database disimpan di: `data/database.db`  
 Engine: `better-sqlite3` — WAL mode + busy_timeout 10 detik.
+
+---
 
 ### Tabel `plans` — Paket Berlangganan
 
@@ -41,15 +43,41 @@ CREATE TABLE plans (
 
 ---
 
+### Tabel `addon_plans` — Paket Add-On Storage
+
+```sql
+CREATE TABLE addon_plans (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  planId           TEXT NOT NULL UNIQUE,   -- e.g. 'addon-10gb', 'addon-25gb', 'addon-50gb'
+  name             TEXT NOT NULL,          -- nama tampilan (e.g. 'Drive 10 GB')
+  quotaBytes       INTEGER NOT NULL,       -- kapasitas dalam bytes
+  price            REAL NOT NULL,          -- harga dalam Rupiah / bulan
+  status           TEXT DEFAULT 'active',  -- 'active' | 'inactive'
+  createdAt        DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+**Data default 3 paket Add-On aktif:**
+
+| planId | name | quotaBytes | price |
+|---|---|---|---|
+| `addon-10gb` | Drive 10 GB | 10737418240 | 29000 |
+| `addon-25gb` | Drive 25 GB | 26843545600 | 49000 |
+| `addon-50gb` | Drive 50 GB | 53687091200 | 89000 |
+
+> **Custom Enterprise (50–200 GB):** Tidak di-seed sebagai baris tetap — dikalkulasi dinamis di `app/api/payment/addon/create` dengan harga Rp 1.250/GB.
+
+---
+
 ### Tabel `vendors` — Fotografer/Pengguna
 
 ```sql
 CREATE TABLE vendors (
   id                          INTEGER PRIMARY KEY AUTOINCREMENT,
   email                       TEXT NOT NULL UNIQUE,
-  password                    TEXT NOT NULL,           -- bcryptjs hash
+  password                    TEXT NOT NULL,           -- bcrypt hash
   name                        TEXT NOT NULL,
-  role                        TEXT DEFAULT 'vendor',   -- 'vendor' | 'admin'
+  role                        TEXT DEFAULT 'vendor',   -- 'vendor'
   status                      TEXT DEFAULT 'active',   -- 'active'|'pending_payment'|'pending_manual'|'expired_draft'|'suspended'
   maxProjects                 INTEGER DEFAULT 5,
   planId                      INTEGER REFERENCES plans(id),
@@ -74,6 +102,24 @@ CREATE TABLE vendors (
   createdAt                   DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 ```
+
+---
+
+### Tabel `admins` — Akun Superadmin & Sub-Admin
+
+```sql
+CREATE TABLE admins (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  email      TEXT NOT NULL UNIQUE,
+  password   TEXT NOT NULL,           -- bcrypt hash
+  name       TEXT NOT NULL,
+  role       TEXT DEFAULT 'admin',    -- 'superadmin' | 'admin'
+  status     TEXT DEFAULT 'active',   -- 'active' | 'inactive'
+  createdAt  DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+> **Hierarki:** `superadmin` — pemilik platform, dibuat via `ADMIN_EMAIL` + `ADMIN_PASSWORD` di `.env.local`. `admin` — Sub-Admin yang ditambahkan via Admin Panel → Sub-Admin Team.
 
 ---
 
@@ -161,17 +207,90 @@ CREATE TABLE selections (
 
 ---
 
-### Tabel `subscription_requests` — Permintaan Upgrade/Perpanjangan
+### Tabel `subscription_requests` — Permintaan Upgrade/Perpanjangan Manual
 
 ```sql
 CREATE TABLE subscription_requests (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,
   vendorId      INTEGER NOT NULL REFERENCES vendors(id),
   planId        INTEGER NOT NULL REFERENCES plans(id),
+  addonPlanId   TEXT DEFAULT NULL,     -- ID Add-On Storage yang diajukan bersamaan (opsional)
+  requestType   TEXT DEFAULT 'plan',   -- 'plan' | 'addon' | 'plan_addon'
   proratedPrice REAL NOT NULL,
-  transferProof TEXT NOT NULL,     -- path file bukti transfer
+  transferProof TEXT NOT NULL,         -- path file bukti transfer
   status        TEXT DEFAULT 'pending', -- 'pending'|'approved'|'rejected'
   createdAt     DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+> **Kolom `addonPlanId` dan `requestType`** ditambahkan dalam audit 09 Agustus 2026 (Bug #9): sebelumnya permintaan upgrade bundel Plan+Add-On tidak menyimpan `addonPlanId`, sehingga kuota Add-On tidak teraktivasi saat Admin approve.
+
+---
+
+### Tabel `payment_transactions` — Log Semua Transaksi Payment Gateway
+
+```sql
+CREATE TABLE payment_transactions (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  orderId         TEXT NOT NULL UNIQUE,   -- ORDER-{timestamp}-{vendorId}-{random}
+  vendorId        INTEGER NOT NULL,
+  planId          INTEGER NOT NULL,
+  addonPlanId     TEXT DEFAULT NULL,      -- ID Add-On Storage (jika bundel)
+  addonQuotaBytes INTEGER DEFAULT 0,      -- kuota Add-On dalam bytes
+  transactionType TEXT DEFAULT 'plan',    -- 'plan' | 'addon' | 'plan_addon'
+  amount          REAL NOT NULL,
+  provider        TEXT NOT NULL,          -- 'midtrans' | 'xendit' | 'tripay' | 'duitku'
+  status          TEXT DEFAULT 'pending', -- 'pending'|'paid'|'expired'|'failed'|'cancelled'
+  paymentUrl      TEXT,
+  rawResponse     TEXT,                   -- JSON response mentah dari provider
+  paidAt          DATETIME,
+  createdAt       DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+---
+
+### Tabel `payment_sessions` — Sesi QRIS Aktif
+
+```sql
+CREATE TABLE payment_sessions (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  orderId         TEXT NOT NULL UNIQUE,
+  vendorId        INTEGER NOT NULL,
+  planId          INTEGER NOT NULL,
+  addonPlanId     TEXT DEFAULT NULL,      -- ID Add-On Storage (jika bundel)
+  addonQuotaBytes INTEGER DEFAULT 0,      -- kuota Add-On dalam bytes
+  transactionType TEXT DEFAULT 'plan',    -- 'plan' | 'addon' | 'plan_addon'
+  amount          REAL NOT NULL,
+  status          TEXT DEFAULT 'pending', -- 'pending'|'paid'|'expired'|'replaced'|'cancelled'
+  paymentMethod   TEXT DEFAULT 'qris',
+  qrUrl           TEXT,                   -- URL gambar QR code / redirect Snap
+  expiresAt       TEXT,                   -- ISO8601 waktu kedaluwarsa QRIS
+  rawResponse     TEXT,
+  paidAt          DATETIME,
+  createdAt       DATETIME DEFAULT CURRENT_TIMESTAMP
+)
+```
+
+---
+
+### Tabel `master_drive_accounts` — Akun Google Drive Pool (BYOS)
+
+```sql
+CREATE TABLE master_drive_accounts (
+  id                INTEGER PRIMARY KEY AUTOINCREMENT,
+  name              TEXT NOT NULL,          -- nama label akun (e.g. 'Worker Account A')
+  role              TEXT DEFAULT 'worker',  -- 'master' | 'worker'
+  email             TEXT,                   -- email akun Google Drive
+  clientId          TEXT,                   -- Google OAuth Client ID
+  clientSecret      TEXT,                   -- Google OAuth Client Secret
+  refreshToken      TEXT,                   -- OAuth Refresh Token
+  accessToken       TEXT,                   -- OAuth Access Token (auto-refresh)
+  rootFolderId      TEXT,                   -- ID folder root vendor di akun ini
+  totalLimitBytes   INTEGER DEFAULT 0,      -- total kapasitas akun (bytes)
+  usedStorageBytes  INTEGER DEFAULT 0,      -- storage terpakai di akun ini (bytes)
+  status            TEXT DEFAULT 'active',  -- 'active' | 'disabled'
+  createdAt         DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 ```
 
@@ -199,11 +318,11 @@ CREATE TABLE saas_settings (
 | `google_client_secret` | Google OAuth Client Secret |
 | `google_refresh_token` | Google OAuth Refresh Token (Master Index) |
 | `google_access_token` | Access token aktif (auto-refresh) |
-| `current_master_cluster_id` | ID Folder Master Cluster aktif di Google Drive API |
+| `current_master_cluster_id` | ID Folder Master Cluster aktif di Google Drive |
 | `current_master_cluster_count` | Jumlah folder vendor dalam cluster aktif |
-| `master_cluster_name` | Nama dinamis folder Master Cluster (`[PICK-YOUR-PHOTO] Platform Master Storage Cluster A`) |
+| `master_cluster_name` | Nama dinamis folder Master Cluster |
 | `master_parent_folder_id` | ID Folder Induk Wadah Master di Google Drive (default: `root`) |
-| `vendor_folder_naming_template` | Format templat nama folder vendor (`📁 [STORAGE DEDICATED] {vendor_name} ({vendor_email})`) |
+| `vendor_folder_naming_template` | Format templat nama folder vendor |
 | `custom_storage_price_per_gb` | Tarif per GB paket storage custom (default: `1250`) |
 | `worker_storage_warning_threshold_gb` | Batas peringatan sisa ruang worker (default: `2` GB) |
 | `max_upload_concurrency_threads` | Batas dasar jalur thread unggah paralel per vendor (default: `4`) |
@@ -214,6 +333,13 @@ CREATE TABLE saas_settings (
 | `trial_max_photos` | Maks. foto tampil di trial galeri |
 | `trial_max_subfolders` | Maks. subfolder di trial |
 | `raw_sorter_trial_limit` | Maks. file di RAW sorter trial |
+| `enable_payment_gateway` | `'1'` = aktif, `'0'` = nonaktif |
+| `payment_gateway_provider` | `'midtrans'` / `'xendit'` / `'tripay'` / `'duitku'` |
+| `payment_gateway_server_key` | Server key / API key provider |
+| `payment_gateway_client_key` | Client key (untuk Midtrans Snap embed) |
+| `payment_gateway_merchant_code` | Merchant code (untuk Duitku) |
+| `payment_gateway_is_production` | `'1'` = production, `'0'` = sandbox |
+| `qris_expiration_minutes` | Durasi kedaluwarsa QRIS (default: `15` menit) |
 
 ---
 
@@ -221,17 +347,17 @@ CREATE TABLE saas_settings (
 
 ```sql
 CREATE TABLE system_settings (
-  id                            INTEGER PRIMARY KEY CHECK (id = 1),
-  enable_registration           INTEGER DEFAULT 1,   -- toggle buka/tutup registrasi
-  enable_free_trial             INTEGER DEFAULT 1,   -- toggle aktif/nonaktif trial
-  max_vendor_quota              INTEGER DEFAULT NULL, -- NULL = unlimited
-  disk_warning_threshold_percent INTEGER DEFAULT 20,
+  id                              INTEGER PRIMARY KEY CHECK (id = 1),
+  enable_registration             INTEGER DEFAULT 1,   -- toggle buka/tutup registrasi
+  enable_free_trial               INTEGER DEFAULT 1,   -- toggle aktif/nonaktif trial
+  max_vendor_quota                INTEGER DEFAULT NULL, -- NULL = unlimited
+  disk_warning_threshold_percent  INTEGER DEFAULT 20,
   disk_critical_threshold_percent INTEGER DEFAULT 10,
-  enable_auto_backup            INTEGER DEFAULT 0,
-  backup_interval_hours         INTEGER DEFAULT 6,
-  trial_expiration_hours        INTEGER DEFAULT 1,
-  trial_expiration_minutes      INTEGER DEFAULT 30,
-  updated_at                    DATETIME DEFAULT CURRENT_TIMESTAMP
+  enable_auto_backup              INTEGER DEFAULT 0,
+  backup_interval_hours           INTEGER DEFAULT 6,
+  trial_expiration_hours          INTEGER DEFAULT 1,
+  trial_expiration_minutes        INTEGER DEFAULT 30,
+  updated_at                      DATETIME DEFAULT CURRENT_TIMESTAMP
 )
 ```
 
@@ -265,11 +391,13 @@ try {
 ### Index Database (Performance)
 
 ```sql
-CREATE INDEX IF NOT EXISTS idx_projects_vendorId     ON projects (vendorId);
-CREATE INDEX IF NOT EXISTS idx_photos_projectId      ON photos (projectId);
-CREATE INDEX IF NOT EXISTS idx_clients_projectId     ON clients (projectId);
-CREATE INDEX IF NOT EXISTS idx_selections_clientId   ON selections (clientId);
+CREATE INDEX IF NOT EXISTS idx_projects_vendorId      ON projects (vendorId);
+CREATE INDEX IF NOT EXISTS idx_photos_projectId       ON photos (projectId);
+CREATE INDEX IF NOT EXISTS idx_clients_projectId      ON clients (projectId);
+CREATE INDEX IF NOT EXISTS idx_selections_clientId    ON selections (clientId);
 CREATE INDEX IF NOT EXISTS idx_subscription_requests_vendorId ON subscription_requests (vendorId);
+CREATE INDEX IF NOT EXISTS idx_payment_transactions_vendorId  ON payment_transactions (vendorId);
+CREATE INDEX IF NOT EXISTS idx_payment_sessions_vendorId      ON payment_sessions (vendorId);
 ```
 
 ---
@@ -278,9 +406,12 @@ CREATE INDEX IF NOT EXISTS idx_subscription_requests_vendorId ON subscription_re
 
 ### Autentikasi JWT (HTTP-Only Cookie)
 
-- **Vendor & Admin:** Login menghasilkan JWT yang disimpan di cookie `token` (HTTP-Only, SameSite=Strict).
+- **Vendor:** Login menghasilkan JWT yang disimpan di cookie `token` (HTTP-Only, SameSite=Strict).
+- **Admin (Superadmin & Sub-Admin):** Login menggunakan tabel `admins` — JWT disimpan di cookie `adminToken` (HTTP-Only).
+- **Hierarki Isolasi:** Akun Superadmin (`role = 'superadmin'`) dan Sub-Admin (`role = 'admin'`) sepenuhnya terpisah dari tabel `vendors` di tabel `admins` yang terdedikasi.
 - **Expiry:** Dikonfigurasi di `lib/auth.js`.
 - **Validasi:** Setiap API request divalidasi via `getAuthVendor()` / `getAuthAdmin()` di `lib/auth.js`.
+- **Master Recovery Override:** Jika seluruh akun admin hilang/terkunci, `.env.local` (`ADMIN_EMAIL` + `ADMIN_PASSWORD`) berfungsi sebagai *Master Recovery Overrule* untuk login Superadmin.
 
 ### Keamanan Galeri Klien
 
@@ -294,11 +425,16 @@ CREATE INDEX IF NOT EXISTS idx_subscription_requests_vendorId ON subscription_re
 - **Domain tersembunyi:** URL Google CDN tidak pernah terekspos ke client — proxy pipe stream menjaga URL asli tersembunyi.
 - **Cache agresif:** Gambar di-cache 7 hari di browser, 30 hari di Cloudflare CDN.
 
+### Keamanan Payment Status Endpoint
+
+- **`GET /api/payment/status`** diproteksi: hanya dapat diakses oleh pengguna dengan sesi autentikasi aktif ATAU vendor yang memiliki transaksi dengan `vendorId` yang cocok — mencegah manipulasi status dari pihak anonim.
+
 ### Keamanan Google OAuth Master
 
 - **Credential storage:** `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` disimpan di `.env.local` **DAN/ATAU** `saas_settings` (DB).
 - **Auto refresh token:** Event `tokens` di `oauth2Client` otomatis update `google_access_token` ke DB.
 - **Cache client:** `getMasterDriveClient()` cache selama 45 menit untuk efisiensi.
+- **Google OAuth Callback:** `SELECT id, email, name, role, status` — tidak pernah mengambil kolom sensitif (`password`, `refreshToken`) yang tidak dibutuhkan.
 
 ### Keamanan File ID Google Drive
 
