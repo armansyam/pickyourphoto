@@ -38,11 +38,6 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
         }
 
-        // Block admin accounts from logging in via public vendor login endpoint
-        if (vendor.role === 'admin') {
-            return NextResponse.json({ message: 'Akun Administrator wajib menggunakan portal login khusus Admin.' }, { status: 403 });
-        }
-
         // Account status validations
         if (vendor.status === 'pending' || vendor.status === 'pending_manual') {
             return NextResponse.json({ message: 'Pendaftaran Anda sedang menunggu konfirmasi/persetujuan dari administrator.' }, { status: 401 });

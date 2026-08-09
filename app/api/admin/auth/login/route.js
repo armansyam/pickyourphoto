@@ -24,29 +24,29 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Email dan password wajib diisi.' }, { status: 400 });
         }
 
-        const stmt = db.prepare('SELECT id, name, email, password, role, status FROM vendors WHERE email = ?');
-        const vendor = stmt.get(email.toLowerCase().trim());
+        const stmt = db.prepare('SELECT id, name, email, password, role, status FROM admins WHERE email = ?');
+        const adminUser = stmt.get(email.toLowerCase().trim());
 
-        if (!vendor) {
-            return NextResponse.json({ message: 'Kredensial login tidak valid.' }, { status: 401 });
+        if (!adminUser) {
+            return NextResponse.json({ message: 'Kredensial login admin tidak valid.' }, { status: 401 });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, vendor.password);
+        const isPasswordValid = await bcrypt.compare(password, adminUser.password);
 
         if (!isPasswordValid) {
-            return NextResponse.json({ message: 'Kredensial login tidak valid.' }, { status: 401 });
+            return NextResponse.json({ message: 'Kredensial login admin tidak valid.' }, { status: 401 });
         }
 
         // Strict role restriction: MUST be superadmin role
-        if (vendor.role !== 'admin') {
+        if (adminUser.role !== 'admin') {
             return NextResponse.json({ message: 'Akses ditolak. Portal ini khusus Administrator SaaS.' }, { status: 403 });
         }
 
-        if (vendor.status === 'suspended') {
+        if (adminUser.status === 'suspended') {
             return NextResponse.json({ message: 'Akun Administrator telah ditangguhkan.' }, { status: 401 });
         }
 
-        const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
+        const token = generateToken({ id: adminUser.id, name: adminUser.name, email: adminUser.email, role: 'admin' });
         setAuthCookie(token);
 
         return NextResponse.json({ success: true, message: 'Admin authentication successful.', role: vendor.role });
