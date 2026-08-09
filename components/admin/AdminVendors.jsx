@@ -426,12 +426,20 @@ export default function AdminVendors({
                           )}
                           {hasPendingUpgrade && (
                             <div style={{ marginTop: '6px' }}>
-                              <button 
-                                onClick={() => setVendorToApprove && setVendorToApprove(v)}
-                                style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000000', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 6px rgba(245,158,11,0.3)' }}
-                              >
-                                ⚡ Verifikasi Upgrade
-                              </button>
+                              {isQris ? (
+                                <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                  <img src="/qris-logo.svg" alt="QRIS" style={{ height: '12px', background: '#ffffff', padding: '1px 3px', borderRadius: '2px' }} />
+                                  QRIS Upgrade (Otomatis)
+                                </span>
+                              ) : (
+                                <button 
+                                  onClick={() => setVendorToApprove && setVendorToApprove(v)}
+                                  style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000000', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 6px rgba(245,158,11,0.3)' }}
+                                  title="Klik untuk meninjau bukti transfer manual & mengonfirmasi upgrade"
+                                >
+                                  📄 Verifikasi Bukti Transfer
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -562,21 +570,34 @@ export default function AdminVendors({
                           </>
                         )}
 
-                        {/* Kelola Vendor (active) actions — dropdown menu */}
+                        {/* Kelola Vendor (active) actions — dropdown menu + quick QRIS check */}
                         {vendorSubTab === 'active' && (
-                          <button
-                            onClick={(e) => handleOpenMenu(e, v)}
-                            className="btn-secondary"
-                            style={{
-                              padding: '4px 10px', fontSize: '12px', fontWeight: '700', borderRadius: '6px',
-                              background: activeMenuVendor?.id === v.id ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
-                              color: activeMenuVendor?.id === v.id ? '#818cf8' : '#e4e4e7',
-                              borderColor: activeMenuVendor?.id === v.id ? '#6366f1' : 'rgba(255,255,255,0.1)',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            Aksi ▾
-                          </button>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                            {hasPendingUpgrade && isQris && (
+                              <button
+                                onClick={() => handleSyncQrisStatus(v)}
+                                disabled={syncingId === v.id}
+                                className="btn-secondary"
+                                style={{ padding: '4px 8px', fontSize: '11px', borderRadius: '6px', color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)', cursor: 'pointer' }}
+                                title="Cek & Sync status QRIS langsung dari Midtrans API"
+                              >
+                                {syncingId === v.id ? '⌛ Cek...' : '🔍 Cek QRIS'}
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => handleOpenMenu(e, v)}
+                              className="btn-secondary"
+                              style={{
+                                padding: '4px 10px', fontSize: '12px', fontWeight: '700', borderRadius: '6px',
+                                background: activeMenuVendor?.id === v.id ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
+                                color: activeMenuVendor?.id === v.id ? '#818cf8' : '#e4e4e7',
+                                borderColor: activeMenuVendor?.id === v.id ? '#6366f1' : 'rgba(255,255,255,0.1)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              Aksi ▾
+                            </button>
+                          </div>
                         )}
                       </div>
                     </td>
