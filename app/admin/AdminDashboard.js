@@ -73,9 +73,10 @@ export default function AdminDashboard({ adminUser }) {
     const [googleMasterAccountEmail, setGoogleMasterAccountEmail] = useState('');
     const [maxUploadConcurrencyThreads, setMaxUploadConcurrencyThreads] = useState(4);
 
-    // Custom Storage & Worker Capacity Warning Threshold States
+    // Custom Storage & Worker Capacity Warning Threshold States & Grace Period
     const [customStoragePricePerGb, setCustomStoragePricePerGb] = useState(1250);
     const [workerStorageWarningThresholdGb, setWorkerStorageWarningThresholdGb] = useState(10);
+    const [gracePeriodDays, setGracePeriodDays] = useState(7);
 
 
     // Payment Gateway Toggle States
@@ -238,6 +239,7 @@ export default function AdminDashboard({ adminUser }) {
                     if (data.saasSettings.smtp_password) setSmtpPassword(data.saasSettings.smtp_password);
                     if (data.saasSettings.custom_storage_price_per_gb) setCustomStoragePricePerGb(parseInt(data.saasSettings.custom_storage_price_per_gb) || 1250);
                     if (data.saasSettings.worker_storage_warning_threshold_gb) setWorkerStorageWarningThresholdGb(parseInt(data.saasSettings.worker_storage_warning_threshold_gb) || 10);
+                    if (data.saasSettings.grace_period_days) setGracePeriodDays(parseInt(data.saasSettings.grace_period_days) || 7);
                 }
             }
         } catch (err) {
@@ -377,7 +379,8 @@ export default function AdminDashboard({ adminUser }) {
                         smtp_password: smtpPassword,
                         smtp_from_name: smtpFromName,
                         custom_storage_price_per_gb: String(customStoragePricePerGb || 1250),
-                        worker_storage_warning_threshold_gb: String(workerStorageWarningThresholdGb || 10)
+                        worker_storage_warning_threshold_gb: String(workerStorageWarningThresholdGb || 10),
+                        grace_period_days: String(gracePeriodDays || 7)
                     }
                 })
             });
@@ -694,6 +697,9 @@ export default function AdminDashboard({ adminUser }) {
                             lastBackupTime={lastBackupTime}
                             lastBackupFileName={lastBackupFileName}
                             lastBackupSizeFormatted={lastBackupSizeFormatted}
+                            customStoragePricePerGb={customStoragePricePerGb} setCustomStoragePricePerGb={setCustomStoragePricePerGb}
+                            workerStorageWarningThresholdGb={workerStorageWarningThresholdGb} setWorkerStorageWarningThresholdGb={setWorkerStorageWarningThresholdGb}
+                            gracePeriodDays={gracePeriodDays} setGracePeriodDays={setGracePeriodDays}
                             savingProfile={savingProfile}
                             profileSuccessMsg={profileSuccessMsg}
                             setProfileSuccessMsg={setProfileSuccessMsg}

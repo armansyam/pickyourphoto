@@ -33,8 +33,21 @@ export async function GET(req) {
       }
     }
 
-    // Auto-sync real-time usedStorageBytes berdasarkan total file aktual di Dedicated Storage
-    const actualStorageBytesRow = db.prepare('SELECT COALESCE(SUM(fileSizeBytes), 0) as totalBytes FROM storage_files WHERE vendorId = ?').get(vendor.id);
+    // AUTO-DETEKSI OTOMATIS SAFEGUARD:
+    // Jika file berada dalam folder GDrive eksternal (isExternalDrive = 1 pada folder parent-nya),
+    // tandai otomatis file tersebut sebagai isExternalDrive = 1 agar tidak salah menghitung kuota Add-on SaaS.
+    try {
+      db.prepare(`
+        UPDATE storage_files 
+        SET isExternalDrive = 1 
+        WHERE vendorId = ? 
+          AND (isExternalDrive IS NULL OR isExternalDrive = 0)
+          AND parentFolderId IN (SELECT driveFolderId FROM storage_folders WHERE vendorId = ? AND isExternalDrive = 1)
+      `).run(vendor.id, vendor.id);
+    } catch (_) {}
+
+    // Auto-sync real-time usedStorageBytes berdasarkan total file aktual di Dedicated Storage Platform SaaS (mengabaikan file dari BYOS Vendor GDrive)
+    const actualStorageBytesRow = db.prepare('SELECT COALESCE(SUM(fileSizeBytes), 0) as totalBytes FROM storage_files WHERE vendorId = ? AND (isExternalDrive IS NULL OR isExternalDrive = 0)').get(vendor.id);
     const actualStorageBytes = actualStorageBytesRow ? actualStorageBytesRow.totalBytes : 0;
     if (vendor.usedStorageBytes !== actualStorageBytes) {
       db.prepare('UPDATE vendors SET usedStorageBytes = ? WHERE id = ?').run(actualStorageBytes, vendor.id);
@@ -45,30 +58,55 @@ export async function GET(req) {
     const rawParentFolderId = searchParams.get('folderId');
     const parentFolderId = (!rawParentFolderId || rawParentFolderId === 'root') ? (rootFolderId || 'root') : rawParentFolderId;
 
-    // Ambil daftar berkas file di folder ini dari DB
-    const files = db.prepare(`
-      SELECT * FROM storage_files 
-      WHERE vendorId = ? AND (parentFolderId = ? OR parentFolderId = 'root')
-      ORDER BY uploadedAt DESC
-    `).all(vendor.id, parentFolderId);
+    // Ambil daftar berkas file di folder ini dari DB (jika Drive terputus, HANYA tampilkan berkas sistem SaaS)
+    const isDriveConnected = Boolean(vendor.externalDriveConnected);
 
-    // Ambil sub-folder internal buatan vendor di Cloud Storage beserta statistik rekursif jumlah foto, subfolder, byte storage, & status proyek terhubung
-    const subFolders = db.prepare(`
-      WITH RECURSIVE Subtree(folderId) AS (
-        SELECT driveFolderId FROM storage_folders WHERE driveFolderId = sf.driveFolderId
-        UNION ALL
-        SELECT child.driveFolderId FROM storage_folders child
-        JOIN Subtree parent ON child.parentFolderId = parent.folderId
-      )
-      SELECT sf.id, sf.folderName as name, sf.driveFolderId, sf.webViewLink, sf.createdAt,
-             (SELECT COUNT(*) FROM storage_folders WHERE parentFolderId = sf.driveFolderId) as subFolderCount,
-             (SELECT COUNT(*) FROM storage_files WHERE parentFolderId IN (SELECT folderId FROM Subtree)) as fileCount,
-             (SELECT COALESCE(SUM(fileSizeBytes), 0) FROM storage_files WHERE parentFolderId IN (SELECT folderId FROM Subtree)) as totalSizeBytes,
-             (SELECT p.id FROM projects p WHERE p.vendorId = sf.vendorId AND (INSTR(p.folderUrl, sf.driveFolderId) > 0 OR p.folderUrl LIKE '%' || sf.driveFolderId || '%') LIMIT 1) as linkedProjectId,
-             (SELECT p.name FROM projects p WHERE p.vendorId = sf.vendorId AND (INSTR(p.folderUrl, sf.driveFolderId) > 0 OR p.folderUrl LIKE '%' || sf.driveFolderId || '%') LIMIT 1) as linkedProjectName
-      FROM storage_folders sf
-      WHERE sf.vendorId = ? AND (sf.parentFolderId = ? OR sf.parentFolderId = 'root')
-    `).all(vendor.id, parentFolderId);
+    const files = isDriveConnected 
+      ? db.prepare(`
+          SELECT * FROM storage_files 
+          WHERE vendorId = ? AND parentFolderId = ?
+          ORDER BY uploadedAt DESC
+        `).all(vendor.id, parentFolderId)
+      : db.prepare(`
+          SELECT * FROM storage_files 
+          WHERE vendorId = ? AND parentFolderId = ? AND (isExternalDrive IS NULL OR isExternalDrive = 0)
+          ORDER BY uploadedAt DESC
+        `).all(vendor.id, parentFolderId);
+
+    // Ambil sub-folder internal buatan vendor di Cloud Storage
+    const subFolders = isDriveConnected
+      ? db.prepare(`
+          WITH RECURSIVE Subtree(folderId) AS (
+            SELECT driveFolderId FROM storage_folders WHERE driveFolderId = sf.driveFolderId
+            UNION ALL
+            SELECT child.driveFolderId FROM storage_folders child
+            JOIN Subtree parent ON child.parentFolderId = parent.folderId
+          )
+          SELECT sf.id, sf.folderName as name, sf.driveFolderId, sf.webViewLink, sf.isExternalDrive, sf.createdAt,
+                 (SELECT COUNT(*) FROM storage_folders WHERE parentFolderId = sf.driveFolderId) as subFolderCount,
+                 (SELECT COUNT(*) FROM storage_files WHERE parentFolderId IN (SELECT folderId FROM Subtree)) as fileCount,
+                 (SELECT COALESCE(SUM(fileSizeBytes), 0) FROM storage_files WHERE parentFolderId IN (SELECT folderId FROM Subtree)) as totalSizeBytes,
+                 (SELECT p.id FROM projects p WHERE p.vendorId = sf.vendorId AND (INSTR(p.folderUrl, sf.driveFolderId) > 0 OR p.folderUrl LIKE '%' || sf.driveFolderId || '%') LIMIT 1) as linkedProjectId,
+                 (SELECT p.name FROM projects p WHERE p.vendorId = sf.vendorId AND (INSTR(p.folderUrl, sf.driveFolderId) > 0 OR p.folderUrl LIKE '%' || sf.driveFolderId || '%') LIMIT 1) as linkedProjectName
+          FROM storage_folders sf
+          WHERE sf.vendorId = ? AND sf.parentFolderId = ?
+        `).all(vendor.id, parentFolderId)
+      : db.prepare(`
+          WITH RECURSIVE Subtree(folderId) AS (
+            SELECT driveFolderId FROM storage_folders WHERE driveFolderId = sf.driveFolderId
+            UNION ALL
+            SELECT child.driveFolderId FROM storage_folders child
+            JOIN Subtree parent ON child.parentFolderId = parent.folderId
+          )
+          SELECT sf.id, sf.folderName as name, sf.driveFolderId, sf.webViewLink, sf.isExternalDrive, sf.createdAt,
+                 (SELECT COUNT(*) FROM storage_folders WHERE parentFolderId = sf.driveFolderId) as subFolderCount,
+                 (SELECT COUNT(*) FROM storage_files WHERE parentFolderId IN (SELECT folderId FROM Subtree)) as fileCount,
+                 (SELECT COALESCE(SUM(fileSizeBytes), 0) FROM storage_files WHERE parentFolderId IN (SELECT folderId FROM Subtree)) as totalSizeBytes,
+                 (SELECT p.id FROM projects p WHERE p.vendorId = sf.vendorId AND (INSTR(p.folderUrl, sf.driveFolderId) > 0 OR p.folderUrl LIKE '%' || sf.driveFolderId || '%') LIMIT 1) as linkedProjectId,
+                 (SELECT p.name FROM projects p WHERE p.vendorId = sf.vendorId AND (INSTR(p.folderUrl, sf.driveFolderId) > 0 OR p.folderUrl LIKE '%' || sf.driveFolderId || '%') LIMIT 1) as linkedProjectName
+          FROM storage_folders sf
+          WHERE sf.vendorId = ? AND sf.parentFolderId = ? AND (sf.isExternalDrive IS NULL OR sf.isExternalDrive = 0)
+        `).all(vendor.id, parentFolderId);
 
     // Ambil proyek link Google Drive murni EKSTERNAL milik studio vendor (yang TIDAK berada di dalam Dedicated Storage SaaS)
     const externalProjects = db.prepare(`

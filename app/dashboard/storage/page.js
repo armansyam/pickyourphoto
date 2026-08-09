@@ -113,8 +113,46 @@ export default function VendorStorageManagerPage() {
   const [showStorageGalleryModal, setShowStorageGalleryModal] = useState(false);
   const [galleryModalFolder, setGalleryModalFolder] = useState(null);
   const [galleryModalFiles, setGalleryModalFiles] = useState([]);
+  const [activePreviewIndex, setActivePreviewIndex] = useState(null);
+  const [previewSourceFiles, setPreviewSourceFiles] = useState([]);
   // BYOS (External Google Drive Vendor) State & Handlers
   const [byosState, setByosState] = useState({ connected: false, email: '', quota: null });
+  const [activeStorageMode, setActiveStorageMode] = useState('byos');
+  const [dismissedByosBar, setDismissedByosBar] = useState(false);
+  const [hasByosUpdates, setHasByosUpdates] = useState(false);
+
+  const handleToggleStorageMode = async (mode) => {
+    try {
+      const res = await fetch('/api/storage/toggle-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActiveStorageMode(mode);
+        showToast(data.message, 'success');
+      } else {
+        showToast(data.error || 'Gagal mengubah target storage.', 'error');
+      }
+    } catch {
+      showToast('Terjadi kesalahan saat mengubah target storage.', 'error');
+    }
+  };
+
+  const checkByosUpdates = async () => {
+    try {
+      const res = await fetch('/api/storage/external/check-updates');
+      const data = await res.json();
+      if (data.success && data.hasUpdates) {
+        setHasByosUpdates(true);
+      } else {
+        setHasByosUpdates(false);
+      }
+    } catch (e) {
+      console.error('BYOS check updates error:', e);
+    }
+  };
 
   const fetchByosData = async () => {
     try {
@@ -126,6 +164,14 @@ export default function VendorStorageManagerPage() {
           email: data.email || '',
           quota: data.quota || null
         });
+        if (data.activeStorageMode) {
+          setActiveStorageMode(data.activeStorageMode);
+        } else {
+          setActiveStorageMode(data.connected ? 'byos' : 'system');
+        }
+        if (data.connected) {
+          checkByosUpdates();
+        }
       }
     } catch (e) {
       console.error('BYOS fetch error:', e);
@@ -169,6 +215,23 @@ export default function VendorStorageManagerPage() {
     }
   };
 
+  const handleSyncByosFolders = async () => {
+    try {
+      showToast('Sedang menyinkronkan folder dari Google Drive Anda...', 'info');
+      const res = await fetch('/api/storage/external/sync', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || 'Folder berhasil disinkronkan!', 'success');
+        setHasByosUpdates(false);
+        fetchStorageFiles(currentFolderId);
+      } else {
+        showToast(data.error || 'Gagal menyinkronkan folder.', 'error');
+      }
+    } catch {
+      showToast('Terjadi kesalahan saat menyinkronkan folder.', 'error');
+    }
+  };
+
   useEffect(() => {
     fetchByosData();
   }, []);
@@ -205,6 +268,29 @@ export default function VendorStorageManagerPage() {
       showToast('Terjadi kesalahan saat memuat galeri storage.', 'error');
     } finally {
       setLoadingGalleryModal(false);
+    }
+  };
+
+  const handleMigrateFolderToByos = async (sf) => {
+    const isConfirmed = confirm(`🚚 Pindahkan Folder "${sf.name}" ke Google Drive Anda?\n\nFolder beserta berkas foto di dalamnya akan dipindahkan ke Root Google Drive milik Anda (${byosState.email}). Proyek foto tetap aktif berjalan tanpa hambatan.`);
+    if (!isConfirmed) return;
+
+    try {
+      showToast(`Sedang memindahkan folder "${sf.name}" ke Google Drive Anda...`, 'info');
+      const res = await fetch('/api/storage/migrate-folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folderId: sf.driveFolderId || sf.id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(data.message || 'Folder berhasil dipindahkan ke Google Drive Anda!', 'success');
+        fetchStorageFiles(currentFolderId);
+      } else {
+        showToast(data.error || 'Gagal memindahkan folder.', 'error');
+      }
+    } catch (e) {
+      showToast('Terjadi kesalahan saat memindahkan folder.', 'error');
     }
   };
 
@@ -884,6 +970,7 @@ export default function VendorStorageManagerPage() {
 
   const usedBytes = vendorData?.usedStorageBytes || 0;
   const quotaBytes = vendorData?.addonStorageQuotaBytes || 0;
+  const vendorQuotaGb = quotaBytes > 0 ? Math.round(quotaBytes / (1024 * 1024 * 1024)) : 25;
   const usagePercent = quotaBytes > 0 ? Math.min(100, Math.round((usedBytes / quotaBytes) * 100)) : (usedBytes > 0 ? 100 : 0);
   const daysRemaining = vendorData?.expiresAt 
     ? Math.max(1, Math.min(30, Math.ceil((new Date(vendorData.expiresAt) - new Date()) / (1000 * 60 * 60 * 24))))
@@ -936,80 +1023,137 @@ export default function VendorStorageManagerPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            {hasAddon && (
-              <>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {hasAddon && (
+                <>
+                  <button
+                    onClick={() => setShowNewFolderModal(true)}
+                    style={{
+                      padding: '10px 18px',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#e4e4e7',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <span>📁</span> Folder Baru
+                  </button>
+
+                  <label
+                    style={{
+                      padding: '10px 18px',
+                      background: 'linear-gradient(135deg, #10b981, #059669)',
+                      color: '#ffffff',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: '0 4px 14px rgba(16,185,129,0.3)'
+                    }}
+                  >
+                    <span>📤</span> Upload File / Foto
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*,video/*"
+                      onChange={handleFilesSelectAndUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+
+                  <label
+                    style={{
+                      padding: '10px 18px',
+                      background: 'rgba(99,102,241,0.15)',
+                      color: '#818cf8',
+                      border: '1px solid rgba(99,102,241,0.3)',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                    title="Pilih dan unggah seluruh folder fisik dari komputer Anda sekaligus"
+                  >
+                    <span>📂</span> Upload Folder
+                    <input
+                      type="file"
+                      webkitdirectory="true"
+                      directory="true"
+                      multiple
+                      onChange={handleFolderSelectAndUpload}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                </>
+              )}
+            </div>
+
+            {/* COMPACT TOGGLE SWITCH PILL UNDER THE 3 ACTION BUTTONS (HANYA BILA PUNYA ADDON SAAS DAN GDRIVE TERHUBUNG) */}
+            {byosState.connected && hasAddon && (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(15, 23, 42, 0.85)',
+                padding: '4px 8px',
+                borderRadius: '20px',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              }}>
+                <span style={{ fontSize: '11px', color: '#9ca3af', fontWeight: '600', marginLeft: '4px' }}>Sumber Kuota Upload:</span>
                 <button
-                  onClick={() => setShowNewFolderModal(true)}
+                  type="button"
+                  onClick={() => handleToggleStorageMode('byos')}
                   style={{
-                    padding: '10px 18px',
-                    background: 'rgba(255,255,255,0.06)',
-                    color: '#e4e4e7',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: '10px',
-                    fontSize: '12px',
+                    padding: '5px 12px',
+                    borderRadius: '16px',
+                    fontSize: '11px',
                     fontWeight: '700',
                     cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
+                    border: 'none',
+                    transition: 'all 0.2s ease',
+                    background: activeStorageMode === 'byos' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 'transparent',
+                    color: activeStorageMode === 'byos' ? '#ffffff' : '#9ca3af',
+                    boxShadow: activeStorageMode === 'byos' ? '0 2px 8px rgba(16, 185, 129, 0.35)' : 'none'
                   }}
+                  title="Upload memotong kuota Google Drive studio Anda sendiri"
                 >
-                  <span>📁</span> Folder Baru
+                  ⚡ Kuota Drive Sendiri
                 </button>
 
-                <label
+                <button
+                  type="button"
+                  onClick={() => handleToggleStorageMode('system')}
                   style={{
-                    padding: '10px 18px',
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: '#ffffff',
-                    borderRadius: '10px',
-                    fontSize: '12px',
+                    padding: '5px 12px',
+                    borderRadius: '16px',
+                    fontSize: '11px',
                     fontWeight: '700',
                     cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 4px 14px rgba(16,185,129,0.3)'
+                    border: 'none',
+                    transition: 'all 0.2s ease',
+                    background: activeStorageMode === 'system' ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'transparent',
+                    color: activeStorageMode === 'system' ? '#ffffff' : '#9ca3af',
+                    boxShadow: activeStorageMode === 'system' ? '0 2px 8px rgba(99, 102, 241, 0.35)' : 'none'
                   }}
+                  title="Upload memotong kuota Add-On Dedicated Storage Platform Anda"
                 >
-                  <span>📤</span> Upload File / Foto
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*,video/*"
-                    onChange={handleFilesSelectAndUpload}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-
-                <label
-                  style={{
-                    padding: '10px 18px',
-                    background: 'rgba(99,102,241,0.15)',
-                    color: '#818cf8',
-                    border: '1px solid rgba(99,102,241,0.3)',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                  title="Pilih dan unggah seluruh folder fisik dari komputer Anda sekaligus"
-                >
-                  <span>📂</span> Upload Folder
-                  <input
-                    type="file"
-                    webkitdirectory="true"
-                    directory="true"
-                    multiple
-                    onChange={handleFolderSelectAndUpload}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-              </>
+                  📦 Kuota Addon {vendorQuotaGb} GB
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -1023,32 +1167,36 @@ export default function VendorStorageManagerPage() {
 
         {/* UPSELL & BYOS BANNER */}
         {!loading && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* CARD 1: STATUS GOOGLE DRIVE VENDOR (BYOS EKSTERNAL) */}
             {byosState.connected ? (
               <div style={{
-                background: 'rgba(52,211,153,0.06)',
-                border: '1px solid rgba(52,211,153,0.3)',
-                borderRadius: '16px',
-                padding: '20px 24px',
+                background: activeStorageMode === 'byos' ? 'rgba(52,211,153,0.06)' : 'rgba(255,255,255,0.02)',
+                border: activeStorageMode === 'byos' ? '1px solid rgba(52,211,153,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '14px',
+                padding: '14px 20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 flexWrap: 'wrap',
-                gap: '16px'
+                gap: '12px',
+                opacity: activeStorageMode === 'byos' ? 1 : 0.75,
+                transition: 'all 0.3s ease'
               }}>
-                <div style={{ flex: 1, minWidth: '260px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <div style={{ flex: 1, minWidth: '240px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '3px 8px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.4)' }}>
-                      ☁️ External GDrive Connected (BYOS)
+                      ☁️ GOOGLE DRIVE TERHUBUNG
                     </span>
+                    {activeStorageMode === 'byos' && (
+                      <span style={{ fontSize: '10px', fontWeight: '800', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: '#ffffff', padding: '3px 8px', borderRadius: '10px' }}>
+                        ⚡ KUOTA UPLOAD AKTIF
+                      </span>
+                    )}
                     <span style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>{byosState.email}</span>
                   </div>
-                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>
-                    Terhubung ke Google Drive Studio Anda (Vendor Owner)
-                  </h4>
                   {byosState.quota && (
-                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#a1a1aa' }}>
+                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#a1a1aa' }}>
                       Kapasitas Drive: <strong style={{ color: '#34d399' }}>{formatBytes(byosState.quota.usedBytes)}</strong> / {byosState.quota.limitBytes > 0 ? formatBytes(byosState.quota.limitBytes) : 'Unlimited'} Terpakai
                       {byosState.quota.freeBytes !== null && (
                         <span style={{ marginLeft: '10px', color: '#fbbf24' }}>
@@ -1061,10 +1209,16 @@ export default function VendorStorageManagerPage() {
 
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button
-                    onClick={fetchByosData}
-                    style={{ padding: '8px 14px', background: 'rgba(255,255,255,0.06)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                    onClick={handleSyncByosFolders}
+                    style={{ padding: '8px 14px', background: 'rgba(56,189,248,0.12)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.35)', borderRadius: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    title="Tarik & Tampilkan Folder dari Root Google Drive Anda ke Konsol Ini"
                   >
-                    🔄 Sync Kuota
+                    <span>🔄 Sync GDrive</span>
+                    {hasByosUpdates && (
+                      <span style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        🔴 Ada Update Baru
+                      </span>
+                    )}
                   </button>
                   <button
                     onClick={handleDisconnectByosDrive}
@@ -1075,70 +1229,54 @@ export default function VendorStorageManagerPage() {
                 </div>
               </div>
             ) : (
-              !hasAddon && (
+              !dismissedByosBar && (
                 <div style={{
-                  background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(16,185,129,0.05))',
+                  background: 'rgba(99,102,241,0.06)',
                   border: '1px solid rgba(99,102,241,0.2)',
-                  borderRadius: '20px',
-                  padding: '28px',
+                  borderRadius: '12px',
+                  padding: '10px 16px',
                   display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '24px'
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  marginBottom: '12px'
                 }}>
-                  <div style={{ flex: 1, minWidth: '280px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.3)' }}>
-                      ✨ Pusat Penyimpanan Studio
-                    </span>
-                    <h2 style={{ margin: '12px 0 8px 0', fontSize: '22px', fontWeight: '800', color: '#ffffff', lineHeight: '1.3' }}>
-                      Kelola Repositori Foto Studio Anda 🚀
-                    </h2>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa', lineHeight: '1.6' }}>
-                      Hubungkan Google Drive milik Anda sendiri secara <strong>Gratis (BYOS)</strong> atau gunakan <strong>Internal Dedicated Storage SaaS</strong> untuk kecepatan tinggi.
-                    </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#d4d4d8' }}>
+                    <span style={{ fontSize: '14px' }}>☁️</span>
+                    <span><strong>Opsional:</strong> Ingin berkas foto disimpan di Google Drive milik studio Anda sendiri?</span>
                   </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '220px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button
                       onClick={handleConnectByosDrive}
                       style={{
-                        padding: '12px 18px',
+                        padding: '6px 14px',
                         background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                         color: '#ffffff',
                         border: 'none',
-                        borderRadius: '10px',
-                        fontSize: '12px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
                         fontWeight: '700',
                         cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        boxShadow: '0 4px 14px rgba(99,102,241,0.3)'
+                        whiteSpace: 'nowrap',
+                        boxShadow: '0 2px 8px rgba(99,102,241,0.25)'
                       }}
                     >
-                      <span>🔗</span> Hubungkan GDrive Saya (BYOS)
+                      🔗 Hubungkan Google Drive
                     </button>
                     <button
-                      onClick={handleOpenAddonModal}
+                      onClick={() => setDismissedByosBar(true)}
                       style={{
-                        padding: '10px 18px',
-                        background: 'rgba(16,185,129,0.15)',
-                        color: '#34d399',
-                        border: '1px solid rgba(16,185,129,0.3)',
-                        borderRadius: '10px',
-                        fontSize: '12px',
-                        fontWeight: '700',
+                        background: 'none',
+                        border: 'none',
+                        color: '#71717a',
+                        fontSize: '14px',
                         cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px'
+                        padding: '2px 6px',
+                        lineHeight: 1
                       }}
+                      title="Tutup pemberitahuan"
                     >
-                      <span>⚡</span> Beli Add-On Storage SaaS
+                      ✕
                     </button>
                   </div>
                 </div>
@@ -1147,12 +1285,80 @@ export default function VendorStorageManagerPage() {
           </div>
         )}
 
-        {/* DASHBOARD CLOUD STORAGE EXPLORER (BILA HAS ADDON ACTIVE) */}
-        {!loading && hasAddon && (
+        {/* BANNER BILA VENDOR BELUM PUNYA ADDON DAN BELUM KONEK GDRIVE */}
+        {!loading && !hasAddon && !byosState.connected && (
+          <div style={{
+            background: 'rgba(245,158,11,0.06)',
+            border: '1px solid rgba(245,158,11,0.3)',
+            borderRadius: '16px',
+            padding: '32px 24px',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+            marginTop: '12px'
+          }}>
+            <div style={{ fontSize: '40px' }}>☁️</div>
+            <div>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>
+                Storage Cloud Studio Belum Aktif
+              </h3>
+              <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa', maxWidth: '540px', lineHeight: '1.6' }}>
+                Anda dapat memilih untuk <strong>menghubungkan Google Drive pribadi milik studio Anda</strong> secara gratis (BYOS) ATAU <strong>membeli paket Add-On Storage Platform</strong> untuk mulai mengunggah & mengelola folder foto.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '8px' }}>
+              <button
+                onClick={handleConnectByosDrive}
+                style={{
+                  padding: '10px 20px',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
+                }}
+              >
+                ⚡ Hubungkan Google Drive Sendiri (BYOS)
+              </button>
+              <button
+                onClick={() => handleOpenAddonModal()}
+                style={{
+                  padding: '10px 20px',
+                  background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(99,102,241,0.3)'
+                }}
+              >
+                📦 Beli Paket Add-On Storage SaaS
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* DASHBOARD CLOUD STORAGE EXPLORER (BILA HAS ADDON ACTIVE ATAU GOOGLE DRIVE VENDOR TERHUBUNG) */}
+        {!loading && (hasAddon || byosState.connected) && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             
-            {/* Quota Progress Meter Card (PUSAT KONTROL KUOTA, MASTER LINK, & UPGRADE) */}
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(52,211,153,0.2)', borderRadius: '16px', padding: '22px' }}>
+            {/* Quota Progress Meter Card (PUSAT KONTROL KUOTA, MASTER LINK, & UPGRADE - HANYA TAMPIL JIKA PUNYA ADDON SAAS) */}
+            {hasAddon && (
+            <div style={{
+              background: activeStorageMode === 'system' && byosState.connected ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
+              border: activeStorageMode === 'system' && byosState.connected ? '2px solid rgba(99,102,241,0.5)' : '1px solid rgba(52,211,153,0.2)',
+              borderRadius: '16px',
+              padding: '22px',
+              opacity: byosState.connected && activeStorageMode !== 'system' ? 0.75 : 1,
+              transition: 'all 0.3s ease'
+            }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1160,6 +1366,11 @@ export default function VendorStorageManagerPage() {
                     <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.3)', padding: '2px 8px', borderRadius: '10px', fontWeight: '700' }}>
                       Add-On Dedicated Storage Aktif
                     </span>
+                    {byosState.connected && activeStorageMode === 'system' && (
+                      <span style={{ fontSize: '10px', fontWeight: '800', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#ffffff', padding: '3px 8px', borderRadius: '10px' }}>
+                        📦 KUOTA UPLOAD AKTIF
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: '24px', fontWeight: '800', color: '#ffffff', marginTop: '6px' }}>
                     {formatBytes(usedBytes)} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>/ {formatBytes(quotaBytes)}</span>
@@ -1261,6 +1472,7 @@ export default function VendorStorageManagerPage() {
                 );
               })()}
             </div>
+            )}
 
             {/* Breadcrumb Navigation Bar */}
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#a1a1aa' }}>
@@ -1365,6 +1577,7 @@ export default function VendorStorageManagerPage() {
                       return (
                         <div
                           key={sf.id}
+                          onClick={() => navigateToFolder(sf.driveFolderId || sf.id, sf.name)}
                           style={{
                             background: 'rgba(255,255,255,0.03)',
                             border: '1px solid rgba(255,255,255,0.08)',
@@ -1372,13 +1585,12 @@ export default function VendorStorageManagerPage() {
                             padding: '14px 16px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '10px'
+                            gap: '10px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
                           }}
                         >
-                          <div
-                            onClick={() => navigateToFolder(sf.driveFolderId || sf.id, sf.name)}
-                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}
-                          >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                             <span style={{ fontSize: '28px' }}>📁</span>
                             <div style={{ overflow: 'hidden', flex: 1 }}>
                               <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1581,6 +1793,35 @@ export default function VendorStorageManagerPage() {
                                 🗑️ Hapus
                               </button>
                             </div>
+
+                            {byosState.connected && !sf.isExternalDrive && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleMigrateFolderToByos(sf);
+                                }}
+                                style={{
+                                  marginTop: '8px',
+                                  width: '100%',
+                                  padding: '7px 10px',
+                                  background: 'rgba(99,102,241,0.12)',
+                                  color: '#818cf8',
+                                  border: '1px solid rgba(99,102,241,0.3)',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '4px'
+                                }}
+                                title="Pindahkan Folder Asli buatan Master Hub Index SaaS Ini ke Google Drive Anda"
+                              >
+                                🚚 Pindahkan ke Drive Saya
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
@@ -1672,32 +1913,45 @@ export default function VendorStorageManagerPage() {
                           {displayedFiles.map((file, idx) => {
                             const isVideo = file.mimeType?.includes('video') || file.fileName?.match(/\.(mp4|mov|avi)$/i);
                             return (
-                              <tr key={file.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                              <tr
+                                key={file.id}
+                                onClick={() => {
+                                  setPreviewSourceFiles(displayedFiles);
+                                  setActivePreviewIndex(idx);
+                                }}
+                                style={{
+                                  borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                  cursor: 'pointer',
+                                  transition: 'background 0.15s ease'
+                                }}
+                              >
                                 <td style={{ padding: '12px 16px', fontWeight: '600', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                   <span>{isVideo ? '🎥' : '📷'}</span>
-                                  <span style={{ maxWidth: '280px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.fileName}</span>
+                                  <span style={{ maxWidth: '320px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.fileName}</span>
                                 </td>
                                 <td style={{ padding: '12px 16px', color: '#a1a1aa' }}>{file.mimeType || 'Media'}</td>
                                 <td style={{ padding: '12px 16px', color: '#34d399', fontWeight: '700' }}>{formatBytes(file.fileSizeBytes)}</td>
                                 <td style={{ padding: '12px 16px', color: '#71717a' }}>{file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : '-'}</td>
                                 <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                                    <button
-                                      onClick={() => {
-                                        setPreviewSourceFiles(displayedFiles);
-                                        setActivePreviewIndex(idx);
-                                      }}
-                                      style={{ padding: '4px 8px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                    >
-                                      👁️ Preview
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteFile(file.id, file.fileName)}
-                                      style={{ padding: '4px 8px', background: 'rgba(239,68,68,0.15)', color: '#f87171', border: 'none', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}
-                                    >
-                                      🗑️ Hapus
-                                    </button>
-                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteFile(file.id, file.fileName);
+                                    }}
+                                    style={{
+                                      padding: '4px 8px',
+                                      background: 'rgba(239,68,68,0.1)',
+                                      color: '#f87171',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      fontSize: '12px',
+                                      cursor: 'pointer'
+                                    }}
+                                    title="Hapus Berkas Ini"
+                                  >
+                                    🗑️ Hapus
+                                  </button>
                                 </td>
                               </tr>
                             );

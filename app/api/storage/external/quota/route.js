@@ -16,11 +16,12 @@ export async function GET(req) {
   }
 
   try {
-    const vendor = db.prepare('SELECT id, externalDriveConnected, externalDriveEmail, externalDriveFolderId FROM vendors WHERE id = ?').get(session.id);
+    const vendor = db.prepare('SELECT id, externalDriveConnected, externalDriveEmail, externalDriveFolderId, activeStorageMode FROM vendors WHERE id = ?').get(session.id);
     if (!vendor || !vendor.externalDriveConnected) {
       return NextResponse.json({
         success: true,
         connected: false,
+        activeStorageMode: vendor?.activeStorageMode || 'system',
         quota: null
       });
     }
@@ -32,6 +33,7 @@ export async function GET(req) {
         success: true,
         connected: true,
         email: vendor.externalDriveEmail,
+        activeStorageMode: vendor.activeStorageMode || 'byos',
         quota: cached.data,
         cached: true,
       });
@@ -46,6 +48,7 @@ export async function GET(req) {
       success: true,
       connected: true,
       email: vendor.externalDriveEmail,
+      activeStorageMode: vendor.activeStorageMode || 'byos',
       quota,
       cached: false,
     });

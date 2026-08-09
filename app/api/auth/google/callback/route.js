@@ -59,15 +59,41 @@ export async function GET(request) {
         const email = googleUser.email.toLowerCase().trim();
         const name = googleUser.name || email.split('@')[0];
 
-        // Parse action state (login vs register)
+        // Parse action state (login vs register vs byos_connect)
         let action = 'login';
+        let stateObj = {};
         try {
             const stateParam = searchParams.get('state');
             if (stateParam) {
-                const parsedState = JSON.parse(decodeURIComponent(stateParam));
-                if (parsedState.action) action = parsedState.action;
+                stateObj = JSON.parse(decodeURIComponent(stateParam));
+                if (stateObj.action) action = stateObj.action;
             }
         } catch (e) {}
+
+        // Penanganan Khusus untuk Otentikasi BYOS Google Drive Vendor
+        if (action === 'byos_connect') {
+            const vendorId = stateObj.vendorId;
+            let refreshToken = tokenData.refresh_token;
+            if (!refreshToken && vendorId) {
+                const existing = db.prepare('SELECT externalDriveRefreshToken FROM vendors WHERE id = ?').get(vendorId);
+                refreshToken = existing?.externalDriveRefreshToken;
+            }
+
+            if (vendorId) {
+                db.prepare(`
+                    UPDATE vendors 
+                    SET externalDriveConnected = 1,
+                        externalDriveEmail = ?,
+                        externalDriveRefreshToken = COALESCE(?, externalDriveRefreshToken),
+                        externalDriveFolderId = 'root'
+                    WHERE id = ?
+                `).run(email, refreshToken || null, vendorId);
+                console.log('[BYOS Connected Success]: Vendor ID', vendorId, 'connected GDrive:', email);
+                return NextResponse.redirect(new URL('/dashboard/storage?success=byos_connected', origin));
+            } else {
+                return NextResponse.redirect(new URL('/dashboard/storage?error=Gagal+menyambungkan+Google+Drive.', origin));
+            }
+        }
 
         let vendor = db.prepare("SELECT * FROM vendors WHERE email = ?").get(email);
 

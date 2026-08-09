@@ -31,11 +31,33 @@ export async function POST(request, { params }) {
 
         const clientId = client.id;
 
-        // 2. Check maxSelection limit & expiration
-        const getProject = db.prepare('SELECT maxSelection, expiresAt FROM projects WHERE id = ?');
-        const project = getProject.get(projectId);
-        const maxSelection = project?.maxSelection || 0;
-        const isProjectExpired = project?.expiresAt ? (new Date() > new Date(project.expiresAt)) : false;
+        // 2. Check maxSelection limit & expiration & vendor subscription status
+        const projectWithVendor = db.prepare(`
+          SELECT p.maxSelection, p.expiresAt as projectExpiresAt, v.expiresAt as vendorExpiresAt, v.status as vendorStatus 
+          FROM projects p 
+          JOIN vendors v ON p.vendorId = v.id 
+          WHERE p.id = ?
+        `).get(projectId);
+
+        if (!projectWithVendor) {
+          return NextResponse.json({ message: 'Proyek tidak ditemukan.' }, { status: 404 });
+        }
+
+        const graceRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'grace_period_days'").get();
+        const graceDays = graceRow && parseInt(graceRow.value, 10) > 0 ? parseInt(graceRow.value, 10) : 7;
+        const graceMs = graceDays * 24 * 60 * 60 * 1000;
+
+        const nowTime = new Date().getTime();
+        const vendorExpiryTime = projectWithVendor.vendorExpiresAt ? new Date(projectWithVendor.vendorExpiresAt).getTime() : 0;
+
+        if (vendorExpiryTime > 0 && nowTime > vendorExpiryTime) {
+          return NextResponse.json({ 
+            message: 'Masa aktif layanan studio telah berakhir (dalam masa tenggang/kedaluwarsa). Galeri seleksi foto sementara ditangguhkan. Harap hubungi pihak studio foto.' 
+          }, { status: 403 });
+        }
+
+        const maxSelection = projectWithVendor.maxSelection || 0;
+        const isProjectExpired = projectWithVendor.projectExpiresAt ? (nowTime > new Date(projectWithVendor.projectExpiresAt).getTime()) : false;
 
         if (isProjectExpired) {
             return NextResponse.json({

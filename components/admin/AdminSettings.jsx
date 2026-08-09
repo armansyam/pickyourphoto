@@ -37,6 +37,7 @@ export default function AdminSettings({
   lastBackupSizeFormatted = null,
   customStoragePricePerGb = 1250, setCustomStoragePricePerGb,
   workerStorageWarningThresholdGb = 10, setWorkerStorageWarningThresholdGb,
+  gracePeriodDays = 7, setGracePeriodDays,
   savingProfile,
   profileSuccessMsg,
   setProfileSuccessMsg,
@@ -675,6 +676,20 @@ export default function AdminSettings({
                 />
                 <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
                   Pemicu notifikasi peringatan dini di Admin Panel untuk segera menambah akun Master Drive Worker baru.
+                </p>
+              </div>
+
+              <div className="form-group" style={{ margin: '16px 0 0 0' }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Masa Tenggang Platform (Grace Period Days)</label>
+                <input
+                  type="number"
+                  className="input-text"
+                  placeholder="Default: 7 Hari"
+                  value={gracePeriodDays}
+                  onChange={e => setGracePeriodDays(parseInt(e.target.value) || 7)}
+                />
+                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                  Jumlah hari masa tenggang (grace period) sebelum berkas vendor kedaluwarsa dibersihkan total dari Google Drive Worker (Hard Purge).
                 </p>
               </div>
             </div>

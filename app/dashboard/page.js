@@ -1136,18 +1136,22 @@ export default function DashboardPage() {
                     </div>
                     <div style={{ background: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)', border: `1px solid ${(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)'}`, borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
-                            <p style={{ margin: 0, fontSize: '11px', color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
-                                {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '⚡ Dedicated Storage Aktif' : 'Status Server Storage'}
+                            <p style={{ margin: 0, fontSize: '11px', color: (vendorDetails.externalDriveConnected || vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
+                                PUSAT STORAGE PROJECT
                             </p>
-                            <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#e4e4e7' : '#34d399' }}>
-                                {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) 
-                                    ? `${((vendorDetails.storageUsedMb || 0) / 1024 < 0.1 ? (vendorDetails.storageUsedMb || 0).toFixed(1) + ' MB' : ((vendorDetails.storageUsedMb || 0) / 1024).toFixed(1) + ' GB')}`
-                                    : 'Zero-Storage ⚡'
+                            <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: (vendorDetails.externalDriveConnected || vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#e4e4e7' : '#34d399' }}>
+                                {vendorDetails.externalDriveConnected 
+                                    ? 'Google Drive Studio ☁️' 
+                                    : (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) 
+                                        ? `${((vendorDetails.storageUsedMb || 0) / 1024 < 0.1 ? (vendorDetails.storageUsedMb || 0).toFixed(1) + ' MB' : ((vendorDetails.storageUsedMb || 0) / 1024).toFixed(1) + ' GB')}`
+                                        : 'Google Drive Utama (Default) ☁️'
                                 }
                                 <span style={{ fontSize: '12px', color: '#71717a', fontWeight: '400', marginLeft: '6px' }}>
-                                    {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0)
-                                        ? `/ ${vendorDetails.storageQuotaGb} GB`
-                                        : '(0 Byte Server)'
+                                    {vendorDetails.externalDriveConnected 
+                                        ? `(${vendorDetails.externalDriveEmail || 'Connected'})` 
+                                        : (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) 
+                                            ? `/ ${vendorDetails.storageQuotaGb} GB SaaS Admin` 
+                                            : '(0 Byte di Storage Admin)'
                                     }
                                 </span>
                             </p>
@@ -1156,7 +1160,7 @@ export default function DashboardPage() {
                             href="/dashboard/storage"
                             style={{
                                 marginTop: '10px',
-                                color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24',
+                                color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) ? '#34d399' : '#fbbf24',
                                 fontSize: '11px',
                                 fontWeight: '600',
                                 textDecoration: 'none',
@@ -1165,7 +1169,9 @@ export default function DashboardPage() {
                                 gap: '4px'
                             }}
                         >
-                            {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '📁 Kelola Dedicated Storage →' : '⚡ Beli Add-On Storage →'}
+                            {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) 
+                                ? '⚙️ Kelola Storage Studio →' 
+                                : '🔗 Hubungkan Drive / Sewa Dedicated Storage →'}
                         </Link>
                     </div>
                     <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '12px', padding: '14px 18px' }}>

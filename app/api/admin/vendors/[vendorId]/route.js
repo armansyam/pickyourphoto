@@ -93,10 +93,11 @@ async function handleUpdateVendor(request, params) {
             } catch (e) {}
         }
 
-        // Send automated approval email notification in background if vendor was just activated
-        if (finalStatus === 'active' && targetVendor.status !== 'active') {
-            sendVendorApprovalEmail(targetVendor, fullPlan, null, 'Transfer Bank Manual').catch(err => {
-                console.error('Failed to trigger background approval email:', err);
+        // Send automated approval email notification in background if vendor was activated
+        if (finalStatus === 'active' && (targetVendor.status !== 'active' || action === 'approve')) {
+            const updatedVendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(vendorId);
+            sendVendorApprovalEmail(updatedVendor || targetVendor, fullPlan, null, 'Transfer Bank Manual').catch(err => {
+                console.error('[Admin Mailer] Failed to trigger background approval email:', err);
             });
         }
 

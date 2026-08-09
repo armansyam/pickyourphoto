@@ -150,8 +150,8 @@ export async function POST(req) {
 
     // 7. REGISTRASIKAN FILE KE DATABASE & UPDATE USED STORAGE BYTES VENDOR
     db.prepare(`
-      INSERT INTO storage_files (vendorId, parentFolderId, driveFileId, fileName, fileSizeBytes, mimeType, webViewLink, webContentLink)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO storage_files (vendorId, parentFolderId, driveFileId, fileName, fileSizeBytes, mimeType, webViewLink, webContentLink, isExternalDrive)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
     `).run(
       vendor.id,
       targetFolderId,

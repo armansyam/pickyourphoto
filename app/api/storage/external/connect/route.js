@@ -30,11 +30,11 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url);
     const origin = searchParams.get('origin') || (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
-    const redirectUri = `${origin.replace(/\/$/, '')}/api/storage/external/callback`;
+    const redirectUri = `${origin.replace(/\/$/, '')}/api/auth/google/callback`;
 
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 
-    const state = JSON.stringify({ vendorId: session.id, origin });
+    const state = JSON.stringify({ action: 'byos_connect', vendorId: session.id, origin });
 
     const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -42,7 +42,7 @@ export async function GET(req) {
       scope: [
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile',
-        'https://www.googleapis.com/auth/drive.file'
+        'https://www.googleapis.com/auth/drive'
       ],
       state,
     });

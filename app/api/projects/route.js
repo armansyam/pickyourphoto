@@ -47,9 +47,10 @@ export async function GET() {
             WHERE sr.vendorId = ? AND sr.status = 'pending'
         `).get(vendor.id);
 
-        const vDb = db.prepare('SELECT hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes FROM vendors WHERE id = ?').get(vendor.id);
+        const vDb = db.prepare('SELECT hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes, externalDriveConnected, externalDriveEmail FROM vendors WHERE id = ?').get(vendor.id);
         const addonQuotaBytes = vDb?.addonStorageQuotaBytes || 0;
-        const storageQuotaGb = vDb?.hasStorageAddon ? parseFloat((addonQuotaBytes / (1024 * 1024 * 1024)).toFixed(1)) : 0;
+        const hasAddon = Boolean(vDb?.hasStorageAddon || addonQuotaBytes > 0);
+        const storageQuotaGb = hasAddon ? parseFloat((addonQuotaBytes / (1024 * 1024 * 1024)).toFixed(1)) : 0;
         const storageUsedMb = parseFloat(((vDb?.usedStorageBytes || 0) / (1024 * 1024)).toFixed(1));
 
         console.log(`--> [API GET /api/projects] Returning ${allProjects.length} total projects for vendor: ${vendor.name}`);
@@ -68,11 +69,13 @@ export async function GET() {
                 maxPhotosPerProject: vendor.maxPhotosPerProject || 0,
                 expiresAt: vendor.expiresAt,
                 isExpired: vendor.isExpired,
-                hasStorageAddon: Boolean(vDb?.hasStorageAddon),
+                hasStorageAddon: hasAddon,
                 storageQuotaGb,
                 storageUsedMb,
                 addonStorageQuotaBytes: addonQuotaBytes,
                 usedStorageBytes: vDb?.usedStorageBytes || 0,
+                externalDriveConnected: Boolean(vDb?.externalDriveConnected),
+                externalDriveEmail: vDb?.externalDriveEmail || null,
                 brandName: vendor.brandName || '',
                 brandLogo: vendor.brandLogo || '',
                 copyDelimiter: vendor.copyDelimiter || ', ',

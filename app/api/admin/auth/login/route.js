@@ -53,6 +53,6 @@ export async function POST(request) {
 
     } catch (error) {
         console.error('Admin Login API Error:', error);
-        return NextResponse.json({ message: 'Terjadi kesalahan internal server: ' + (error.message || String(error)), stack: error.stack }, { status: 500 });
+        return NextResponse.json({ message: 'Terjadi kesalahan internal server.' }, { status: 500 });
     }
 }

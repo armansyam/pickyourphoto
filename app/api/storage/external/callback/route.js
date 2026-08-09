@@ -63,28 +63,8 @@ export async function GET(req) {
       return NextResponse.redirect(`${redirectTarget}?error=Google+tidak+mengembalikan+Refresh+Token.+Harap+ulangi+otentikasi.`);
     }
 
-    // Buat folder khusus di Google Drive Vendor: 📁 [PICK YOUR PHOTO] Studio Repositori
-    const drive = google.drive({ version: 'v3', auth: oauth2Client });
-    let externalFolderId = 'root';
-
-    try {
-      const folderRes = await drive.files.create({
-        resource: {
-          name: '📁 [PICK YOUR PHOTO] Studio Repositori',
-          mimeType: 'application/vnd.google-apps.folder',
-        },
-        fields: 'id',
-      });
-      externalFolderId = folderRes.data.id;
-
-      // Otomatis berikan akses Writer Permission ke Worker Accounts Admin jika terdaftar
-      try {
-        const { ensureFolderWriterPermission } = await import('@/lib/google-master-drive');
-        await ensureFolderWriterPermission(externalFolderId);
-      } catch (_) {}
-    } catch (folderErr) {
-      console.warn('[External Drive Folder Creation Warning]:', folderErr.message);
-    }
+    // Langsung gunakan Root Index Google Drive Vendor ('root')
+    const externalFolderId = 'root';
 
     // Simpan ke DB
     db.prepare(`
