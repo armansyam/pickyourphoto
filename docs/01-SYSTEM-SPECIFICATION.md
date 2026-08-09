@@ -57,7 +57,7 @@ expired (otomatis via autoCheckVendorSubscriptionExpiry saat login/request)
 
 ---
 
-### 3.2. Add-On Cloud Storage Engine & Enterprise Custom Storage (50GB - 200GB)
+### 3.2. Add-On Cloud Storage Engine & Order Bump Modal (50GB - 200GB)
 
 Sistem Add-On Cloud Storage bersifat dinamis dan dapat disesuaikan kebutuhan fotografer:
 
@@ -69,10 +69,24 @@ Sistem Add-On Cloud Storage bersifat dinamis dan dapat disesuaikan kebutuhan fot
 | **Drive 50 GB** | 50 GB | Rp 89.000 |
 | **Custom Enterprise (50-200GB)** | 50 GB – 200 GB | Rp 1.250 / GB |
 
+**Strategi Penawaran Modal Popup Add-On saat Registrasi (Order Bump):**
+- **Clean Checkout:** Halaman checkout registrasi awal tetap bersih dan menampilkan total biaya default Paket Utama.
+- **Interactive Modal Selector:** Calon vendor dapat mengklik tombol `[ ⚡ + Tambahkan Cloud Storage Tambahan ]` untuk membuka Modal Popup pemilihan Add-On Storage.
+- **Dynamic Re-calculation:** Memilih paket pada modal akan menambahkan line item Add-On di rincian order dan menjumlahkan total tagihan secara instan. Vendor dapat menghapus Add-On (opsi reset) jika batal memilih.
+- **Bundled Midtrans QRIS:** Midtrans membuat 1 transaksi tunggal dengan `item_details` berisi Paket Utama & Add-On Storage.
+- **Automated Instant Setup:** Webhook notification Midtrans mengaktifkan status vendor (`status = 'active'`) dan mengisi `addonStorageQuotaBytes` di database secara serentak (*100% co-terming & ready-to-use*).
+
+**Pengelolaan Upgrade di Admin Dashboard & Proteksi QRIS Expiry:**
+- **Inquiry Scope:** Khusus pendaftar baru (*new signups*).
+- **Kelola Vendor Scope (`/admin` -> Tab Vendors):** Seluruh pengajuan upgrade dari vendor aktif (baik Upgrade Plan + Add-On maupun Standalone Add-On Storage) yang menggunakan **Manual Transfer** dikelola langsung di tabel Kelola Vendor.
+- **Emblem Notifikasi `⚡ UPGRADE PENDING`:** Baris vendor yang mengajukan upgrade manual menampilkan emblem terang `⚡ UPGRADE PENDING`. Mengklik emblem ini membuka Modal Konfirmasi Approval berisi rincian upgrade (prorata), nominal transfer, dan foto bukti bayar.
+- **Kolom Add-On / Storage:** Tabel Kelola Vendor menampilkan kolom khusus kuota Add-On storage vendor aktif.
+- **QRIS Expiration Safety:** Transaksi upgrade QRIS memiliki timer countdown kedaluwarsa. Jika transaksi QRIS expired/dibatalkan, vendor **tetap menggunakan Paket Utama & kuota storage versi sebelumnya secara aman** tanpa ada gangguan pada langganan aktif.
+
 **Aturan Prorata Harian & Upgrade Add-On Storage:**
 - **Co-Terming Expiration:** Masa berlaku Add-On Storage **selalu diselaraskan (*co-terminous*)** dengan tanggal kedaluwarsa Paket Utama vendor (`expiresAt`).
 - **Prorata Upgrade Add-On Custom:** Vendor yang meng-upgrade kuota custom dari kuota sebelumnya hanya membayar selisih GB tambahan ($\text{Selisih GB} \times \text{Rp } 1.250$).
-- **Instant Quota Expansion:** Kuota storage (`addonStorageQuotaBytes`) diperbarui seketika saat Notifikasi Callback Midtrans QRIS / Polling Pending bernilai `paid`.
+- **Instant Quota Expansion:** Kuota storage (`addonStorageQuotaBytes`) diperbarui seketika saat Notifikasi Callback Midtrans QRIS / Polling Pending bernilai `paid` atau saat Admin menekan tombol Approve pada pengajuan manual.
 
 ---
 
@@ -138,6 +152,37 @@ Sistem Add-On Cloud Storage bersifat dinamis dan dapat disesuaikan kebutuhan fot
 - **Modul Pengaturan:** Integrasi Google Cloud OAuth, SMTP Mailer, Midtrans Payment Gateway, & System Quota.
 - **Kelola Add-On Plans:** Superadmin dapat mengubah harga, status, dan kuota Add-On Storage secara real-time.
 - **Indicator SMTP Warning Badge:** Badge visual `🟢 SMTP Aktif` / `⚠️ SMTP Belum Aktif` memberikan kepastian status mailer pada Admin Panel.
+
+---
+
+### 3.9. Sistem Email Notifikasi Terpadu (`lib/mailer.js`) & White-Label Invoice
+
+Sistem email notifikasi dirancang 100% white-label tanpa mencantumkan brand gateway pihak ketiga:
+
+1. **Email Tagihan QRIS Pending (`sendPendingQrisEmail`):**  
+   * **Pemicu:** Dikirim seketika saat QRIS dibuat (`/api/payment/create`).
+   * **Subjek:** `💳 Pendaftaran Akun [Nama App] Telah Diterima — Instruksi Pembayaran QRIS`
+   * **Isi:** Memuat No. Order, Rincian Paket + Add-On Storage, Total Nominal, & Tombol `[ 🚀 Selesaikan Pembayaran QRIS Sekarang ]`.
+2. **Email Instruksi Transfer Manual 24h (`sendPendingManualTransferInstructionEmail`):**  
+   * **Pemicu:** Dikirim saat registrasi manual dipilih tanpa upload bukti.
+   * **Subjek:** `📩 Pendaftaran Akun [Nama App] Telah Diterima — Instruksi Transfer Bank (Berlaku 24 Jam)`
+   * **Isi:** Memuat No. Rekening BCA, Nominal Bayar, Batas Waktu 24 Jam, & Tombol `[ 📤 Upload Bukti Transfer Sekarang ]`.
+3. **Email Pendaftaran Diterima (`sendPendingManualTransferReceivedEmail`):**  
+   * **Pemicu:** Dikirim saat registrasi manual dilengkapi foto bukti transfer.
+   * **Subjek:** `📩 Pendaftaran Akun [Nama App] Telah Diterima — Menunggu Verifikasi Pembayaran`
+   * **Isi:** Menginfokan bahwa foto bukti transfer sedang diperiksa oleh Tim Admin (Est. Max 1x24 Jam).
+4. **Email Bukti Invoice Lunas Resmi (`sendVendorApprovalEmail`):**  
+   * **Pemicu:** Dikirim seketika saat pembayaran QRIS `paid` atau saat Admin mengeklik **Setujui/Approve** di Admin Dashboard.
+   * **Subjek:** `🎉 Invoice Lunas: Akun Berlangganan [Nama App] Telah Aktif!`
+   * **Isi:** Memuat Kotak Invoice HTML resmi dengan No. Invoice (`INV-xxx`), Metode Pembayaran (`QRIS` / `Transfer Bank Manual`), Rincian Paket + Add-On Storage, dan Status `🟢 PAID / LUNAS (VERIFIED)`.
+5. **Proteksi Privasi Klien:** Platform **TIDAK PERNAH** mengirimkan email otomatis ke pelanggan/klien akhir fotografer.
+
+---
+
+### 3.10. Batas Waktu 1x24 Jam Transfer Manual & Auto-Cleanup Daemon
+
+- **Aturan Batas Waktu 24 Jam:** Pendaftaran Transfer Manual tanpa bukti bayar (`paymentProof IS NULL`) wajib diselesaikan dalam waktu 1x24 jam dari registrasi (`createdAt <= DATETIME('now', '-24 hours')`).
+- **Auto-Cleanup Background Sync (`/api/admin/vendors`):** Background worker otomatis memperbarui status pendaftaran manual gantung yang melebihi 24 jam menjadi `expired_draft` dan memindahkannya ke **Sub-Tab Arsip** di Admin Panel, sehingga antrean Admin Panel selalu bersih.
 
 ---
 

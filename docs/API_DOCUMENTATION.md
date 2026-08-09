@@ -625,33 +625,28 @@ GET /api/payment/qr-image?url=https://qris.provider.com/xxx.png
 ```
 Vendor buka /register
     │
-    ├── Pilih paket → klik "Bayar Sekarang"
+    ├── Pilih Paket Utama + Add-On Cloud Storage (Opsional via Order Bump Modal)
+    ├── Pilih Metode Pembayaran: QRIS atau Transfer Bank Manual
     │
     ▼
-POST /api/payment/create
-    │── Buat orderId unik
-    │── Panggil createMidtransTransaction() → dapat snap token + qrUrl
-    │── Simpan ke payment_transactions + payment_sessions
-    │── Vendor status = pending_payment
+POST /api/payment/create (jika QRIS) / POST /api/auth/register (jika Manual)
+    │── Buat orderId unik bundel (Paket + Add-On Storage)
+    │── Panggil createMidtransTransaction() → dapat QR code
+    │── Simpan ke payment_transactions (addonPlanId & addonQuotaBytes)
+    │── Simpan vendor.pendingAddonPlanId & pendingAddonQuotaBytes
+    │── Kirim Email Pending Instructions (Instruksi QRIS / Transfer Manual 24 Jam)
     │
     ▼
-UI tampilkan QR Code (dari qrUrl / Midtrans Snap embed)
+UI Tampilkan QR Code / Bukti Transfer
     │
-    ├── Polling GET /api/payment/status setiap 3-5 detik
+    ├── Mode QRIS: Webhook / Status Polling mendeteksi paid ──→ Auto Activate (Plan + Add-On)
+    │                                                    ──→ Send Email Invoice Lunas (QRIS)
     │
-[User scan QR & bayar via GoPay/QRIS]
-    │
-[Midtrans kirim webhook ke]
-    ▼
-POST /api/payment/notification
-    │── Verifikasi SHA512 signature
-    │── Update status paid di DB
-    │── Vendor.status = 'active', expiresAt = +30 hari
-    │── Kirim email konfirmasi
-    │
-[Polling /status mendeteksi paid]
-    ▼
-Set-Cookie: token=[jwt] → redirect ke /dashboard ✅
+    └── Mode Manual: Vendor Upload Bukti ──→ Status pending_manual 
+                                         ──→ Send Email Pendaftaran Diterima
+                                         ──→ Admin klik Approve di Kelola Vendor 
+                                         ──→ Auto Activate (Plan + Add-On)
+                                         ──→ Send Email Invoice Lunas (Transfer Bank Manual)
 ```
 
 ---

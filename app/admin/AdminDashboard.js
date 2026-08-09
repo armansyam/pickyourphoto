@@ -891,16 +891,43 @@ export default function AdminDashboard({ adminUser }) {
             {/* ── MODALS (Approve Vendor, Delete Vendor, Delete Plan, Plan Form, Lightbox) ── */}
             {vendorToApprove && (
                 <div className="modal-overlay" onClick={() => { if (!approving) setVendorToApprove(null); }}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', width: '90%' }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px', width: '90%' }}>
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(16,185,129,0.15)', color: '#34d399', fontSize: '28px', marginBottom: '16px' }}>✓</div>
-                            <h3 className="title-gradient" style={{ fontSize: '22px', margin: '0 0 8px 0', fontWeight: 'bold' }}>Setujui Pendaftaran</h3>
+                            <h3 className="title-gradient" style={{ fontSize: '22px', margin: '0 0 8px 0', fontWeight: 'bold' }}>Setujui Pembayaran & Akses</h3>
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
-                                Apakah Anda yakin ingin menyetujui pendaftaran vendor <strong>"{vendorToApprove.name}"</strong>?
+                                Konfirmasi persetujuan pendaftaran / upgrade vendor <strong>"{vendorToApprove.name}"</strong> ({vendorToApprove.email}).
                             </p>
+
+                            {/* Order Breakdown Box */}
+                            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px', marginTop: '16px', textAlign: 'left', fontSize: '13px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <span style={{ color: '#a1a1aa' }}>Paket Utama:</span>
+                                    <strong style={{ color: '#fbbf24' }}>{vendorToApprove.planName || 'Pro Studio Plan'}</strong>
+                                </div>
+                                {(vendorToApprove.pendingAddonQuotaBytes > 0 || vendorToApprove.addonStorageQuotaBytes > 0) && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                        <span style={{ color: '#a1a1aa' }}>Add-On Storage:</span>
+                                        <strong style={{ color: '#38bdf8' }}>
+                                            💾 {Math.round((vendorToApprove.pendingAddonQuotaBytes || vendorToApprove.addonStorageQuotaBytes) / (1024 * 1024 * 1024))} GB Drive
+                                        </strong>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Payment Proof Image Preview if available */}
+                            {vendorToApprove.paymentProof && vendorToApprove.paymentProof.startsWith('/uploads/') && (
+                                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                                    <div style={{ fontSize: '12px', color: '#a1a1aa', marginBottom: '6px', fontWeight: 'bold' }}>🖼️ Pratinjau Struk Bukti Transfer:</div>
+                                    <a href={vendorToApprove.paymentProof} target="_blank" rel="noopener noreferrer">
+                                        <img src={vendorToApprove.paymentProof} alt="Bukti Bayar" style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', objectFit: 'contain' }} />
+                                    </a>
+                                </div>
+                            )}
+
                             {(vendorToApprove.status === 'pending_payment' || (vendorToApprove.paymentProof && vendorToApprove.paymentProof.includes('Midtrans'))) && (
                                 <div style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '8px', padding: '10px 12px', marginTop: '14px', fontSize: '12px', color: '#fbbf24', textAlign: 'left' }}>
-                                    ⚠️ <strong>Catatan:</strong> Vendor ini mendaftar via QRIS / Midtrans tetapi transaksi pembayaran saat ini <strong>belum terkonfirmasi lunas oleh sistem Midtrans</strong>. Menyetujui secara manual akan mengaktifkan akun vendor tanpa menunggu konfirmasi pembayaran.
+                                    ⚠️ <strong>Catatan:</strong> Transaksi QRIS Midtrans ini belum dikonfirmasi lunas otomatis. Menyetujui secara manual akan mengaktifkan akun vendor & storage secara langsung.
                                 </div>
                             )}
                         </div>

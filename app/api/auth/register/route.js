@@ -17,7 +17,7 @@ export async function POST(request) {
         }
 
         const contentType = request.headers.get('content-type') || '';
-        let name, email, whatsapp, password, plan, paymentProofFile, rawPaymentMethod;
+        let name, email, whatsapp, password, plan, paymentProofFile, rawPaymentMethod, addonPlanId;
 
         if (contentType.includes('application/json')) {
             const body = await request.json();
@@ -28,6 +28,7 @@ export async function POST(request) {
             plan = body.plan;
             paymentProofFile = body.paymentProof;
             rawPaymentMethod = body.paymentMethod;
+            addonPlanId = body.addonPlanId;
         } else {
             const formData = await request.formData();
             name = formData.get('name');
@@ -37,6 +38,7 @@ export async function POST(request) {
             plan = formData.get('plan');
             paymentProofFile = formData.get('paymentProof');
             rawPaymentMethod = formData.get('paymentMethod');
+            addonPlanId = formData.get('addonPlanId');
         }
 
         if (!email || !plan) {
@@ -44,7 +46,19 @@ export async function POST(request) {
         }
         const finalWhatsapp = whatsapp ? whatsapp.trim() : '';
 
-
+        // Determine Add-On Storage Quota Bytes if addonPlanId is provided
+        let addonQuotaBytes = 0;
+        let selectedAddonKey = addonPlanId || null;
+        if (selectedAddonKey) {
+            if (selectedAddonKey === 'addon-10gb') addonQuotaBytes = 10 * 1024 * 1024 * 1024;
+            else if (selectedAddonKey === 'addon-25gb') addonQuotaBytes = 25 * 1024 * 1024 * 1024;
+            else if (selectedAddonKey === 'addon-50gb') addonQuotaBytes = 50 * 1024 * 1024 * 1024;
+            else {
+                // Lookup from addon_plans table
+                const addonRow = db.prepare('SELECT quotaBytes FROM addon_plans WHERE planKey = ? OR id = ?').get(selectedAddonKey, selectedAddonKey);
+                if (addonRow) addonQuotaBytes = addonRow.quotaBytes;
+            }
+        }
 
         // --- Registration Settings & Quota Check ---
         const settings = db.prepare("SELECT enable_registration, max_vendor_quota FROM system_settings WHERE id = 1").get() || {
@@ -98,25 +112,22 @@ export async function POST(request) {
 
         // Save payment proof file without sharp compression
         let paymentProofPath = '';
-        if (paymentProofFile && paymentProofFile.size > 0 && typeof paymentProofFile !== 'string') {
+        if (isManual && paymentProofFile && typeof paymentProofFile === 'object') {
             try {
-                const arrayBuffer = await paymentProofFile.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
+                const buffer = Buffer.from(await paymentProofFile.arrayBuffer());
+                const ext = path.extname(paymentProofFile.name || '.png') || '.png';
+                const filename = `proof_${Date.now()}_${Math.random().toString(36).slice(2, 7)}${ext}`;
+                const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'proofs');
 
-                const proofDir = path.join(process.cwd(), 'public', 'staging_uploads', 'payment_proofs');
-                if (!fs.existsSync(proofDir)) {
-                    fs.mkdirSync(proofDir, { recursive: true });
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
                 }
 
-                const originalName = paymentProofFile.name || 'proof.jpg';
-                const ext = path.extname(originalName) || '.jpg';
-                const filename = `${Date.now()}_proof${ext}`;
-                const filepath = path.join(proofDir, filename);
-                await fs.promises.writeFile(filepath, buffer);
-                
-                paymentProofPath = `/staging_uploads/payment_proofs/${filename}`;
+                const filePath = path.join(uploadDir, filename);
+                fs.writeFileSync(filePath, buffer);
+                paymentProofPath = `/uploads/proofs/${filename}`;
             } catch (err) {
-                console.error('Failed to save payment proof:', err);
+                console.error('Failed to save payment proof image:', err);
                 return NextResponse.json({ message: 'Failed to process payment proof image.' }, { status: 400 });
             }
         } else if (isGateway) {
@@ -137,29 +148,53 @@ export async function POST(request) {
 
             const updateStmt = db.prepare(`
                 UPDATE vendors 
-                SET name = ?, whatsapp = ?, password = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?, archivedAt = NULL
+                SET name = ?, whatsapp = ?, password = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?, pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?, archivedAt = NULL
                 WHERE id = ?
             `);
-            updateStmt.run(vendorName, finalWhatsapp, hashedPassword, planDetails.id, planDetails.maxProjects, paymentProofPath, initialStatus, existingVendor.id);
+            updateStmt.run(vendorName, finalWhatsapp, hashedPassword, planDetails.id, planDetails.maxProjects, paymentProofPath, initialStatus, selectedAddonKey, addonQuotaBytes, existingVendor.id);
+
+            const targetVendorId = existingVendor.id;
+            
+            // Trigger Manual Transfer Pending Email if not gateway
+            if (!isGateway) {
+                const mailer = await import('@/lib/mailer.js');
+                const addonName = selectedAddonKey ? (selectedAddonKey === 'addon-10gb' ? 'Drive 10 GB' : selectedAddonKey === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
+                if (paymentProofPath) {
+                    mailer.sendPendingManualTransferReceivedEmail({ name: vendorName, email }, planDetails, addonName).catch(() => {});
+                } else {
+                    mailer.sendPendingManualTransferInstructionEmail({ name: vendorName, email }, planDetails, addonName).catch(() => {});
+                }
+            }
 
             return NextResponse.json({ 
                 message: isGateway ? 'Registration submitted successfully. Waiting for QRIS payment.' : 'Registration submitted successfully. Waiting for admin approval.', 
-                vendorId: existingVendor.id 
+                vendorId: targetVendorId 
             }, { status: 200 });
         }
 
         const hashedPassword = await bcrypt.hash(password || Math.random().toString(36), 10);
 
         const insertStmt = db.prepare(`
-            INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, resetRequested) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, pendingAddonPlanId, pendingAddonQuotaBytes, resetRequested) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
         `);
-        const info = insertStmt.run(name || email.split('@')[0], email, finalWhatsapp, hashedPassword, 'vendor', initialStatus, planDetails.maxProjects, planDetails.id, paymentProofPath);
+        const info = insertStmt.run(name || email.split('@')[0], email, finalWhatsapp, hashedPassword, 'vendor', initialStatus, planDetails.maxProjects, planDetails.id, paymentProofPath, selectedAddonKey, addonQuotaBytes);
+        const newVendorId = info.lastInsertRowid;
 
+        // Trigger Manual Transfer Pending Email if not gateway
+        if (!isGateway) {
+            const mailer = await import('@/lib/mailer.js');
+            const addonName = selectedAddonKey ? (selectedAddonKey === 'addon-10gb' ? 'Drive 10 GB' : selectedAddonKey === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
+            if (paymentProofPath) {
+                mailer.sendPendingManualTransferReceivedEmail({ name: name || email.split('@')[0], email }, planDetails, addonName).catch(() => {});
+            } else {
+                mailer.sendPendingManualTransferInstructionEmail({ name: name || email.split('@')[0], email }, planDetails, addonName).catch(() => {});
+            }
+        }
 
         return NextResponse.json({ 
             message: isGateway ? 'Registration submitted successfully. Waiting for QRIS payment.' : 'Registration submitted successfully. Waiting for admin approval.', 
-            vendorId: info.lastInsertRowid 
+            vendorId: newVendorId 
         }, { status: 201 });
 
 

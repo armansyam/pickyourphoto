@@ -48,22 +48,54 @@ async function handleUpdateVendor(request, params) {
             finalExpiresAt = expDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
         }
 
+        // Determine Add-On storage quota provisions if pending or requested
+        let newAddonPlanId = body.addonPlanId || targetVendor.addonPlanId;
+        let newAddonStorageQuotaBytes = targetVendor.addonStorageQuotaBytes || 0;
+
+        if (finalStatus === 'active' && targetVendor.pendingAddonQuotaBytes > 0) {
+            newAddonPlanId = targetVendor.pendingAddonPlanId || newAddonPlanId;
+            newAddonStorageQuotaBytes = targetVendor.pendingAddonQuotaBytes;
+        }
+
         // Update details
-        const updateStmt = db.prepare('UPDATE vendors SET planId = ?, expiresAt = ?, maxProjects = ?, status = ?, additionalProjects = ?, additionalProjectsExpiresAt = ?, additionalPhotosPerProject = ? WHERE id = ?');
+        const updateStmt = db.prepare(`
+            UPDATE vendors 
+            SET planId = ?, 
+                expiresAt = ?, 
+                maxProjects = ?, 
+                status = ?, 
+                addonPlanId = ?,
+                addonStorageQuotaBytes = ?,
+                pendingAddonPlanId = NULL,
+                pendingAddonQuotaBytes = 0,
+                additionalProjects = ?, 
+                additionalProjectsExpiresAt = ?, 
+                additionalPhotosPerProject = ? 
+            WHERE id = ?
+        `);
         updateStmt.run(
             finalPlanId, 
             finalExpiresAt, 
             maxProjects, 
             finalStatus, 
+            newAddonPlanId,
+            newAddonStorageQuotaBytes,
             additionalProjects !== undefined ? (parseInt(additionalProjects) || 0) : targetVendor.additionalProjects, 
             additionalProjectsExpiresAt !== undefined ? additionalProjectsExpiresAt : targetVendor.additionalProjectsExpiresAt, 
             additionalPhotosPerProject !== undefined ? (parseInt(additionalPhotosPerProject) || 0) : targetVendor.additionalPhotosPerProject, 
             vendorId
         );
 
+        // Mark associated payment transactions as paid if approving
+        if (finalStatus === 'active') {
+            try {
+                db.prepare("UPDATE payment_transactions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE vendorId = ? AND status IN ('pending', 'pending_manual')").run(vendorId);
+            } catch (e) {}
+        }
+
         // Send automated approval email notification in background if vendor was just activated
         if (finalStatus === 'active' && targetVendor.status !== 'active') {
-            sendVendorApprovalEmail(targetVendor, fullPlan).catch(err => {
+            sendVendorApprovalEmail(targetVendor, fullPlan, null, 'Transfer Bank Manual').catch(err => {
                 console.error('Failed to trigger background approval email:', err);
             });
         }

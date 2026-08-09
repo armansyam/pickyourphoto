@@ -19,12 +19,11 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Payment Gateway saat ini dinonaktifkan.' }, { status: 400 });
     }
 
-    const { vendorId, planId, customAmount } = await request.json();
+    const { vendorId, planId, addonPlanId, customAmount } = await request.json();
 
     if (!vendorId || !planId) {
       return NextResponse.json({ message: 'vendorId dan planId wajib diisi.' }, { status: 400 });
     }
-
 
     const vendor = db.prepare('SELECT id, name, email, whatsapp FROM vendors WHERE id = ?').get(vendorId);
     if (!vendor) {
@@ -40,26 +39,52 @@ export async function POST(request) {
     const { getAuthVendor } = await import('@/lib/auth');
     const authUser = getAuthVendor();
 
-    // Calculate amount considering active Flash Sale Promo
-    // customAmount is strictly reserved for Admin manual testing or authorized prorated upgrades
+    // Calculate base plan amount considering active Flash Sale Promo
     const allowCustom = authUser && (authUser.role === 'admin' || authUser.id === vendorId);
-    let amount = (customAmount && customAmount > 0 && allowCustom) ? customAmount : plan.price;
+    let planAmount = (customAmount && customAmount > 0 && allowCustom) ? customAmount : plan.price;
 
     if (plan.price > 0 && (!customAmount || !allowCustom)) {
       const settings = db.prepare("SELECT enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at FROM system_settings WHERE id = 1").get() || {};
       const promoEnds = settings.flash_promo_ends_at ? new Date(settings.flash_promo_ends_at) : null;
       if (settings.enable_flash_promo === 1 && promoEnds && promoEnds > new Date()) {
         const pct = settings.flash_promo_discount_percent || 20;
-        amount = Math.round(plan.price * (1 - pct / 100));
+        planAmount = Math.round(plan.price * (1 - pct / 100));
       }
     }
 
+    // Calculate Add-On price & quota if selected
+    let addonAmount = 0;
+    let addonQuotaBytes = 0;
+    let addonName = '';
+    if (addonPlanId) {
+      if (addonPlanId === 'addon-10gb') {
+        addonAmount = 29000;
+        addonQuotaBytes = 10 * 1024 * 1024 * 1024;
+        addonName = 'Add-On Storage 10 GB';
+      } else if (addonPlanId === 'addon-25gb') {
+        addonAmount = 49000;
+        addonQuotaBytes = 25 * 1024 * 1024 * 1024;
+        addonName = 'Add-On Storage 25 GB';
+      } else if (addonPlanId === 'addon-50gb') {
+        addonAmount = 89000;
+        addonQuotaBytes = 50 * 1024 * 1024 * 1024;
+        addonName = 'Add-On Storage 50 GB';
+      } else {
+        const addonRow = db.prepare('SELECT name, price, quotaBytes FROM addon_plans WHERE planKey = ? OR id = ?').get(addonPlanId, addonPlanId);
+        if (addonRow) {
+          addonAmount = addonRow.price;
+          addonQuotaBytes = addonRow.quotaBytes;
+          addonName = addonRow.name;
+        }
+      }
+    }
 
-    // Generate unique orderId (was missing — caused ReferenceError on every request)
+    const totalAmount = planAmount + addonAmount;
+
+    // Generate unique orderId
     const orderId = `ORDER-${Date.now()}-${vendor.id}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
     // Step 1: Mark any old pending sessions as 'replaced' BEFORE creating new one
-    // (prevents race condition where two pending sessions coexist briefly)
     try {
       db.prepare(`
         UPDATE payment_sessions 
@@ -71,11 +96,11 @@ export async function POST(request) {
     // Step 2: Create new payment via gateway
     const paymentResult = await createPayment({
       orderId,
-      amount,
+      amount: totalAmount,
       vendorName: vendor.name,
       vendorEmail: vendor.email,
       vendorPhone: vendor.whatsapp,
-      planName: plan.name,
+      planName: addonName ? `${plan.name} + ${addonName}` : plan.name,
     });
 
     // Calculate dynamic QRIS expiration time from Admin SaaS settings (default: 15 minutes)
@@ -85,40 +110,50 @@ export async function POST(request) {
 
     // Save payment transaction log in DB
     db.prepare(`
-      INSERT INTO payment_transactions (orderId, vendorId, planId, amount, provider, status, paymentUrl, rawResponse)
-      VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)
+      INSERT INTO payment_transactions (orderId, vendorId, planId, addonPlanId, addonQuotaBytes, amount, provider, status, paymentUrl, rawResponse)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
     `).run(
       orderId,
       vendor.id,
       plan.id,
-      amount,
+      addonPlanId || null,
+      addonQuotaBytes,
+      totalAmount,
       config.provider,
       paymentResult.redirectUrl || '',
       JSON.stringify(paymentResult.raw || {})
     );
 
-    // Save payment session in DB with real qrUrl from Midtrans Core API
+    // Save payment session in DB
     const qrUrl = paymentResult.qrUrl || paymentResult.redirectUrl || '';
     db.prepare(`
-      INSERT INTO payment_sessions (orderId, vendorId, planId, amount, status, paymentMethod, qrUrl, expiresAt, rawResponse)
-      VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?)
+      INSERT INTO payment_sessions (orderId, vendorId, planId, addonPlanId, amount, status, paymentMethod, qrUrl, expiresAt, rawResponse)
+      VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
     `).run(
       orderId,
       vendor.id,
       plan.id,
-      amount,
+      addonPlanId || null,
+      totalAmount,
       config.provider,
       qrUrl,
       expiresAt,
       JSON.stringify(paymentResult.raw || {})
     );
 
-    // Step 4: Update vendor status to pending_payment and clear archivedAt
+    // Step 4: Update vendor status to pending_payment and store pendingAddon details
     db.prepare(`
       UPDATE vendors 
-      SET status = 'pending_payment', archivedAt = NULL, planId = ? 
+      SET status = 'pending_payment', archivedAt = NULL, planId = ?, pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
       WHERE id = ?
-    `).run(plan.id, vendor.id);
+    `).run(plan.id, addonPlanId || null, addonQuotaBytes, vendor.id);
+
+    // Trigger Pending QRIS Instructions Email in background
+    try {
+      const mailer = await import('@/lib/mailer.js');
+      const addonName = addonPlanId ? (addonPlanId === 'addon-10gb' ? 'Drive 10 GB' : addonPlanId === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
+      mailer.sendPendingQrisEmail(vendor, plan, orderId, totalAmount, addonName).catch(() => {});
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,

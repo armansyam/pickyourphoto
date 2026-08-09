@@ -50,19 +50,23 @@ CREATE TABLE vendors (
   password                    TEXT NOT NULL,           -- bcryptjs hash
   name                        TEXT NOT NULL,
   role                        TEXT DEFAULT 'vendor',   -- 'vendor' | 'admin'
-  status                      TEXT DEFAULT 'active',   -- 'active'|'pending'|'suspended'
+  status                      TEXT DEFAULT 'active',   -- 'active'|'pending_payment'|'pending_manual'|'expired_draft'|'suspended'
   maxProjects                 INTEGER DEFAULT 5,
   planId                      INTEGER REFERENCES plans(id),
   expiresAt                   TEXT,                    -- ISO8601, masa aktif berlangganan
   whatsapp                    TEXT,
   paymentProof                TEXT,                    -- path bukti transfer
+  pendingAddonPlanId          TEXT,                    -- plan id addon yang diajukan (misal: addon-25gb)
+  pendingAddonQuotaBytes      INTEGER DEFAULT 0,       -- kuota bytes addon yang diajukan
+  addonPlanId                 TEXT,                    -- plan id addon aktif
+  addonStorageQuotaBytes      INTEGER DEFAULT 0,       -- kuota bytes addon aktif
   resetRequested              INTEGER DEFAULT 0,
   brandName                   TEXT,
   brandLogo                   TEXT,                    -- path logo studio
   additionalProjects          INTEGER DEFAULT 0,
   additionalProjectsExpiresAt TEXT,
   additionalPhotosPerProject  INTEGER DEFAULT 0,
-  usedStorageBytes            INTEGER DEFAULT 0,       -- LEGACY, selalu 0
+  usedStorageBytes            INTEGER DEFAULT 0,       -- ukuran byte foto proyek terpakai
   copyDelimiter               TEXT DEFAULT ', ',       -- pemisah nama file salin
   copyIncludeExt              INTEGER DEFAULT 0,       -- 1 = sertakan ekstensi
   copySortOrder               TEXT DEFAULT 'name_asc', -- urutan salin nama file

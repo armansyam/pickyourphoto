@@ -21,6 +21,18 @@ export async function GET() {
         const nowMs = Date.now();
         if (nowMs - lastSyncTimestamp > SYNC_THROTTLE_MS) {
             lastSyncTimestamp = nowMs;
+            
+            // Auto-expire manual transfer registrations without proof older than 24 hours
+            try {
+                db.prepare(`
+                    UPDATE vendors 
+                    SET status = 'expired_draft', archivedAt = CURRENT_TIMESTAMP 
+                    WHERE status = 'pending_manual' 
+                      AND (paymentProof IS NULL OR paymentProof = '') 
+                      AND createdAt <= DATETIME('now', '-24 hours')
+                `).run();
+            } catch (e) {}
+
             try {
                 const pendingTxs = db.prepare("SELECT pt.*, v.email as vendorEmail FROM payment_transactions pt JOIN vendors v ON pt.vendorId = v.id WHERE v.status = 'pending_payment' AND pt.status = 'pending'").all();
                 
@@ -46,10 +58,28 @@ export async function GET() {
                                         expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
                                         const expiresAt = expDate.toISOString().split('T')[0];
 
-                                        db.prepare("UPDATE vendors SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ? WHERE id = ?")
-                                            .run(plan ? plan.id : tx.planId, expiresAt, plan ? plan.maxProjects : 10, tx.vendorId);
-                                        
-                                        console.log(`[Admin API Auto-Sync SUCCESS] Vendor ID ${tx.vendorId} activated automatically!`);
+                                         const vendorObj = db.prepare('SELECT * FROM vendors WHERE id = ?').get(tx.vendorId);
+                                         let syncAddonKey = vendorObj?.addonPlanId;
+                                         let syncAddonQuotaBytes = vendorObj?.addonStorageQuotaBytes || 0;
+
+                                         if (tx.addonPlanId || vendorObj?.pendingAddonQuotaBytes > 0) {
+                                           const addonKey = tx.addonPlanId || vendorObj?.pendingAddonPlanId;
+                                           let quotaBytes = vendorObj?.pendingAddonQuotaBytes || 0;
+                                           if (!quotaBytes && addonKey) {
+                                             if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
+                                             else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
+                                             else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+                                           }
+                                           if (quotaBytes > 0) {
+                                             syncAddonKey = addonKey;
+                                             syncAddonQuotaBytes = quotaBytes;
+                                           }
+                                         }
+
+                                         db.prepare("UPDATE vendors SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?, hasStorageAddon = ?, addonPlanId = ?, addonStorageQuotaBytes = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0 WHERE id = ?")
+                                             .run(plan ? plan.id : tx.planId, expiresAt, plan ? plan.maxProjects : 10, syncAddonQuotaBytes > 0 ? 1 : 0, syncAddonKey, syncAddonQuotaBytes, tx.vendorId);
+                                         
+                                         console.log(`[Admin API Auto-Sync SUCCESS] Vendor ID ${tx.vendorId} activated automatically (Storage: ${syncAddonQuotaBytes} bytes)!`);
                                     }
                                 }
                             } catch (err) {

@@ -119,13 +119,31 @@ export async function GET(request) {
                   expDate.setDate(expDate.getDate() + (plan.activePeriodDays || 30));
                   const expiresAt = expDate.toISOString().split('T')[0];
 
+                  // Determine bundled Add-On storage quota provisions if available
+                  let newAddonPlanId = vendor.addonPlanId;
+                  let newAddonStorageQuotaBytes = vendor.addonStorageQuotaBytes || 0;
+
+                  if (transaction.addonPlanId || vendor.pendingAddonQuotaBytes > 0) {
+                    const addonKey = transaction.addonPlanId || vendor.pendingAddonPlanId;
+                    let quotaBytes = vendor.pendingAddonQuotaBytes || 0;
+                    if (!quotaBytes && addonKey) {
+                      if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
+                      else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
+                      else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+                    }
+                    if (quotaBytes > 0) {
+                      newAddonPlanId = addonKey;
+                      newAddonStorageQuotaBytes = quotaBytes;
+                    }
+                  }
+
                   db.prepare(`
                     UPDATE vendors 
-                    SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?
+                    SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?, hasStorageAddon = ?, addonPlanId = ?, addonStorageQuotaBytes = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0
                     WHERE id = ?
-                  `).run(plan.id, expiresAt, plan.maxProjects, vendor.id);
+                  `).run(plan.id, expiresAt, plan.maxProjects, newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, newAddonPlanId, newAddonStorageQuotaBytes, vendor.id);
 
-                  console.log(`[Live Midtrans Check SUCCESS] Vendor ${vendor.name} (${vendor.email}) activated & sending approval email...`);
+                  console.log(`[Live Midtrans Check SUCCESS] Vendor ${vendor.name} (${vendor.email}) activated (Storage: ${newAddonStorageQuotaBytes} bytes) & sending approval email...`);
 
                   // Send email notification to vendor!
                   sendVendorApprovalEmail({ ...vendor, status: 'active' }, plan).catch(err => {

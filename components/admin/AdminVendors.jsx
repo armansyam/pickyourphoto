@@ -333,6 +333,7 @@ export default function AdminVendors({
                 <th onClick={() => handleSort('name')} style={{ padding: '10px 14px', cursor: 'pointer', color: getHeaderColor('name') }}>Nama</th>
                 <th onClick={() => handleSort('email')} style={{ padding: '10px 14px', cursor: 'pointer', color: getHeaderColor('email') }}>Kontak</th>
                 <th onClick={() => handleSort('planName')} style={{ padding: '10px 14px', cursor: 'pointer', color: getHeaderColor('planName') }}>Paket</th>
+                <th style={{ padding: '10px 14px', color: '#a1a1aa' }}>Storage Add-On</th>
                 <th style={{ padding: '10px 14px', color: '#a1a1aa' }}>
                   {vendorSubTab === 'active' ? 'Status / Masa Aktif' :
                    inquirySubTab === 'prospect' ? 'Status Lead' :
@@ -346,6 +347,8 @@ export default function AdminVendors({
                 const expired = isExpired(v.expiresAt);
                 const waUrl = getWaReminderUrl(v.whatsapp, v.name, v.planName, v.expiresAt);
                 const isQris = isQrisVendor(v);
+                const storageGb = v.addonStorageQuotaBytes ? Math.round(v.addonStorageQuotaBytes / (1024 * 1024 * 1024)) : 0;
+                const hasPendingUpgrade = v.pendingAddonQuotaBytes > 0 || (v.paymentProof && v.status === 'active');
 
                 return (
                   <tr key={v.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -370,6 +373,28 @@ export default function AdminVendors({
                     {/* Plan */}
                     <td style={{ padding: '12px 14px', color: '#fbbf24', fontWeight: '500' }}>
                       {v.status === 'draft_plan' ? '⏳ Belum Pilih' : (v.planName || 'Free Trial')}
+                    </td>
+
+                    {/* Storage Add-On */}
+                    <td style={{ padding: '12px 14px' }}>
+                      {storageGb > 0 ? (
+                        <span style={{ color: '#38bdf8', background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.3)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                          💾 {storageGb} GB Drive
+                        </span>
+                      ) : (
+                        <span style={{ color: '#71717a', fontSize: '11px' }}>Bawaan Plan</span>
+                      )}
+                      {hasPendingUpgrade && (
+                        <div style={{ marginTop: '4px' }}>
+                          <span 
+                            onClick={() => setVendorToApprove && setVendorToApprove(v)}
+                            style={{ cursor: 'pointer', color: '#f59e0b', background: 'rgba(245,158,11,0.18)', border: '1px dashed #f59e0b', padding: '2px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}
+                            title="Klik untuk meninjau & mengonfirmasi upgrade manual"
+                          >
+                            ⚡ UPGRADE PENDING
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Status column — context-aware */}

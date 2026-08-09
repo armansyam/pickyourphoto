@@ -123,23 +123,41 @@ export async function POST(request) {
         expDate.setDate(expDate.getDate() + (plan.activePeriodDays || 30));
         const expiresAt = expDate.toISOString().split('T')[0];
 
-        // Activate vendor account
+        // Determine if there is a bundled Add-On storage quota to activate
+        let newAddonPlanId = vendor.addonPlanId;
+        let newAddonStorageQuotaBytes = vendor.addonStorageQuotaBytes || 0;
+
+        if (transaction.addonPlanId || vendor.pendingAddonQuotaBytes > 0) {
+          const addonKey = transaction.addonPlanId || vendor.pendingAddonPlanId;
+          let quotaBytes = vendor.pendingAddonQuotaBytes || 0;
+          if (!quotaBytes && addonKey) {
+            if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
+            else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
+            else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+          }
+          if (quotaBytes > 0) {
+            newAddonPlanId = addonKey;
+            newAddonStorageQuotaBytes = quotaBytes;
+          }
+        }
+
+        // Activate vendor account and addon storage
         db.prepare(`
           UPDATE vendors 
-          SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?
+          SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?, hasStorageAddon = ?, addonPlanId = ?, addonStorageQuotaBytes = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0
           WHERE id = ?
-        `).run(plan.id, expiresAt, plan.maxProjects, vendor.id);
+        `).run(plan.id, expiresAt, plan.maxProjects, newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, newAddonPlanId, newAddonStorageQuotaBytes, vendor.id);
 
-        console.log(`[Payment Webhook SUCCESS] Vendor ${vendor.name} (${vendor.email}) berhasil diaktivasi otomatis untuk paket ${plan.name}!`);
+        console.log(`[Payment Webhook SUCCESS] Vendor ${vendor.name} (${vendor.email}) berhasil diaktivasi otomatis untuk paket ${plan.name} (Storage: ${newAddonStorageQuotaBytes} bytes)!`);
 
         // Trigger automated email notification based on transaction type
         const updatedVendor = { ...vendor, status: 'active', expiresAt };
         if (isRenewal) {
-          sendVendorRenewalConfirmationEmail(updatedVendor, plan, expiresAt, 'Midtrans QRIS / GoPay (Otomatis)').catch(() => {});
+          sendVendorRenewalConfirmationEmail(updatedVendor, plan, expiresAt, 'QRIS').catch(() => {});
         } else if (isUpgrade) {
-          sendVendorUpgradeConfirmationEmail(updatedVendor, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'Midtrans QRIS / GoPay (Otomatis)').catch(() => {});
+          sendVendorUpgradeConfirmationEmail(updatedVendor, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(() => {});
         } else {
-          sendVendorApprovalEmail(updatedVendor, plan).catch(() => {});
+          sendVendorApprovalEmail(updatedVendor, plan, transaction.orderId, 'QRIS').catch(() => {});
         }
       }
     } else if (isFailed) {
