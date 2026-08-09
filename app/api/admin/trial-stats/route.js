@@ -60,7 +60,8 @@ export async function GET() {
         saasRows.forEach(r => { saasMap[r.key] = r.value; });
 
         // system_settings for trial control & flash promo
-        const sysSetting = db.prepare("SELECT enable_free_trial, trial_expiration_minutes, max_vendor_quota, enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at, flash_promo_duration_hours, flash_promo_title, flash_promo_banner_text FROM system_settings WHERE id = 1").get() || {};
+        const sysSetting = db.prepare("SELECT * FROM system_settings WHERE id = 1").get() || {};
+        const availablePlans = db.prepare("SELECT id, name, price, maxProjects FROM plans WHERE status = 'active' ORDER BY price ASC").all() || [];
 
         return NextResponse.json({
             stats: {
@@ -72,6 +73,7 @@ export async function GET() {
                 conversionRate,
             },
             recentTrials,
+            availablePlans,
             settings: {
                 enable_free_trial: sysSetting.enable_free_trial ?? 1,
                 trial_expiration_minutes: sysSetting.trial_expiration_minutes ?? 30,
@@ -83,11 +85,17 @@ export async function GET() {
                 trial_cta_text: saasMap.trial_cta_text || '',
                 trial_cta_subtext: saasMap.trial_cta_subtext || '',
                 enable_flash_promo: sysSetting.enable_flash_promo ?? 0,
+                flash_promo_type: sysSetting.flash_promo_type || 'percent',
                 flash_promo_discount_percent: sysSetting.flash_promo_discount_percent ?? 20,
                 flash_promo_ends_at: sysSetting.flash_promo_ends_at || null,
                 flash_promo_duration_hours: sysSetting.flash_promo_duration_hours ?? 24,
                 flash_promo_title: sysSetting.flash_promo_title || '⚡ FLASH SALE PROMO',
                 flash_promo_banner_text: sysSetting.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!',
+                flash_bundle_plan_id: sysSetting.flash_bundle_plan_id || (availablePlans[1]?.id || availablePlans[0]?.id || null),
+                flash_bundle_addon_name: sysSetting.flash_bundle_addon_name || 'Gratis +2 Extra Sub-Event Link',
+                flash_bundle_addon_type: sysSetting.flash_bundle_addon_type || 'sub_event',
+                flash_bundle_addon_value: sysSetting.flash_bundle_addon_value ?? 2,
+                flash_bundle_anchor_price: sysSetting.flash_bundle_anchor_price ?? 199000,
             }
         });
     } catch (error) {
@@ -115,11 +123,17 @@ export async function PATCH(request) {
             trial_cta_text,
             trial_cta_subtext,
             enable_flash_promo,
+            flash_promo_type,
             flash_promo_discount_percent,
             flash_promo_ends_at,
             flash_promo_duration_hours,
             flash_promo_title,
-            flash_promo_banner_text
+            flash_promo_banner_text,
+            flash_bundle_plan_id,
+            flash_bundle_addon_name,
+            flash_bundle_addon_type,
+            flash_bundle_addon_value,
+            flash_bundle_anchor_price,
         } = body;
 
         // Update system_settings
@@ -137,10 +151,6 @@ export async function PATCH(request) {
         let finalEnableTrial = enable_free_trial !== undefined ? (enable_free_trial ? 1 : 0) : current.enable_free_trial;
         let finalEnableFlash = enable_flash_promo !== undefined ? (enable_flash_promo ? 1 : 0) : (current.enable_flash_promo || 0);
 
-        // Campaign Transition Rules:
-        // 1. Activating Flash Sale automatically turns Free Trial OFF
-        // 2. Deactivating Flash Sale automatically restores Free Trial to ON
-        // 3. Activating Free Trial automatically turns Flash Sale OFF
         if (enable_flash_promo === true || enable_flash_promo === 1) {
             finalEnableFlash = 1;
             finalEnableTrial = 0;
@@ -159,22 +169,34 @@ export async function PATCH(request) {
             SET enable_free_trial = ?, 
                 trial_expiration_minutes = ?, 
                 enable_flash_promo = ?,
+                flash_promo_type = ?,
                 flash_promo_discount_percent = ?,
                 flash_promo_ends_at = ?,
                 flash_promo_duration_hours = ?,
                 flash_promo_title = ?,
                 flash_promo_banner_text = ?,
+                flash_bundle_plan_id = ?,
+                flash_bundle_addon_name = ?,
+                flash_bundle_addon_type = ?,
+                flash_bundle_addon_value = ?,
+                flash_bundle_anchor_price = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = 1
         `).run(
             finalEnableTrial,
             trial_expiration_minutes !== undefined ? Math.max(1, parseInt(trial_expiration_minutes) || 30) : current.trial_expiration_minutes,
             finalEnableFlash,
+            flash_promo_type !== undefined ? flash_promo_type : (current.flash_promo_type || 'percent'),
             flash_promo_discount_percent !== undefined ? Math.max(1, Math.min(90, parseInt(flash_promo_discount_percent) || 20)) : (current.flash_promo_discount_percent || 20),
             targetEndsAt,
             flash_promo_duration_hours !== undefined ? Math.max(1, parseInt(flash_promo_duration_hours) || 24) : (current.flash_promo_duration_hours || 24),
             flash_promo_title !== undefined ? flash_promo_title : (current.flash_promo_title || '⚡ FLASH SALE PROMO'),
-            flash_promo_banner_text !== undefined ? flash_promo_banner_text : (current.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!')
+            flash_promo_banner_text !== undefined ? flash_promo_banner_text : (current.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!'),
+            flash_bundle_plan_id !== undefined ? (flash_bundle_plan_id ? parseInt(flash_bundle_plan_id) : null) : current.flash_bundle_plan_id,
+            flash_bundle_addon_name !== undefined ? flash_bundle_addon_name : (current.flash_bundle_addon_name || 'Gratis +2 Extra Sub-Event Link'),
+            flash_bundle_addon_type !== undefined ? flash_bundle_addon_type : (current.flash_bundle_addon_type || 'sub_event'),
+            flash_bundle_addon_value !== undefined ? parseInt(flash_bundle_addon_value) || 2 : (current.flash_bundle_addon_value ?? 2),
+            flash_bundle_anchor_price !== undefined ? parseFloat(flash_bundle_anchor_price) || 199000 : (current.flash_bundle_anchor_price ?? 199000)
         );
 
         // Update saas_settings

@@ -2,15 +2,16 @@
 
 > **Dokumentasi Resmi API Endpoint Platform SaaS Pick Your Photo**  
 > Lokasi: `docs/API_DOCUMENTATION.md`  
-> **Terakhir diperbarui:** 2026-08-05 — disesuaikan dengan route aktual di `app/api/`
+> **Terakhir diperbarui:** 2026-08-09 — disesuaikan dengan audit forensik & perbaikan 9 bug Payment Gateway & Storage Add-On
 
 ---
 
-## 🔐 Autentikasi
+## 🔐 Autentikasi & Keamanan
 
 Seluruh endpoint **vendor** memerlukan cookie JWT `token` yang valid (diperoleh setelah login).  
-Seluruh endpoint **admin** memerlukan cookie JWT `adminToken` yang valid.  
-Endpoint **klien galeri** menggunakan query param `key=[accessKey]`.
+Seluruh endpoint **admin** memerlukan cookie JWT `token` dengan role `admin` yang valid.  
+Endpoint **klien galeri** menggunakan query param `key=[accessKey]`.  
+Endpoint **payment status** (`/api/payment/status`) dilindungi dengan verifikasi token pengguna aktif ATAU kecocokan `vendorId` transaksi internal untuk mencegah eksploitasi unauthenticated request.
 
 ---
 

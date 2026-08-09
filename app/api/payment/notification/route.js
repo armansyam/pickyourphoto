@@ -92,7 +92,7 @@ export async function POST(request) {
 
           db.prepare(`
             UPDATE vendors 
-            SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
+            SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0
             WHERE id = ?
           `).run(targetQuotaBytes, addonPlanIdToStore || 'custom', vendor.id);
 
@@ -107,6 +107,21 @@ export async function POST(request) {
           }
 
           console.log(`[Payment Webhook SUCCESS] Vendor ${vendor.name} (${vendor.email}) Add-On Storage ${planName} (${targetQuotaBytes} bytes) berhasil diaktivasi!`);
+
+          // Trigger email notification for Add-On activation
+          try {
+            const currentPlan = db.prepare('SELECT * FROM plans WHERE id = ?').get(vendor.planId);
+            const updatedVendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(vendor.id);
+            sendVendorUpgradeConfirmationEmail(
+              updatedVendor,
+              currentPlan?.name || 'Paket Aktif',
+              { name: `Add-On ${planName}`, maxProjects: vendor.maxProjects },
+              vendor.expiresAt ? vendor.expiresAt.split('T')[0] : '',
+              'QRIS'
+            ).catch(() => {});
+          } catch (mailErr) {
+            console.error('[Add-On Payment Webhook Mailer Error]:', mailErr);
+          }
         }
       } else if (vendor && plan) {
         const wasActive = vendor.status === 'active';

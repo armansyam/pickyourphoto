@@ -57,12 +57,28 @@ export async function POST(request) {
 
         // Check active Flash Sale Promo for target plan price
         let targetPlanPrice = newPlan.price;
+        let isBundlePromo = 0;
+        let bundleAddonName = null;
+        let bundleAddonType = null;
+        let bundleAddonValue = 0;
+
         if (newPlan.price > 0) {
-            const settings = db.prepare("SELECT enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at FROM system_settings WHERE id = 1").get() || {};
+            const settings = db.prepare("SELECT enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at, flash_promo_type, flash_bundle_plan_id, flash_bundle_addon_name, flash_bundle_addon_type, flash_bundle_addon_value FROM system_settings WHERE id = 1").get() || {};
             const promoEnds = settings.flash_promo_ends_at ? new Date(settings.flash_promo_ends_at) : null;
             if (settings.enable_flash_promo === 1 && promoEnds && promoEnds > new Date()) {
-                const pct = settings.flash_promo_discount_percent || 20;
-                targetPlanPrice = Math.round(newPlan.price * (1 - pct / 100));
+                const promoType = settings.flash_promo_type || 'percent';
+                if (promoType === 'percent') {
+                    const pct = settings.flash_promo_discount_percent || 20;
+                    targetPlanPrice = Math.round(newPlan.price * (1 - pct / 100));
+                } else if (promoType === 'bundle') {
+                    const isTarget = !settings.flash_bundle_plan_id || settings.flash_bundle_plan_id === planId;
+                    if (isTarget) {
+                        isBundlePromo = 1;
+                        bundleAddonName = settings.flash_bundle_addon_name || 'Gratis +2 Extra Sub-Event Link';
+                        bundleAddonType = settings.flash_bundle_addon_type || 'sub_event';
+                        bundleAddonValue = settings.flash_bundle_addon_value || 2;
+                    }
+                }
             }
         }
 
@@ -142,12 +158,13 @@ export async function POST(request) {
             db.prepare('UPDATE vendors SET paymentProof = ? WHERE id = ?').run(webPath, vendor.id);
         }
 
-        // Insert request
+        // Insert request (include addonPlanId if bundled with storage Add-On & Flash Sale Bundle metadata)
         const insertStmt = db.prepare(`
-            INSERT INTO subscription_requests (vendorId, planId, proratedPrice, transferProof, status)
-            VALUES (?, ?, ?, ?, 'pending')
+            INSERT INTO subscription_requests (vendorId, planId, addonPlanId, requestType, proratedPrice, transferProof, isBundlePromo, bundleAddonName, bundleAddonType, bundleAddonValue, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
         `);
-        insertStmt.run(vendor.id, planId, Math.round(proratedPrice), webPath);
+        const reqType = (addonPlanId && addonQuotaBytes > 0) ? 'plan_addon' : 'plan';
+        insertStmt.run(vendor.id, planId, addonPlanId || null, reqType, Math.round(proratedPrice), webPath, isBundlePromo, bundleAddonName, bundleAddonType, bundleAddonValue);
 
         return NextResponse.json({ message: 'Permintaan upgrade berhasil diajukan.', proratedPrice });
 

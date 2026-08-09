@@ -255,6 +255,29 @@ export async function GET() {
             LIMIT 5
         `).all() || [];
 
+        const recentSubscriptionEvents = db.prepare(`
+            SELECT 
+                pt.id,
+                pt.orderId,
+                pt.vendorId,
+                pt.amount,
+                pt.transactionType,
+                COALESCE(pt.paidAt, pt.createdAt) as eventTime,
+                v.name as vendorName,
+                v.email as vendorEmail,
+                p.name as planName,
+                ap.name as addonName,
+                pt.addonQuotaBytes,
+                pt.addonPlanId
+            FROM payment_transactions pt
+            JOIN vendors v ON pt.vendorId = v.id
+            LEFT JOIN plans p ON pt.planId = p.id
+            LEFT JOIN addon_plans ap ON pt.addonPlanId = ap.id
+            WHERE pt.status = 'paid'
+            ORDER BY COALESCE(pt.paidAt, pt.createdAt) DESC
+            LIMIT 5
+        `).all() || [];
+
         // 7. Monthly trend data queried DIRECTLY from SQLite (Vendor Growth & MRR)
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
         const now = new Date();
@@ -419,6 +442,7 @@ export async function GET() {
             googleClientId: googleClientId ? 'Configured' : null,
             recentProjects,
             recentVendors,
+            recentSubscriptionEvents,
             revenueTrend,
             selectionTrend,
             enable_auto_backup: settings.enable_auto_backup,

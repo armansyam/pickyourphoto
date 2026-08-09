@@ -94,6 +94,21 @@ export async function PUT(request) {
 
                 db.prepare("UPDATE subscription_requests SET status = 'approved' WHERE id = ?").run(id);
 
+                // Trigger email notification for Add-On Storage approval
+                try {
+                    const fullVendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(upgradeReq.vendorId);
+                    const currentPlan = db.prepare('SELECT * FROM plans WHERE id = ?').get(fullVendor?.planId);
+                    sendVendorUpgradeConfirmationEmail(
+                        fullVendor,
+                        currentPlan?.name || 'Paket Aktif',
+                        { name: `Add-On ${addonPlan.name}`, maxProjects: fullVendor?.maxProjects || 5 },
+                        fullVendor?.expiresAt ? fullVendor.expiresAt.split('T')[0] : '',
+                        'Transfer Bank Manual (Dikonfirmasi Admin)'
+                    ).catch(() => {});
+                } catch (mailErr) {
+                    console.error('[Admin Add-On Approval Mailer Error]:', mailErr);
+                }
+
                 return NextResponse.json({ message: `Permintaan Add-On Storage (${addonPlan.name}) berhasil disetujui!` });
             }
 
@@ -126,10 +141,18 @@ export async function PUT(request) {
             // Update vendor plan information and clear pending addon flags
             const updateVendor = db.prepare(`
                 UPDATE vendors 
-                SET planId = ?, expiresAt = ?, maxProjects = ?, paymentProof = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0 
+                SET planId = ?, 
+                    expiresAt = ?, 
+                    maxProjects = ?, 
+                    paymentProof = ?, 
+                    pendingAddonPlanId = NULL, 
+                    pendingAddonQuotaBytes = 0,
+                    additionalProjects = COALESCE(additionalProjects, 0) + CASE WHEN ? = 1 THEN COALESCE(?, 2) ELSE 0 END
                 WHERE id = ?
             `);
-            updateVendor.run(upgradeReq.planId, expiresAt, plan.maxProjects, upgradeReq.transferProof, upgradeReq.vendorId);
+            const isBundle = upgradeReq.isBundlePromo === 1 ? 1 : 0;
+            const bundleVal = upgradeReq.bundleAddonValue || 2;
+            updateVendor.run(upgradeReq.planId, expiresAt, plan.maxProjects, upgradeReq.transferProof, isBundle, bundleVal, upgradeReq.vendorId);
 
             // Update request status
             const updateReq = db.prepare("UPDATE subscription_requests SET status = 'approved' WHERE id = ?");

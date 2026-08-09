@@ -17,6 +17,19 @@ export async function GET(request) {
     let orderId = searchParams.get('orderId');
     const vendorId = searchParams.get('vendorId');
 
+    // Security: Require either authenticated session or valid vendorId matching a real transaction
+    const { getAuthVendor } = await import('@/lib/auth');
+    const authUser = getAuthVendor();
+    
+    if (!authUser && !vendorId && !orderId) {
+      return NextResponse.json({ paid: false, message: 'Akses ditolak.' }, { status: 401 });
+    }
+
+    // If caller is authenticated, restrict to their own transactions (unless admin)
+    if (authUser && authUser.role !== 'admin' && vendorId && String(authUser.id) !== String(vendorId)) {
+      return NextResponse.json({ paid: false, message: 'Akses ditolak.' }, { status: 403 });
+    }
+
     if (!orderId && vendorId) {
       const tx = db.prepare('SELECT orderId FROM payment_transactions WHERE vendorId = ? ORDER BY id DESC LIMIT 1').get(vendorId);
       if (tx) orderId = tx.orderId;
@@ -29,6 +42,11 @@ export async function GET(request) {
     let transaction = db.prepare('SELECT * FROM payment_transactions WHERE orderId = ?').get(orderId);
     if (!transaction) {
       return NextResponse.json({ paid: false, message: 'Transaksi pembayaran tidak ditemukan.' });
+    }
+
+    // If unauthenticated, verify vendorId matches the transaction owner
+    if (!authUser && String(transaction.vendorId) !== String(vendorId)) {
+      return NextResponse.json({ paid: false, message: 'Akses ditolak.' }, { status: 403 });
     }
 
     const config = getPaymentGatewayConfig();
@@ -87,69 +105,111 @@ export async function GET(request) {
     if (isSettled) {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
       if (vendor) {
-        const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
-        const expiresAt = expDate.toISOString().split('T')[0];
+        if (transaction.transactionType === 'addon') {
+          // Pure Add-On storage purchase
+          let targetQuotaBytes = transaction.addonQuotaBytes || vendor.pendingAddonQuotaBytes || 0;
+          let addonPlanIdToStore = transaction.addonPlanId || vendor.pendingAddonPlanId || 'custom';
+          let planName = 'Add-On Storage';
 
-        const wasActive = vendor.status === 'active';
-        const isUpgrade = wasActive && plan && vendor.planId !== plan.id;
-        const isRenewal = wasActive && plan && vendor.planId === plan.id;
-        const oldPlanRow = isUpgrade ? db.prepare('SELECT name FROM plans WHERE id = ?').get(vendor.planId) : null;
-
-        let newAddonPlanId = vendor.addonPlanId;
-        let newAddonStorageQuotaBytes = vendor.addonStorageQuotaBytes || 0;
-
-        if (transaction.addonPlanId || vendor.pendingAddonQuotaBytes > 0) {
-          const addonKey = transaction.addonPlanId || vendor.pendingAddonPlanId;
-          let quotaBytes = transaction.addonQuotaBytes || vendor.pendingAddonQuotaBytes || 0;
-          if (!quotaBytes && addonKey) {
-            if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
-            else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
-            else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+          if (!targetQuotaBytes && addonPlanIdToStore) {
+            const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(addonPlanIdToStore);
+            if (addonPlan) {
+              targetQuotaBytes = addonPlan.quotaBytes;
+              planName = addonPlan.name;
+            } else if (addonPlanIdToStore === 'addon-10gb') targetQuotaBytes = 10 * 1024 * 1024 * 1024;
+            else if (addonPlanIdToStore === 'addon-25gb') targetQuotaBytes = 25 * 1024 * 1024 * 1024;
+            else if (addonPlanIdToStore === 'addon-50gb') targetQuotaBytes = 50 * 1024 * 1024 * 1024;
           }
-          if (quotaBytes > 0) {
-            newAddonPlanId = addonKey;
-            newAddonStorageQuotaBytes = quotaBytes;
+
+          db.prepare(`
+            UPDATE vendors 
+            SET hasStorageAddon = 1, 
+                addonStorageQuotaBytes = ?, 
+                addonPlanId = ?, 
+                pendingAddonPlanId = NULL, 
+                pendingAddonQuotaBytes = 0
+            WHERE id = ?
+          `).run(targetQuotaBytes > 0 ? targetQuotaBytes : vendor.addonStorageQuotaBytes, addonPlanIdToStore, vendor.id);
+
+          try {
+            const currentPlan = db.prepare('SELECT * FROM plans WHERE id = ?').get(vendor.planId);
+            const updatedVendorObj = { ...vendor, hasStorageAddon: 1, addonStorageQuotaBytes: targetQuotaBytes };
+            sendVendorUpgradeConfirmationEmail(
+              updatedVendorObj,
+              currentPlan?.name || 'Paket Aktif',
+              { name: `Add-On ${planName}`, maxProjects: vendor.maxProjects },
+              vendor.expiresAt ? vendor.expiresAt.split('T')[0] : '',
+              'QRIS'
+            ).catch(() => {});
+          } catch (mailErr) {
+            console.error('[Payment Status Add-On Email Error]:', mailErr);
           }
-        }
-
-        db.prepare(`
-          UPDATE vendors 
-          SET status = 'active', 
-              planId = ?, 
-              expiresAt = ?, 
-              maxProjects = ?, 
-              hasStorageAddon = ?, 
-              addonPlanId = ?, 
-              addonStorageQuotaBytes = ?, 
-              pendingAddonPlanId = NULL, 
-              pendingAddonQuotaBytes = 0
-          WHERE id = ?
-        `).run(
-          plan ? plan.id : transaction.planId, 
-          expiresAt, 
-          plan ? plan.maxProjects : vendor.maxProjects, 
-          newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, 
-          newAddonPlanId, 
-          newAddonStorageQuotaBytes, 
-          vendor.id
-        );
-
-        // Send confirmation email asynchronously
-        const updatedVendorObj = { ...vendor, status: 'active', expiresAt };
-        if (isUpgrade) {
-          sendVendorUpgradeConfirmationEmail(updatedVendorObj, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(err => {
-            console.error('[Payment Status Email Error]:', err);
-          });
-        } else if (isRenewal) {
-          sendVendorRenewalConfirmationEmail(updatedVendorObj, plan, expiresAt, 'QRIS').catch(err => {
-            console.error('[Payment Status Email Error]:', err);
-          });
         } else {
-          sendVendorApprovalEmail(updatedVendorObj, plan, transaction.orderId, 'QRIS').catch(err => {
-            console.error('[Payment Status Email Error]:', err);
-          });
+          // Standard Main Plan (or Main Plan + Bundled Add-On)
+          const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
+          const expDate = new Date();
+          expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
+          const expiresAt = expDate.toISOString().split('T')[0];
+
+          const wasActive = vendor.status === 'active';
+          const isUpgrade = wasActive && plan && vendor.planId !== plan.id;
+          const isRenewal = wasActive && plan && vendor.planId === plan.id;
+          const oldPlanRow = isUpgrade ? db.prepare('SELECT name FROM plans WHERE id = ?').get(vendor.planId) : null;
+
+          let newAddonPlanId = vendor.addonPlanId;
+          let newAddonStorageQuotaBytes = vendor.addonStorageQuotaBytes || 0;
+
+          if (transaction.addonPlanId || vendor.pendingAddonQuotaBytes > 0) {
+            const addonKey = transaction.addonPlanId || vendor.pendingAddonPlanId;
+            let quotaBytes = transaction.addonQuotaBytes || vendor.pendingAddonQuotaBytes || 0;
+            if (!quotaBytes && addonKey) {
+              if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
+              else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
+              else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+            }
+            if (quotaBytes > 0) {
+              newAddonPlanId = addonKey;
+              newAddonStorageQuotaBytes = quotaBytes;
+            }
+          }
+
+          db.prepare(`
+            UPDATE vendors 
+            SET status = 'active', 
+                planId = ?, 
+                expiresAt = ?, 
+                maxProjects = ?, 
+                hasStorageAddon = ?, 
+                addonPlanId = ?, 
+                addonStorageQuotaBytes = ?, 
+                pendingAddonPlanId = NULL, 
+                pendingAddonQuotaBytes = 0
+            WHERE id = ?
+          `).run(
+            plan ? plan.id : transaction.planId, 
+            expiresAt, 
+            plan ? plan.maxProjects : vendor.maxProjects, 
+            newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, 
+            newAddonPlanId, 
+            newAddonStorageQuotaBytes, 
+            vendor.id
+          );
+
+          // Send confirmation email asynchronously
+          const updatedVendorObj = { ...vendor, status: 'active', expiresAt };
+          if (isUpgrade) {
+            sendVendorUpgradeConfirmationEmail(updatedVendorObj, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(err => {
+              console.error('[Payment Status Email Error]:', err);
+            });
+          } else if (isRenewal) {
+            sendVendorRenewalConfirmationEmail(updatedVendorObj, plan, expiresAt, 'QRIS').catch(err => {
+              console.error('[Payment Status Email Error]:', err);
+            });
+          } else {
+            sendVendorApprovalEmail(updatedVendorObj, plan, transaction.orderId, 'QRIS').catch(err => {
+              console.error('[Payment Status Email Error]:', err);
+            });
+          }
         }
 
         // Generate token and return paid response

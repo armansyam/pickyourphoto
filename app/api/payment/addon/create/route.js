@@ -180,6 +180,13 @@ export async function POST(req) {
         VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, 'addon', ?)
       `).run(orderId, vendor.id, vendorMainPlanId, addonPlan.id, proratedPrice, config.provider, qrUrl, expiresAt, rawPayload);
 
+      // Lock pending addon flags on vendor so Admin badge shows and webhook/polling can read quota
+      db.prepare(`
+        UPDATE vendors 
+        SET pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
+        WHERE id = ?
+      `).run(addonPlan.id, addonPlan.quotaBytes, vendor.id);
+
       return NextResponse.json({
         success: true,
         isPaymentRequired: true,

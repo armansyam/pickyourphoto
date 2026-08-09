@@ -53,36 +53,96 @@ export async function GET() {
                                         db.prepare("UPDATE payment_transactions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE id = ?").run(tx.id);
                                         try { db.prepare("UPDATE payment_sessions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE orderId = ?").run(tx.orderId); } catch (e) {}
                                         
-                                        const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(tx.planId);
-                                        const expDate = new Date();
-                                        expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
-                                        const expiresAt = expDate.toISOString().split('T')[0];
-
                                         const vendorObj = db.prepare('SELECT * FROM vendors WHERE id = ?').get(tx.vendorId);
-                                        let syncAddonKey = vendorObj?.addonPlanId;
-                                        let syncAddonQuotaBytes = vendorObj?.addonStorageQuotaBytes || 0;
 
-                                        if (tx.addonPlanId || vendorObj?.pendingAddonQuotaBytes > 0) {
-                                          const addonKey = tx.addonPlanId || vendorObj?.pendingAddonPlanId;
-                                          let quotaBytes = tx.addonQuotaBytes || vendorObj?.pendingAddonQuotaBytes || 0;
-                                          if (!quotaBytes && addonKey) {
-                                            if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
-                                            else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
-                                            else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+                                        if (tx.transactionType === 'addon') {
+                                          // Pure Add-On Storage — only update storage columns, DO NOT touch expiresAt/planId
+                                          let targetQuotaBytes = tx.addonQuotaBytes || vendorObj?.pendingAddonQuotaBytes || 0;
+                                          let addonPlanIdToStore = tx.addonPlanId || vendorObj?.pendingAddonPlanId || 'custom';
+
+                                          if (!targetQuotaBytes && addonPlanIdToStore) {
+                                            const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(addonPlanIdToStore);
+                                            if (addonPlan) targetQuotaBytes = addonPlan.quotaBytes;
+                                            else if (addonPlanIdToStore === 'addon-10gb') targetQuotaBytes = 10 * 1024 * 1024 * 1024;
+                                            else if (addonPlanIdToStore === 'addon-25gb') targetQuotaBytes = 25 * 1024 * 1024 * 1024;
+                                            else if (addonPlanIdToStore === 'addon-50gb') targetQuotaBytes = 50 * 1024 * 1024 * 1024;
                                           }
-                                          if (quotaBytes > 0) {
-                                            syncAddonKey = addonKey;
-                                            syncAddonQuotaBytes = quotaBytes;
+
+                                          db.prepare(`
+                                            UPDATE vendors 
+                                            SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0
+                                            WHERE id = ?
+                                          `).run(targetQuotaBytes > 0 ? targetQuotaBytes : vendorObj.addonStorageQuotaBytes, addonPlanIdToStore, tx.vendorId);
+
+                                          console.log(`[Admin API Auto-Sync SUCCESS] Vendor ID ${tx.vendorId} Add-On Storage activated (${targetQuotaBytes} bytes)!`);
+
+                                          // Trigger email for Add-On activation
+                                          try {
+                                            const { sendVendorUpgradeConfirmationEmail } = await import('@/lib/mailer.js');
+                                            const currentPlan = db.prepare('SELECT * FROM plans WHERE id = ?').get(vendorObj.planId);
+                                            sendVendorUpgradeConfirmationEmail(
+                                              vendorObj,
+                                              currentPlan?.name || 'Paket Aktif',
+                                              { name: 'Add-On Storage', maxProjects: vendorObj.maxProjects },
+                                              vendorObj.expiresAt ? vendorObj.expiresAt.split('T')[0] : '',
+                                              'QRIS'
+                                            ).catch(() => {});
+                                          } catch (mailErr) { console.error('[Admin Auto-Sync Addon Mail Error]:', mailErr); }
+
+                                        } else {
+                                          // Standard Main Plan activation
+                                          const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(tx.planId);
+                                          const now2 = new Date();
+                                          let expDate = now2;
+                                          if (vendorObj?.expiresAt && new Date(vendorObj.expiresAt) > now2) {
+                                            expDate = new Date(vendorObj.expiresAt);
                                           }
+                                          expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
+                                          const expiresAt = expDate.toISOString().split('T')[0];
+
+                                          let syncAddonKey = vendorObj?.addonPlanId;
+                                          let syncAddonQuotaBytes = vendorObj?.addonStorageQuotaBytes || 0;
+
+                                          if (tx.addonPlanId || vendorObj?.pendingAddonQuotaBytes > 0) {
+                                            const addonKey = tx.addonPlanId || vendorObj?.pendingAddonPlanId;
+                                            let quotaBytes = tx.addonQuotaBytes || vendorObj?.pendingAddonQuotaBytes || 0;
+                                            if (!quotaBytes && addonKey) {
+                                              if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
+                                              else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
+                                              else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+                                            }
+                                            if (quotaBytes > 0) {
+                                              syncAddonKey = addonKey;
+                                              syncAddonQuotaBytes = quotaBytes;
+                                            }
+                                          }
+
+                                          const wasActive = vendorObj?.status === 'active';
+                                          const isRenewal = wasActive && vendorObj?.planId === tx.planId;
+                                          const isUpgrade = wasActive && vendorObj?.planId !== tx.planId;
+
+                                          db.prepare(`
+                                            UPDATE vendors 
+                                            SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?, hasStorageAddon = ?, addonPlanId = ?, addonStorageQuotaBytes = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0 
+                                            WHERE id = ?
+                                          `).run(tx.planId, expiresAt, plan ? plan.maxProjects : vendorObj.maxProjects, syncAddonQuotaBytes > 0 ? 1 : 0, syncAddonKey, syncAddonQuotaBytes, tx.vendorId);
+                                          
+                                          console.log(`[Admin API Auto-Sync SUCCESS] Vendor ID ${tx.vendorId} activated automatically (Plan: ${plan?.name}, Storage: ${syncAddonQuotaBytes} bytes)!`);
+
+                                          // Trigger email notification
+                                          try {
+                                            const mailer = await import('@/lib/mailer.js');
+                                            const updatedV = { ...vendorObj, status: 'active', expiresAt };
+                                            if (isRenewal) {
+                                              mailer.sendVendorRenewalConfirmationEmail(updatedV, plan, expiresAt, 'QRIS').catch(() => {});
+                                            } else if (isUpgrade) {
+                                              const oldPlanRow = db.prepare('SELECT name FROM plans WHERE id = ?').get(vendorObj.planId);
+                                              mailer.sendVendorUpgradeConfirmationEmail(updatedV, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(() => {});
+                                            } else {
+                                              mailer.sendVendorApprovalEmail(updatedV, plan, tx.orderId, 'QRIS').catch(() => {});
+                                            }
+                                          } catch (mailErr) { console.error('[Admin Auto-Sync Mail Error]:', mailErr); }
                                         }
-
-                                        db.prepare(`
-                                          UPDATE vendors 
-                                          SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?, hasStorageAddon = ?, addonPlanId = ?, addonStorageQuotaBytes = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0 
-                                          WHERE id = ?
-                                        `).run(tx.planId, expiresAt, plan ? plan.maxProjects : vendorObj.maxProjects, syncAddonQuotaBytes > 0 ? 1 : 0, syncAddonKey, syncAddonQuotaBytes, tx.vendorId);
-                                        
-                                        console.log(`[Admin API Auto-Sync SUCCESS] Vendor ID ${tx.vendorId} activated automatically (Storage: ${syncAddonQuotaBytes} bytes)!`);
                                     }
                                 }
                             } catch (err) {

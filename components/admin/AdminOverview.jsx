@@ -34,9 +34,21 @@ export default function AdminOverview({ analyticsData, diskStats }) {
   const photoScanStats = analyticsData?.photoScanStats || {};
 
   const recentProjects = analyticsData?.recentProjects || [];
-
   const recentVendors = analyticsData?.recentVendors || [];
+  const recentSubscriptionEvents = analyticsData?.recentSubscriptionEvents || [];
   const planDistribution = analyticsData?.planDistribution || [];
+
+  const formatTimeAgo = (timeString) => {
+    if (!timeString) return 'baru saja';
+    const diff = Date.now() - new Date(timeString).getTime();
+    if (diff < 60000) return 'baru saja';
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m lalu`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}j lalu`;
+    const days = Math.floor(hours / 24);
+    return `${days}h lalu`;
+  };
 
   const revenueTrend = analyticsData?.revenueTrend || [];
   const selectionTrend = analyticsData?.selectionTrend || [];
@@ -468,10 +480,10 @@ export default function AdminOverview({ analyticsData, diskStats }) {
         </div>
       </div>
 
-      {/* ── 3. ASYMMETRIC SECOND ROW (STATUS STUDIO, STREAM AKTIVITAS, DONUT CHART & RINGKASAN GALERI) ── */}
+      {/* ── 3. SECOND ROW (STATUS STUDIO, DONUT CHART & RINGKASAN GALERI) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)', gap: '24px' }}>
         
-        {/* LEFT COLUMN: STATUS AKUN STUDIO & STREAM AKTIVITAS TERBARU */}
+        {/* LEFT COLUMN: STATUS AKUN STUDIO */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* Card A: Status Akun Studio */}
@@ -504,59 +516,6 @@ export default function AdminOverview({ analyticsData, diskStats }) {
                 <div style={{ fontSize: '11px', color: '#818cf8', fontWeight: '700' }}>⚠️ EXPIRED &lt; 7 HARI</div>
                 <div style={{ fontSize: '24px', fontWeight: '900', color: '#ffffff', margin: '4px 0' }}>{expiringSoonCount}</div>
                 <div style={{ fontSize: '10px', color: '#71717a' }}>Mendekati masa habis</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Card B: Live Activity Stream */}
-          <div className="glass-card" style={{ padding: '24px', borderRadius: '18px' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>📜 Aktivitas Terbaru Platform</span>
-            </h3>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              {/* Recent Projects */}
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#818cf8', marginBottom: '10px' }}>📁 Galeri Project Terbaru</div>
-                {recentProjects.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {recentProjects.map(p => (
-                      <div key={p.id} style={{ fontSize: '11px', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong style={{ color: '#ffffff', display: 'block' }}>{p.name}</strong>
-                          <span style={{ color: '#71717a' }}>{p.vendorName}</span>
-                        </div>
-                        <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: p.status === 'completed' ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: p.status === 'completed' ? '#34d399' : '#fbbf24' }}>
-                          {p.status === 'completed' ? 'Selesai' : 'Aktif'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '11px', color: '#71717a' }}>Belum ada aktivitas project.</div>
-                )}
-              </div>
-
-              {/* Recent Vendors */}
-              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#34d399', marginBottom: '10px' }}>👤 Pendaftaran Studio Terbaru</div>
-                {recentVendors.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {recentVendors.map(v => (
-                      <div key={v.id} style={{ fontSize: '11px', paddingBottom: '6px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong style={{ color: '#ffffff', display: 'block' }}>{v.name}</strong>
-                          <span style={{ color: '#71717a' }}>{v.email}</span>
-                        </div>
-                        <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: v.status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: v.status === 'active' ? '#34d399' : '#fbbf24' }}>
-                          {v.status === 'active' ? 'Aktif' : 'Pending'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{ fontSize: '11px', color: '#71717a' }}>Belum ada pendaftaran baru.</div>
-                )}
               </div>
             </div>
           </div>
@@ -602,7 +561,7 @@ export default function AdminOverview({ analyticsData, diskStats }) {
                     <strong style={{ color: '#ffffff' }}>{s.count} Studio</strong>
                   </div>
                 )) : (
-                  <div style={{ fontSize: '11px', color: '#71717a' }}>Belum ada data paket studio.</div>
+                  <div style={{ color: '#71717a' }}>Belum ada data paket.</div>
                 )}
               </div>
             </div>
@@ -633,7 +592,129 @@ export default function AdminOverview({ analyticsData, diskStats }) {
           </div>
 
         </div>
+      </div>
 
+      {/* ── 4. FULL-WIDTH LIVE ACTIVITY STREAM (PROJECTS, VENDORS, SUBSCRIPTIONS & ADD-ONS) ── */}
+      <div className="glass-card" style={{ padding: '24px', borderRadius: '18px' }}>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: '15px', fontWeight: '700', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>📜 Aktivitas Terbaru Platform</span>
+        </h3>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          {/* Recent Projects */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#818cf8', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>📁 Galeri Project Terbaru</span>
+                <span style={{ fontSize: '9px', background: 'rgba(129,140,248,0.15)', color: '#818cf8', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Top 5</span>
+              </div>
+              {recentProjects.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {recentProjects.map(p => (
+                    <div key={p.id} style={{ fontSize: '11px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
+                        <strong style={{ color: '#ffffff', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.name}</strong>
+                        <span style={{ color: '#71717a', fontSize: '10px' }}>{p.vendorName}</span>
+                      </div>
+                      <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: p.status === 'completed' ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: p.status === 'completed' ? '#34d399' : '#fbbf24', flexShrink: 0, fontWeight: 'bold' }}>
+                        {p.status === 'completed' ? 'Selesai' : 'Aktif'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: '11px', color: '#71717a' }}>Belum ada aktivitas project.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Vendors */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#34d399', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>👤 Pendaftaran Studio Terbaru</span>
+                <span style={{ fontSize: '9px', background: 'rgba(52,211,153,0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Top 5</span>
+              </div>
+              {recentVendors.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {recentVendors.map(v => (
+                    <div key={v.id} style={{ fontSize: '11px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
+                        <strong style={{ color: '#ffffff', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden' }}>{v.name}</strong>
+                        <span style={{ color: '#71717a', fontSize: '10px' }}>{v.email}</span>
+                      </div>
+                      <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: v.status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: v.status === 'active' ? '#34d399' : '#fbbf24', flexShrink: 0, fontWeight: 'bold' }}>
+                        {v.status === 'active' ? 'Aktif' : 'Pending'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: '11px', color: '#71717a' }}>Belum ada pendaftaran baru.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Active Subscriptions & Add-On Events (Top 5) */}
+          <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '14px', border: '1px solid rgba(16,185,129,0.2)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#34d399', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>⚡ Subskripsi & Add-On Terbaru</span>
+                <span style={{ fontSize: '9px', background: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>Top 5</span>
+              </div>
+              {recentSubscriptionEvents.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {recentSubscriptionEvents.map(ev => {
+                    const quotaGb = ev.addonQuotaBytes ? Math.round(ev.addonQuotaBytes / (1024 * 1024 * 1024)) : 0;
+                    
+                    let label = '';
+                    let icon = '⚡';
+                    let badgeColor = '#34d399';
+                    let badgeBg = 'rgba(52,211,153,0.15)';
+
+                    if (ev.transactionType === 'addon') {
+                      icon = '💾';
+                      label = ev.addonName ? `Add-On ${ev.addonName}` : (quotaGb > 0 ? `Add-On +${quotaGb} GB` : 'Add-On Storage');
+                      badgeColor = '#38bdf8';
+                      badgeBg = 'rgba(56,189,248,0.15)';
+                    } else if (ev.planName && ev.addonPlanId) {
+                      icon = '🚀';
+                      label = `${ev.planName} + Add-On`;
+                      badgeColor = '#fbbf24';
+                      badgeBg = 'rgba(251,191,36,0.15)';
+                    } else {
+                      icon = '⚡';
+                      label = ev.planName ? `${ev.planName}` : 'Subskripsi Paket';
+                      badgeColor = '#818cf8';
+                      badgeBg = 'rgba(129,140,248,0.15)';
+                    }
+
+                    return (
+                      <div key={ev.id} style={{ fontSize: '11px', paddingBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.04)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '8px' }}>
+                          <strong style={{ color: '#ffffff', display: 'block', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                            {icon} {ev.vendorName || 'Studio'}
+                          </strong>
+                          <span style={{ color: '#a1a1aa', fontSize: '10px' }}>{label}</span>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: badgeBg, color: badgeColor, fontWeight: 'bold', display: 'block' }}>
+                            Rp {(ev.amount || 0).toLocaleString('id-ID')}
+                          </span>
+                          <span style={{ fontSize: '9px', color: '#71717a', display: 'block', marginTop: '2px' }}>
+                            {formatTimeAgo(ev.eventTime)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ fontSize: '11px', color: '#71717a' }}>Belum ada aktivitas subskripsi lunas.</div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>

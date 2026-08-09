@@ -85,6 +85,15 @@ export default function AdminTrialControl({ addToast }) {
     const [flashBannerText, setFlashBannerText] = useState('Diskon Spesial Paket Berlangganan!');
     const [selectedDurationHours, setSelectedDurationHours] = useState(24);
 
+    // Flash Sale Bundle Dynamic States
+    const [availablePlans, setAvailablePlans] = useState([]);
+    const [flashPromoType, setFlashPromoType] = useState('percent'); // 'percent' | 'bundle'
+    const [flashBundlePlanId, setFlashBundlePlanId] = useState(null);
+    const [flashBundleAddonName, setFlashBundleAddonName] = useState('Gratis +2 Extra Sub-Event Link');
+    const [flashBundleAddonType, setFlashBundleAddonType] = useState('sub_event');
+    const [flashBundleAddonValue, setFlashBundleAddonValue] = useState(2);
+    const [flashBundleAnchorPrice, setFlashBundleAnchorPrice] = useState(199000);
+
     const [activePreset, setActivePreset] = useState(null);
     const [confirmFlash, setConfirmFlash] = useState(false);
 
@@ -96,6 +105,7 @@ export default function AdminTrialControl({ addToast }) {
             const json = await res.json();
             setStats(json.stats);
             setRecentTrials(json.recentTrials || []);
+            setAvailablePlans(json.availablePlans || []);
             const s = json.settings;
             setEnableTrial(s.enable_free_trial === 1 || s.enable_free_trial === true);
             setExpirationMinutes(s.trial_expiration_minutes || 30);
@@ -124,6 +134,12 @@ export default function AdminTrialControl({ addToast }) {
             }
             setFlashTitle(s.flash_promo_title || '⚡ FLASH SALE PROMO');
             setFlashBannerText(s.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!');
+            setFlashPromoType(s.flash_promo_type || 'percent');
+            setFlashBundlePlanId(s.flash_bundle_plan_id || (json.availablePlans?.[1]?.id || json.availablePlans?.[0]?.id || null));
+            setFlashBundleAddonName(s.flash_bundle_addon_name || 'Gratis +2 Extra Sub-Event Link');
+            setFlashBundleAddonType(s.flash_bundle_addon_type || 'sub_event');
+            setFlashBundleAddonValue(s.flash_bundle_addon_value ?? 2);
+            setFlashBundleAnchorPrice(s.flash_bundle_anchor_price ?? 199000);
         } catch (err) {
             addToast?.('❌ ' + err.message, 'error');
         } finally {
@@ -153,6 +169,12 @@ export default function AdminTrialControl({ addToast }) {
                 flash_promo_duration_hours: overrides.flash_promo_duration_hours ?? selectedDurationHours,
                 flash_promo_title: overrides.flash_promo_title ?? flashTitle,
                 flash_promo_banner_text: overrides.flash_promo_banner_text ?? flashBannerText,
+                flash_promo_type: overrides.flash_promo_type ?? flashPromoType,
+                flash_bundle_plan_id: overrides.flash_bundle_plan_id ?? flashBundlePlanId,
+                flash_bundle_addon_name: overrides.flash_bundle_addon_name ?? flashBundleAddonName,
+                flash_bundle_addon_type: overrides.flash_bundle_addon_type ?? flashBundleAddonType,
+                flash_bundle_addon_value: overrides.flash_bundle_addon_value ?? flashBundleAddonValue,
+                flash_bundle_anchor_price: overrides.flash_bundle_anchor_price ?? flashBundleAnchorPrice,
             };
             const res = await fetch('/api/admin/trial-stats', {
                 method: 'PATCH',
@@ -306,37 +328,170 @@ export default function AdminTrialControl({ addToast }) {
 
                 <div style={{ opacity: enableFlashPromo ? 1 : 0.45, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     
+                    {/* MODE STRATEGI SWITCHER */}
+                    <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.25)', padding: '6px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <button
+                            type="button"
+                            disabled={!enableFlashPromo}
+                            onClick={() => {
+                                setFlashPromoType('percent');
+                                handleSave({ flash_promo_type: 'percent' });
+                            }}
+                            style={{
+                                flex: 1,
+                                padding: '10px 14px',
+                                borderRadius: '8px',
+                                border: flashPromoType === 'percent' ? '1px solid #ef4444' : 'none',
+                                background: flashPromoType === 'percent' ? 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(220,38,38,0.15))' : 'transparent',
+                                color: flashPromoType === 'percent' ? '#f87171' : '#a1a1aa',
+                                fontWeight: '700',
+                                fontSize: '12px',
+                                cursor: enableFlashPromo ? 'pointer' : 'not-allowed',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            🏷️ Mode Diskon Persentase (%)
+                        </button>
+                        <button
+                            type="button"
+                            disabled={!enableFlashPromo}
+                            onClick={() => {
+                                setFlashPromoType('bundle');
+                                handleSave({ flash_promo_type: 'bundle' });
+                            }}
+                            style={{
+                                flex: 1,
+                                padding: '10px 14px',
+                                borderRadius: '8px',
+                                border: flashPromoType === 'bundle' ? '1px solid #10b981' : 'none',
+                                background: flashPromoType === 'bundle' ? 'linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.15))' : 'transparent',
+                                color: flashPromoType === 'bundle' ? '#34d399' : '#a1a1aa',
+                                fontWeight: '700',
+                                fontSize: '12px',
+                                cursor: enableFlashPromo ? 'pointer' : 'not-allowed',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            🎁 Mode Flash Sale Bundle (Plan + Add-on) ⭐
+                        </button>
+                    </div>
+
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#f87171', marginBottom: '8px' }}>
-                                🏷️ Persentase Diskon (%)
-                            </label>
-                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                {[10, 20, 30, 40, 50].map(pct => (
-                                    <button
-                                        key={pct}
-                                        type="button"
+                        {flashPromoType === 'percent' ? (
+                            <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#f87171', marginBottom: '8px' }}>
+                                    🏷️ Persentase Diskon (%)
+                                </label>
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {[10, 20, 30, 40, 50].map(pct => (
+                                        <button
+                                            key={pct}
+                                            type="button"
+                                            disabled={!enableFlashPromo}
+                                            onClick={() => {
+                                                setFlashDiscountPercent(pct);
+                                                handleSave({ flash_promo_discount_percent: pct });
+                                            }}
+                                            style={{
+                                                padding: '6px 12px',
+                                                borderRadius: '8px',
+                                                border: flashDiscountPercent === pct ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
+                                                background: flashDiscountPercent === pct ? 'rgba(239,68,68,0.25)' : 'rgba(0,0,0,0.2)',
+                                                color: flashDiscountPercent === pct ? '#f87171' : '#a1a1aa',
+                                                fontSize: '12px',
+                                                fontWeight: 'bold',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            {pct}% Diskon
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#34d399', marginBottom: '6px' }}>
+                                        🎯 Target Paket Berlangganan (Plan Utama)
+                                    </label>
+                                    <select
                                         disabled={!enableFlashPromo}
-                                        onClick={() => {
-                                            setFlashDiscountPercent(pct);
-                                            handleSave({ flash_promo_discount_percent: pct });
+                                        value={flashBundlePlanId || ''}
+                                        onChange={(e) => {
+                                            const pid = parseInt(e.target.value);
+                                            setFlashBundlePlanId(pid);
+                                            const sel = availablePlans.find(p => p.id === pid);
+                                            const defaultAnchor = sel ? sel.price + 70000 : 199000;
+                                            setFlashBundleAnchorPrice(defaultAnchor);
+                                            handleSave({ flash_bundle_plan_id: pid, flash_bundle_anchor_price: defaultAnchor });
                                         }}
                                         style={{
-                                            padding: '6px 12px',
+                                            width: '100%',
+                                            padding: '8px 12px',
                                             borderRadius: '8px',
-                                            border: flashDiscountPercent === pct ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
-                                            background: flashDiscountPercent === pct ? 'rgba(239,68,68,0.25)' : 'rgba(0,0,0,0.2)',
-                                            color: flashDiscountPercent === pct ? '#f87171' : '#a1a1aa',
+                                            background: '#18181b',
+                                            border: '1px solid rgba(16,185,129,0.3)',
+                                            color: '#ffffff',
                                             fontSize: '12px',
-                                            fontWeight: 'bold',
-                                            cursor: 'pointer'
+                                            fontWeight: '600'
                                         }}
                                     >
-                                        {pct}% Diskon
-                                    </button>
-                                ))}
+                                        <option value="">-- Semua Paket Berhak Dapat Bonus --</option>
+                                        {availablePlans.map(p => (
+                                            <option key={p.id} value={p.id}>
+                                                {p.name} (Rp {p.price.toLocaleString('id-ID')})
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#a1a1aa', marginBottom: '4px' }}>
+                                            🎁 Teks Bonus Add-on
+                                        </label>
+                                        <input
+                                            type="text"
+                                            disabled={!enableFlashPromo}
+                                            value={flashBundleAddonName}
+                                            onChange={(e) => setFlashBundleAddonName(e.target.value)}
+                                            onBlur={(e) => handleSave({ flash_bundle_addon_name: e.target.value })}
+                                            placeholder="Gratis +2 Extra Sub-Event Link"
+                                            style={{
+                                                width: '100%',
+                                                padding: '6px 10px',
+                                                borderRadius: '8px',
+                                                background: '#18181b',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                color: '#ffffff',
+                                                fontSize: '12px'
+                                            }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#a1a1aa', marginBottom: '4px' }}>
+                                            🏷️ Total Anchor Price (Dicoret)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            disabled={!enableFlashPromo}
+                                            value={flashBundleAnchorPrice}
+                                            onChange={(e) => setFlashBundleAnchorPrice(parseFloat(e.target.value) || 0)}
+                                            onBlur={(e) => handleSave({ flash_bundle_anchor_price: parseFloat(e.target.value) || 0 })}
+                                            placeholder="199000"
+                                            style={{
+                                                width: '100%',
+                                                padding: '6px 10px',
+                                                borderRadius: '8px',
+                                                background: '#18181b',
+                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                color: '#ffffff',
+                                                fontSize: '12px'
+                                            }}
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <div>
                             <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#fbbf24', marginBottom: '8px' }}>
@@ -387,30 +542,102 @@ export default function AdminTrialControl({ addToast }) {
                         </div>
                     </div>
 
-                    <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '10px', padding: '14px' }}>
-                        <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px' }}>
-                            💡 Simulator Harga Terpotong (Live Real-Time)
+                    <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '16px' }}>
+                        <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>💡 Simulator Tampilan Vendor (Live Real-Time)</span>
+                            <span style={{ fontSize: '10px', color: flashPromoType === 'bundle' ? '#34d399' : '#f87171' }}>
+                                MODE: {flashPromoType === 'bundle' ? 'FLASHSALE BUNDLE' : 'DISKON PERSENTASE'}
+                            </span>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', fontSize: '12px' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
-                                <div style={{ color: '#94a3b8' }}>Starter Plan (Rp 49k)</div>
-                                <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
-                                    Rp {Math.round(49000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
+
+                        {flashPromoType === 'percent' ? (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px', fontSize: '12px' }}>
+                                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: '8px' }}>
+                                    <div style={{ color: '#94a3b8' }}>Starter Plan (Rp 49k)</div>
+                                    <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
+                                        Rp {Math.round(49000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
+                                    </div>
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: '8px' }}>
+                                    <div style={{ color: '#94a3b8' }}>Pro Studio (Rp 129k)</div>
+                                    <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
+                                        Rp {Math.round(129000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
+                                    </div>
+                                </div>
+                                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '10px 12px', borderRadius: '8px' }}>
+                                    <div style={{ color: '#94a3b8' }}>Business Studio (Rp 249k)</div>
+                                    <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
+                                        Rp {Math.round(249000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
+                                    </div>
                                 </div>
                             </div>
-                            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
-                                <div style={{ color: '#94a3b8' }}>Pro Studio (Rp 129k)</div>
-                                <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
-                                    Rp {Math.round(129000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
-                                </div>
+                        ) : (
+                            <div style={{
+                                background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(0,0,0,0.4))',
+                                border: '1px solid rgba(16,185,129,0.3)',
+                                borderRadius: '12px',
+                                padding: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '12px'
+                            }}>
+                                {(() => {
+                                    const targetPlan = availablePlans.find(p => p.id === flashBundlePlanId) || availablePlans[1] || availablePlans[0] || { name: 'Pro Studio Plan', price: 129000 };
+                                    const savingAmount = Math.max(0, flashBundleAnchorPrice - targetPlan.price);
+                                    return (
+                                        <>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                                <div>
+                                                    <span style={{ fontSize: '11px', fontWeight: '800', background: 'linear-gradient(90deg, #10b981, #059669)', color: '#ffffff', padding: '3px 8px', borderRadius: '6px' }}>
+                                                        ⚡ FLASHSALE BUNDLE KILAT
+                                                    </span>
+                                                    <h5 style={{ margin: '6px 0 0', fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>
+                                                        {targetPlan.name} (Rp {targetPlan.price.toLocaleString('id-ID')})
+                                                    </h5>
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: '#fbbf24', fontWeight: '700', background: 'rgba(251,191,36,0.1)', padding: '4px 10px', borderRadius: '8px', border: '1px solid rgba(251,191,36,0.3)' }}>
+                                                    ⏱ Sisa Waktu: 11:59:50
+                                                </div>
+                                            </div>
+
+                                            <div style={{
+                                                background: 'rgba(16,185,129,0.15)',
+                                                border: '1px dashed rgba(16,185,129,0.4)',
+                                                borderRadius: '8px',
+                                                padding: '10px 14px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '10px'
+                                            }}>
+                                                <span style={{ fontSize: '20px' }}>🎁</span>
+                                                <div>
+                                                    <div style={{ fontSize: '11px', color: '#34d399', fontWeight: '800', textTransform: 'uppercase' }}>
+                                                        BONUS FREE ADD-ON INCLUDED
+                                                    </div>
+                                                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>
+                                                        {flashBundleAddonName}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', paddingTop: '6px' }}>
+                                                <div>
+                                                    <div style={{ fontSize: '11px', color: '#71717a', textDecoration: 'line-through' }}>
+                                                        Total Nilai: Rp {flashBundleAnchorPrice.toLocaleString('id-ID')}
+                                                    </div>
+                                                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>
+                                                        Rp {targetPlan.price.toLocaleString('id-ID')} <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: 'normal' }}>/ bulan</span>
+                                                    </div>
+                                                </div>
+                                                <div style={{ background: '#10b981', color: '#ffffff', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '800' }}>
+                                                    HEMAT RP {savingAmount.toLocaleString('id-ID')}
+                                                </div>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
                             </div>
-                            <div style={{ background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: '8px' }}>
-                                <div style={{ color: '#94a3b8' }}>Business Studio (Rp 249k)</div>
-                                <div style={{ color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
-                                    Rp {Math.round(249000 * (1 - flashDiscountPercent / 100)).toLocaleString('id-ID')}
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
                 </div>
