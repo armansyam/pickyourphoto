@@ -123,6 +123,8 @@ export async function POST(request) {
         const ext = file.name ? path.extname(file.name) || '.png' : '.png';
         const fileName = `proof_${vendor.id}_${Date.now()}${ext}`;
         const filePath = path.join(uploadDir, fileName);
+        fs.writeFileSync(filePath, buffer);
+        const webPath = `/staging_uploads/payment_proofs/${fileName}`;
 
         const addonPlanId = formData.get('addonPlanId');
         let addonQuotaBytes = 0;

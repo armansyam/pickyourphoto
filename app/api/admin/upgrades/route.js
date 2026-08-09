@@ -88,7 +88,7 @@ export async function PUT(request) {
 
                 db.prepare(`
                   UPDATE vendors 
-                  SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
+                  SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0 
                   WHERE id = ?
                 `).run(addonPlan.quotaBytes, addonPlan.id, upgradeReq.vendorId);
 
@@ -123,8 +123,12 @@ export async function PUT(request) {
                 expiresAt = baseDate.toISOString();
             }
 
-            // Update vendor plan information and update their main paymentProof link to the latest approved one
-            const updateVendor = db.prepare('UPDATE vendors SET planId = ?, expiresAt = ?, maxProjects = ?, paymentProof = ? WHERE id = ?');
+            // Update vendor plan information and clear pending addon flags
+            const updateVendor = db.prepare(`
+                UPDATE vendors 
+                SET planId = ?, expiresAt = ?, maxProjects = ?, paymentProof = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0 
+                WHERE id = ?
+            `);
             updateVendor.run(upgradeReq.planId, expiresAt, plan.maxProjects, upgradeReq.transferProof, upgradeReq.vendorId);
 
             // Update request status

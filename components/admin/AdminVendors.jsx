@@ -167,7 +167,8 @@ export default function AdminVendors({
     const matchesSearch = !q || (
       (v.name && v.name.toLowerCase().includes(q)) ||
       (v.email && v.email.toLowerCase().includes(q)) ||
-      (v.whatsapp && v.whatsapp.includes(q))
+      (v.whatsapp && v.whatsapp.includes(q)) ||
+      (v.orderId && v.orderId.toLowerCase().includes(q))
     );
 
     let matchesTab = false;
