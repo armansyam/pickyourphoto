@@ -29,27 +29,33 @@ if [ ! -f .env ]; then
     fi
 fi
 
-# Otomasi JWT_SECRET jika belum ada, kosong, atau masih bernilai default
+# Otomasi JWT_SECRET secara murni di Bash (menggunakan OpenSSL / urandom)
+# Tidak membutuhkan Node.js di Host OS (cocok untuk server murni Docker)
 echo "🔑    Memvalidasi JWT_SECRET di .env..."
-node -e "
-  const fs = require('fs');
-  const crypto = require('crypto');
-  let content = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
-  const defaultKeys = ['JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman', 'JWT_SECRET=pick-your-photo-super-secret-key-2026'];
-  const isDefault = defaultKeys.some(d => content.includes(d));
-  if (!content.includes('JWT_SECRET=') || isDefault) {
-    const secureKey = crypto.randomBytes(32).toString('hex');
-    if (content.includes('JWT_SECRET=')) {
-      content = content.replace(/JWT_SECRET=.*/g, 'JWT_SECRET=' + secureKey);
-    } else {
-      content += '\nJWT_SECRET=' + secureKey + '\n';
-    }
-    fs.writeFileSync('.env', content, 'utf8');
-    console.log('   ✅ JWT_SECRET acak (64 hex chars) berhasil di-generate otomatis!');
-  } else {
-    console.log('   ✅ JWT_SECRET sudah terkonfigurasi dengan aman.');
-  }
-"
+if grep -q "JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman" .env || \
+   grep -q "JWT_SECRET=pick-your-photo-super-secret-key-2026" .env || \
+   ! grep -q "JWT_SECRET=" .env || \
+   grep -q "JWT_SECRET=$" .env; then
+
+    # Generate 64 hex characters acak
+    NEW_SECRET=$(openssl rand -hex 32 2>/dev/null || LC_ALL=C tr -dc 'a-f0-9' < /dev/urandom | head -c 64)
+
+    if grep -q "JWT_SECRET=" .env; then
+        # Replace baris JWT_SECRET yang ada
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s/JWT_SECRET=.*/JWT_SECRET=$NEW_SECRET/" .env
+        else
+            sed -i "s/JWT_SECRET=.*/JWT_SECRET=$NEW_SECRET/" .env
+        fi
+    else
+        # Tambahkan di baris baru
+        echo "" >> .env
+        echo "JWT_SECRET=$NEW_SECRET" >> .env
+    fi
+    echo "   ✅ JWT_SECRET acak (64 hex chars) berhasil di-generate otomatis!"
+else
+    echo "   ✅ JWT_SECRET sudah terkonfigurasi dengan aman."
+fi
 
 # 3. Build & Jalankan Container Docker baru
 echo "📦 [3/5] Membangun ulang image Docker dan me-restart container..."
