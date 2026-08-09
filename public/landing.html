@@ -479,18 +479,18 @@
         <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
           <!-- Box 1: Link Galeri Klien -->
           <div style="background: rgba(11,9,24,0.8); border: 1px solid rgba(129,140,248,0.3); padding: 12px; border-radius: 10px;">
-            <span style="font-size: 11px; color: #818cf8; font-weight: bold; display: block; margin-bottom: 4px;">📱 Link Galeri Klien (Halaman Seleksi Foto):</span>
+            <span style="font-size: 11px; color: #818cf8; font-weight: bold; display: block; margin-bottom: 4px;">Link Galeri Klien (Halaman Seleksi Foto):</span>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
               <code id="resClientUrlText" style="font-size: 12px; color: #EAE8F7; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></code>
-              <button type="button" id="copyClientUrlBtn" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;">📋 Salin</button>
+              <button type="button" id="copyClientUrlBtn" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;">Salin</button>
             </div>
           </div>
 
           <!-- Box 2: Link Hasil Seleksi & Live Button -->
           <div style="background: rgba(11,9,24,0.8); border: 1px solid rgba(16,185,129,0.3); padding: 14px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; color: #34d399; font-weight: bold;">📋 Link Hasil Seleksi (Halaman Lightroom Ready):</span>
-              <button type="button" id="copyResultUrlBtn" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: #34d399; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">📋 Salin Link</button>
+              <span style="font-size: 11px; color: #34d399; font-weight: bold;">Link Hasil Seleksi (Halaman Lightroom Ready):</span>
+              <button type="button" id="copyResultUrlBtn" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: #34d399; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">Salin Link</button>
             </div>
             <code id="resResultUrlText" style="font-size: 12px; color: #9791B8; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></code>
 
@@ -501,7 +501,7 @@
         </div>
 
         <div style="display: flex; gap: 12px;">
-          <a id="openGalleryBtn" href="#" target="_blank" style="flex: 1; background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; text-align: center; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; text-decoration: none;">📱 Buka &amp; Tes Galeri Seleksi &rarr;</a>
+          <a id="openGalleryBtn" href="#" target="_blank" style="flex: 1; background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; text-align: center; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; text-decoration: none;">Buka &amp; Tes Galeri Seleksi &rarr;</a>
           <button type="button" id="resetTrialFormBtn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9791B8; padding: 14px 18px; border-radius: 10px; font-size: 13px; cursor: pointer;">↺ Buat Baru</button>
         </div>
       </div>
@@ -514,13 +514,13 @@
             <h3 id="liveCardTitle" style="font-size: 17px; font-weight: bold; color: #fff; margin: 4px 0 0 0;">Hasil Seleksi Foto Trial</h3>
           </div>
           <button type="button" id="refreshLiveResultBtn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #38bdf8; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
-            <span>🔄 Sync Live</span>
+            <span>Sync Live</span>
           </button>
         </div>
 
         <div id="liveStatusBox" style="background: rgba(11,9,24,0.8); border: 1px solid rgba(129,140,248,0.2); padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
           <div style="font-size: 13px; color: #cbd5e1;">
-            Status: <strong id="liveStatusBadge" style="color: #fbbf24;">⏳ Menunggu Pilihan Klien...</strong>
+            Status: <strong id="liveStatusBadge" style="color: #fbbf24;">Menunggu Pilihan Klien...</strong>
           </div>
           <div style="font-size: 13px; color: #34d399; font-weight: bold;" id="liveSelectedCountText">
             0 Foto Dipilih
@@ -530,8 +530,8 @@
         <!-- LIGHTROOM READY FILENAMES CONTAINER -->
         <div style="margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">📋 List Nama File (Format Lightroom Filter):</span>
-            <button type="button" id="copyLiveFilenamesBtn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s;">📋 Salin Nama File</button>
+            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">List Nama File (Format Lightroom Filter):</span>
+            <button type="button" id="copyLiveFilenamesBtn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s;">Salin Nama File</button>
           </div>
           <div id="liveFilenamesBox" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(16,185,129,0.3); padding: 14px; border-radius: 10px; font-family: var(--mono, monospace); font-size: 13px; color: #38bdf8; min-height: 56px; max-height: 120px; overflow-y: auto; word-break: break-all; line-height: 1.6;">
             <em>Klien belum memilih foto. Buka tab Galeri Klien untuk simulasi memilih foto.</em>
@@ -541,7 +541,7 @@
         <!-- NAVIGATION BUTTONS -->
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <button type="button" id="backToLinksBtn" style="flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #eae8f7; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s;">← Kembali ke Link Galeri</button>
-          <a id="openFullResultBtn" href="#" target="_blank" style="background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 6px;">📁 Halaman RAW Sorter →</a>
+          <a id="openFullResultBtn" href="#" target="_blank" style="background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 6px;">Halaman RAW Sorter →</a>
           <button type="button" id="resetLiveFormBtn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9791B8; padding: 12px 16px; border-radius: 10px; font-size: 13px; cursor: pointer;">↺ Buat Baru</button>
         </div>
       </div>
@@ -601,7 +601,7 @@
           }
 
           if (statusBadge) {
-            statusBadge.textContent = isCompleted ? '✅ Klien Sudah Memilih' : '⏳ Menunggu Pilihan Klien...';
+            statusBadge.textContent = isCompleted ? 'Klien Sudah Memilih' : 'Menunggu Pilihan Klien...';
             statusBadge.style.color = isCompleted ? '#34d399' : '#fbbf24';
           }
           if (countText) {
@@ -621,7 +621,7 @@
         } catch (err) {
           console.error(err);
         } finally {
-          if (refreshBtn) refreshBtn.innerHTML = '<span>🔄 Sync Live</span>';
+          if (refreshBtn) refreshBtn.innerHTML = '<span>Sync Live</span>';
         }
       }
 
@@ -811,18 +811,18 @@
           // Wire copy buttons
           document.getElementById('copyClientUrlBtn').onclick = function() {
             navigator.clipboard.writeText(clientUrl);
-            alert('✓ Link Galeri Klien berhasil disalin!');
+            alert('Link Galeri Klien berhasil disalin!');
           };
           document.getElementById('copyResultUrlBtn').onclick = function() {
             navigator.clipboard.writeText(resultUrl);
-            alert('✓ Link Hasil Seleksi berhasil disalin!');
+            alert('Link Hasil Seleksi berhasil disalin!');
           };
 
           // Switch UI from form to result card cleanly inside trial box
           transitionCard(trialForm, trialResultCard);
 
         } catch (err) {
-          errBox.textContent = '⚠️ ' + err.message;
+          errBox.textContent = err.message;
           errBox.style.display = 'block';
           if (formWrapper) formWrapper.style.maxHeight = 'none';
           btn.disabled = false;
@@ -856,10 +856,10 @@
           if (currentSelectedPhotos && currentSelectedPhotos.length > 0) {
             const stripped = currentSelectedPhotos.map(function(n) { return n.replace(/\.[^.]+$/, ''); }).join(', ');
             navigator.clipboard.writeText(stripped);
-            copyLiveFilenamesBtn.textContent = '✓ Berhasil Disalin!';
+            copyLiveFilenamesBtn.textContent = 'Berhasil Disalin!';
             copyLiveFilenamesBtn.style.background = '#10b981';
             setTimeout(function() {
-              copyLiveFilenamesBtn.textContent = '📋 Salin Nama File';
+              copyLiveFilenamesBtn.textContent = 'Salin Nama File';
               copyLiveFilenamesBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
             }, 2500);
           } else {
