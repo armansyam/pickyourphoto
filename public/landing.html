@@ -1111,7 +1111,7 @@
           <li style="color: rgba(255,255,255,0.4);">• Logo Platform Standard</li>
           <li style="color: rgba(255,255,255,0.4);">• Fitur RAW Selector Nonaktif</li>
         </ul>
-        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Pilih Paket &rarr;</a>
+        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Daftar Sekarang &rarr;</a>
       </div>
       <div class="tier featured">
         <span class="tier-badge" data-i18n="pricing.badge">PALING DIPILIH</span>
@@ -1125,7 +1125,7 @@
           <li style="color: #34d399; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>
           <li style="color: rgba(255,255,255,0.4);">• Fitur RAW Selector Nonaktif</li>
         </ul>
-        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Pilih Paket &rarr;</a>
+        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Daftar Sekarang &rarr;</a>
       </div>
       <div class="tier">
         <div class="tier-name" data-i18n="pricing.t3.name">Business Studio Plan</div>
@@ -1138,7 +1138,7 @@
           <li style="color: #34d399; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>
           <li style="color: #34d399; font-weight: bold;">✓ Fitur Auto-Sorter / Selector File RAW</li>
         </ul>
-        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Pilih Paket &rarr;</a>
+        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.08); color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Daftar Sekarang &rarr;</a>
       </div>
     </div>
     <div style="text-align: center; margin-top: 28px; font-size: 13.5px; color: var(--muted); font-family: var(--sans);" class="reveal">
@@ -1501,6 +1501,64 @@
     }
   };
 
+  function renderDynamicPlans(plans, lang) {
+    var grid = document.getElementById('landingTierGrid');
+    if (!grid || !Array.isArray(plans) || plans.length === 0) return;
+    var isEn = lang === 'en';
+    grid.innerHTML = plans.map(function(p) {
+      var isFeatured = p.name.toLowerCase().includes('pro');
+      var isDiscounted = p.discountedPrice && p.discountedPrice < p.originalPrice;
+      var priceFormatted = isDiscounted 
+        ? '<span style="text-decoration: line-through; opacity: 0.6; font-size: 15px; margin-right: 6px;">Rp ' + Number(p.originalPrice).toLocaleString('id-ID') + '</span> <span style="color: #ef4444;">Rp ' + Number(p.discountedPrice).toLocaleString('id-ID') + '</span>'
+        : 'Rp ' + Number(p.price).toLocaleString('id-ID');
+      
+      var period = p.activePeriodDays || 30;
+
+      var noteText = isEn 
+        ? (p.name.includes('Starter') ? 'Ideal for freelance & beginner photographers' : (isFeatured ? 'For professional photographers & studio teams' : 'For large studios & high volume vendors'))
+        : (p.name.includes('Starter') ? 'Cocok untuk fotografer pemula / freelance' : (isFeatured ? 'Untuk fotografer profesional & tim studio' : 'Untuk studio besar & vendor volume tinggi'));
+
+      var maxProjectsText = isEn ? ('Up to ' + p.maxProjects + ' Active Projects') : ('Maksimal ' + p.maxProjects + ' Project Aktif');
+      var maxPhotosText = p.maxPhotosPerProject > 0 
+        ? (isEn ? ('Max ' + p.maxPhotosPerProject + ' Photos / Project') : ('Maksimal ' + p.maxPhotosPerProject + ' Foto / Project'))
+        : (isEn ? 'No Photo Count Limit per Project' : 'Bebas Jumlah Foto per Proyek');
+      var lifetimeText = isEn ? (period + ' Days Active Gallery Lifetime') : ('Masa Simpan Galeri ' + period + ' Hari Aktif');
+      var gdriveText = isEn ? 'Direct Google Drive Integration' : 'Integrasi Langsung Google Drive';
+
+      var logoTextHtml = p.allowCustomLogo 
+        ? '<li style="color: #818cf8; font-weight: bold;">' + (isEn ? '✓ Custom Studio Logo (White-Label)' : '✓ Custom Logo Studio (White-Label)') + '</li>'
+        : '<li style="color: var(--muted-dark);">' + (isEn ? '• Default Platform Logo' : '• Logo Default Platform') + '</li>';
+
+      var rawTextHtml = p.allowRawSelector
+        ? '<li style="color: #10b981; font-weight: bold;">' + (isEn ? '✓ 1-Click RAW File Auto-Sorter' : '✓ Fitur Auto-Sorter / Selector File RAW') + '</li>'
+        : '<li style="color: var(--muted-dark);">' + (isEn ? '• RAW Selector Feature Disabled' : '• Fitur RAW Selector Nonaktif') + '</li>';
+
+      var badgeText = isDiscounted
+        ? (isEn ? ('DISCOUNT ' + p.discountPercent + '%') : ('DISKON ' + p.discountPercent + '%'))
+        : (isFeatured ? (isEn ? 'MOST POPULAR' : 'PALING DIPILIH') : '');
+
+      var ctaBtnText = isDiscounted
+        ? (isEn ? ('Claim Discount ' + p.discountPercent + '% &rarr;') : ('Klaim Diskon ' + p.discountPercent + '% &rarr;'))
+        : (isEn ? 'Register Now &rarr;' : 'Daftar Sekarang &rarr;');
+
+      return '<div class="tier ' + (isFeatured ? 'featured' : '') + '">' +
+        (badgeText ? '<span class="tier-badge" ' + (isDiscounted ? 'style="background: linear-gradient(135deg, #ef4444, #dc2626);"' : '') + '>' + badgeText + '</span>' : '') +
+        '<div class="tier-name">' + p.name + '</div>' +
+        '<div style="font-size: 22px; font-weight: 850; color: ' + (isFeatured ? '#fbbf24' : 'var(--brass-bright)') + '; margin-bottom: 4px;">' + priceFormatted + ' <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ ' + period + (isEn ? ' days' : ' hari') + '</span></div>' +
+        '<div class="tier-note">' + noteText + '</div>' +
+        '<ul>' +
+          '<li>' + maxProjectsText + '</li>' +
+          '<li>' + maxPhotosText + '</li>' +
+          '<li>' + lifetimeText + '</li>' +
+          '<li>' + gdriveText + '</li>' +
+          logoTextHtml +
+          rawTextHtml +
+        '</ul>' +
+        '<a href="/register?planId=' + p.id + '" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: ' + (isDiscounted ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : (isFeatured ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)')) + '; color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">' + ctaBtnText + '</a>' +
+      '</div>';
+    }).join('');
+  }
+
   function applyLang(lang){
     document.documentElement.lang=lang;
     document.querySelectorAll('[data-i18n]').forEach(function(el){
@@ -1508,6 +1566,9 @@
       if(text!==undefined)el.innerHTML=text;
     });
     document.querySelectorAll('.lang-btn').forEach(function(btn){btn.classList.toggle('active',btn.dataset.lang===lang);});
+    if (window.currentFetchedPlans) {
+      renderDynamicPlans(window.currentFetchedPlans, lang);
+    }
   }
   document.querySelectorAll('.lang-btn').forEach(function(btn){btn.addEventListener('click',function(){applyLang(btn.dataset.lang);});});
   applyLang('id');
@@ -1588,34 +1649,8 @@
         }
       }
 
-      if (Array.isArray(plans) && plans.length > 0) {
-        var grid = document.getElementById('landingTierGrid');
-        if (!grid) return;
-        grid.innerHTML = plans.map(function(p) {
-          var isFeatured = p.name.toLowerCase().includes('pro');
-          var isDiscounted = p.discountedPrice && p.discountedPrice < p.originalPrice;
-          var priceFormatted = isDiscounted 
-            ? '<span style="text-decoration: line-through; opacity: 0.6; font-size: 15px; margin-right: 6px;">Rp ' + Number(p.originalPrice).toLocaleString('id-ID') + '</span> <span style="color: #ef4444;">Rp ' + Number(p.discountedPrice).toLocaleString('id-ID') + '</span>'
-            : 'Rp ' + Number(p.price).toLocaleString('id-ID');
-          
-          var period = p.activePeriodDays || 30;
-          return '<div class="tier ' + (isFeatured ? 'featured' : '') + '">' +
-            (isDiscounted ? '<span class="tier-badge" style="background: linear-gradient(135deg, #ef4444, #dc2626);">DISKON ' + p.discountPercent + '%</span>' : (isFeatured ? '<span class="tier-badge">PALING DIPILIH</span>' : '')) +
-            '<div class="tier-name">' + p.name + '</div>' +
-            '<div style="font-size: 22px; font-weight: 850; color: ' + (isFeatured ? '#fbbf24' : 'var(--brass-bright)') + '; margin-bottom: 4px;">' + priceFormatted + ' <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ ' + period + ' hari</span></div>' +
-            '<div class="tier-note">' + (p.name.includes('Starter') ? 'Cocok untuk fotografer pemula / freelance' : (isFeatured ? 'Untuk fotografer profesional & tim studio' : 'Untuk studio besar & vendor volume tinggi')) + '</div>' +
-            '<ul>' +
-              '<li>Maksimal ' + p.maxProjects + ' Project Aktif</li>' +
-              '<li>Maksimal ' + (p.maxPhotosPerProject > 0 ? p.maxPhotosPerProject + ' Foto / Project' : 'Bebas Jumlah Foto per Proyek') + '</li>' +
-              '<li>Masa Simpan Galeri ' + period + ' Hari Aktif</li>' +
-              '<li>Integrasi Langsung Google Drive</li>' +
-              (p.allowCustomLogo ? '<li style="color: #818cf8; font-weight: bold;">Custom Logo Studio (White-Label)</li>' : '<li style="color: var(--muted-dark);">Logo Default Platform</li>') +
-              (p.allowRawSelector ? '<li style="color: #10b981; font-weight: bold;">Fitur 1-Klik Auto-Sorter / Selector File RAW</li>' : '<li style="color: var(--muted-dark);">Fitur RAW Selector Nonaktif</li>') +
-            '</ul>' +
-            '<a href="/register?planId=' + p.id + '" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: ' + (isDiscounted ? 'linear-gradient(135deg, #ef4444, #b91c1c)' : (isFeatured ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)')) + '; color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">' + (isDiscounted ? 'Klaim Diskon ' + p.discountPercent + '% &rarr;' : 'Pilih Paket &rarr;') + '</a>' +
-          '</div>';
-        }).join('');
-      }
+      window.currentFetchedPlans = plans;
+      renderDynamicPlans(plans, document.documentElement.lang || 'id');
     })
     .catch(function(err) { console.log('Landing plans sync:', err); });
 

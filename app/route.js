@@ -51,7 +51,7 @@ export async function GET(request) {
           ${logoText}
           ${rawText}
         </ul>
-        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: ${isFeatured ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)'}; color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Pilih Paket &rarr;</a>
+        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 20px; padding: 10px; background: ${isFeatured ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.08)'}; color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px;">Daftar Sekarang &rarr;</a>
       </div>`;
             }).join('');
 
