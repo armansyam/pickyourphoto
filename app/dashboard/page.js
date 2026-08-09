@@ -221,8 +221,11 @@ export default function DashboardPage() {
     };
 
     // Instant Render Memory Cache
-    const fetchProjects = async (silentRevalidate = false) => {
-        if (!silentRevalidate && typeof window !== 'undefined' && window._vendorDashboardCache) {
+    const fetchProjects = async (silentRevalidate = false, clearCache = false) => {
+        if (clearCache && typeof window !== 'undefined') {
+            window._vendorDashboardCache = null;
+        }
+        if (!silentRevalidate && !clearCache && typeof window !== 'undefined' && window._vendorDashboardCache) {
             const cached = window._vendorDashboardCache;
             setProjects(cached.projects || []);
             if (cached.vendor) {
@@ -389,6 +392,15 @@ export default function DashboardPage() {
                 }
             });
         }
+
+        // Real-time background auto-revalidate vendor dashboard state every 8 seconds
+        const timer = setInterval(() => {
+            if (typeof document !== 'undefined' && !document.hidden) {
+                fetchProjects(true, true);
+            }
+        }, 8000);
+
+        return () => clearInterval(timer);
     }, []);
 
     // Dynamically inject Midtrans Snap script if Payment Gateway is enabled
@@ -1079,7 +1091,7 @@ export default function DashboardPage() {
                     <p style={{ color: '#a1a1aa', margin: '4px 0 0 0', fontSize: '13px' }}>
                         Kelola project seleksi foto klien
                         {vendorDetails && (
-                            <span> — Paket: <strong>{vendorDetails.planName || 'Basic'} Plan</strong> (Masa aktif s/d: {vendorDetails.expiresAt ? new Date(vendorDetails.expiresAt).toLocaleDateString() : 'Lifetime'})</span>
+                            <span> — Paket: <strong>{vendorDetails.planName ? (vendorDetails.planName.endsWith('Plan') ? vendorDetails.planName : `${vendorDetails.planName} Plan`) : 'Basic Plan'}</strong> (Masa aktif s/d: {vendorDetails.expiresAt ? new Date(vendorDetails.expiresAt).toLocaleDateString() : 'Lifetime'})</span>
                         )}
                     </p>
                 </div>
