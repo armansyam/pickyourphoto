@@ -120,7 +120,7 @@ export async function POST(req) {
         transferProofPath = `/staging_uploads/payment_proofs/${filename}`;
       }
 
-      // Simpan permohonan Add-On Storage ke subscription_requests agar dikonfirmasi Admin
+      // Simpan permohonan Add-On Storage ke subscription_requests & update pending flags di vendors
       const existingReq = db.prepare("SELECT id FROM subscription_requests WHERE vendorId = ? AND status = 'pending'").get(vendor.id);
       if (existingReq) {
         db.prepare("UPDATE subscription_requests SET addonPlanId = ?, requestType = 'addon', proratedPrice = ?, transferProof = ? WHERE id = ?")
@@ -129,6 +129,12 @@ export async function POST(req) {
         db.prepare("INSERT INTO subscription_requests (vendorId, planId, addonPlanId, requestType, proratedPrice, transferProof, status) VALUES (?, ?, ?, 'addon', ?, ?, 'pending')")
           .run(vendor.id, vendor.planId || 1, addonPlan.id, proratedPrice, transferProofPath);
       }
+
+      db.prepare(`
+        UPDATE vendors 
+        SET pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?, paymentProof = ? 
+        WHERE id = ?
+      `).run(addonPlan.id, addonPlan.quotaBytes, transferProofPath, vendor.id);
 
       return NextResponse.json({
         success: true,
