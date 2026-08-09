@@ -207,6 +207,13 @@ export async function POST(req) {
       ON CONFLICT(logDate) DO UPDATE SET totalBytesUploaded = totalBytesUploaded + ?
     `).run(today, bytes, bytes);
 
+    // Cleanup log lama >30 hari secara probabilistik (5% chance) agar tabel tidak tumbuh tak terbatas
+    if (Math.random() < 0.05) {
+      try {
+        db.prepare("DELETE FROM daily_upload_logs WHERE logDate < date('now', '-30 days')").run();
+      } catch (_) {}
+    }
+
     return NextResponse.json({
       success: true,
       message: `Berkas ${fileName} berhasil disimpan di Cloud Storage.`,
@@ -241,10 +248,20 @@ export async function DELETE(req) {
       return NextResponse.json({ success: false, error: 'File tidak ditemukan atau bukan milik Anda.' }, { status: 404 });
     }
 
-    // 1. Hapus dari Google Drive API
+    // 1. Hapus dari Google Drive API — gunakan client yang sesuai dengan storage mode
     try {
       if (file.driveFileId) {
-        await deleteDriveFile(file.driveFileId);
+        if (file.isExternalDrive) {
+          // File BYOS: gunakan Drive client vendor sendiri (Master Admin tidak punya akses)
+          const { getVendorDriveClient } = await import('@/lib/google-master-drive');
+          const vendorDrive = await getVendorDriveClient(session.id);
+          if (vendorDrive) {
+            await vendorDrive.files.delete({ fileId: file.driveFileId });
+          }
+        } else {
+          // File SaaS Dedicated: gunakan Master Admin Drive client
+          await deleteDriveFile(file.driveFileId);
+        }
       }
     } catch (driveErr) {
       console.warn(`[Drive Delete Warning] Gagal menghapus file di Drive ${file.driveFileId}:`, driveErr.message);

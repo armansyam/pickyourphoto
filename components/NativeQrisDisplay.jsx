@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
+    // Deteksi provider dari pendingOrder (dikirim dari /api/payment/create response)
+    const provider = (pendingOrder?.provider || 'midtrans').toLowerCase();
+    const isMidtrans = provider === 'midtrans';
     const [timeLeft, setTimeLeft] = useState('');
     const [isExpired, setIsExpired] = useState(false);
     const [checkingStatus, setCheckingStatus] = useState(false);
@@ -66,8 +69,9 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
         return () => clearInterval(poll);
     }, [pendingOrder?.orderId, isExpired, paidSuccess]);
 
-    // Dynamically load Midtrans snap.js script if missing on current page
+    // Dynamically load Midtrans snap.js script — ONLY for Midtrans provider
     useEffect(() => {
+        if (!isMidtrans) return; // Skip entirely for Xendit, Tripay, Duitku, Doku
         if (typeof window === 'undefined') return;
         if (window.snap) return;
 
@@ -95,11 +99,11 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
         };
 
         loadSnapScript();
-    }, []);
+    }, [isMidtrans]);
 
-    // Snap embed
+    // Snap embed — ONLY for Midtrans (other providers use iframe redirect instead)
     useEffect(() => {
-        if (!pendingOrder?.token || snapEmbedDone.current || paidSuccess) return;
+        if (!isMidtrans || !pendingOrder?.token || snapEmbedDone.current || paidSuccess) return;
 
         let isMounted = true;
         const tryEmbed = () => {
@@ -138,7 +142,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
         return () => {
             isMounted = false;
         };
-    }, [pendingOrder?.token, paidSuccess]);
+    }, [isMidtrans, pendingOrder?.token, paidSuccess]);
 
     const triggerRedirectToDashboard = async () => {
         try {
@@ -250,9 +254,21 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                                 )}
                             </div>
                         )}
-                        {/* Snap Embed Target with Direct Fallback Iframe */}
+                        {/* QR/Payment Area:
+                            - Midtrans: snap.embed renders into #midtrans-snap-embed
+                            - Xendit/Tripay/Duitku/Doku: iframe dari redirectUrl
+                        */}
                         <div id="midtrans-snap-embed" style={{ width: '100%', minHeight: '600px' }}>
-                          {(pendingOrder?.paymentUrl || pendingOrder?.redirectUrl) && (
+                          {/* Iframe fallback: untuk non-Midtrans atau saat snap.embed belum siap */}
+                          {!isMidtrans && (pendingOrder?.redirectUrl || pendingOrder?.paymentUrl) && (
+                            <iframe
+                              src={pendingOrder.redirectUrl || pendingOrder.paymentUrl}
+                              style={{ width: '100%', height: '620px', border: 'none', borderRadius: '12px', background: '#ffffff' }}
+                              title="Payment Gateway"
+                            />
+                          )}
+                          {/* Midtrans: iframe sebagai last-resort fallback jika snap.embed gagal */}
+                          {isMidtrans && !snapEmbedDone.current && (pendingOrder?.paymentUrl || pendingOrder?.redirectUrl) && (
                             <iframe
                               src={pendingOrder.paymentUrl || pendingOrder.redirectUrl}
                               style={{ width: '100%', height: '620px', border: 'none', borderRadius: '12px', background: '#ffffff' }}

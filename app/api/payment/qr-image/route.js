@@ -20,6 +20,14 @@ export async function GET(request) {
 
         const config = getPaymentGatewayConfig();
         const serverKey = config.serverKey || '';
+
+        // QR image proxy hanya tersedia untuk Midtrans (provider lain tidak punya QRIS URL yang dapat di-proxy)
+        if (config.provider !== 'midtrans') {
+            return NextResponse.json({
+                message: `Provider aktif (${config.provider}) tidak mendukung QR image proxy. QR Code ditampilkan langsung dari URL payment.`
+            }, { status: 400 });
+        }
+
         if (!serverKey) {
             return NextResponse.json({ message: 'Server key not configured' }, { status: 500 });
         }

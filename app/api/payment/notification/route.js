@@ -166,13 +166,17 @@ export async function POST(request) {
         console.log(`[Payment Webhook SUCCESS] Vendor ${vendor.name} (${vendor.email}) berhasil diaktivasi otomatis untuk paket ${plan.name} (Storage: ${newAddonStorageQuotaBytes} bytes)!`);
 
         // Trigger automated email notification based on transaction type
+        // GUARD: Kirim email hanya jika vendor sebelumnya belum active (cegah email ganda dgn payment/status)
+        // payment/status sudah kirim email untuk non-webhook activation (polling frontend)
+        // Webhook ini hanya kirim email untuk kasus yang belum dihandle status route
         const updatedVendor = { ...vendor, status: 'active', expiresAt };
-        if (isRenewal) {
-          sendVendorRenewalConfirmationEmail(updatedVendor, plan, expiresAt, 'QRIS').catch(() => {});
+        if (!wasActive) {
+          // Vendor baru pertama kali aktif — kirim approval email
+          sendVendorApprovalEmail(updatedVendor, plan, transaction.orderId, 'QRIS').catch(() => {});
         } else if (isUpgrade) {
           sendVendorUpgradeConfirmationEmail(updatedVendor, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(() => {});
-        } else {
-          sendVendorApprovalEmail(updatedVendor, plan, transaction.orderId, 'QRIS').catch(() => {});
+        } else if (isRenewal) {
+          sendVendorRenewalConfirmationEmail(updatedVendor, plan, expiresAt, 'QRIS').catch(() => {});
         }
       }
     } else if (isFailed) {

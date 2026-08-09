@@ -70,8 +70,9 @@ export async function POST(request) {
     });
 
     const config = getPaymentGatewayConfig();
-    // Record new payment session (2-hour expiry)
-    const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString();
+    // Record new payment session — expiry from admin settings (default: 15 minutes)
+    const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 15;
+    const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
     db.prepare(`
       INSERT INTO payment_sessions (orderId, vendorId, planId, amount, status, paymentMethod, expiresAt)
       VALUES (?, ?, ?, ?, 'pending', ?, ?)

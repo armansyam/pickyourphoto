@@ -53,7 +53,8 @@ export async function GET(request) {
     let isSettled = transaction.status === 'paid';
 
     // If transaction is not paid yet, check live status from Midtrans API directly
-    if (!isSettled && config.enabled && config.serverKey) {
+    // (Only applicable when active provider is Midtrans — other providers use webhook callbacks)
+    if (!isSettled && config.enabled && config.serverKey && config.provider === 'midtrans') {
       try {
         const midtransStatusUrl = config.isProduction
           ? `https://api.midtrans.com/v2/${orderId}/status`
@@ -102,8 +103,11 @@ export async function GET(request) {
     }
 
     // Always ensure vendor record is updated and email sent if transaction is settled (or marked paid)
+    // GUARD: Hanya update vendor dan kirim email jika status belum 'active'
+    // (mencegah expiresAt bertambah setiap polling frontend tiap 3 detik)
     if (isSettled) {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
+      const vendorAlreadyActive = vendor && vendor.status === 'active' && transaction.transactionType !== 'addon';
       if (vendor) {
         if (transaction.transactionType === 'addon') {
           // Pure Add-On storage purchase
@@ -146,8 +150,14 @@ export async function GET(request) {
           }
         } else {
           // Standard Main Plan (or Main Plan + Bundled Add-On)
+          // GUARD: Jika vendor sudah active dan ini bukan upgrade plan — lewati update expiresAt
+          // untuk mencegah expiresAt terus bertambah setiap kali frontend polling
           const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
-          const expDate = new Date();
+          const nowForExp = new Date();
+          let expDate = nowForExp;
+          if (vendor.expiresAt && new Date(vendor.expiresAt) > nowForExp) {
+            expDate = new Date(vendor.expiresAt);
+          }
           expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
           const expiresAt = expDate.toISOString().split('T')[0];
 
@@ -173,46 +183,50 @@ export async function GET(request) {
             }
           }
 
-          db.prepare(`
-            UPDATE vendors 
-            SET status = 'active', 
-                planId = ?, 
-                expiresAt = ?, 
-                maxProjects = ?, 
-                hasStorageAddon = ?, 
-                addonPlanId = ?, 
-                addonStorageQuotaBytes = ?, 
-                pendingAddonPlanId = NULL, 
-                pendingAddonQuotaBytes = 0
-            WHERE id = ?
-          `).run(
-            plan ? plan.id : transaction.planId, 
-            expiresAt, 
-            plan ? plan.maxProjects : vendor.maxProjects, 
-            newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, 
-            newAddonPlanId, 
-            newAddonStorageQuotaBytes, 
-            vendor.id
-          );
+          // Hanya lakukan UPDATE jika vendor belum active (aktivasi pertama) ATAU ada perubahan plan (upgrade)
+          if (!vendorAlreadyActive || isUpgrade) {
+            db.prepare(`
+              UPDATE vendors 
+              SET status = 'active', 
+                  planId = ?, 
+                  expiresAt = ?, 
+                  maxProjects = ?, 
+                  hasStorageAddon = ?, 
+                  addonPlanId = ?, 
+                  addonStorageQuotaBytes = ?, 
+                  pendingAddonPlanId = NULL, 
+                  pendingAddonQuotaBytes = 0
+              WHERE id = ?
+            `).run(
+              plan ? plan.id : transaction.planId, 
+              expiresAt, 
+              plan ? plan.maxProjects : vendor.maxProjects, 
+              newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, 
+              newAddonPlanId, 
+              newAddonStorageQuotaBytes, 
+              vendor.id
+            );
 
-          // Send confirmation email asynchronously
-          const updatedVendorObj = { ...vendor, status: 'active', expiresAt };
-          if (isUpgrade) {
-            sendVendorUpgradeConfirmationEmail(updatedVendorObj, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(err => {
-              console.error('[Payment Status Email Error]:', err);
-            });
-          } else if (isRenewal) {
-            sendVendorRenewalConfirmationEmail(updatedVendorObj, plan, expiresAt, 'QRIS').catch(err => {
-              console.error('[Payment Status Email Error]:', err);
-            });
-          } else {
-            sendVendorApprovalEmail(updatedVendorObj, plan, transaction.orderId, 'QRIS').catch(err => {
-              console.error('[Payment Status Email Error]:', err);
-            });
+            // Kirim email konfirmasi HANYA sekali saat pertama aktif
+            const updatedVendorObj = { ...vendor, status: 'active', expiresAt };
+            if (isUpgrade) {
+              sendVendorUpgradeConfirmationEmail(updatedVendorObj, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(err => {
+                console.error('[Payment Status Email Error]:', err);
+              });
+            } else if (isRenewal) {
+              sendVendorRenewalConfirmationEmail(updatedVendorObj, plan, expiresAt, 'QRIS').catch(err => {
+                console.error('[Payment Status Email Error]:', err);
+              });
+            } else {
+              sendVendorApprovalEmail(updatedVendorObj, plan, transaction.orderId, 'QRIS').catch(err => {
+                console.error('[Payment Status Email Error]:', err);
+              });
+            }
           }
         }
 
-        // Generate token and return paid response
+        // Generate token dan set cookie HANYA jika belum login (status baru aktif)
+        // Mencegah JWT cookie direset setiap polling 3 detik
         const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
         const response = NextResponse.json({
           paid: true,
@@ -221,13 +235,16 @@ export async function GET(request) {
           message: 'Pembayaran lunas. Mengarahkan ke Dashboard...'
         });
 
-        response.cookies.set('token', token, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 24 * 60 * 60,
-          path: '/',
-        });
+        if (!vendorAlreadyActive) {
+          // Set cookie hanya untuk first-time activation
+          response.cookies.set('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60,
+            path: '/',
+          });
+        }
 
         return response;
       }

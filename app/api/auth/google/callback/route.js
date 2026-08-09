@@ -95,7 +95,7 @@ export async function GET(request) {
             }
         }
 
-        let vendor = db.prepare("SELECT * FROM vendors WHERE email = ?").get(email);
+        let vendor = db.prepare("SELECT id, email, name, role, status FROM vendors WHERE email = ?").get(email);
 
         if (vendor) {
             const token = generateToken({

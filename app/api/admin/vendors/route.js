@@ -34,15 +34,25 @@ export async function GET() {
             } catch (e) {}
 
             try {
-                const pendingTxs = db.prepare("SELECT pt.*, v.email as vendorEmail FROM payment_transactions pt JOIN vendors v ON pt.vendorId = v.id WHERE pt.status = 'pending' AND (pt.paymentMethod = 'qris' OR pt.provider = 'midtrans')").all();
+                // Auto-sync: ambil semua pending transactions (semua provider)
+                // Live check API hanya dilakukan untuk Midtrans; provider lain rely on webhook
+                const pendingTxs = db.prepare("SELECT pt.*, v.email as vendorEmail FROM payment_transactions pt JOIN vendors v ON pt.vendorId = v.id WHERE pt.status = 'pending'").all();
                 
                 if (pendingTxs && pendingTxs.length > 0) {
                     const pgConfig = getPaymentGatewayConfig();
                     const serverKey = pgConfig?.serverKey;
-                    if (serverKey) {
+                    // Live check hanya untuk Midtrans — provider lain (Xendit/Tripay/Duitku/Doku) rely on webhook
+                    const midtransTxs = pendingTxs.filter(tx => !tx.provider || tx.provider === 'midtrans');
+                    const otherTxs = pendingTxs.filter(tx => tx.provider && tx.provider !== 'midtrans');
+
+                    if (otherTxs.length > 0) {
+                      console.log(`[Admin API] ${otherTxs.length} pending tx dari provider non-Midtrans (${[...new Set(otherTxs.map(t => t.provider))].join(', ')}) — menunggu webhook callback.`);
+                    }
+
+                    if (serverKey && midtransTxs.length > 0) {
                         const authHeader = 'Basic ' + Buffer.from(serverKey + ':').toString('base64');
                         const baseUrl = pgConfig.isProduction ? 'https://api.midtrans.com/v2' : 'https://api.sandbox.midtrans.com/v2';
-                        for (const tx of pendingTxs) {
+                        for (const tx of midtransTxs) {
                             try {
                                 const midRes = await fetch(`${baseUrl}/${tx.orderId}/status`, {
                                     headers: { 'Accept': 'application/json', 'Authorization': authHeader }

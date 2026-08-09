@@ -141,7 +141,8 @@ export async function PUT(request) {
             // Update vendor plan information and clear pending addon flags
             const updateVendor = db.prepare(`
                 UPDATE vendors 
-                SET planId = ?, 
+                SET status = 'active',
+                    planId = ?, 
                     expiresAt = ?, 
                     maxProjects = ?, 
                     paymentProof = ?, 

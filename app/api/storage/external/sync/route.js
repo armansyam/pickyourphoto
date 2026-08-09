@@ -37,8 +37,15 @@ export async function POST(req) {
     vendorOAuth2Client.setCredentials({ refresh_token: vendor.externalDriveRefreshToken });
     const vendorDrive = google.drive({ version: 'v3', auth: vendorOAuth2Client });
 
-    // Sync Rekursif dari Root ('root') sampai seluruh sub-folder & file
-    const syncDriveTree = async (parentDriveId = 'root') => {
+    // Sync Rekursif dari Root ('root') sampai seluruh sub-folder & file (maks 10 level kedalaman)
+    const MAX_SYNC_DEPTH = 10;
+    const syncDriveTree = async (parentDriveId = 'root', depth = 0) => {
+      // Safety guard: cegah rekursi tak terbatas (timeout / stack overflow)
+      if (depth > MAX_SYNC_DEPTH) {
+        console.warn(`[BYOS Sync] Batas kedalaman folder (${MAX_SYNC_DEPTH} level) tercapai di parentId=${parentDriveId}. Sub-folder lebih dalam dilewati.`);
+        return { foldersCount: 0, filesCount: 0 };
+      }
+
       let foldersCount = 0;
       let filesCount = 0;
 
@@ -74,8 +81,8 @@ export async function POST(req) {
             );
             foldersCount++;
 
-            // Rekursif sync sub-folder
-            const subCounts = await syncDriveTree(item.id);
+            // Rekursif sync sub-folder dengan depth tracking
+            const subCounts = await syncDriveTree(item.id, depth + 1);
             foldersCount += subCounts.foldersCount;
             filesCount += subCounts.filesCount;
           } else {

@@ -3,19 +3,45 @@ import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+// Field yang aman diekspos ke public frontend (tanpa auth)
+// Server Key, SMTP password, Google secrets, bank account TIDAK boleh ada di sini
+const PUBLIC_SAFE_FIELDS = new Set([
+    // Payment Gateway — hanya client key (bukan server key!) untuk load Snap.js
+    'payment_gateway_provider',
+    'payment_gateway_client_key',
+    'payment_gateway_is_production',
+    'enable_payment_gateway',
+    // Branding / UI
+    'saas_name',
+    'saas_logo_url',
+    'saas_primary_color',
+    'saas_support_whatsapp',
+    'saas_support_email',
+    // Flash Sale (UI display only)
+    'enable_flash_promo',
+    'flash_promo_discount_percent',
+    'flash_promo_ends_at',
+    'flash_promo_type',
+    'flash_bundle_plan_id',
+    'flash_bundle_addon_name',
+    'flash_bundle_addon_type',
+    'flash_bundle_addon_value',
+]);
+
 export async function GET() {
     try {
         const sysSetting = db.prepare("SELECT enable_free_trial, trial_expiration_minutes FROM system_settings WHERE id = 1").get() || {};
-        const stmt = db.prepare('SELECT key, value FROM saas_settings');
-        const rows = stmt.all();
+        const rows = db.prepare('SELECT key, value FROM saas_settings').all();
         
-        // Convert rows to simple key-value object
+        // Only expose safe public fields — never server keys, passwords, or secrets
         const settings = {
             enable_free_trial: sysSetting.enable_free_trial ?? 1,
             trial_expiration_minutes: sysSetting.trial_expiration_minutes ?? 60,
         };
         rows.forEach(row => {
-            settings[row.key] = row.value;
+            if (PUBLIC_SAFE_FIELDS.has(row.key)) {
+                settings[row.key] = row.value;
+            }
         });
 
         return NextResponse.json(settings, { status: 200 });

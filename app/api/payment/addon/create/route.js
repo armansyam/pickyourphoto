@@ -191,6 +191,7 @@ export async function POST(req) {
         success: true,
         isPaymentRequired: true,
         orderId,
+        provider: config.provider || 'midtrans',
         amount: proratedPrice,
         token: paymentResult.token,
         snapToken: paymentResult.token,

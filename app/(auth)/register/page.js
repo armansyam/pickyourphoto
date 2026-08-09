@@ -325,6 +325,7 @@ export default function RegisterPage() {
                             email: email,
                             whatsapp: whatsapp,
                             orderId: payData.orderId,
+                            provider: payData.provider || 'midtrans',
                             token: payData.token,
                             redirectUrl: payData.redirectUrl,
                             qrUrl: payData.qrUrl || payData.redirectUrl,
@@ -643,6 +644,7 @@ export default function RegisterPage() {
                                                                 setPendingOrder({
                                                                     orderId: payData.orderId,
                                                                     email: expiredOrder.email,
+                                                                    provider: payData.provider || 'midtrans',
                                                                     token: payData.token,
                                                                     qrUrl: payData.qrUrl,
                                                                     expiresAt: payData.expiresAt,

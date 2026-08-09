@@ -39,6 +39,11 @@ export async function POST(request) {
     const { getAuthVendor } = await import('@/lib/auth');
     const authUser = getAuthVendor();
 
+    // Security: Logged-in vendor can only create payments for their own account
+    if (authUser && authUser.role !== 'admin' && String(authUser.id) !== String(vendorId)) {
+      return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
+    }
+
     // Calculate base plan amount considering active Flash Sale Promo
     const allowCustom = authUser && (authUser.role === 'admin' || authUser.id === vendorId);
     let planAmount = (customAmount && customAmount > 0 && allowCustom) ? customAmount : plan.price;

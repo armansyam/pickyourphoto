@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { getPaymentGatewayConfig } from '@/lib/payment-gateway';
 
 export async function POST(request) {
     try {
@@ -89,6 +90,12 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Email sudah terdaftar. Silakan login.' }, { status: 409 });
         }
 
+        // Blokir registrasi jika email sudah digunakan oleh admin
+        const existingAdmin = db.prepare('SELECT id FROM admins WHERE email = ?').get(email.toLowerCase().trim());
+        if (existingAdmin) {
+            return NextResponse.json({ message: 'Email sudah terdaftar. Silakan login.' }, { status: 409 });
+        }
+
         // Lookup plan
         const planStmt = db.prepare('SELECT * FROM plans WHERE id = ?');
         let planDetails = planStmt.get(plan);
@@ -131,7 +138,10 @@ export async function POST(request) {
                 return NextResponse.json({ message: 'Failed to process payment proof image.' }, { status: 400 });
             }
         } else if (isGateway) {
-            paymentProofPath = 'Midtrans Automatic Payment';
+            // Gunakan nama provider aktif secara dinamis (bukan hardcode Midtrans)
+            const pgConfig = getPaymentGatewayConfig();
+            const providerLabel = (pgConfig?.provider || 'gateway').charAt(0).toUpperCase() + (pgConfig?.provider || 'gateway').slice(1);
+            paymentProofPath = `${providerLabel} Automatic Payment`;
         }
 
 

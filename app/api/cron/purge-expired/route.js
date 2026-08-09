@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { getWorkerDriveClient } from '@/lib/googleDriveWorker';
+import { getWorkerDriveClient } from '@/lib/google-master-drive';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,11 +84,15 @@ async function handlePurge(req) {
         // 2. Hapus proyek vendor
         db.prepare('DELETE FROM projects WHERE vendorId = ?').run(vendor.id);
 
-        // 3. Hapus berkas & folder storage SaaS vendor
+        // 3. Hapus berkas & folder storage SaaS vendor (isExternalDrive = 0)
         db.prepare('DELETE FROM storage_files WHERE vendorId = ? AND (isExternalDrive IS NULL OR isExternalDrive = 0)').run(vendor.id);
         db.prepare('DELETE FROM storage_folders WHERE vendorId = ? AND (isExternalDrive IS NULL OR isExternalDrive = 0)').run(vendor.id);
 
-        // 4. Update status vendor menjadi suspended / purged & usedStorageBytes = 0
+        // 4. Hapus record BYOS dari DB (file fisik di Drive vendor tidak dihapus — itu milik mereka)
+        db.prepare('DELETE FROM storage_files WHERE vendorId = ? AND isExternalDrive = 1').run(vendor.id);
+        db.prepare('DELETE FROM storage_folders WHERE vendorId = ? AND isExternalDrive = 1').run(vendor.id);
+
+        // 5. Update status vendor menjadi suspended & usedStorageBytes = 0
         db.prepare(`
           UPDATE vendors 
           SET status = 'suspended',

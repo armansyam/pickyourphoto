@@ -60,7 +60,9 @@ function getFolderSizeBytes(dirPath) {
                 totalSize += fs.statSync(fullPath).size;
             }
         }
-    } catch (err) {}
+    } catch (err) {
+        console.warn(`[Disk Stats Warning] Gagal membaca folder ${dirPath}:`, err.message);
+    }
     return totalSize;
 }
 

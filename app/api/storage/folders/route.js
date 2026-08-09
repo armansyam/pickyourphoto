@@ -32,10 +32,16 @@ export async function GET() {
       ORDER BY p.createdAt DESC
     `).all(vendor.id);
 
-    // Hitung pemakaian storage fisik INTERNAL Dedicated Storage (mengabaikan Google Drive eksternal)
-    const usedBytes = projects.reduce((acc, curr) => acc + (curr.totalSizeBytes || 0), 0);
+    // Hitung pemakaian storage fisik INTERNAL Dedicated Storage dari storage_files
+    // (konsisten dengan files/route.js — satu sumber kebenaran)
+    const actualStorageRow = db.prepare(`
+      SELECT COALESCE(SUM(fileSizeBytes), 0) as totalBytes 
+      FROM storage_files 
+      WHERE vendorId = ? AND (isExternalDrive IS NULL OR isExternalDrive = 0)
+    `).get(vendor.id);
+    const usedBytes = actualStorageRow ? actualStorageRow.totalBytes : 0;
 
-    // Sync updated usedStorageBytes ke tabel vendors jika ada perbedaan dari proyek eksternal
+    // Sync updated usedStorageBytes ke tabel vendors jika ada perbedaan
     if (vendor.usedStorageBytes !== usedBytes) {
       db.prepare('UPDATE vendors SET usedStorageBytes = ? WHERE id = ?').run(usedBytes, vendor.id);
     }
