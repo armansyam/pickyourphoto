@@ -70,7 +70,7 @@ export async function GET(request) {
                 return `
       <div class="tier" style="border: 1.5px solid rgba(52,211,153,0.3); background: rgba(52,211,153,0.03); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; justify: space-between;">
         <div>
-          <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(52,211,153,0.15); color: #34d399; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(52,211,153,0.3);">⚡ ADD-ON CLOUD</span>
+          <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(52,211,153,0.15); color: #34d399; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(52,211,153,0.3);">ADD-ON CLOUD</span>
           <div class="tier-name" style="margin-top: 10px;">${addon.name}</div>
           <div style="font-size: 26px; font-weight: 850; color: #ffffff; margin: 6px 0 2px 0;">
               ${quotaGb} GB Storage
