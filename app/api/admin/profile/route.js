@@ -28,7 +28,7 @@ export async function PUT(request) {
                 return NextResponse.json({ message: 'Password must be at least 6 characters.' }, { status: 400 });
             }
             const hashedPassword = await bcrypt.hash(password, 10);
-            db.prepare("UPDATE vendors SET password = ? WHERE id = ?").run(hashedPassword, admin.id);
+            db.prepare("UPDATE admins SET password = ? WHERE id = ?").run(hashedPassword, admin.id);
         }
 
         // 2. Update SaaS settings
