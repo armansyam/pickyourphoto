@@ -587,13 +587,17 @@ export default function DashboardPage() {
                         const stData = await stRes.json();
                         if (stRes.ok && stData.paid) {
                             clearInterval(pollTimer);
+                            if (typeof window !== 'undefined' && window.snap && typeof window.snap.hide === 'function') {
+                                try { window.snap.hide(); } catch (e) {}
+                            }
                             setShowUpgradeModal(false);
                             setSelectedUpgradePlan(null);
+                            setSelectedUpgradeAddon(null);
                             addToast('🎉 Upgrade Plan Berhasil! Paket Anda telah diperbarui.', 'success');
                             fetchProjects();
                         }
                     } catch (e) {}
-                }, 2500);
+                }, 1200);
             }
 
             if (typeof window !== 'undefined' && window.snap) {
