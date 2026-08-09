@@ -51,6 +51,85 @@ export default function AdminSettings({
   const [paymentTestStatus, setPaymentTestStatus] = useState({ loading: false, success: '', error: '' });
   const [testEmailStatus, setTestEmailStatus] = useState({ loading: false, success: '', error: '' });
 
+  // Sub-Admin Management state
+  const [adminList, setAdminList] = useState([]);
+  const [loadingAdmins, setLoadingAdmins] = useState(false);
+  const [showAddAdminModal, setShowAddAdminModal] = useState(false);
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPass, setNewAdminPass] = useState('');
+  const [submittingAdmin, setSubmittingAdmin] = useState(false);
+
+  const fetchAdminList = async () => {
+    setLoadingAdmins(true);
+    try {
+      const res = await fetch('/api/admin/admins');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.admins)) {
+          setAdminList(data.admins);
+        }
+      }
+    } catch (e) {} finally {
+      setLoadingAdmins(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchAdminList();
+  }, []);
+
+  const handleCreateSubAdmin = async (e) => {
+    e.preventDefault();
+    if (!newAdminName || !newAdminEmail || !newAdminPass) {
+      if (addToast) addToast('Nama, email, dan password wajib diisi!', 'error');
+      return;
+    }
+    setSubmittingAdmin(true);
+    try {
+      const res = await fetch('/api/admin/admins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newAdminName, email: newAdminEmail, password: newAdminPass })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (addToast) addToast(data.message || 'Sub-Admin berhasil ditambahkan!', 'success');
+        setShowAddAdminModal(false);
+        setNewAdminName('');
+        setNewAdminEmail('');
+        setNewAdminPass('');
+        fetchAdminList();
+      } else {
+        if (addToast) addToast(data.error || 'Gagal menambah Sub-Admin.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    } finally {
+      setSubmittingAdmin(false);
+    }
+  };
+
+  const handleDeleteAdmin = async (adminObj) => {
+    if (adminObj.isRoot === 1 || Number(adminObj.id) === 1) {
+      if (addToast) addToast('Root Master Admin tidak boleh dihapus demi keamanan sistem.', 'error');
+      return;
+    }
+    if (!confirm(`Apakah Anda yakin ingin menghapus akun Sub-Admin "${adminObj.name}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/admins?id=${adminObj.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (addToast) addToast(data.message || 'Sub-Admin berhasil dihapus.', 'success');
+        fetchAdminList();
+      } else {
+        if (addToast) addToast(data.error || 'Gagal menghapus Sub-Admin.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    }
+  };
+
   return (
     <div className="glass-card" style={{ padding: '28px', borderRadius: '16px', maxWidth: '850px', margin: '0 auto', boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}>
       
@@ -695,8 +774,98 @@ export default function AdminSettings({
               </div>
             </div>
 
+            {/* ── 4. TIM ADMINISTRATOR & SUB-ADMIN MANAGEMENT ── */}
+            <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div>
+                  <h5 style={{ margin: 0, fontSize: '14px', color: '#818cf8', fontWeight: 'bold' }}>
+                    👥 Tim Administrator & Sub-Admin
+                  </h5>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#94a3b8' }}>
+                    Kelola daftar Superadmin Root dan Staf Sub-Admin yang memiliki akses ke Admin Dashboard.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowAddAdminModal(true)}
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}
+                >
+                  ➕ Tambah Sub-Admin
+                </button>
+              </div>
+
+              {loadingAdmins ? (
+                <div style={{ fontSize: '12px', color: '#94a3b8', padding: '12px' }}>⏳ Memuat daftar admin...</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {adminList.map(adm => (
+                    <div key={adm.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '16px' }}>{adm.isRoot === 1 ? '👑' : '👨‍💼'}</span>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {adm.name}
+                            {adm.isRoot === 1 ? (
+                              <span style={{ fontSize: '10px', background: 'rgba(251,191,36,0.2)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', padding: '1px 6px', borderRadius: '4px' }}>Root Master Admin</span>
+                            ) : (
+                              <span style={{ fontSize: '10px', background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.4)', padding: '1px 6px', borderRadius: '4px' }}>Sub-Admin</span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>{adm.email}</div>
+                        </div>
+                      </div>
+
+                      {adm.isRoot !== 1 && Number(adm.id) !== 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAdmin(adm)}
+                          style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          🗑️ Hapus
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         )}
+
+      {/* ── MODAL TAMBAH SUB-ADMIN ── */}
+      {showAddAdminModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '16px', width: '90%', maxWidth: '420px', padding: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '16px', color: '#818cf8', fontWeight: 'bold' }}>➕ Tambah Sub-Admin Baru</h4>
+              <button type="button" onClick={() => setShowAddAdminModal(false)} style={{ background: 'none', border: 'none', color: '#a1a1aa', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Nama Lengkap Staf</label>
+                <input type="text" className="input-text" placeholder="Contoh: Budi Santoso (Staf CS)" value={newAdminName} onChange={e => setNewAdminName(e.target.value)} required />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Email Admin</label>
+                <input type="email" className="input-text" placeholder="admin2@domain.com" value={newAdminEmail} onChange={e => setNewAdminEmail(e.target.value)} required />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Password Akses</label>
+                <input type="password" className="input-text" placeholder="Minimal 6 karakter" value={newAdminPass} onChange={e => setNewAdminPass(e.target.value)} required />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                <button type="button" onClick={() => setShowAddAdminModal(false)} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e4e4e7', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>Batal</button>
+                <button type="button" disabled={submittingAdmin} onClick={handleCreateSubAdmin} style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#ffffff', padding: '8px 20px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  {submittingAdmin ? '⏳ Menyimpan...' : '✓ Tambah Admin'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
         {/* ── STICKY/GLOBAL SAVE ALL SETTINGS BUTTON AT BOTTOM ── */}
         <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end' }}>
