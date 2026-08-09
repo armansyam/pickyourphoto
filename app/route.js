@@ -46,7 +46,7 @@ export async function GET(request) {
         <div class="tier-note">${plan.name.includes('Starter') ? 'Cocok untuk fotografer pemula / freelance' : plan.name.includes('Pro') ? 'Untuk fotografer profesional & tim studio' : 'Untuk studio besar & vendor volume tinggi'}</div>
         <ul>
           <li>✓ Maksimal ${plan.maxProjects} Project Aktif</li>
-          <li>✓ Foto Unlimited</li>
+          <li>✓ Bebas Jumlah Foto per Proyek</li>
           <li>✓ Galeri Online & Seleksi Foto Klien</li>
           ${logoText}
           ${rawText}

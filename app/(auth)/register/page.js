@@ -237,7 +237,7 @@ export default function RegisterPage() {
     const getFeatures = (p) => {
         return [
             `Maksimal ${p.maxProjects} Project Aktif`,
-            'Foto Unlimited',
+            'Bebas Jumlah Foto per Proyek',
             'Galeri Online & Seleksi Foto Klien',
             p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business')
                 ? 'Bisa Menggunakan Logo Studio Sendiri'
@@ -1147,7 +1147,7 @@ export default function RegisterPage() {
                                                                              }} />
 
                                                                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#d4d4d8' }}>
-                                                                                 <div>✓ <strong>Foto Unlimited</strong></div>
+                                                                                 <div>✓ <strong>Bebas Jumlah Foto per Proyek</strong></div>
                                                                                  <div>✓ <strong>Galeri Online & Seleksi Foto Klien</strong></div>
                                                                                  <div>✓ Maksimal <strong>{p.maxProjects} Project Aktif</strong></div>
                                                                                  {p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business') ? (
