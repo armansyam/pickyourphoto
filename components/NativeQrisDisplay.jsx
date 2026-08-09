@@ -256,7 +256,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                             <iframe
                               src={pendingOrder.paymentUrl || pendingOrder.redirectUrl}
                               style={{ width: '100%', height: '620px', border: 'none', borderRadius: '12px', background: '#ffffff' }}
-                              title="Midtrans QRIS Payment"
+                              title="QRIS Instant Payment"
                             />
                           )}
                         </div>

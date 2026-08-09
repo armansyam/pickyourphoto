@@ -90,13 +90,13 @@ export default function AdminVendors({
         setSyncStatusResult({
           type: 'success',
           title: 'Pembayaran LUNAS! 🎉',
-          message: `Pembayaran untuk vendor "${vendor.name}" telah terverifikasi LUNAS oleh Midtrans! Akun vendor otomatis aktif.`
+          message: `Pembayaran untuk vendor "${vendor.name}" telah terverifikasi LUNAS oleh Payment Gateway! Akun vendor otomatis aktif.`
         });
       } else {
         setSyncStatusResult({
           type: 'info',
           title: 'Status Pembayaran Pending',
-          message: data.message || 'Transaksi pembayaran Midtrans belum diselesaikan oleh calon vendor.'
+          message: data.message || 'Transaksi pembayaran QRIS belum diselesaikan oleh calon vendor.'
         });
       }
       if (refetchVendors) refetchVendors();
@@ -104,7 +104,7 @@ export default function AdminVendors({
       setSyncStatusResult({
         type: 'error',
         title: 'Gagal Mengecek Status',
-        message: err.message || 'Terjadi kesalahan koneksi saat mengecek status Midtrans.'
+        message: err.message || 'Terjadi kesalahan koneksi saat mengecek status Payment Gateway.'
       });
     } finally {
       setSyncingId(null);
@@ -509,9 +509,9 @@ export default function AdminVendors({
                                   disabled={syncingId === v.id}
                                   className="btn-secondary"
                                   style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#fbbf24', borderColor: 'rgba(251,191,36,0.3)', cursor: 'pointer' }}
-                                  title="Cek & Sync status pembayaran langsung dari Midtrans API"
+                                  title="Cek & Sync status pembayaran langsung dari Gateway API"
                                 >
-                                  {syncingId === v.id ? '⌛ Cek...' : '🔍 Cek Status Midtrans'}
+                                  {syncingId === v.id ? '⌛ Cek...' : '🔍 Cek Status QRIS'}
                                 </button>
                                 <button
                                   onClick={() => onCancelQris && onCancelQris(v)}

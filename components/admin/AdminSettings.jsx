@@ -448,7 +448,7 @@ export default function AdminSettings({
                   onChange={e => setPaymentGatewayProvider(e.target.value)}
                   style={{ background: 'rgba(0,0,0,0.3)' }}
                 >
-                  <option value="midtrans">Midtrans Snap API (QRIS, VA, GoPay, Card)</option>
+                  <option value="midtrans">QRIS Gateway Otomatis (QRIS, E-Wallet, Card)</option>
                   <option value="xendit">Xendit Invoice API (QRIS, E-Wallet, VA)</option>
                   <option value="tripay">Tripay Payment API (QRIS, VA, Alfamart)</option>
                   <option value="duitku">Duitku Pop-Up API (QRIS, VA, E-Wallet)</option>
@@ -483,7 +483,7 @@ export default function AdminSettings({
                     style={{ background: 'rgba(0,0,0,0.4)', width: '110px', color: '#fbbf24', fontWeight: 'bold' }}
                   />
                   <span style={{ fontSize: '12px', color: '#e2e8f0', lineHeight: '1.4' }}>
-                    Menit (Default: <strong>15 Menit</strong>). Mengatur batas hitung mundur expired QRIS Midtrans & Database secara presisi.
+                    Menit (Default: <strong>15 Menit</strong>). Mengatur batas hitung mundur expired QRIS Gateway & Database secara presisi.
                   </span>
                 </div>
               </div>
@@ -510,7 +510,7 @@ export default function AdminSettings({
                       });
                       const data = await res.json();
                       if (res.ok && data.success) {
-                        if (addToast) addToast(data.message || 'Koneksi Midtrans BERHASIL!', 'success');
+                        if (addToast) addToast(data.message || 'Koneksi Payment Gateway BERHASIL!', 'success');
                       } else {
                         if (addToast) addToast(data.message || 'Tes koneksi gagal.', 'error');
                       }
@@ -522,7 +522,7 @@ export default function AdminSettings({
                   }}
                   style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
                 >
-                  {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes API Midtrans'}
+                  {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes Payment Gateway'}
                 </button>
               </div>
 
