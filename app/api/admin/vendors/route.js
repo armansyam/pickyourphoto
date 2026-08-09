@@ -34,7 +34,7 @@ export async function GET() {
             } catch (e) {}
 
             try {
-                const pendingTxs = db.prepare("SELECT pt.*, v.email as vendorEmail FROM payment_transactions pt JOIN vendors v ON pt.vendorId = v.id WHERE v.status = 'pending_payment' AND pt.status = 'pending'").all();
+                const pendingTxs = db.prepare("SELECT pt.*, v.email as vendorEmail FROM payment_transactions pt JOIN vendors v ON pt.vendorId = v.id WHERE pt.status = 'pending' AND (pt.paymentMethod = 'qris' OR pt.provider = 'midtrans')").all();
                 
                 if (pendingTxs && pendingTxs.length > 0) {
                     const pgConfig = getPaymentGatewayConfig();
@@ -58,28 +58,31 @@ export async function GET() {
                                         expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
                                         const expiresAt = expDate.toISOString().split('T')[0];
 
-                                         const vendorObj = db.prepare('SELECT * FROM vendors WHERE id = ?').get(tx.vendorId);
-                                         let syncAddonKey = vendorObj?.addonPlanId;
-                                         let syncAddonQuotaBytes = vendorObj?.addonStorageQuotaBytes || 0;
+                                        const vendorObj = db.prepare('SELECT * FROM vendors WHERE id = ?').get(tx.vendorId);
+                                        let syncAddonKey = vendorObj?.addonPlanId;
+                                        let syncAddonQuotaBytes = vendorObj?.addonStorageQuotaBytes || 0;
 
-                                         if (tx.addonPlanId || vendorObj?.pendingAddonQuotaBytes > 0) {
-                                           const addonKey = tx.addonPlanId || vendorObj?.pendingAddonPlanId;
-                                           let quotaBytes = vendorObj?.pendingAddonQuotaBytes || 0;
-                                           if (!quotaBytes && addonKey) {
-                                             if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
-                                             else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
-                                             else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
-                                           }
-                                           if (quotaBytes > 0) {
-                                             syncAddonKey = addonKey;
-                                             syncAddonQuotaBytes = quotaBytes;
-                                           }
-                                         }
+                                        if (tx.addonPlanId || vendorObj?.pendingAddonQuotaBytes > 0) {
+                                          const addonKey = tx.addonPlanId || vendorObj?.pendingAddonPlanId;
+                                          let quotaBytes = tx.addonQuotaBytes || vendorObj?.pendingAddonQuotaBytes || 0;
+                                          if (!quotaBytes && addonKey) {
+                                            if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
+                                            else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
+                                            else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+                                          }
+                                          if (quotaBytes > 0) {
+                                            syncAddonKey = addonKey;
+                                            syncAddonQuotaBytes = quotaBytes;
+                                          }
+                                        }
 
-                                         db.prepare("UPDATE vendors SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?, hasStorageAddon = ?, addonPlanId = ?, addonStorageQuotaBytes = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0 WHERE id = ?")
-                                             .run(plan ? plan.id : tx.planId, expiresAt, plan ? plan.maxProjects : 10, syncAddonQuotaBytes > 0 ? 1 : 0, syncAddonKey, syncAddonQuotaBytes, tx.vendorId);
-                                         
-                                         console.log(`[Admin API Auto-Sync SUCCESS] Vendor ID ${tx.vendorId} activated automatically (Storage: ${syncAddonQuotaBytes} bytes)!`);
+                                        db.prepare(`
+                                          UPDATE vendors 
+                                          SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?, hasStorageAddon = ?, addonPlanId = ?, addonStorageQuotaBytes = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0 
+                                          WHERE id = ?
+                                        `).run(tx.planId, expiresAt, plan ? plan.maxProjects : vendorObj.maxProjects, syncAddonQuotaBytes > 0 ? 1 : 0, syncAddonKey, syncAddonQuotaBytes, tx.vendorId);
+                                        
+                                        console.log(`[Admin API Auto-Sync SUCCESS] Vendor ID ${tx.vendorId} activated automatically (Storage: ${syncAddonQuotaBytes} bytes)!`);
                                     }
                                 }
                             } catch (err) {

@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
-import jwt from 'jsonwebtoken';
 import { generateToken } from '@/lib/auth';
 import { getPaymentGatewayConfig } from '@/lib/payment-gateway';
-
 import { sendVendorApprovalEmail } from '@/lib/mailer';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
 
 export async function GET(request) {
   try {
@@ -30,165 +27,108 @@ export async function GET(request) {
       return NextResponse.json({ paid: false, message: 'Transaksi pembayaran tidak ditemukan.' });
     }
 
-    // If not marked paid yet, check live status from Midtrans API directly
-    if (transaction.status !== 'paid') {
-      const config = getPaymentGatewayConfig();
-      if (config.enabled && config.serverKey) {
-        try {
-          const midtransStatusUrl = config.isProduction
-            ? `https://api.midtrans.com/v2/${orderId}/status`
-            : `https://api.sandbox.midtrans.com/v2/${orderId}/status`;
+    const config = getPaymentGatewayConfig();
+    let isSettled = transaction.status === 'paid';
 
-          const authHeader = 'Basic ' + Buffer.from(config.serverKey + ':').toString('base64');
-          const midRes = await fetch(midtransStatusUrl, {
-            headers: {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json',
-              'Authorization': authHeader
-            }
-          });
+    // If transaction is not paid yet, check live status from Midtrans API directly
+    if (!isSettled && config.enabled && config.serverKey) {
+      try {
+        const midtransStatusUrl = config.isProduction
+          ? `https://api.midtrans.com/v2/${orderId}/status`
+          : `https://api.sandbox.midtrans.com/v2/${orderId}/status`;
 
-          if (midRes.ok) {
-            const midData = await midRes.json();
-            const txStatus = midData.transaction_status;
-
-            if (txStatus === 'settlement' || txStatus === 'capture') {
-              // Update payment transaction status in DB
-              db.prepare("UPDATE payment_transactions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE id = ?").run(transaction.id);
-              try {
-                db.prepare("UPDATE payment_sessions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE orderId = ?").run(orderId);
-              } catch (e) {}
-
-              // Activate vendor account / Add-On storage
-              const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
-
-              if (transaction.transactionType === 'addon' || transaction.addonPlanId) {
-                let targetQuotaBytes = 0;
-                let addonPlanIdToStore = transaction.addonPlanId;
-                let planName = 'Add-On Storage';
-
-                if (transaction.addonPlanId === 'custom' || String(transaction.addonPlanId).includes('custom')) {
-                  planName = 'Custom Storage';
-                  try {
-                    const rawObj = JSON.parse(transaction.rawResponse || '{}');
-                    if (rawObj.customQuotaBytes) {
-                      targetQuotaBytes = parseInt(rawObj.customQuotaBytes, 10);
-                    }
-                  } catch (e) {}
-
-                  if (!targetQuotaBytes) {
-                    targetQuotaBytes = 60 * 1024 * 1024 * 1024;
-                  }
-                } else {
-                  const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(transaction.addonPlanId);
-                  if (addonPlan) {
-                    targetQuotaBytes = addonPlan.quotaBytes;
-                    addonPlanIdToStore = addonPlan.id;
-                    planName = addonPlan.name;
-                  }
-                }
-
-                if (vendor && targetQuotaBytes > 0) {
-                  db.prepare(`
-                    INSERT INTO storage_addon_subscriptions (vendorId, addonPlanId, price, proratedPrice, status)
-                    VALUES (?, ?, ?, ?, 'active')
-                  `).run(vendor.id, addonPlanIdToStore || 'custom', transaction.amount, transaction.amount);
-
-                  db.prepare(`
-                    UPDATE vendors 
-                    SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
-                    WHERE id = ?
-                  `).run(targetQuotaBytes, addonPlanIdToStore || 'custom', vendor.id);
-
-                  if (!vendor.driveRootFolderId) {
-                    try {
-                      const { createVendorRootFolder } = await import('@/lib/google-master-drive.js');
-                      const root = await createVendorRootFolder(vendor.email, vendor.name);
-                      db.prepare('UPDATE vendors SET driveRootFolderId = ? WHERE id = ?').run(root.folderId, vendor.id);
-                    } catch (err) {
-                      console.warn('[Root Folder Creation Error]:', err.message);
-                    }
-                  }
-
-                  console.log(`[Live Midtrans Status SUCCESS] Vendor ${vendor.name} Add-On Storage ${planName} activated!`);
-                }
-              } else {
-                const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
-                if (vendor && plan) {
-                  const expDate = new Date();
-                  expDate.setDate(expDate.getDate() + (plan.activePeriodDays || 30));
-                  const expiresAt = expDate.toISOString().split('T')[0];
-
-                  // Determine bundled Add-On storage quota provisions if available
-                  let newAddonPlanId = vendor.addonPlanId;
-                  let newAddonStorageQuotaBytes = vendor.addonStorageQuotaBytes || 0;
-
-                  if (transaction.addonPlanId || vendor.pendingAddonQuotaBytes > 0) {
-                    const addonKey = transaction.addonPlanId || vendor.pendingAddonPlanId;
-                    let quotaBytes = vendor.pendingAddonQuotaBytes || 0;
-                    if (!quotaBytes && addonKey) {
-                      if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
-                      else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
-                      else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
-                    }
-                    if (quotaBytes > 0) {
-                      newAddonPlanId = addonKey;
-                      newAddonStorageQuotaBytes = quotaBytes;
-                    }
-                  }
-
-                  db.prepare(`
-                    UPDATE vendors 
-                    SET status = 'active', planId = ?, expiresAt = ?, maxProjects = ?, hasStorageAddon = ?, addonPlanId = ?, addonStorageQuotaBytes = ?, pendingAddonPlanId = NULL, pendingAddonQuotaBytes = 0
-                    WHERE id = ?
-                  `).run(plan.id, expiresAt, plan.maxProjects, newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, newAddonPlanId, newAddonStorageQuotaBytes, vendor.id);
-
-                  console.log(`[Live Midtrans Check SUCCESS] Vendor ${vendor.name} (${vendor.email}) activated (Storage: ${newAddonStorageQuotaBytes} bytes) & sending approval email...`);
-
-                  // Send email notification to vendor!
-                  sendVendorApprovalEmail({ ...vendor, status: 'active' }, plan).catch(err => {
-                    console.error('[Live Payment Status Email Error]:', err);
-                  });
-                }
-              }
-
-              transaction.status = 'paid';
-            } else if (txStatus === 'expire' || txStatus === 'cancel' || txStatus === 'deny') {
-              const newTxStatus = txStatus === 'expire' ? 'expired' : 'cancelled';
-              db.prepare("UPDATE payment_transactions SET status = ? WHERE id = ?").run(newTxStatus, transaction.id);
-              try {
-                db.prepare("UPDATE payment_sessions SET status = ? WHERE orderId = ?").run(newTxStatus, orderId);
-              } catch (e) {}
-
-              // Update vendor status to move candidate to Arsip sub-tab
-              const newVendorStatus = txStatus === 'expire' ? 'expired_draft' : 'cancelled';
-              db.prepare("UPDATE vendors SET status = ?, archivedAt = CURRENT_TIMESTAMP WHERE id = ? AND status != 'active'").run(newVendorStatus, transaction.vendorId);
-
-              console.log(`[Live Midtrans Check EXPIRED] Vendor ID ${transaction.vendorId} status set to ${newVendorStatus}`);
-              transaction.status = newTxStatus;
-
-              return NextResponse.json({
-                paid: false,
-                status: newTxStatus,
-                expired: true,
-                message: txStatus === 'expire' ? 'Transaksi QRIS ini telah KEDALUWARSA (Expired) oleh Midtrans. Akun dipindahkan ke Arsip.' : 'Transaksi telah dibatalkan/ditolak oleh Midtrans.'
-              });
-            }
+        const authHeader = 'Basic ' + Buffer.from(config.serverKey + ':').toString('base64');
+        const midRes = await fetch(midtransStatusUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': authHeader
           }
-        } catch (midErr) {
-          console.error('[Midtrans Live Status Fetch Error]:', midErr);
+        });
+
+        if (midRes.ok) {
+          const midData = await midRes.json();
+          const txStatus = midData.transaction_status;
+
+          if (txStatus === 'settlement' || txStatus === 'capture') {
+            isSettled = true;
+            db.prepare("UPDATE payment_transactions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE id = ?").run(transaction.id);
+            try {
+              db.prepare("UPDATE payment_sessions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE orderId = ?").run(orderId);
+            } catch (e) {}
+          } else if (txStatus === 'expire' || txStatus === 'cancel' || txStatus === 'deny') {
+            const newTxStatus = txStatus === 'expire' ? 'expired' : 'cancelled';
+            db.prepare("UPDATE payment_transactions SET status = ? WHERE id = ?").run(newTxStatus, transaction.id);
+            try {
+              db.prepare("UPDATE payment_sessions SET status = ? WHERE orderId = ?").run(newTxStatus, orderId);
+            } catch (e) {}
+
+            const newVendorStatus = txStatus === 'expire' ? 'expired_draft' : 'cancelled';
+            db.prepare("UPDATE vendors SET status = ?, archivedAt = CURRENT_TIMESTAMP WHERE id = ? AND status != 'active'").run(newVendorStatus, transaction.vendorId);
+
+            return NextResponse.json({
+              paid: false,
+              status: newTxStatus,
+              expired: true,
+              message: 'Transaksi QRIS ini telah kedaluwarsa atau dibatalkan.'
+            });
+          }
         }
+      } catch (midErr) {
+        console.error('[Midtrans Live Status Fetch Error]:', midErr);
       }
     }
 
-    const session = db.prepare('SELECT * FROM payment_sessions WHERE orderId = ?').get(orderId);
-
-    if (transaction.status === 'paid') {
+    // Always ensure vendor record is updated if transaction is settled (or marked paid)
+    if (isSettled) {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
       if (vendor) {
-        // Generate auth session token using standard helper with role
-        const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
+        const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
+        const expDate = new Date();
+        expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
+        const expiresAt = expDate.toISOString().split('T')[0];
 
+        let newAddonPlanId = vendor.addonPlanId;
+        let newAddonStorageQuotaBytes = vendor.addonStorageQuotaBytes || 0;
+
+        if (transaction.addonPlanId || vendor.pendingAddonQuotaBytes > 0) {
+          const addonKey = transaction.addonPlanId || vendor.pendingAddonPlanId;
+          let quotaBytes = transaction.addonQuotaBytes || vendor.pendingAddonQuotaBytes || 0;
+          if (!quotaBytes && addonKey) {
+            if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
+            else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
+            else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+          }
+          if (quotaBytes > 0) {
+            newAddonPlanId = addonKey;
+            newAddonStorageQuotaBytes = quotaBytes;
+          }
+        }
+
+        db.prepare(`
+          UPDATE vendors 
+          SET status = 'active', 
+              planId = ?, 
+              expiresAt = ?, 
+              maxProjects = ?, 
+              hasStorageAddon = ?, 
+              addonPlanId = ?, 
+              addonStorageQuotaBytes = ?, 
+              pendingAddonPlanId = NULL, 
+              pendingAddonQuotaBytes = 0
+          WHERE id = ?
+        `).run(
+          plan ? plan.id : transaction.planId, 
+          expiresAt, 
+          plan ? plan.maxProjects : vendor.maxProjects, 
+          newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, 
+          newAddonPlanId, 
+          newAddonStorageQuotaBytes, 
+          vendor.id
+        );
+
+        // Generate token and return paid response
+        const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
         const response = NextResponse.json({
           paid: true,
           status: 'paid',
@@ -196,7 +136,6 @@ export async function GET(request) {
           message: 'Pembayaran lunas. Mengarahkan ke Dashboard...'
         });
 
-        // Set token cookie
         response.cookies.set('token', token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -205,11 +144,11 @@ export async function GET(request) {
           path: '/',
         });
 
-
         return response;
       }
     }
 
+    const session = db.prepare('SELECT * FROM payment_sessions WHERE orderId = ?').get(orderId);
     return NextResponse.json({ 
       paid: false, 
       status: transaction.status,
