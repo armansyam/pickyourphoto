@@ -17,22 +17,20 @@ echo "=========================================="
 echo "📥 [1/5] Menarik pembaruan kode terbaru dari Git (main branch)..."
 git pull origin main
 
-# 2. Setup berkas .env & .env.local
-echo "📄 [2/5] Memeriksa dan menyiapkan berkas .env dan .env.local..."
+# 2. Setup berkas .env & .env.local (Tangani jika file belum ada ATAU kosong 0 bytes)
+echo "📄 [2/5] Memeriksa dan menyiapkan berkas .env.local dan .env..."
 
-# Buat .env.local dari template jika belum ada
-if [ ! -f .env.local ]; then
+if [ ! -f .env.local ] || [ ! -s .env.local ]; then
     if [ -f .env.example ]; then
-        echo "   ↳ Salin dari template .env.example → .env.local"
+        echo "   ↳ Berkas .env.local belum ada atau kosong. Menyalin dari .env.example..."
         cp .env.example .env.local
     else
-        echo "   ↳ Buat .env.local kosong"
+        echo "   ↳ Membuat .env.local..."
         touch .env.local
     fi
 fi
 
-# Buat .env dari .env.local jika .env belum ada (untuk Docker Compose)
-if [ ! -f .env ]; then
+if [ ! -f .env ] || [ ! -s .env ]; then
     echo "   ↳ Menyinkronkan .env.local → .env untuk Docker"
     cp .env.local .env
 fi
@@ -40,6 +38,11 @@ fi
 # Fungsi helper untuk update JWT_SECRET di berkas env
 update_jwt_secret() {
     local target_file="$1"
+
+    if ! grep -q "JWT_SECRET=" "$target_file" && [ -f .env.example ]; then
+        cat .env.example > "$target_file"
+    fi
+
     if grep -q "JWT_SECRET=isi_dengan_string_acak_panjang_dan_aman" "$target_file" || \
        grep -q "JWT_SECRET=pick-your-photo-super-secret-key-2026" "$target_file" || \
        ! grep -q "JWT_SECRET=" "$target_file" || \
