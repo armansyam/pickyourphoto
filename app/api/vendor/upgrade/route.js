@@ -124,8 +124,21 @@ export async function POST(request) {
         const fileName = `proof_${vendor.id}_${Date.now()}${ext}`;
         const filePath = path.join(uploadDir, fileName);
 
-        fs.writeFileSync(filePath, buffer);
-        const webPath = `/staging_uploads/payment_proofs/${fileName}`;
+        const addonPlanId = formData.get('addonPlanId');
+        let addonQuotaBytes = 0;
+        if (addonPlanId === 'addon-10gb') addonQuotaBytes = 10 * 1024 * 1024 * 1024;
+        else if (addonPlanId === 'addon-25gb') addonQuotaBytes = 25 * 1024 * 1024 * 1024;
+        else if (addonPlanId === 'addon-50gb') addonQuotaBytes = 50 * 1024 * 1024 * 1024;
+
+        if (addonPlanId && addonQuotaBytes > 0) {
+            db.prepare(`
+                UPDATE vendors 
+                SET pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?, paymentProof = ? 
+                WHERE id = ?
+            `).run(addonPlanId, addonQuotaBytes, webPath, vendor.id);
+        } else {
+            db.prepare('UPDATE vendors SET paymentProof = ? WHERE id = ?').run(webPath, vendor.id);
+        }
 
         // Insert request
         const insertStmt = db.prepare(`

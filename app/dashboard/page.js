@@ -148,6 +148,8 @@ export default function DashboardPage() {
     const [paymentGatewayClientKey, setPaymentGatewayClientKey] = useState('');
     const [paymentGatewayIsProduction, setPaymentGatewayIsProduction] = useState(false);
     const [upgradePaymentMethod, setUpgradePaymentMethod] = useState('gateway');
+    const [selectedUpgradeAddon, setSelectedUpgradeAddon] = useState(null);
+    const [isUpgradeAddonModalOpen, setIsUpgradeAddonModalOpen] = useState(false);
 
 
     // Project deletion states
@@ -524,6 +526,9 @@ export default function DashboardPage() {
         try {
             const formData = new FormData();
             formData.append('planId', selectedUpgradePlan.id);
+            if (selectedUpgradeAddon) {
+                formData.append('addonPlanId', selectedUpgradeAddon.key);
+            }
             formData.append('transferProof', transferProofFile);
 
             const res = await fetch('/api/vendor/upgrade', {
@@ -539,6 +544,7 @@ export default function DashboardPage() {
             addToast('Permintaan upgrade berhasil dikirim. Menunggu verifikasi admin.', 'success');
             setShowUpgradeModal(false);
             setSelectedUpgradePlan(null);
+            setSelectedUpgradeAddon(null);
             setTransferProofFile(null);
             fetchProjects(); // Reload to capture the pending state
         } catch (err) {
@@ -556,13 +562,15 @@ export default function DashboardPage() {
 
         try {
             const proration = getProrationDetails(selectedUpgradePlan);
+            const totalWithAddon = proration.total + (selectedUpgradeAddon ? selectedUpgradeAddon.price : 0);
             const res = await fetch('/api/payment/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     vendorId: vendorDetails.id,
                     planId: selectedUpgradePlan.id,
-                    customAmount: proration.total
+                    addonPlanId: selectedUpgradeAddon?.key || null,
+                    customAmount: totalWithAddon
                 })
             });
 
@@ -2769,9 +2777,105 @@ export default function DashboardPage() {
                                         </div>
                                     )}
 
+                                    {/* Add-On Storage Offer Card & Trigger for Dashboard Upgrade */}
+                                    <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '10px', padding: '12px 14px', margin: '12px 0' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                            <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>💾 CLOUD STORAGE ADD-ON (OPSIONAL)</span>
+                                            {selectedUpgradeAddon && (
+                                                <button type="button" onClick={() => setSelectedUpgradeAddon(null)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}>
+                                                    🗑️ Hapus Add-On
+                                                </button>
+                                            )}
+                                        </div>
+                                        {selectedUpgradeAddon ? (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '13px' }}>{selectedUpgradeAddon.name}</div>
+                                                    <div style={{ color: '#94a3b8', fontSize: '11px' }}>Kapasitas Tambahan Studio</div>
+                                                </div>
+                                                <span style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '14px' }}>
+                                                    + Rp {selectedUpgradeAddon.price.toLocaleString('id-ID')}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                                                <span style={{ color: '#cbd5e1', fontSize: '11px' }}>Ingin menambah kuota cloud storage studio?</span>
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setIsUpgradeAddonModalOpen(true)} 
+                                                    style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                                >
+                                                    ⚡ + Tambahkan Cloud Storage
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Add-On Selection Modal inside Dashboard */}
+                                    {isUpgradeAddonModalOpen && (
+                                        <div onClick={() => setIsUpgradeAddonModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                                            <div onClick={e => e.stopPropagation()} style={{ background: '#0f172a', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '20px', width: '100%', maxWidth: '460px', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+                                                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                                    <span style={{ fontSize: '11px', fontWeight: 'bold', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '4px 12px', borderRadius: '20px' }}>
+                                                        PILIH ADD-ON CLOUD STORAGE
+                                                    </span>
+                                                    <h3 style={{ margin: '8px 0 4px 0', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
+                                                        Tingkatkan Kapasitas Storage Studio
+                                                    </h3>
+                                                    <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
+                                                        Tambah kuota agar dapat mengunggah & mengirim lebih banyak foto ke klien.
+                                                    </p>
+                                                </div>
+
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                                                    {[
+                                                        { key: 'addon-10gb', name: 'Drive 10 GB', price: 29000, desc: 'Cocok untuk studio pemula (10 GB Extra)' },
+                                                        { key: 'addon-25gb', name: 'Drive 25 GB', price: 49000, desc: 'Paling Populer & Hemat (25 GB Extra)', popular: true },
+                                                        { key: 'addon-50gb', name: 'Drive 50 GB', price: 89000, desc: 'Kapasitas Besar Studio Pro (50 GB Extra)' }
+                                                    ].map(opt => (
+                                                        <div 
+                                                            key={opt.key}
+                                                            onClick={() => {
+                                                                setSelectedUpgradeAddon(opt);
+                                                                setIsUpgradeAddonModalOpen(false);
+                                                            }}
+                                                            style={{
+                                                                background: selectedUpgradeAddon?.key === opt.key ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.03)',
+                                                                border: selectedUpgradeAddon?.key === opt.key ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
+                                                                borderRadius: '12px',
+                                                                padding: '12px 14px',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                justify: 'space-between',
+                                                                alignItems: 'center'
+                                                            }}
+                                                        >
+                                                            <div>
+                                                                <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                    📁 {opt.name}
+                                                                    {opt.popular && <span style={{ fontSize: '9px', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '2px 6px', borderRadius: '4px' }}>⭐ TERFAVORIT</span>}
+                                                                </div>
+                                                                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{opt.desc}</div>
+                                                            </div>
+                                                            <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '13px' }}>
+                                                                + Rp {opt.price.toLocaleString('id-ID')}
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <div style={{ display: 'flex', gap: '12px' }}>
+                                                    <button type="button" onClick={() => setIsUpgradeAddonModalOpen(false)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>
+                                                        Batal
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div style={{ borderTop: '1px dashed rgba(255,255,255,0.1)', margin: '12px 0', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: '700' }}>
                                         <span style={{ color: '#e4e4e7' }}>{selectedUpgradePlan.id === vendorDetails?.planId ? 'Biaya Perpanjangan' : 'Total Pembayaran'}</span>
-                                        <span style={{ color: '#fbbf24' }}>Rp {getProrationDetails(selectedUpgradePlan).total.toLocaleString('id-ID')}</span>
+                                        <span style={{ color: '#fbbf24' }}>Rp {(getProrationDetails(selectedUpgradePlan).total + (selectedUpgradeAddon ? selectedUpgradeAddon.price : 0)).toLocaleString('id-ID')}</span>
                                     </div>
                                 </div>
 
