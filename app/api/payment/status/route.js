@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { generateToken } from '@/lib/auth';
 import { getPaymentGatewayConfig } from '@/lib/payment-gateway';
-import { sendVendorApprovalEmail } from '@/lib/mailer';
+import { 
+  sendVendorApprovalEmail, 
+  sendVendorUpgradeConfirmationEmail, 
+  sendVendorRenewalConfirmationEmail 
+} from '@/lib/mailer';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -79,7 +83,7 @@ export async function GET(request) {
       }
     }
 
-    // Always ensure vendor record is updated if transaction is settled (or marked paid)
+    // Always ensure vendor record is updated and email sent if transaction is settled (or marked paid)
     if (isSettled) {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
       if (vendor) {
@@ -87,6 +91,11 @@ export async function GET(request) {
         const expDate = new Date();
         expDate.setDate(expDate.getDate() + (plan ? plan.activePeriodDays : 30));
         const expiresAt = expDate.toISOString().split('T')[0];
+
+        const wasActive = vendor.status === 'active';
+        const isUpgrade = wasActive && plan && vendor.planId !== plan.id;
+        const isRenewal = wasActive && plan && vendor.planId === plan.id;
+        const oldPlanRow = isUpgrade ? db.prepare('SELECT name FROM plans WHERE id = ?').get(vendor.planId) : null;
 
         let newAddonPlanId = vendor.addonPlanId;
         let newAddonStorageQuotaBytes = vendor.addonStorageQuotaBytes || 0;
@@ -126,6 +135,22 @@ export async function GET(request) {
           newAddonStorageQuotaBytes, 
           vendor.id
         );
+
+        // Send confirmation email asynchronously
+        const updatedVendorObj = { ...vendor, status: 'active', expiresAt };
+        if (isUpgrade) {
+          sendVendorUpgradeConfirmationEmail(updatedVendorObj, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(err => {
+            console.error('[Payment Status Email Error]:', err);
+          });
+        } else if (isRenewal) {
+          sendVendorRenewalConfirmationEmail(updatedVendorObj, plan, expiresAt, 'QRIS').catch(err => {
+            console.error('[Payment Status Email Error]:', err);
+          });
+        } else {
+          sendVendorApprovalEmail(updatedVendorObj, plan, transaction.orderId, 'QRIS').catch(err => {
+            console.error('[Payment Status Email Error]:', err);
+          });
+        }
 
         // Generate token and return paid response
         const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
