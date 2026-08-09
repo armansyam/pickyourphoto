@@ -109,6 +109,10 @@ export async function GET() {
                 v.planId,
                 v.expiresAt,
                 v.paymentProof,
+                v.addonPlanId,
+                v.addonStorageQuotaBytes,
+                v.pendingAddonPlanId,
+                v.pendingAddonQuotaBytes,
                 v.resetRequested,
                 v.createdAt,
                 p.name as planName,
@@ -119,7 +123,10 @@ export async function GET() {
                 (SELECT expiresAt FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as paymentExpiresAt,
                 (SELECT expiresAt FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as qrisExpiresAt,
                 (SELECT orderId FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as orderId,
-                (SELECT paymentMethod FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as sessionPaymentMethod
+                (SELECT paymentMethod FROM payment_sessions WHERE vendorId = v.id ORDER BY id DESC LIMIT 1) as sessionPaymentMethod,
+                (SELECT planId FROM subscription_requests WHERE vendorId = v.id AND status = 'pending' ORDER BY id DESC LIMIT 1) as pendingPlanId,
+                (SELECT p2.name FROM subscription_requests sr JOIN plans p2 ON sr.planId = p2.id WHERE sr.vendorId = v.id AND sr.status = 'pending' ORDER BY sr.id DESC LIMIT 1) as pendingPlanName,
+                (SELECT transferProof FROM subscription_requests WHERE vendorId = v.id AND status = 'pending' ORDER BY id DESC LIMIT 1) as pendingTransferProof
             FROM vendors v
             LEFT JOIN plans p ON v.planId = p.id
             WHERE v.role != 'admin'

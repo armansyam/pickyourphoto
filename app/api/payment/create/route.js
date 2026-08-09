@@ -141,12 +141,20 @@ export async function POST(request) {
       JSON.stringify(paymentResult.raw || {})
     );
 
-    // Step 4: Update vendor status to pending_payment and store pendingAddon details
-    db.prepare(`
-      UPDATE vendors 
-      SET status = 'pending_payment', archivedAt = NULL, planId = ?, pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
-      WHERE id = ?
-    `).run(plan.id, addonPlanId || null, addonQuotaBytes, vendor.id);
+    // Step 4: Update vendor pendingAddon details. If new signup, set pending_payment. If active vendor, keep active!
+    if (vendor.status === 'active') {
+      db.prepare(`
+        UPDATE vendors 
+        SET pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
+        WHERE id = ?
+      `).run(addonPlanId || null, addonQuotaBytes, vendor.id);
+    } else {
+      db.prepare(`
+        UPDATE vendors 
+        SET status = 'pending_payment', archivedAt = NULL, planId = ?, pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
+        WHERE id = ?
+      `).run(plan.id, addonPlanId || null, addonQuotaBytes, vendor.id);
+    }
 
     // Trigger Pending QRIS Instructions Email in background
     try {

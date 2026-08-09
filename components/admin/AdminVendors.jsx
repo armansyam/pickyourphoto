@@ -348,7 +348,11 @@ export default function AdminVendors({
                 const waUrl = getWaReminderUrl(v.whatsapp, v.name, v.planName, v.expiresAt);
                 const isQris = isQrisVendor(v);
                 const storageGb = v.addonStorageQuotaBytes ? Math.round(v.addonStorageQuotaBytes / (1024 * 1024 * 1024)) : 0;
-                const hasPendingUpgrade = v.pendingAddonQuotaBytes > 0 || (v.paymentProof && v.status === 'active');
+                const pendingStorageGb = v.pendingAddonQuotaBytes ? Math.round(v.pendingAddonQuotaBytes / (1024 * 1024 * 1024)) : 0;
+
+                const hasPendingPlanUpgrade = !!(v.pendingPlanName && v.pendingPlanName !== v.planName);
+                const hasPendingStorageAddon = !!(pendingStorageGb > 0 || (v.pendingAddonPlanId && v.pendingAddonPlanId !== v.addonPlanId));
+                const hasPendingUpgrade = hasPendingPlanUpgrade || hasPendingStorageAddon || !!(v.pendingTransferProof && v.status === 'active');
 
                 return (
                   <tr key={v.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -372,26 +376,37 @@ export default function AdminVendors({
 
                     {/* Plan */}
                     <td style={{ padding: '12px 14px', color: '#fbbf24', fontWeight: '500' }}>
-                      {v.status === 'draft_plan' ? '⏳ Belum Pilih' : (v.planName || 'Free Trial')}
+                      <div>{v.status === 'draft_plan' ? '⏳ Belum Pilih' : (v.planName || 'Free Trial')}</div>
+                      {hasPendingPlanUpgrade && (
+                        <div style={{ marginTop: '4px' }}>
+                          <span 
+                            onClick={() => setVendorToApprove && setVendorToApprove(v)}
+                            style={{ cursor: 'pointer', color: '#fbbf24', background: 'rgba(251,191,36,0.15)', border: '1px dashed #fbbf24', padding: '2px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', display: 'inline-block' }}
+                            title="Klik untuk meninjau & mengonfirmasi upgrade paket"
+                          >
+                            ➔ Upgrade: {v.pendingPlanName}
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Storage Add-On */}
                     <td style={{ padding: '12px 14px' }}>
                       {storageGb > 0 ? (
                         <span style={{ color: '#38bdf8', background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.3)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                          💾 {storageGb} GB Drive
+                          💾 {storageGb} GB Extra
                         </span>
                       ) : (
-                        <span style={{ color: '#71717a', fontSize: '11px' }}>Bawaan Plan</span>
+                        <span style={{ color: '#71717a', fontSize: '12px' }}>–</span>
                       )}
-                      {hasPendingUpgrade && (
+                      {hasPendingStorageAddon && (
                         <div style={{ marginTop: '4px' }}>
                           <span 
                             onClick={() => setVendorToApprove && setVendorToApprove(v)}
-                            style={{ cursor: 'pointer', color: '#f59e0b', background: 'rgba(245,158,11,0.18)', border: '1px dashed #f59e0b', padding: '2px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}
-                            title="Klik untuk meninjau & mengonfirmasi upgrade manual"
+                            style={{ cursor: 'pointer', color: '#38bdf8', background: 'rgba(56,189,248,0.15)', border: '1px dashed #38bdf8', padding: '2px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', display: 'inline-block' }}
+                            title="Klik untuk meninjau & mengonfirmasi upgrade storage"
                           >
-                            ⚡ UPGRADE PENDING
+                            ➔ Add-On: +{pendingStorageGb || (v.pendingAddonPlanId === 'addon-10gb' ? 10 : v.pendingAddonPlanId === 'addon-25gb' ? 25 : 50)} GB
                           </span>
                         </div>
                       )}
@@ -407,6 +422,16 @@ export default function AdminVendors({
                           {v.expiresAt && (
                             <div style={{ fontSize: '11px', color: '#71717a', marginTop: '3px' }}>
                               {new Date(v.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </div>
+                          )}
+                          {hasPendingUpgrade && (
+                            <div style={{ marginTop: '6px' }}>
+                              <button 
+                                onClick={() => setVendorToApprove && setVendorToApprove(v)}
+                                style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000000', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 6px rgba(245,158,11,0.3)' }}
+                              >
+                                ⚡ Verifikasi Upgrade
+                              </button>
                             </div>
                           )}
                         </div>
