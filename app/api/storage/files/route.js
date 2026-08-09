@@ -142,21 +142,24 @@ export async function POST(req) {
       return NextResponse.json({ success: false, error: 'Data registrasi file tidak lengkap.' }, { status: 400 });
     }
 
-    const vendor = db.prepare('SELECT id, usedStorageBytes, addonStorageQuotaBytes FROM vendors WHERE id = ?').get(session.id);
+    const vendor = db.prepare('SELECT id, usedStorageBytes, addonStorageQuotaBytes, externalDriveConnected FROM vendors WHERE id = ?').get(session.id);
     if (!vendor) {
       return NextResponse.json({ success: false, error: 'Vendor tidak ditemukan.' }, { status: 404 });
     }
 
     const bytes = parseInt(fileSizeBytes, 10) || 0;
+    const isExternal = Boolean(body.isExternalDrive || vendor.externalDriveConnected);
 
     // Simpan berkas file ke storage_files
     db.prepare(`
-      INSERT INTO storage_files (vendorId, parentFolderId, driveFileId, fileName, fileSizeBytes, mimeType, webViewLink, webContentLink)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(vendor.id, parentFolderId || 'root', driveFileId, fileName, bytes, mimeType || 'image/jpeg', webViewLink || '', webContentLink || '');
+      INSERT INTO storage_files (vendorId, parentFolderId, driveFileId, fileName, fileSizeBytes, mimeType, webViewLink, webContentLink, isExternalDrive)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(vendor.id, parentFolderId || 'root', driveFileId, fileName, bytes, mimeType || 'image/jpeg', webViewLink || '', webContentLink || '', isExternal ? 1 : 0);
 
-    // Update usedStorageBytes vendor
-    db.prepare('UPDATE vendors SET usedStorageBytes = usedStorageBytes + ? WHERE id = ?').run(bytes, vendor.id);
+    // Update usedStorageBytes vendor HANYA jika berkas disimpan di SaaS Worker Admin (bukan BYOS External Drive)
+    if (!isExternal) {
+      db.prepare('UPDATE vendors SET usedStorageBytes = usedStorageBytes + ? WHERE id = ?').run(bytes, vendor.id);
+    }
 
     // Update log harian upload global platform
     const today = new Date().toISOString().split('T')[0];

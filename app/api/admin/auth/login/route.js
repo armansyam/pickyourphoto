@@ -49,10 +49,10 @@ export async function POST(request) {
         const token = generateToken({ id: adminUser.id, name: adminUser.name, email: adminUser.email, role: 'admin' });
         setAuthCookie(token);
 
-        return NextResponse.json({ success: true, message: 'Admin authentication successful.', role: vendor.role });
+        return NextResponse.json({ success: true, message: 'Admin authentication successful.', role: adminUser.role });
 
     } catch (error) {
         console.error('Admin Login API Error:', error);
-        return NextResponse.json({ message: 'Terjadi kesalahan internal server.' }, { status: 500 });
+        return NextResponse.json({ message: 'Terjadi kesalahan internal server: ' + (error.message || String(error)), stack: error.stack }, { status: 500 });
     }
 }

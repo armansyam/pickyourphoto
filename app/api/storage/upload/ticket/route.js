@@ -44,32 +44,49 @@ export async function POST(req) {
       }, { status: 400 });
     }
 
-    const vendor = db.prepare('SELECT id, name, email, driveRootFolderId, hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes FROM vendors WHERE id = ?').get(session.id);
+    const vendor = db.prepare('SELECT id, name, email, driveRootFolderId, hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes, externalDriveConnected, externalDriveEmail, externalDriveRefreshToken, externalDriveFolderId FROM vendors WHERE id = ?').get(session.id);
     if (!vendor) {
       return NextResponse.json({ success: false, error: 'Vendor tidak ditemukan.' }, { status: 404 });
     }
 
+    const sizeBytes = parseInt(fileSizeBytes, 10) || 0;
+
+    // 2. STORAGE ROUTER: BYOS (Google Drive Vendor Sendiri) vs SaaS Dedicated Internal Storage
+    if (vendor.externalDriveConnected && vendor.externalDriveRefreshToken) {
+      // Buka jalur upload direct ke Google Drive milik Vendor
+      const { createVendorExternalResumableUploadTicket } = await import('@/lib/google-master-drive');
+      const ticket = await createVendorExternalResumableUploadTicket(vendor.id, parentFolderId, fileName, mimeType || 'image/jpeg', sizeBytes);
+      return NextResponse.json({
+        success: true,
+        uploadUrl: ticket.uploadUrl,
+        accessToken: ticket.accessToken,
+        targetFolderId: ticket.targetFolderId,
+        isExternalDrive: true,
+        driveEmail: vendor.externalDriveEmail
+      });
+    }
+
+    // 3. JIKA TIDAK MENGGUNAKAN BYOS DRIVE VENDOR, PERIKSA ADDDON STORAGE SAAS ADMIN
     if (!vendor.hasStorageAddon) {
       return NextResponse.json({
         success: false,
-        error: 'Anda belum memiliki Paket Add-On Storage aktif. Harap beri atau aktifkan paket storage terlebih dahulu.'
+        error: 'Anda belum memiliki Paket Add-On Storage aktif atau belum menghubungkan Google Drive pribadi. Harap hubungkan GDrive Anda atau aktifkan paket storage.'
       }, { status: 403 });
     }
 
-    const sizeBytes = parseInt(fileSizeBytes, 10) || 0;
     const usedBytes = vendor.usedStorageBytes || 0;
     const totalQuotaBytes = vendor.addonStorageQuotaBytes || 0;
 
-    // 2. VALIDASI KUOTA PERSONAL VENDOR
+    // 4. VALIDASI KUOTA PERSONAL VENDOR (Hanya untuk SaaS Dedicated Worker Admin)
     if (usedBytes + sizeBytes > totalQuotaBytes) {
       const remainingBytes = Math.max(0, totalQuotaBytes - usedBytes);
       return NextResponse.json({
         success: false,
-        error: `Kapasitas Cloud Storage Anda tidak mencukupi. Sisa kuota: ${formatBytes(remainingBytes)}, Ukuran file: ${formatBytes(sizeBytes)}. Harap tambah paket Add-On Storage Anda.`
+        error: `Kapasitas Cloud Storage Anda tidak mencukupi. Sisa kuota: ${formatBytes(remainingBytes)}, Ukuran file: ${formatBytes(sizeBytes)}. Harap hubungkan Google Drive Anda atau tambah paket Add-On Storage.`
       }, { status: 400 });
     }
 
-    // 3. VALIDASI CAP UNGGULAN HARIAN PLATFORM (Dinamis dari saas_settings)
+    // 5. VALIDASI CAP UNGGULAN HARIAN PLATFORM (Dinamis dari saas_settings)
     const capRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'daily_upload_cap_gb'").get();
     const capGb = capRow && parseInt(capRow.value, 10) > 0 ? parseInt(capRow.value, 10) : 720;
     const maxDailyPlatformBytes = capGb * 1024 * 1024 * 1024;
@@ -85,7 +102,7 @@ export async function POST(req) {
       }, { status: 429 });
     }
 
-    // 4. PASTI KAN ROOT FOLDER VENDOR TERSEDIA
+    // 6. PASTIKAN ROOT FOLDER VENDOR TERSEDIA PADA WORKER ADMIN
     let rootFolderId = vendor.driveRootFolderId;
     if (!rootFolderId) {
       const root = await createVendorRootFolder(vendor.email, vendor.name);
@@ -95,14 +112,15 @@ export async function POST(req) {
 
     const targetFolderId = parentFolderId && parentFolderId !== 'root' ? parentFolderId : rootFolderId;
 
-    // 5. TERBITKAN TIKET RESUMABLE UPLOAD VIA GOOGLE DRIVE API v3
+    // 7. TERBITKAN TIKET RESUMABLE UPLOAD VIA GOOGLE DRIVE API v3 WORKER ADMIN
     const ticket = await createResumableUploadTicket(targetFolderId, fileName, mimeType || 'image/jpeg', sizeBytes);
 
     return NextResponse.json({
       success: true,
       uploadUrl: ticket.uploadUrl,
       accessToken: ticket.accessToken,
-      targetFolderId
+      targetFolderId,
+      isExternalDrive: false
     });
   } catch (error) {
     console.error('[Resumable Upload Ticket Error]:', error.message);

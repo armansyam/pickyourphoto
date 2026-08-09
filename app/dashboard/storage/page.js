@@ -113,9 +113,65 @@ export default function VendorStorageManagerPage() {
   const [showStorageGalleryModal, setShowStorageGalleryModal] = useState(false);
   const [galleryModalFolder, setGalleryModalFolder] = useState(null);
   const [galleryModalFiles, setGalleryModalFiles] = useState([]);
-  const [loadingGalleryModal, setLoadingGalleryModal] = useState(false);
-  const [activePreviewIndex, setActivePreviewIndex] = useState(null);
-  const [previewSourceFiles, setPreviewSourceFiles] = useState([]);
+  // BYOS (External Google Drive Vendor) State & Handlers
+  const [byosState, setByosState] = useState({ connected: false, email: '', quota: null });
+
+  const fetchByosData = async () => {
+    try {
+      const res = await fetch('/api/storage/external/quota');
+      const data = await res.json();
+      if (data.success) {
+        setByosState({
+          connected: Boolean(data.connected),
+          email: data.email || '',
+          quota: data.quota || null
+        });
+      }
+    } catch (e) {
+      console.error('BYOS fetch error:', e);
+    }
+  };
+
+  const handleConnectByosDrive = async () => {
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const res = await fetch(`/api/storage/external/connect?origin=${encodeURIComponent(origin)}`);
+      const data = await res.json();
+      if (data.success && data.authUrl) {
+        window.location.href = data.authUrl;
+      } else {
+        showToast(data.error || 'Gagal memulai koneksi Google Drive.', 'error');
+      }
+    } catch (e) {
+      showToast('Terjadi kesalahan saat koneksi Google Drive.', 'error');
+    }
+  };
+
+  const handleDisconnectByosDrive = async () => {
+    const isConfirmed = confirm(
+      '⚠️ PERINGATAN PENGGANTIAN/PELEPASAN AKUN GOOGLE DRIVE:\n\n' +
+      'Mengganti atau melelepas akun Google Drive akan mengalihkan pusat penyedia storage & upload proyek baru Anda ke Drive yang baru.\n\n' +
+      'Akses manajemen berkas pada Drive lama Anda akan dilepas dari konsol ini (berkas fisik di GDrive lama Anda tetap 100% aman tersimpan di akun Google Anda).\n\n' +
+      'Apakah Anda yakin ingin melanjutkan pelepas/penggantian akun?'
+    );
+    if (!isConfirmed) return;
+
+    try {
+      const res = await fetch('/api/storage/external/disconnect', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Koneksi Google Drive Eksternal berhasil dilepas.', 'success');
+        setByosState({ connected: false, email: '', quota: null });
+        fetchStorageFiles(currentFolderId);
+      }
+    } catch (e) {
+      showToast('Gagal melepas koneksi Drive.', 'error');
+    }
+  };
+
+  useEffect(() => {
+    fetchByosData();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -965,56 +1021,129 @@ export default function VendorStorageManagerPage() {
           </div>
         )}
 
-        {/* UPSELL BANNER (JIKA BELUM BELI ADD-ON) */}
-        {!loading && !hasAddon && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
-            <div style={{
-              background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(16,185,129,0.05))',
-              border: '1px solid rgba(99,102,241,0.2)',
-              borderRadius: '20px',
-              padding: '32px',
-              display: 'flex',
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '24px'
-            }}>
-              <div style={{ flex: 1, minWidth: '280px' }}>
-                <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.3)' }}>
-                  ✨ Fitur Premium Studio Cloud
-                </span>
-                <h2 style={{ margin: '14px 0 10px 0', fontSize: '24px', fontWeight: '800', color: '#ffffff', lineHeight: '1.3' }}>
-                  Simpan Ribuan Foto Langsung di Dedicated Cloud SaaS 🚀
-                </h2>
-                <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa', lineHeight: '1.6' }}>
-                  Dapatkan Dedicated Storage kecepatan tinggi di cloud platform Pick Your Photo. Bebas buat folder, unggah foto/video fisik langsung dari HP/laptop, dan bagikan dengan mudah.
-                </p>
-              </div>
-
-              <div style={{ background: 'rgba(24,24,27,0.8)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '16px', padding: '24px', textAlign: 'center', minWidth: '220px' }}>
-                <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: '600', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Mulai Dari Hanya</span>
-                <div style={{ fontSize: '26px', fontWeight: '800', color: '#fbbf24', marginBottom: '14px' }}>
-                  {addonPlans.length > 0 ? formatIDR(addonPlans[0].price) : 'Rp 47.000'} <span style={{ fontSize: '12px', color: '#71717a', fontWeight: '400' }}>/ bln</span>
+        {/* UPSELL & BYOS BANNER */}
+        {!loading && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* CARD 1: STATUS GOOGLE DRIVE VENDOR (BYOS EKSTERNAL) */}
+            {byosState.connected ? (
+              <div style={{
+                background: 'rgba(52,211,153,0.06)',
+                border: '1px solid rgba(52,211,153,0.3)',
+                borderRadius: '16px',
+                padding: '20px 24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '16px'
+              }}>
+                <div style={{ flex: 1, minWidth: '260px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '3px 8px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.4)' }}>
+                      ☁️ External GDrive Connected (BYOS)
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>{byosState.email}</span>
+                  </div>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>
+                    Terhubung ke Google Drive Studio Anda (Vendor Owner)
+                  </h4>
+                  {byosState.quota && (
+                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#a1a1aa' }}>
+                      Kapasitas Drive: <strong style={{ color: '#34d399' }}>{formatBytes(byosState.quota.usedBytes)}</strong> / {byosState.quota.limitBytes > 0 ? formatBytes(byosState.quota.limitBytes) : 'Unlimited'} Terpakai
+                      {byosState.quota.freeBytes !== null && (
+                        <span style={{ marginLeft: '10px', color: '#fbbf24' }}>
+                          (Sisa {formatBytes(byosState.quota.freeBytes)} Kosong)
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={handleOpenAddonModal}
-                  style={{
-                    width: '100%',
-                    padding: '10px 16px',
-                    background: 'linear-gradient(135deg, #10b981, #059669)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '12px',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Beli Paket Storage &rarr;
-                </button>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    onClick={fetchByosData}
+                    style={{ padding: '8px 14px', background: 'rgba(255,255,255,0.06)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                  >
+                    🔄 Sync Kuota
+                  </button>
+                  <button
+                    onClick={handleDisconnectByosDrive}
+                    style={{ padding: '8px 14px', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                  >
+                    🔌 Putus Akses
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              !hasAddon && (
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.08), rgba(16,185,129,0.05))',
+                  border: '1px solid rgba(99,102,241,0.2)',
+                  borderRadius: '20px',
+                  padding: '28px',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '24px'
+                }}>
+                  <div style={{ flex: 1, minWidth: '280px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(99,102,241,0.15)', color: '#818cf8', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.3)' }}>
+                      ✨ Pusat Penyimpanan Studio
+                    </span>
+                    <h2 style={{ margin: '12px 0 8px 0', fontSize: '22px', fontWeight: '800', color: '#ffffff', lineHeight: '1.3' }}>
+                      Kelola Repositori Foto Studio Anda 🚀
+                    </h2>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa', lineHeight: '1.6' }}>
+                      Hubungkan Google Drive milik Anda sendiri secara <strong>Gratis (BYOS)</strong> atau gunakan <strong>Internal Dedicated Storage SaaS</strong> untuk kecepatan tinggi.
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minWidth: '220px' }}>
+                    <button
+                      onClick={handleConnectByosDrive}
+                      style={{
+                        padding: '12px 18px',
+                        background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 14px rgba(99,102,241,0.3)'
+                      }}
+                    >
+                      <span>🔗</span> Hubungkan GDrive Saya (BYOS)
+                    </button>
+                    <button
+                      onClick={handleOpenAddonModal}
+                      style={{
+                        padding: '10px 18px',
+                        background: 'rgba(16,185,129,0.15)',
+                        color: '#34d399',
+                        border: '1px solid rgba(16,185,129,0.3)',
+                        borderRadius: '10px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>⚡</span> Beli Add-On Storage SaaS
+                    </button>
+                  </div>
+                </div>
+              )
+            )}
           </div>
         )}
 
@@ -1709,63 +1838,87 @@ export default function VendorStorageManagerPage() {
           {!isUploadMinimized && (
             <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               
-              {/* Corporate Turbo Upload Recommendation Banner */}
+              {/* Corporate Turbo Upload Recommendation Banner (Eksklusif Add-On SaaS) */}
               {isTurboSupported && !isTurboModeActive && !dismissedTurboPrompt && uploadProgress.some(i => i.status === 'uploading') && (
-                <div style={{
-                  background: isOverpowerPc ? 'rgba(168,85,247,0.1)' : 'rgba(52,211,153,0.08)',
-                  border: isOverpowerPc ? '1px solid rgba(168,85,247,0.3)' : '1px solid rgba(52,211,153,0.25)',
-                  borderRadius: '12px',
-                  padding: '12px 14px'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '13px' }}>⚡</span>
-                    <span style={{ fontSize: '12px', fontWeight: '800', color: isOverpowerPc ? '#c084fc' : '#34d399' }}>
-                      {isOverpowerPc ? '🔥 PC Overpower Workstation Terdeteksi!' : 'Performa Unggah Tinggi Tersedia'}
-                    </span>
+                hasAddon ? (
+                  <div style={{
+                    background: isOverpowerPc ? 'rgba(168,85,247,0.1)' : 'rgba(52,211,153,0.08)',
+                    border: isOverpowerPc ? '1px solid rgba(168,85,247,0.3)' : '1px solid rgba(52,211,153,0.25)',
+                    borderRadius: '12px',
+                    padding: '12px 14px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '13px' }}>⚡</span>
+                      <span style={{ fontSize: '12px', fontWeight: '800', color: isOverpowerPc ? '#c084fc' : '#34d399' }}>
+                        {isOverpowerPc ? '🔥 PC Overpower Workstation Terdeteksi!' : 'Performa Unggah Tinggi Tersedia'}
+                      </span>
+                    </div>
+                    <p style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#a1a1aa', lineHeight: '1.5' }}>
+                      {isOverpowerPc 
+                        ? 'Spesifikasi PC Workstation studio Anda sangat tinggi (12+ Core CPU / 16GB+ RAM). Aktifkan Turbo Overpower untuk mengunggah dengan 10 jalur paralel serentak?'
+                        : 'Perangkat dan koneksi internet studio Anda mendukung fitur pengunggahan berkecepatan tinggi. Aktifkan Turbo Upload untuk mempercepat proses pengiriman berkas foto?'}
+                    </p>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsTurboModeActive(true);
+                          showToast(`⚡ Turbo Upload ${isOverpowerPc ? 'Overpower (10 Thread)' : '(8 Thread)'} Aktif! Pengunggahan dipacu secara maksimal.`, 'success');
+                        }}
+                        style={{
+                          padding: '5px 12px',
+                          background: isOverpowerPc ? 'linear-gradient(135deg, #9333ea, #7e22ce)' : 'linear-gradient(135deg, #10b981, #059669)',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {isOverpowerPc ? '🔥 Aktifkan Turbo Overpower (10 Thread)' : '⚡ Aktifkan Turbo Upload (8 Thread)'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDismissedTurboPrompt(true)}
+                        style={{
+                          padding: '5px 12px',
+                          background: 'rgba(255,255,255,0.06)',
+                          color: '#a1a1aa',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: '600',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Gunakan Mode Standar
+                      </button>
+                    </div>
                   </div>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '11px', color: '#a1a1aa', lineHeight: '1.5' }}>
-                    {isOverpowerPc 
-                      ? 'Spesifikasi PC Workstation studio Anda sangat tinggi (12+ Core CPU / 16GB+ RAM). Aktifkan Turbo Overpower untuk mengunggah dengan 10 jalur paralel serentak?'
-                      : 'Perangkat dan koneksi internet studio Anda mendukung fitur pengunggahan berkecepatan tinggi. Aktifkan Turbo Upload untuk mempercepat proses pengiriman berkas foto?'}
-                  </p>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                ) : (
+                  <div style={{
+                    background: 'rgba(251,191,36,0.08)',
+                    border: '1px solid rgba(251,191,36,0.25)',
+                    borderRadius: '12px',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px'
+                  }}>
+                    <div style={{ fontSize: '11px', color: '#fbbf24' }}>
+                      ⚡ <strong>Turbo Upload (10 Thread High-Speed)</strong> eksklusif untuk pemilik Paket Add-On Dedicated SaaS.
+                    </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        setIsTurboModeActive(true);
-                        showToast(`⚡ Turbo Upload ${isOverpowerPc ? 'Overpower (10 Thread)' : '(8 Thread)'} Aktif! Pengunggahan dipacu secara maksimal.`, 'success');
-                      }}
-                      style={{
-                        padding: '5px 12px',
-                        background: isOverpowerPc ? 'linear-gradient(135deg, #9333ea, #7e22ce)' : 'linear-gradient(135deg, #10b981, #059669)',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        cursor: 'pointer'
-                      }}
+                      onClick={handleOpenAddonModal}
+                      style={{ padding: '4px 10px', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}
                     >
-                      {isOverpowerPc ? '🔥 Aktifkan Turbo Overpower (10 Thread)' : '⚡ Aktifkan Turbo Upload (8 Thread)'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDismissedTurboPrompt(true)}
-                      style={{
-                        padding: '5px 12px',
-                        background: 'rgba(255,255,255,0.06)',
-                        color: '#a1a1aa',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Gunakan Mode Standar
+                      Beli Add-On &rarr;
                     </button>
                   </div>
-                </div>
+                )
               )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: '#ffffff', fontWeight: '700' }}>
