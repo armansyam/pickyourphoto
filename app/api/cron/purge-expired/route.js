@@ -14,6 +14,23 @@ export async function POST(req) {
 
 async function handlePurge(req) {
   try {
+    // 0. Keamanan: Validasi otorisasi CRON_SECRET
+    const cronSecret = process.env.CRON_SECRET;
+    const authHeader = req.headers.get('authorization') || '';
+    const customHeader = req.headers.get('x-cron-secret') || '';
+    const providedToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : customHeader.trim();
+
+    if (cronSecret) {
+      if (!providedToken || providedToken !== cronSecret) {
+        return NextResponse.json({ success: false, error: 'Unauthorized: Invalid or missing CRON_SECRET token.' }, { status: 401 });
+      }
+    } else if (process.env.NODE_ENV === 'production') {
+      console.warn('[Purge Cron Warning]: CRON_SECRET belum dikonfigurasi di environment production.');
+      return NextResponse.json({ success: false, error: 'Unauthorized: CRON_SECRET environment variable is missing.' }, { status: 401 });
+    } else {
+      console.warn('[Purge Cron Dev Notice]: Mengeksekusi purge cron dalam mode development tanpa CRON_SECRET.');
+    }
+
     // 1. Ambil durasi masa tenggang dari saas_settings
     const graceRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'grace_period_days'").get();
     const graceDays = graceRow && parseInt(graceRow.value, 10) > 0 ? parseInt(graceRow.value, 10) : 7;

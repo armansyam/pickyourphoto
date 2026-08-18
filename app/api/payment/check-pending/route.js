@@ -1,10 +1,29 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
+function maskPhoneNumber(phone) {
+    if (!phone) return '';
+    const clean = phone.trim();
+    if (clean.length <= 6) return '****';
+    const start = clean.slice(0, 4);
+    const end = clean.slice(-3);
+    return `${start}****${end}`;
+}
+
 export async function GET(request) {
     try {
+        const clientIp = getClientIp(request);
+        const rateCheck = checkRateLimit(`check_pending_ip_${clientIp}`, 30, 60);
+        if (!rateCheck.success) {
+            return NextResponse.json({ 
+                hasPending: false, 
+                message: `Terlalu banyak permintaan. Harap tunggu ${rateCheck.resetSeconds} detik.` 
+            }, { status: 429 });
+        }
+
         const { searchParams } = new URL(request.url);
         const email = searchParams.get('email')?.toLowerCase().trim();
 
@@ -22,6 +41,8 @@ export async function GET(request) {
             return NextResponse.json({ hasPending: false });
         }
 
+        const maskedPhone = maskPhoneNumber(vendor.whatsapp);
+
         // Vendor sudah di-archive (expired_draft) — langsung tampilkan card expired
         if (vendor.status === 'expired_draft') {
             const plan = db.prepare("SELECT id, name, price FROM plans WHERE id = ?").get(vendor.planId);
@@ -36,7 +57,7 @@ export async function GET(request) {
                 vendorId: vendor.id,
                 name: vendor.name,
                 email: vendor.email,
-                whatsapp: vendor.whatsapp,
+                whatsapp: maskedPhone,
                 orderId: lastSession?.orderId || null,
                 planName: plan?.name || 'Paket SaaS',
                 planPrice: plan?.price || lastSession?.amount || 0,
@@ -70,7 +91,7 @@ export async function GET(request) {
                     vendorId: vendor.id,
                     name: vendor.name,
                     email: vendor.email,
-                    whatsapp: vendor.whatsapp,
+                    whatsapp: maskedPhone,
                     orderId: expiredSession.orderId,
                     planName: plan?.name || 'Paket SaaS',
                     planPrice: plan?.price || expiredSession.amount,
@@ -80,7 +101,6 @@ export async function GET(request) {
             }
             return NextResponse.json({ hasPending: false });
         }
-
 
         let token = null;
         let redirectUrl = null;
@@ -102,7 +122,7 @@ export async function GET(request) {
             vendorId: vendor.id,
             name: vendor.name,
             email: vendor.email,
-            whatsapp: vendor.whatsapp,
+            whatsapp: maskedPhone,
             orderId: session.orderId,
             token,
             redirectUrl,

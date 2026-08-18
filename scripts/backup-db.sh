@@ -2,8 +2,9 @@
 # backup-db.sh — Jalankan via cron (misal: tiap 6 jam)
 # Contoh entri crontab: 0 */6 * * * /Users/armansyam/Documents/Project\ AmsDev/pick-your-photo/scripts/backup-db.sh
 
-# Path direktori proyek (sesuaikan jika deploy di server VPS)
-PROJECT_DIR="/Users/armansyam/Documents/Project AmsDev/pick-your-photo"
+# Path direktori proyek (dinamis otomatis mendeteksi root project)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
 DB_FILE="$PROJECT_DIR/data/database.db"
 BACKUP_DIR="$PROJECT_DIR/backups"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)

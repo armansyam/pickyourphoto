@@ -270,13 +270,20 @@ export async function DELETE(req) {
     // 2. Hapus dari DB storage_files
     db.prepare('DELETE FROM storage_files WHERE id = ?').run(file.id);
 
-    // 3. Refund usedStorageBytes vendor
-    db.prepare('UPDATE vendors SET usedStorageBytes = MAX(0, usedStorageBytes - ?) WHERE id = ?').run(file.fileSizeBytes, session.id);
+    // 3. Refund usedStorageBytes vendor HANYA jika berkas disimpan di SaaS Storage (bukan BYOS External Drive)
+    const isSaaSFile = (file.isExternalDrive !== 1 && file.isExternalDrive !== '1');
+    let refundedBytes = 0;
+    if (isSaaSFile && file.fileSizeBytes > 0) {
+      db.prepare('UPDATE vendors SET usedStorageBytes = MAX(0, usedStorageBytes - ?) WHERE id = ?').run(file.fileSizeBytes, session.id);
+      refundedBytes = file.fileSizeBytes;
+    }
 
     return NextResponse.json({
       success: true,
-      message: `File "${file.fileName}" berhasil dihapus dari Cloud Storage. Kuota sebesar ${formatBytes(file.fileSizeBytes)} telah dikembalikan.`,
-      refundedBytes: file.fileSizeBytes
+      message: isSaaSFile 
+        ? `File "${file.fileName}" berhasil dihapus dari Cloud Storage. Kuota sebesar ${formatBytes(file.fileSizeBytes)} telah dikembalikan.`
+        : `File "${file.fileName}" berhasil dihapus dari Google Drive Anda.`,
+      refundedBytes
     });
   } catch (error) {
     console.error('[Storage Files DELETE Error]:', error.message);

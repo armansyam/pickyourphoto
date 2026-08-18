@@ -2,8 +2,9 @@
 # backup-photos.sh — Jalankan via cron (misal: tiap 24 jam)
 # Contoh entri crontab: 0 2 * * * /Users/armansyam/Documents/Project\ AmsDev/pick-your-photo/scripts/backup-photos.sh
 
-# Path direktori proyek
-PROJECT_DIR="/Users/armansyam/Documents/Project AmsDev/pick-your-photo"
+# Path direktori proyek (dinamis otomatis mendeteksi root project)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
 SRC_DIR="$PROJECT_DIR/public/staging_uploads/"
 # Tempat penyimpanan cadangan eksternal (idealnya di disk fisik yang berbeda)
 DEST_DIR="$PROJECT_DIR/backups/staging_uploads_backup/"

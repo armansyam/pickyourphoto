@@ -162,6 +162,12 @@ export async function DELETE(request, { params }) {
                 db.prepare('DELETE FROM projects WHERE vendorId = ?').run(vendorId);
             }
 
+            // Delete storage files, folders, addon subscriptions & upload queues
+            db.prepare('DELETE FROM storage_files WHERE vendorId = ?').run(vendorId);
+            db.prepare('DELETE FROM storage_folders WHERE vendorId = ?').run(vendorId);
+            db.prepare('DELETE FROM storage_addon_subscriptions WHERE vendorId = ?').run(vendorId);
+            db.prepare('DELETE FROM upload_queue WHERE vendorId = ?').run(vendorId);
+
             // Delete payment transactions & sessions
             db.prepare('DELETE FROM payment_transactions WHERE vendorId = ?').run(vendorId);
             db.prepare('DELETE FROM payment_sessions WHERE vendorId = ?').run(vendorId);
