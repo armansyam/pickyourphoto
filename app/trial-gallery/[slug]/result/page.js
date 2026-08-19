@@ -173,26 +173,52 @@ export default function TrialResultPage({ params }) {
                 <div style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.6', marginBottom: '14px' }}>
                   {selectedCount} foto sudah dipilih klien. Sekarang tinggal 1 klik — RAW Sorter akan mencocokkan dan memindahkan file RAW dari folder lokal kamu <strong style={{ color: '#c4b5fd' }}>100% di komputer, tanpa upload</strong>. Hemat waktu editing berjam-jam.
                 </div>
-                <button
-                  onClick={() => setShowSorter(true)}
-                  style={{
-                    padding: '11px 26px',
-                    borderRadius: '10px',
-                    border: 'none',
-                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                    color: '#fff',
-                    fontWeight: '700',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 18px rgba(99,102,241,0.4)',
-                    transition: 'all 0.2s',
-                    letterSpacing: '0.3px',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.5)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 18px rgba(99,102,241,0.4)'; }}
-                >
-                  📁 Coba RAW Sorter Sekarang →
-                </button>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                  <button
+                    onClick={() => setShowSorter(true)}
+                    style={{
+                      padding: '11px 22px',
+                      borderRadius: '10px',
+                      border: 'none',
+                      background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                      color: '#fff',
+                      fontWeight: '700',
+                      fontSize: '13.5px',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 18px rgba(99,102,241,0.4)',
+                      transition: 'all 0.2s',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.5)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 18px rgba(99,102,241,0.4)'; }}
+                  >
+                    <span>📁</span> Coba RAW Sorter Sekarang →
+                  </button>
+
+                  <button
+                    onClick={() => setShowSorter(true)}
+                    style={{
+                      padding: '11px 18px',
+                      borderRadius: '10px',
+                      border: '1px solid rgba(139, 92, 246, 0.35)',
+                      background: 'rgba(139, 92, 246, 0.12)',
+                      color: '#c4b5fd',
+                      fontWeight: '700',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.22)'; e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.12)'; e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.35)'; }}
+                  >
+                    <span>✨</span> Magic-Sort (1-Klik)
+                  </button>
+                </div>
               </div>
             </div>
           )}

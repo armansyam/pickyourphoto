@@ -8,20 +8,20 @@ import { getRequestOrigin } from '@/lib/url';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
-    // Check if user is logged in
     const vendor = getAuthVendor();
-    if (vendor) {
-        const origin = getRequestOrigin(request);
-        if (vendor.role === 'admin') {
-            return NextResponse.redirect(new URL('/admin', origin));
-        } else {
-            return NextResponse.redirect(new URL('/dashboard', origin));
-        }
-    }
 
     // Read static landing page html
     const filePath = path.join(process.cwd(), 'public/landing.html');
     let html = fs.readFileSync(filePath, 'utf8');
+
+    // If user is already logged in, update navbar login button to point to dashboard
+    if (vendor) {
+        const dest = vendor.role === 'admin' ? '/admin' : '/dashboard';
+        html = html.replace(
+            /<a href="\/login"[\s\S]*?data-i18n="nav\.masuk">[\s\S]*?<\/a>/,
+            `<a href="${dest}" style="font-size:13.5px;color:#ffffff;font-weight:700;padding:6px 14px;background:linear-gradient(135deg,#C5A059,#996515);border-radius:8px;box-shadow:0 2px 8px rgba(197,160,89,0.3);text-decoration:none;display:inline-flex;align-items:center;gap:6px;">Buka Dashboard &rarr;</a>`
+        );
+    }
 
     try {
         const plans = db.prepare("SELECT * FROM plans WHERE status = 'active' ORDER BY price ASC").all();
@@ -29,25 +29,25 @@ export async function GET(request) {
             const dynamicTierHtml = plans.map(plan => {
                 const isFeatured = plan.name.includes('Pro');
                 const logoText = (plan.allowCustomLogo === 1 || plan.allowCustomLogo === true || plan.name.includes('Pro') || plan.name.includes('Business'))
-                    ? '<li style="color: #34d399; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>'
-                    : '<li style="color: rgba(255,255,255,0.4);">• Logo Platform Standard</li>';
+                    ? '<li style="color: #8C6D23; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>'
+                    : '<li style="color: var(--muted-dark);">• Logo Platform Standard</li>';
                     
                 const rawText = (plan.allowRawSelector === 1 || plan.allowRawSelector === true)
-                    ? '<li style="color: #34d399; font-weight: bold;">✓ Fitur Auto-Sorter / Selector File RAW</li>'
-                    : '<li style="color: rgba(255,255,255,0.4);">• Fitur RAW Selector Nonaktif</li>';
+                    ? '<li style="color: #8C6D23; font-weight: bold;">✓ Fitur Auto-Sorter / Selector File RAW</li>'
+                    : '<li style="color: var(--muted-dark);">• Fitur RAW Selector Nonaktif</li>';
 
                 return `
       <div class="tier ${isFeatured ? 'featured' : ''}">
         ${isFeatured ? '<span class="tier-badge">PALING DIPILIH</span>' : ''}
         <div class="tier-name">${plan.name}</div>
-        <div style="font-size: 22px; font-weight: 850; color: ${isFeatured ? '#fbbf24' : '#e4e4e7'}; margin-bottom: 4px;">
-            Rp ${Number(plan.price).toLocaleString('id-ID')} <span style="font-size: 11px; font-weight: normal; color: #a1a1aa;">/ ${plan.activePeriodDays || 30} hari</span>
+        <div style="font-size: 22px; font-weight: 850; color: ${isFeatured ? '#8C6D23' : 'var(--brass-dark)'}; margin-bottom: 4px;">
+            Rp ${Number(plan.price).toLocaleString('id-ID')} <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ ${plan.activePeriodDays || 30} hari</span>
         </div>
         <div class="tier-note">${plan.name.includes('Starter') ? 'Cocok untuk fotografer pemula / freelance' : plan.name.includes('Pro') ? 'Untuk fotografer profesional & tim studio' : 'Untuk studio besar & vendor volume tinggi'}</div>
         <ul>
           <li>✓ Maksimal ${plan.maxProjects} Project Aktif</li>
           <li>✓ Bebas Jumlah Foto per Proyek</li>
-          <li>✓ Galeri Online & Seleksi Foto Klien</li>
+          <li>✓ Galeri Online &amp; Seleksi Foto Klien</li>
           ${logoText}
           ${rawText}
         </ul>
@@ -68,25 +68,25 @@ export async function GET(request) {
             const dynamicAddonHtml = addonPlans.map(addon => {
                 const quotaGb = addon.quotaBytes ? (addon.quotaBytes / (1024 * 1024 * 1024)).toFixed(0) : '0';
                 return `
-      <div class="tier" style="border: 1.5px solid rgba(52,211,153,0.3); background: rgba(52,211,153,0.03); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; justify: space-between;">
+      <div class="tier" style="border: 1.5px solid rgba(197,160,89,0.35); background: #FFFFFF; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 6px 24px rgba(197,160,89,0.08);">
         <div>
-          <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(52,211,153,0.15); color: #34d399; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(52,211,153,0.3);">ADD-ON CLOUD</span>
-          <div class="tier-name" style="margin-top: 10px;">${addon.name}</div>
-          <div style="font-size: 26px; font-weight: 850; color: #ffffff; margin: 6px 0 2px 0;">
+          <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(197,160,89,0.15); color: #8C6D23; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(197,160,89,0.4);">ADD-ON CLOUD</span>
+          <div class="tier-name" style="margin-top: 10px; color: #1C1917;">${addon.name}</div>
+          <div style="font-size: 26px; font-weight: 850; color: #1C1917; margin: 6px 0 2px 0;">
               ${quotaGb} GB Storage
           </div>
-          <div style="font-size: 18px; font-weight: 700; color: #34d399; margin-bottom: 12px;">
-              Rp ${Number(addon.price).toLocaleString('id-ID')} <span style="font-size: 11px; font-weight: normal; color: #a1a1aa;">/ bulan</span>
+          <div style="font-size: 18px; font-weight: 700; color: #8C6D23; margin-bottom: 12px;">
+              Rp ${Number(addon.price).toLocaleString('id-ID')} <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ bulan</span>
           </div>
-          <div class="tier-note" style="margin-bottom: 14px;">Dedicated Cloud Storage studio</div>
-          <ul style="list-style: none; padding: 0; margin: 0 0 16px 0; font-size: 12px; line-height: 2.0; color: #a1a1aa;">
-            <li style="color: #34d399; font-weight: bold;">✓ ${quotaGb} GB Dedicated Storage</li>
-            <li style="color: #34d399; font-weight: bold;">✓ High-Speed Pipe Stream</li>
+          <div class="tier-note" style="margin-bottom: 14px; color: var(--muted);">Dedicated Cloud Storage studio</div>
+          <ul style="list-style: none; padding: 0; margin: 0 0 16px 0; font-size: 12px; line-height: 2.0; color: var(--muted);">
+            <li style="color: #8C6D23; font-weight: bold;">✓ ${quotaGb} GB Dedicated Storage</li>
+            <li style="color: #8C6D23; font-weight: bold;">✓ High-Speed Pipe Stream</li>
             <li>✓ Unlimited High-Res Photos</li>
             <li>✓ Daily Prorated Billing</li>
           </ul>
         </div>
-        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 16px; padding: 10px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px; box-shadow: 0 4px 12px rgba(16,185,129,0.25);">Daftar &amp; Pilih Add-On &rarr;</a>
+        <a href="/register" style="display: block; width: 100%; text-align: center; margin-top: 16px; padding: 10px; background: linear-gradient(135deg, #C5A059, #996515); color: #fff; border-radius: 8px; font-weight: bold; text-decoration: none; font-size: 13px; box-shadow: 0 4px 12px rgba(197,160,89,0.25);">Daftar &amp; Pilih Add-On &rarr;</a>
       </div>`;
             }).join('');
 

@@ -164,16 +164,6 @@ export async function DELETE(request, { params }) {
 
         runDeleteTx();
 
-        // Delete physical files from disk recursively
-        const uploadDir = path.join(process.cwd(), 'public', 'staging_uploads', `vendor_${project.vendorId}`, `project_${project.id}_${project.slug}`);
-        if (fs.existsSync(uploadDir)) {
-            try {
-                fs.rmSync(uploadDir, { recursive: true, force: true });
-            } catch (err) {
-                console.error(`Failed to delete directory ${uploadDir}:`, err);
-            }
-        }
-
         return NextResponse.json({ message: 'Project and all associated files deleted successfully.' });
 
     } catch (error) {

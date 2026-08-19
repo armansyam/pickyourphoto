@@ -61,6 +61,159 @@ export default function AdminSettings({
   const [newAdminPass, setNewAdminPass] = useState('');
   const [submittingAdmin, setSubmittingAdmin] = useState(false);
 
+  // Backup & Recovery Suite State
+  const [backupsList, setBackupsList] = useState([]);
+  const [loadingBackups, setLoadingBackups] = useState(false);
+  const [creatingBackup, setCreatingBackup] = useState(false);
+  const [uploadingBackup, setUploadingBackup] = useState(false);
+  const [restoreModal, setRestoreModal] = useState(null); // { open: true, fileName, date, size }
+  const [restoringBackup, setRestoringBackup] = useState(false);
+  const [systemReloading, setSystemReloading] = useState(false);
+  const [reloadCountdown, setReloadCountdown] = useState(3);
+
+  const fetchBackupsList = async () => {
+    setLoadingBackups(true);
+    try {
+      const res = await fetch('/api/admin/backups');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data.backups)) {
+          setBackupsList(data.backups);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch backups:', e);
+    } finally {
+      setLoadingBackups(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setCreatingBackup(true);
+    try {
+      const res = await fetch('/api/admin/backups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create' })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (addToast) addToast(data.message || 'Snapshot database berhasil dibuat!', 'success');
+        fetchBackupsList();
+      } else {
+        if (addToast) addToast(data.message || 'Gagal membuat backup database.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message || 'Terjadi kesalahan saat membuat backup.', 'error');
+    } finally {
+      setCreatingBackup(false);
+    }
+  };
+
+  const handleUploadRestore = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.db')) {
+      if (addToast) addToast('Format file salah. Harap pilih file database SQLite (.db).', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    const confirmUpload = window.confirm(
+      `Peringatan: Anda akan mengunggah dan langsung memulihkan database dari berkas "${file.name}".\n\nData saat ini akan digantikan dan snapshot darurat akan dibuat otomatis.\n\nLanjutkan?`
+    );
+    if (!confirmUpload) {
+      e.target.value = '';
+      return;
+    }
+
+    setUploadingBackup(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/backups', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        if (addToast) addToast(data.message || 'Database berhasil dipulihkan dari file unggahan!', 'success');
+        // Trigger visual reload countdown
+        setSystemReloading(true);
+        let count = 3;
+        const interval = setInterval(() => {
+          count -= 1;
+          setReloadCountdown(count);
+          if (count <= 0) {
+            clearInterval(interval);
+            window.location.reload();
+          }
+        }, 1000);
+      } else {
+        if (addToast) addToast(data.message || 'Gagal memulihkan database dari file unggahan.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message || 'Terjadi kesalahan saat mengunggah file.', 'error');
+    } finally {
+      setUploadingBackup(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!restoreModal?.fileName) return;
+    setRestoringBackup(true);
+    try {
+      const res = await fetch(`/api/admin/backups/${encodeURIComponent(restoreModal.fileName)}`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        if (addToast) addToast(data.message || 'Database berhasil dipulihkan!', 'success');
+        setRestoreModal(null);
+        // Trigger visual reload countdown
+        setSystemReloading(true);
+        let count = 3;
+        const interval = setInterval(() => {
+          count -= 1;
+          setReloadCountdown(count);
+          if (count <= 0) {
+            clearInterval(interval);
+            window.location.reload();
+          }
+        }, 1000);
+      } else {
+        if (addToast) addToast(data.message || 'Gagal memulihkan database.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message || 'Terjadi kesalahan saat memulihkan database.', 'error');
+    } finally {
+      setRestoringBackup(false);
+    }
+  };
+
+  const handleDeleteBackup = async (fileName) => {
+    if (!window.confirm(`Hapus berkas cadangan "${fileName}" secara permanen?`)) return;
+    try {
+      const res = await fetch(`/api/admin/backups/${encodeURIComponent(fileName)}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (addToast) addToast(data.message || 'Berkas cadangan berhasil dihapus.', 'success');
+        fetchBackupsList();
+      } else {
+        if (addToast) addToast(data.message || 'Gagal menghapus berkas cadangan.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message || 'Terjadi kesalahan.', 'error');
+    }
+  };
+
   const fetchAdminList = async () => {
     setLoadingAdmins(true);
     try {
@@ -78,6 +231,7 @@ export default function AdminSettings({
 
   React.useEffect(() => {
     fetchAdminList();
+    fetchBackupsList();
   }, []);
 
   const handleCreateSubAdmin = async (e) => {
@@ -528,7 +682,8 @@ export default function AdminSettings({
                   onChange={e => setPaymentGatewayProvider(e.target.value)}
                   style={{ background: 'rgba(0,0,0,0.3)' }}
                 >
-                  <option value="midtrans">QRIS Gateway Otomatis (QRIS, E-Wallet, Card)</option>
+                  <option value="ipaymu">⭐ IPaymu Direct QRIS API (Rekomendasi Bebas Iframe)</option>
+                  <option value="midtrans">QRIS Gateway Otomatis (Midtrans Snap)</option>
                   <option value="xendit">Xendit Invoice API (QRIS, E-Wallet, VA)</option>
                   <option value="tripay">Tripay Payment API (QRIS, VA, Alfamart)</option>
                   <option value="duitku">Duitku Pop-Up API (QRIS, VA, E-Wallet)</option>
@@ -537,12 +692,28 @@ export default function AdminSettings({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>Client Key / Public Key</label>
-                  <input type="text" className="input-text" value={paymentGatewayClientKey} onChange={e => setPaymentGatewayClientKey(e.target.value)} />
+                  <label className="form-label" style={{ fontSize: '12px' }}>
+                    {paymentGatewayProvider === 'ipaymu' ? 'Nomor Virtual Account (VA) Merchant' : 'Client Key / Public Key'}
+                  </label>
+                  <input 
+                    type="text" 
+                    className="input-text" 
+                    placeholder={paymentGatewayProvider === 'ipaymu' ? 'Contoh: 0000001234567890' : 'Client Key'}
+                    value={paymentGatewayClientKey} 
+                    onChange={e => setPaymentGatewayClientKey(e.target.value)} 
+                  />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>Server Key / Secret Key</label>
-                  <input type="password" className="input-text" value={paymentGatewayServerKey} onChange={e => setPaymentGatewayServerKey(e.target.value)} />
+                  <label className="form-label" style={{ fontSize: '12px' }}>
+                    {paymentGatewayProvider === 'ipaymu' ? 'API Key IPaymu' : 'Server Key / Secret Key'}
+                  </label>
+                  <input 
+                    type="password" 
+                    className="input-text" 
+                    placeholder={paymentGatewayProvider === 'ipaymu' ? 'API Key dari dashboard IPaymu' : 'Server Key'}
+                    value={paymentGatewayServerKey} 
+                    onChange={e => setPaymentGatewayServerKey(e.target.value)} 
+                  />
                 </div>
               </div>
 
@@ -712,14 +883,25 @@ export default function AdminSettings({
                 />
               </div>
             </div>
-
-            {/* AUTO-BACKUP DATABASE */}
-            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
-              💾 Auto-Backup Database
-            </h4>
+            {/* DATABASE BACKUP, SNAPSHOT & RECOVERY SUITE */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', color: '#818cf8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                </svg>
+                Backup & Disaster Recovery Database
+              </h4>
+              <span style={{ fontSize: '11px', background: sysEnableBackup ? 'rgba(16,185,129,0.15)' : 'rgba(148,163,184,0.1)', color: sysEnableBackup ? '#34d399' : '#94a3b8', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                {sysEnableBackup ? '🟢 AUTO-BACKUP AKTIF' : '⚪ AUTO-BACKUP NONAKTIF'}
+              </span>
+            </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              
+              {/* 1. Kontrol Auto-Backup Periodik */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <input
                     type="checkbox"
@@ -728,66 +910,333 @@ export default function AdminSettings({
                     onChange={e => setSysEnableBackup(e.target.checked)}
                     style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                   />
-                  <label htmlFor="enable_auto_backup" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableBackup ? '#34d399' : '#94a3b8' }}>
-                    Aktifkan Auto-Backup Database Otomatis
+                  <div>
+                    <label htmlFor="enable_auto_backup" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableBackup ? '#34d399' : '#94a3b8' }}>
+                      Aktifkan Penjadwalan Auto-Backup Otomatis
+                    </label>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>
+                      Server akan otomatis membuat snapshot cadangan berkala di background daemon.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', opacity: sysEnableBackup ? 1 : 0.4 }}>
+                  <label style={{ fontSize: '12px', color: '#a1a1aa' }}>Interval:</label>
+                  <select
+                    className="input-text"
+                    value={sysBackupInterval ?? 6}
+                    onChange={e => setSysBackupInterval(parseInt(e.target.value) || 6)}
+                    disabled={!sysEnableBackup}
+                    style={{ maxWidth: '140px', padding: '6px 10px', fontSize: '12px' }}
+                  >
+                    <option value={3}>Tiap 3 Jam</option>
+                    <option value={6}>Tiap 6 Jam</option>
+                    <option value={12}>Tiap 12 Jam</option>
+                    <option value={24}>Tiap 24 Jam</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 2. Action Bar: Manual Snapshot & Upload Restore */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', margin: '20px 0 16px' }}>
+                <div>
+                  <h5 style={{ margin: 0, fontSize: '13px', color: '#ffffff', fontWeight: 'bold' }}>
+                    Riwayat Berkas Cadangan di Server ({backupsList.length})
+                  </h5>
+                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#71717a' }}>
+                    Retensi otomatis 7 hari. File pre-restore snapshot otomatis diamankan sebelum setiap restore.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {/* Tombol Buat Snapshot Manual */}
+                  <button
+                    type="button"
+                    disabled={creatingBackup}
+                    onClick={handleCreateBackup}
+                    style={{
+                      background: 'rgba(99, 102, 241, 0.15)',
+                      border: '1px solid rgba(99, 102, 241, 0.3)',
+                      color: '#818cf8',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      cursor: creatingBackup ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    {creatingBackup ? 'Membuat Snapshot...' : 'Snapshot Sekarang'}
+                  </button>
+
+                  {/* Tombol Upload & Restore */}
+                  <label
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.15)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      color: '#34d399',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      cursor: uploadingBackup ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      margin: 0
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    {uploadingBackup ? 'Mengunggah & Memulihkan...' : 'Upload & Restore .db'}
+                    <input
+                      type="file"
+                      accept=".db"
+                      onChange={handleUploadRestore}
+                      disabled={uploadingBackup}
+                      style={{ display: 'none' }}
+                    />
                   </label>
                 </div>
-                <span style={{ fontSize: '11px', background: sysEnableBackup ? 'rgba(16,185,129,0.15)' : 'rgba(148,163,184,0.1)', color: sysEnableBackup ? '#34d399' : '#94a3b8', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
-                  {sysEnableBackup ? '🟢 BACKUP AKTIF' : '⚪ BACKUP NONAKTIF'}
-                </span>
               </div>
 
-              {/* Info Status Backup Terakhir (System Log) */}
-              <div style={{
-                background: 'rgba(99, 102, 241, 0.08)',
-                border: '1px solid rgba(99, 102, 241, 0.25)',
-                borderRadius: '12px',
-                padding: '14px 18px',
-                marginBottom: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '12px'
-              }}>
-                <div>
-                  <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    🕒 Backup Terakhir (System Log)
-                  </div>
-                  <div style={{ fontSize: '15px', fontWeight: '800', color: '#ffffff', marginTop: '3px' }}>
-                    {lastBackupTime || 'Belum pernah'}
-                  </div>
+              {/* 3. Tabel Daftar File Backup */}
+              {loadingBackups ? (
+                <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '12px' }}>
+                  Memuat daftar berkas cadangan...
                 </div>
+              ) : backupsList.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '24px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px dashed rgba(255,255,255,0.08)' }}>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#71717a' }}>
+                    Belum ada berkas cadangan (.db) tersimpan di server. Klik "Snapshot Sekarang" untuk membuat cadangan pertama.
+                  </p>
+                </div>
+              ) : (
+                <div style={{ overflowX: 'auto', maxHeight: '280px', overflowY: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', color: '#71717a', textAlign: 'left' }}>
+                        <th style={{ padding: '8px 12px' }}>Nama Berkas</th>
+                        <th style={{ padding: '8px 12px' }}>Tipe</th>
+                        <th style={{ padding: '8px 12px' }}>Tanggal Dibuat</th>
+                        <th style={{ padding: '8px 12px' }}>Ukuran</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'right' }}>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {backupsList.map((item, idx) => (
+                        <tr key={item.fileName} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent' }}>
+                          {/* Nama Berkas */}
+                          <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: '#e4e4e7', fontWeight: 'bold' }}>
+                            {item.fileName}
+                          </td>
 
-                {lastBackupFileName && (
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>Berkas Backup Terakhir:</div>
-                    <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#34d399', fontWeight: 'bold' }}>
-                      {lastBackupFileName} {lastBackupSizeFormatted ? `(${lastBackupSizeFormatted})` : ''}
+                          {/* Tipe Badge */}
+                          <td style={{ padding: '10px 12px' }}>
+                            {item.isPreRestore ? (
+                              <span style={{ fontSize: '10px', background: 'rgba(168,85,247,0.15)', color: '#c084fc', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                Pre-Restore Snapshot
+                              </span>
+                            ) : item.isUploaded ? (
+                              <span style={{ fontSize: '10px', background: 'rgba(56,189,248,0.15)', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                File Unggahan
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.15)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                                Auto Backup
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Tanggal */}
+                          <td style={{ padding: '10px 12px', color: '#a1a1aa' }}>
+                            {item.dateFormatted}, {item.timeFormatted}
+                          </td>
+
+                          {/* Ukuran */}
+                          <td style={{ padding: '10px 12px', color: '#fbbf24', fontWeight: 'bold' }}>
+                            {item.sizeFormatted}
+                          </td>
+
+                          {/* Tombol Aksi */}
+                          <td style={{ padding: '10px 12px', textAlign: 'right' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
+                              {/* Unduh */}
+                              <a
+                                href={`/api/admin/backups/${encodeURIComponent(item.fileName)}`}
+                                download
+                                style={{
+                                  background: 'rgba(255,255,255,0.05)',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                  color: '#e4e4e7',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  textDecoration: 'none',
+                                  cursor: 'pointer'
+                                }}
+                                title="Unduh file .db ke komputer"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                  <polyline points="7 10 12 15 17 10"></polyline>
+                                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Unduh
+                              </a>
+
+                              {/* Restore */}
+                              <button
+                                type="button"
+                                onClick={() => setRestoreModal({
+                                  open: true,
+                                  fileName: item.fileName,
+                                  date: `${item.dateFormatted}, ${item.timeFormatted}`,
+                                  size: item.sizeFormatted
+                                })}
+                                style={{
+                                  background: 'rgba(251, 191, 36, 0.15)',
+                                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                                  color: '#fbbf24',
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  cursor: 'pointer'
+                                }}
+                                title="Pulihkan database dari file ini"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                  <path d="M3 3v5h5"></path>
+                                </svg>
+                                Restore
+                              </button>
+
+                              {/* Hapus */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteBackup(item.fileName)}
+                                style={{
+                                  background: 'rgba(239, 68, 68, 0.1)',
+                                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                                  color: '#f87171',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  cursor: 'pointer'
+                                }}
+                                title="Hapus file cadangan ini"
+                              >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* ── MODAL KONFIRMASI RESTORE DATABASE ── */}
+            {restoreModal && (
+              <div className="modal-overlay" onClick={() => { if (!restoringBackup) setRestoreModal(null); }}>
+                <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', width: '90%', borderRadius: '16px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(251,191,36,0.15)', color: '#fbbf24', marginBottom: '14px' }}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 8px' }}>
+                      Konfirmasi Pemulihan Database
+                    </h3>
+                    <p style={{ color: '#a1a1aa', fontSize: '13px', lineHeight: '1.5', margin: 0 }}>
+                      Apakah Anda yakin ingin memulihkan seluruh database dari berkas ini?
+                    </p>
+                  </div>
+
+                  {/* Detail Box */}
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '14px', fontSize: '12px', lineHeight: '1.6', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#71717a' }}>Berkas:</span>
+                      <strong style={{ color: '#34d399', fontFamily: 'monospace' }}>{restoreModal.fileName}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#71717a' }}>Waktu Cadangan:</span>
+                      <span style={{ color: '#e4e4e7' }}>{restoreModal.date}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#71717a' }}>Ukuran:</span>
+                      <strong style={{ color: '#fbbf24' }}>{restoreModal.size}</strong>
                     </div>
                   </div>
-                )}
-              </div>
 
-              <div className="form-group" style={{ margin: 0, opacity: sysEnableBackup ? 1 : 0.4, transition: 'opacity 0.2s' }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Interval Backup (Jam)</label>
-                <input
-                  type="number"
-                  className="input-text"
-                  placeholder="Contoh: 6 (backup setiap 6 jam)"
-                  min="1"
-                  max="168"
-                  value={sysBackupInterval ?? 6}
-                  onChange={e => setSysBackupInterval(parseInt(e.target.value) || 6)}
-                  disabled={!sysEnableBackup}
-                  style={{ maxWidth: '200px' }}
-                />
-                <p style={{ fontSize: '11px', color: '#64748b', margin: '6px 0 0 0' }}>
-                  Backup berjalan otomatis secara otonom di background daemon server (<code>lib/db.js</code>).
-                  File backup tersimpan di folder <code>backups/</code> di server.
-                </p>
+                  {/* Security Notice */}
+                  <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '12px', fontSize: '11px', color: '#34d399', lineHeight: '1.4', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                      <polyline points="9 12 11 14 15 10"></polyline>
+                    </svg>
+                    <span><strong>Garansi Keamanan:</strong> Snapshot darurat database saat ini akan otomatis dibuat sebelum file ditimpa.</span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                      type="button"
+                      disabled={restoringBackup}
+                      onClick={() => setRestoreModal(null)}
+                      style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#e4e4e7', fontSize: '13px', cursor: 'pointer' }}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      disabled={restoringBackup}
+                      onClick={handleConfirmRestore}
+                      style={{ flex: 2, padding: '10px', borderRadius: '8px', border: 'none', background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000000', fontWeight: 'bold', fontSize: '13px', cursor: restoringBackup ? 'not-allowed' : 'pointer' }}
+                    >
+                      {restoringBackup ? 'Memulihkan Data...' : 'Konfirmasi & Pulihkan'}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {/* ── SYSTEM RELOADING FULLSCREEN OVERLAY ── */}
+            {systemReloading && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: 99999, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+                <div style={{ width: '64px', height: '64px', borderRadius: '50%', border: '4px solid rgba(99,102,241,0.2)', borderTopColor: '#818cf8', animation: 'spin 1s linear infinite', marginBottom: '20px' }}></div>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px' }}>Memuat Ulang Sistem...</h3>
+                <p style={{ color: '#a1a1aa', fontSize: '14px', margin: 0 }}>
+                  Database berhasil dipulihkan. Halaman akan otomatis memuat ulang dalam <strong>{reloadCountdown}</strong> detik.
+                </p>
+                <style>{`
+                  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                `}</style>
+              </div>
+            )}
 
             {/* ── 4. TIM ADMINISTRATOR & SUB-ADMIN MANAGEMENT ── */}
             <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>

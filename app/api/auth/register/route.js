@@ -124,7 +124,7 @@ export async function POST(request) {
                 const buffer = Buffer.from(await paymentProofFile.arrayBuffer());
                 const ext = path.extname(paymentProofFile.name || '.png') || '.png';
                 const filename = `proof_${Date.now()}_${Math.random().toString(36).slice(2, 7)}${ext}`;
-                const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'proofs');
+                const uploadDir = path.join(process.cwd(), 'data', 'private_storage', 'proofs');
 
                 if (!fs.existsSync(uploadDir)) {
                     fs.mkdirSync(uploadDir, { recursive: true });
@@ -132,7 +132,7 @@ export async function POST(request) {
 
                 const filePath = path.join(uploadDir, filename);
                 fs.writeFileSync(filePath, buffer);
-                paymentProofPath = `/uploads/proofs/${filename}`;
+                paymentProofPath = `/api/admin/proofs/${filename}`;
             } catch (err) {
                 console.error('Failed to save payment proof image:', err);
                 return NextResponse.json({ message: 'Failed to process payment proof image.' }, { status: 400 });

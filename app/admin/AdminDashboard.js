@@ -8,6 +8,7 @@ import AdminPlans from '@/components/admin/AdminPlans';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminTrialControl from '@/components/admin/AdminTrialControl';
 import AdminStoragePool from '@/components/admin/AdminStoragePool';
+import AdminUpgradeRequests from '@/components/admin/AdminUpgradeRequests';
 
 export default function AdminDashboard({ adminUser }) {
     const [activeTab, setActiveTab] = useState('analytics'); // 'analytics', 'inquiry', 'vendors', 'plans', 'trial', 'settings'
@@ -189,10 +190,14 @@ export default function AdminDashboard({ adminUser }) {
             const res = await fetch('/api/admin/upgrades');
             if (res.ok) {
                 const data = await res.json();
-                setUpgrades(data);
-                const pending = data.filter(u => u.status === 'pending');
-                const pendingVal = pending.reduce((acc, curr) => acc + (curr.planPrice || 0), 0);
-                setPendingUpgradeSummary({ pendingCount: pending.length, pendingTotalValue: pendingVal });
+                // API returns { requests: [], summary: {} } — extract correctly
+                const requestList = Array.isArray(data) ? data : (data.requests || []);
+                setUpgrades(requestList);
+                const summary = data.summary || {};
+                setPendingUpgradeSummary({
+                    pendingCount: summary.pendingCount ?? requestList.filter(u => u.status === 'pending').length,
+                    pendingTotalValue: summary.pendingTotalValue ?? 0,
+                });
             }
         } catch (err) {
             console.error('Failed to fetch upgrades:', err);
@@ -268,6 +273,9 @@ export default function AdminDashboard({ adminUser }) {
         if (tabKey === 'vendors' || tabKey === 'inquiry') {
             fetchData();
         }
+        if (tabKey === 'upgrades') {
+            fetchUpgrades();
+        }
         if (typeof window !== 'undefined') {
             window.location.hash = tabKey;
             localStorage.setItem('admin_active_tab', tabKey);
@@ -277,12 +285,12 @@ export default function AdminDashboard({ adminUser }) {
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const hash = window.location.hash.replace('#', '');
-            const validTabs = ['analytics', 'vendors', 'plans', 'trial', 'settings', 'inquiry', 'storage-pool'];
+            const validTabs = ['analytics', 'vendors', 'plans', 'trial', 'settings', 'inquiry', 'storage-pool', 'upgrades'];
             if (validTabs.includes(hash)) {
                 setActiveTab(hash);
             } else {
                 const savedTab = localStorage.getItem('admin_active_tab');
-                if (savedTab && validTabs.includes(savedTab)) {
+                if (savedTab && ['analytics', 'vendors', 'plans', 'trial', 'settings', 'inquiry', 'storage-pool', 'upgrades'].includes(savedTab)) {
                     setActiveTab(savedTab);
                 }
             }
@@ -746,6 +754,24 @@ export default function AdminDashboard({ adminUser }) {
                                 )}
                             </button>
 
+                            {/* UPGRADE REQUESTS — permohonan upgrade/addon dari vendor aktif */}
+                            <button
+                                onClick={() => handleTabChange('upgrades')}
+                                style={{
+                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    background: activeTab === 'upgrades' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
+                                    color: activeTab === 'upgrades' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
+                                    position: 'relative', display: 'flex', alignItems: 'center', gap: '6px'
+                                }}
+                            >
+                                ⬆️ Upgrade & Add-On
+                                {pendingUpgradeSummary.pendingCount > 0 && (
+                                    <span style={{ background: '#f59e0b', color: '#000', borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>
+                                        {pendingUpgradeSummary.pendingCount}
+                                    </span>
+                                )}
+                            </button>
+
                             {/* KELOLA VENDOR — hanya vendor aktif berlangganan */}
                             <button
                                 onClick={() => handleTabChange('vendors')}
@@ -828,6 +854,17 @@ export default function AdminDashboard({ adminUser }) {
                                 onCancelQris={handleCancelQris}
                                 onRegenerateQris={handleRegenerateQris}
                                 refetchVendors={fetchData}
+                            />
+                        )}
+
+                        {/* UPGRADE REQUESTS TAB */}
+                        {activeTab === 'upgrades' && (
+                            <AdminUpgradeRequests
+                                upgrades={upgrades}
+                                pendingUpgradeSummary={pendingUpgradeSummary}
+                                addToast={addToast}
+                                setActiveProofUrl={setActiveProofUrl}
+                                onRefresh={() => { fetchUpgrades(); fetchData(); fetchAnalytics(); }}
                             />
                         )}
 
@@ -922,12 +959,19 @@ export default function AdminDashboard({ adminUser }) {
                             </div>
 
                             {/* Payment Proof Image Preview if available */}
-                            {vendorToApprove.paymentProof && vendorToApprove.paymentProof.startsWith('/uploads/') && (
+                            {vendorToApprove.paymentProof && (vendorToApprove.paymentProof.startsWith('/api/admin/proofs/') || vendorToApprove.paymentProof.startsWith('/uploads/') || vendorToApprove.paymentProof.startsWith('/staging_uploads/')) && (
                                 <div style={{ marginTop: '16px', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '12px', color: '#a1a1aa', marginBottom: '6px', fontWeight: 'bold' }}>🖼️ Pratinjau Struk Bukti Transfer:</div>
-                                    <a href={vendorToApprove.paymentProof} target="_blank" rel="noopener noreferrer">
-                                        <img src={vendorToApprove.paymentProof} alt="Bukti Bayar" style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', objectFit: 'contain' }} />
-                                    </a>
+                                    <div style={{ fontSize: '12px', color: '#a1a1aa', marginBottom: '6px', fontWeight: 'bold' }}>🖼️ Pratinjau Struk Bukti Transfer (Private & Aman):</div>
+                                    {(() => {
+                                        const rawUrl = vendorToApprove.paymentProof;
+                                        const filename = rawUrl.split('/').pop();
+                                        const secureUrl = `/api/admin/proofs/${filename}`;
+                                        return (
+                                            <a href={secureUrl} target="_blank" rel="noopener noreferrer">
+                                                <img src={secureUrl} alt="Bukti Bayar" style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', objectFit: 'contain' }} />
+                                            </a>
+                                        );
+                                    })()}
                                 </div>
                             )}
 
@@ -1071,7 +1115,7 @@ export default function AdminDashboard({ adminUser }) {
                         {(() => {
                             const proofStr = typeof activeProofUrl === 'object' ? (activeProofUrl.url || '') : (activeProofUrl || '');
                             const vendorStatus = typeof activeProofUrl === 'object' ? activeProofUrl.status : null;
-                            const isGateway = proofStr === 'via_payment_gateway' || proofStr.includes('Midtrans');
+                            const isGateway = proofStr === 'via_payment_gateway' || proofStr.toLowerCase().includes('automatic payment');
                             const isPaid = vendorStatus === 'active';
 
                             return (
@@ -1154,7 +1198,7 @@ export default function AdminDashboard({ adminUser }) {
                                         </div>
                                     ) : (
                                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                            <img src={proofStr} alt="Bukti Transfer" style={{ maxWidth: '100%', maxHeight: '55vh', objectFit: 'contain', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                            <img src={`/api/admin/proofs/${proofStr.split('/').pop()}`} alt="Bukti Transfer" style={{ maxWidth: '100%', maxHeight: '55vh', objectFit: 'contain', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }} />
                                         </div>
                                     )}
 

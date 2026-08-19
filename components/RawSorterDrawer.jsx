@@ -29,14 +29,47 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
     const isTrial = vendorPlan === 'free_trial';
     const [TRIAL_LIMIT, setTrialLimit] = useState(5); // default, akan di-fetch dari admin settings
 
+    const [showMagicGuide, setShowMagicGuide] = useState(false);
+    const [copyFeedback, setCopyFeedback] = useState('');
+
     const {
         sourceName, destName,
         isRunning, isDone,
         logs, progress, summary,
         isSupported,
         pickSourceFolder, pickDestFolder,
-        runSorter, abort, reset, fullReset
+        runSorter, abort, reset, fullReset,
+        downloadMagicScript
     } = useRawSorter();
+
+    // Copy Lightroom Query string
+    const handleCopyLightroom = useCallback(() => {
+        if (!fileNames || fileNames.length === 0) return;
+        const query = fileNames.map(f => {
+            const dot = f.lastIndexOf('.');
+            return dot > 0 ? f.substring(0, dot) : f;
+        }).join(', ');
+
+        navigator.clipboard.writeText(query).then(() => {
+            setCopyFeedback('✓ Query Lightroom Disalin!');
+            setTimeout(() => setCopyFeedback(''), 2500);
+        }).catch(() => {});
+    }, [fileNames]);
+
+    // Export simple text list
+    const handleExportTxt = useCallback(() => {
+        if (!fileNames || fileNames.length === 0) return;
+        const text = fileNames.join('\n');
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `daftar_foto_${(projectName || 'seleksi').replace(/\s+/g, '_')}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, [fileNames, projectName]);
 
     // Fetch selected file names when drawer opens
     // Jika preloadedFileNames disediakan (e.g. dari trial), skip API call
@@ -286,27 +319,10 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                     display: 'flex',
                     flexDirection: 'column',
                 }}>
-                    {/* Browser compatibility warning */}
-                    {!isSupported && (
-                        <div style={{
-                            margin: '16px 20px 0',
-                            padding: '14px 18px',
-                            background: 'rgba(239, 68, 68, 0.1)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                            borderRadius: '12px',
-                            color: '#f87171',
-                            fontSize: '13px',
-                            lineHeight: '1.5',
-                        }}>
-                            <strong>⚠️ Browser Tidak Didukung</strong>
-                            <br />
-                            RAW Sorter memerlukan <strong>Chrome 86+</strong> atau <strong>Edge 86+</strong>. 
-                            Firefox dan Safari belum mendukung File System Access API.
-                        </div>
-                    )}
+
 
                     {/* Trial warning banner */}
-                    {isTrial && isSupported && (
+                    {isTrial && (
                         <div style={{
                             margin: '16px 20px 0',
                             padding: '12px 16px',
@@ -329,7 +345,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                     )}
 
                     {/* ── TWO-COLUMN SETUP AREA ── */}
-                    {!isRunning && !isDone && isSupported && (
+                    {!isRunning && !isDone && (
                         <div className="raw-sorter-drawer-columns" style={{
                             display: 'grid',
                             gridTemplateColumns: '1fr 1fr',
@@ -345,20 +361,27 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                 flexDirection: 'column',
                                 minHeight: 0,
                             }}>
-                                <h3 style={{
-                                    margin: '0 0 12px',
-                                    fontSize: '13px',
-                                    fontWeight: '600',
-                                    color: '#a1a1aa',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.06em',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                }}>
-                                    <span style={{ fontSize: '14px' }}>📄</span>
-                                    Daftar File Terpilih
-                                </h3>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                    <h3 style={{
+                                        margin: 0,
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        color: '#a1a1aa',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.06em',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                    }}>
+                                        <span style={{ fontSize: '14px' }}>📄</span>
+                                        Daftar File Terpilih
+                                    </h3>
+                                    {copyFeedback && (
+                                        <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '600', animation: 'fadeIn 0.2s ease' }}>
+                                            {copyFeedback}
+                                        </span>
+                                    )}
+                                </div>
 
                                 {loadingFiles ? (
                                     <div style={{
@@ -391,255 +414,600 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                         ✕ {fetchError}
                                     </div>
                                 ) : (
-                                    <div style={{
-                                        flex: 1,
-                                        overflow: 'auto',
-                                        borderRadius: '10px',
-                                        background: 'rgba(0, 0, 0, 0.2)',
-                                        border: '1px solid rgba(255,255,255,0.04)',
-                                        padding: '4px',
-                                    }}>
-                                        {fileNames.length === 0 ? (
-                                            <div style={{
-                                                padding: '32px 16px',
-                                                textAlign: 'center',
-                                                color: '#52525b',
-                                                fontSize: '13px',
-                                            }}>
-                                                Tidak ada foto yang dipilih klien
-                                            </div>
-                                        ) : (
-                                            fileNames.map((name, i) => {
-                                                const isOverLimit = isTrial && i >= TRIAL_LIMIT;
-                                                return (
-                                                    <div
-                                                        key={i}
-                                                        style={{
-                                                            padding: '7px 12px',
-                                                            fontSize: '12px',
-                                                            fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace",
-                                                            color: isOverLimit ? '#3f3f46' : '#d4d4d8',
-                                                            borderBottom: '1px solid rgba(255,255,255,0.02)',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            gap: '8px',
-                                                            opacity: isOverLimit ? 0.5 : 1,
-                                                            transition: 'background 0.15s',
-                                                            borderRadius: '6px',
-                                                        }}
-                                                        onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.03)'}
-                                                        onMouseLeave={e => e.target.style.background = 'transparent'}
-                                                    >
-                                                        <span style={{
-                                                            fontSize: '10px',
-                                                            color: isOverLimit ? '#27272a' : '#52525b',
-                                                            fontFamily: 'inherit',
-                                                            minWidth: '22px',
-                                                            textAlign: 'right',
-                                                        }}>
-                                                            {i + 1}
-                                                        </span>
-                                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            {name}
-                                                        </span>
-                                                        {isOverLimit && i === TRIAL_LIMIT && (
-                                                            <span style={{ fontSize: '10px', color: '#a855f7', marginLeft: 'auto', flexShrink: 0 }}>
-                                                                🔒 trial limit
+                                    <>
+                                        <div style={{
+                                            flex: 1,
+                                            overflow: 'auto',
+                                            borderRadius: '10px',
+                                            background: 'rgba(0, 0, 0, 0.2)',
+                                            border: '1px solid rgba(255,255,255,0.04)',
+                                            padding: '4px',
+                                            marginBottom: '12px',
+                                        }}>
+                                            {fileNames.length === 0 ? (
+                                                <div style={{
+                                                    padding: '32px 16px',
+                                                    textAlign: 'center',
+                                                    color: '#52525b',
+                                                    fontSize: '13px',
+                                                }}>
+                                                    Tidak ada foto yang dipilih klien
+                                                </div>
+                                            ) : (
+                                                fileNames.map((name, i) => {
+                                                    const isOverLimit = isTrial && i >= TRIAL_LIMIT;
+                                                    return (
+                                                        <div
+                                                            key={i}
+                                                            style={{
+                                                                padding: '7px 12px',
+                                                                fontSize: '12px',
+                                                                fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace",
+                                                                color: isOverLimit ? '#3f3f46' : '#d4d4d8',
+                                                                borderBottom: '1px solid rgba(255,255,255,0.02)',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '8px',
+                                                                opacity: isOverLimit ? 0.5 : 1,
+                                                                transition: 'background 0.15s',
+                                                                borderRadius: '6px',
+                                                            }}
+                                                            onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.03)'}
+                                                            onMouseLeave={e => e.target.style.background = 'transparent'}
+                                                        >
+                                                            <span style={{
+                                                                fontSize: '10px',
+                                                                color: isOverLimit ? '#27272a' : '#52525b',
+                                                                fontFamily: 'inherit',
+                                                                minWidth: '22px',
+                                                                textAlign: 'right',
+                                                            }}>
+                                                                {i + 1}
                                                             </span>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })
-                                        )}
-                                    </div>
+                                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                {name}
+                                                            </span>
+                                                            {isOverLimit && i === TRIAL_LIMIT && (
+                                                                <span style={{ fontSize: '10px', color: '#a855f7', marginLeft: 'auto', flexShrink: 0 }}>
+                                                                    🔒 trial limit
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })
+                                            )}
+                                        </div>
+
+                                        {/* Quick Export Tools under list */}
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button
+                                                type="button"
+                                                onClick={handleCopyLightroom}
+                                                disabled={fileNames.length === 0}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '9px 12px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    color: '#cbd5e1',
+                                                    fontSize: '11px',
+                                                    fontWeight: '600',
+                                                    cursor: fileNames.length === 0 ? 'not-allowed' : 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '6px',
+                                                    transition: 'all 0.2s',
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                                            >
+                                                📋 Salin Query Lightroom
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={handleExportTxt}
+                                                disabled={fileNames.length === 0}
+                                                style={{
+                                                    padding: '9px 12px',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    background: 'rgba(255,255,255,0.03)',
+                                                    color: '#94a3b8',
+                                                    fontSize: '11px',
+                                                    fontWeight: '500',
+                                                    cursor: fileNames.length === 0 ? 'not-allowed' : 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                    transition: 'all 0.2s',
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
+                                            >
+                                                📄 Export .TXT
+                                            </button>
+                                        </div>
+                                    </>
                                 )}
                             </div>
 
-                            {/* RIGHT COLUMN: Folder Picker & Controls */}
+                            {/* RIGHT COLUMN: Folder Picker & Magic-Sort Controls */}
                             <div style={{
                                 padding: '20px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '16px',
+                                gap: '14px',
+                                overflowY: 'auto',
                             }}>
-                                <h3 style={{
-                                    margin: '0 0 0',
-                                    fontSize: '13px',
-                                    fontWeight: '600',
-                                    color: '#a1a1aa',
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.06em',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                }}>
-                                    <span style={{ fontSize: '14px' }}>⚙️</span>
-                                    Pengaturan Sortir
-                                </h3>
-
-                                {/* Source Folder Picker */}
-                                <div>
-                                    <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '8px' }}>
-                                        Folder Sumber (RAW Files)
-                                    </label>
-                                    <button
-                                        onClick={pickSourceFolder}
-                                        style={{
-                                            width: '100%',
+                                {/* ── JIKA BROWSER TIDAK MENDUKUNG: MAGIC-SORT NAIK JADI HIGHLIGHT UTAMA DI ATAS ── */}
+                                {!isSupported ? (
+                                    <>
+                                        {/* Magic-Sort Card as Top Highlight */}
+                                        <div style={{
                                             padding: '14px 16px',
                                             borderRadius: '12px',
-                                            border: `1px solid ${sourceName ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255,255,255,0.08)'}`,
-                                            background: sourceName ? 'rgba(52, 211, 153, 0.06)' : 'rgba(255,255,255,0.03)',
-                                            color: sourceName ? '#6ee7b7' : '#71717a',
-                                            fontSize: '13px',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
+                                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05))',
+                                            border: '1px solid rgba(139, 92, 246, 0.25)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '10px',
+                                        }}>
+                                            {/* Magic Sort Header */}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span style={{ fontSize: '15px' }}>✨</span>
+                                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#f5f3ff' }}>
+                                                        Magic-Sort (1-Klik)
+                                                    </span>
+                                                </div>
+                                                <span style={{
+                                                    fontSize: '10px',
+                                                    fontWeight: '600',
+                                                    background: 'rgba(99, 102, 241, 0.2)',
+                                                    color: '#c4b5fd',
+                                                    padding: '2px 8px',
+                                                    borderRadius: '6px',
+                                                }}>
+                                                    ⚡ Opsi Rekomendasi
+                                                </span>
+                                            </div>
+
+                                            {/* Copywriting Singkat & Padat */}
+                                            <p style={{
+                                                margin: 0,
+                                                fontSize: '11.5px',
+                                                color: '#cbd5e1',
+                                                lineHeight: '1.45',
+                                            }}>
+                                                Sortir otomatis tanpa browser. Unduh skrip, letakkan di folder RAW, lalu klik ganda (*double click*).
+                                            </p>
+
+                                            {/* 2 Download Buttons */}
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => downloadMagicScript(fileNames, projectName, 'mac', mode)}
+                                                    disabled={fileNames.length === 0}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '9px 12px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid rgba(255,255,255,0.12)',
+                                                        background: 'rgba(255,255,255,0.06)',
+                                                        color: '#ffffff',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600',
+                                                        cursor: fileNames.length === 0 ? 'not-allowed' : 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '6px',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+                                                >
+                                                    <span>🍏</span> Mac (.command)
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => downloadMagicScript(fileNames, projectName, 'windows', mode)}
+                                                    disabled={fileNames.length === 0}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '9px 12px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid rgba(59, 130, 246, 0.3)',
+                                                        background: 'rgba(59, 130, 246, 0.12)',
+                                                        color: '#93c5fd',
+                                                        fontSize: '12px',
+                                                        fontWeight: '600',
+                                                        cursor: fileNames.length === 0 ? 'not-allowed' : 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '6px',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.22)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)'; }}
+                                                >
+                                                    <span>🪟</span> Windows (.bat)
+                                                </button>
+                                            </div>
+
+                                            {/* Collapsible Accordion Guide (Default Hidden) */}
+                                            <div style={{
+                                                borderRadius: '6px',
+                                                background: 'rgba(0, 0, 0, 0.25)',
+                                                border: '1px solid rgba(255, 255, 255, 0.04)',
+                                                overflow: 'hidden',
+                                            }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowMagicGuide(!showMagicGuide)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '7px 10px',
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: '#94a3b8',
+                                                        fontSize: '10.5px',
+                                                        fontWeight: '500',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        transition: 'background 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.color = '#cbd5e1'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
+                                                >
+                                                    <span>📖 Panduan Singkat (3 Langkah)</span>
+                                                    <span style={{ fontSize: '9px', color: '#818cf8' }}>{showMagicGuide ? '▲ Tutup' : '▼ Lihat'}</span>
+                                                </button>
+
+                                                {showMagicGuide && (
+                                                    <div style={{
+                                                        padding: '8px 10px',
+                                                        borderTop: '1px solid rgba(255, 255, 255, 0.04)',
+                                                        fontSize: '10.5px',
+                                                        color: '#94a3b8',
+                                                        lineHeight: '1.5',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '4px',
+                                                        animation: 'fadeIn 0.15s ease',
+                                                    }}>
+                                                        <div>1. <strong>Unduh:</strong> Pilih skrip Mac atau Windows di atas.</div>
+                                                        <div>2. <strong>Pindahkan:</strong> Taruh file skrip ke folder foto RAW Anda.</div>
+                                                        <div>3. <strong>Jalankan:</strong> Klik ganda skrip untuk sortir instan.</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Compact Locked Browser Info */}
+                                        <div style={{
+                                            padding: '12px 14px',
+                                            borderRadius: '10px',
+                                            background: 'rgba(255, 255, 255, 0.02)',
+                                            border: '1px solid rgba(255, 255, 255, 0.06)',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '10px',
-                                            transition: 'all 0.2s',
-                                        }}
-                                        onMouseEnter={e => {
-                                            if (!sourceName) e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)';
-                                        }}
-                                        onMouseLeave={e => {
-                                            if (!sourceName) e.target.style.borderColor = 'rgba(255,255,255,0.08)';
-                                        }}
-                                    >
-                                        <span style={{ fontSize: '18px' }}>{sourceName ? '✅' : '📂'}</span>
-                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {sourceName || 'Pilih folder sumber...'}
-                                        </span>
-                                    </button>
-                                </div>
-
-                                {/* Destination Folder Picker */}
-                                <div>
-                                    <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '8px' }}>
-                                        Folder Tujuan
-                                    </label>
-                                    <button
-                                        onClick={pickDestFolder}
-                                        style={{
-                                            width: '100%',
-                                            padding: '14px 16px',
-                                            borderRadius: '12px',
-                                            border: `1px solid ${destName ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255,255,255,0.08)'}`,
-                                            background: destName ? 'rgba(52, 211, 153, 0.06)' : 'rgba(255,255,255,0.03)',
-                                            color: destName ? '#6ee7b7' : '#71717a',
+                                            opacity: 0.65,
+                                        }}>
+                                            <span style={{ fontSize: '15px' }}>🔒</span>
+                                            <div>
+                                                <div style={{ fontSize: '11px', fontWeight: '600', color: '#a1a1aa' }}>
+                                                    Sortir Langsung di Browser Terkunci
+                                                </div>
+                                                <div style={{ fontSize: '10px', color: '#71717a', marginTop: '1px' }}>
+                                                    Browser ini (Brave/Safari/Firefox) membatasi akses folder web demi privasi. Buka lewat Google Chrome / Edge untuk sortir langsung di browser.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    /* ── JIKA BROWSER MENDUKUNG (CHROME / EDGE): TAMPILKAN NATIVE SORTER + MAGIC SORT DI BAWAH ── */
+                                    <>
+                                        <h3 style={{
+                                            margin: '0 0 0',
                                             fontSize: '13px',
-                                            cursor: 'pointer',
-                                            textAlign: 'left',
+                                            fontWeight: '600',
+                                            color: '#a1a1aa',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.06em',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '10px',
-                                            transition: 'all 0.2s',
-                                        }}
-                                        onMouseEnter={e => {
-                                            if (!destName) e.target.style.borderColor = 'rgba(99, 102, 241, 0.3)';
-                                        }}
-                                        onMouseLeave={e => {
-                                            if (!destName) e.target.style.borderColor = 'rgba(255,255,255,0.08)';
-                                        }}
-                                    >
-                                        <span style={{ fontSize: '18px' }}>{destName ? '✅' : '📂'}</span>
-                                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            {destName || 'Pilih folder tujuan...'}
-                                        </span>
-                                    </button>
-                                </div>
+                                            gap: '8px',
+                                        }}>
+                                            <span style={{ fontSize: '14px' }}>⚙️</span>
+                                            Pengaturan Sortir
+                                        </h3>
 
-                                {/* Mode Toggle */}
-                                <div>
-                                    <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '10px' }}>
-                                        Metode
-                                    </label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        {[
-                                            { value: 'copy', icon: '📋', label: 'Salin (Copy)', desc: 'File asli tetap di sumber' },
-                                            { value: 'move', icon: '✂️', label: 'Pindah (Move)', desc: 'File dipindah ke tujuan' },
-                                        ].map(opt => (
+                                        {/* Source Folder Picker */}
+                                        <div>
+                                            <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '8px' }}>
+                                                Folder Sumber (RAW Files)
+                                            </label>
                                             <button
-                                                key={opt.value}
-                                                onClick={() => setMode(opt.value)}
+                                                onClick={pickSourceFolder}
                                                 style={{
-                                                    flex: 1,
-                                                    padding: '12px',
+                                                    width: '100%',
+                                                    padding: '12px 16px',
                                                     borderRadius: '12px',
-                                                    border: `1.5px solid ${mode === opt.value ? 'rgba(99, 102, 241, 0.4)' : 'rgba(255,255,255,0.06)'}`,
-                                                    background: mode === opt.value
-                                                        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08))'
-                                                        : 'rgba(255,255,255,0.02)',
+                                                    border: `1px solid ${sourceName ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255,255,255,0.08)'}`,
+                                                    background: sourceName ? 'rgba(52, 211, 153, 0.06)' : 'rgba(255,255,255,0.03)',
+                                                    color: sourceName ? '#6ee7b7' : '#71717a',
+                                                    fontSize: '13px',
                                                     cursor: 'pointer',
-                                                    textAlign: 'center',
+                                                    textAlign: 'left',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px',
                                                     transition: 'all 0.2s',
                                                 }}
+                                                onMouseEnter={e => { if (!sourceName) e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)'; }}
+                                                onMouseLeave={e => { if (!sourceName) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                             >
-                                                <div style={{ fontSize: '22px', marginBottom: '4px' }}>{opt.icon}</div>
-                                                <div style={{
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    color: mode === opt.value ? '#c7d2fe' : '#a1a1aa',
-                                                }}>{opt.label}</div>
-                                                <div style={{
-                                                    fontSize: '10px',
-                                                    color: '#52525b',
-                                                    marginTop: '2px',
-                                                }}>{opt.desc}</div>
+                                                <span style={{ fontSize: '18px' }}>{sourceName ? '✅' : '📂'}</span>
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {sourceName || 'Pilih folder sumber...'}
+                                                </span>
                                             </button>
-                                        ))}
-                                    </div>
-                                </div>
+                                        </div>
 
-                                {/* Move warning */}
-                                {mode === 'move' && (
-                                    <div style={{
-                                        padding: '10px 14px',
-                                        background: 'rgba(251, 191, 36, 0.06)',
-                                        border: '1px solid rgba(251, 191, 36, 0.15)',
-                                        borderRadius: '10px',
-                                        fontSize: '11px',
-                                        color: '#fbbf24',
-                                        lineHeight: '1.5',
-                                    }}>
-                                        ⚠️ <strong>Mode Pindah:</strong> File akan disalin dulu ke tujuan, lalu sumber dihapus setelah verifikasi berhasil. Aman, tidak ada data hilang.
-                                    </div>
+                                        {/* Destination Folder Picker */}
+                                        <div>
+                                            <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '8px' }}>
+                                                Folder Tujuan
+                                            </label>
+                                            <button
+                                                onClick={pickDestFolder}
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '12px 16px',
+                                                    borderRadius: '12px',
+                                                    border: `1px solid ${destName ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255,255,255,0.08)'}`,
+                                                    background: destName ? 'rgba(52, 211, 153, 0.06)' : 'rgba(255,255,255,0.03)',
+                                                    color: destName ? '#6ee7b7' : '#71717a',
+                                                    fontSize: '13px',
+                                                    cursor: 'pointer',
+                                                    textAlign: 'left',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px',
+                                                    transition: 'all 0.2s',
+                                                }}
+                                                onMouseEnter={e => { if (!destName) e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)'; }}
+                                                onMouseLeave={e => { if (!destName) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+                                            >
+                                                <span style={{ fontSize: '18px' }}>{destName ? '✅' : '📂'}</span>
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {destName || 'Pilih folder tujuan...'}
+                                                </span>
+                                            </button>
+                                        </div>
+
+                                        {/* Mode Toggle */}
+                                        <div>
+                                            <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '10px' }}>
+                                                Metode
+                                            </label>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                {[
+                                                    { value: 'copy', icon: '📋', label: 'Salin (Copy)', desc: 'File asli tetap di sumber' },
+                                                    { value: 'move', icon: '✂️', label: 'Pindah (Move)', desc: 'File dipindah ke tujuan' },
+                                                ].map(opt => (
+                                                    <button
+                                                        key={opt.value}
+                                                        onClick={() => setMode(opt.value)}
+                                                        style={{
+                                                            flex: 1,
+                                                            padding: '10px 8px',
+                                                            borderRadius: '12px',
+                                                            border: `1.5px solid ${mode === opt.value ? 'rgba(99, 102, 241, 0.4)' : 'rgba(255,255,255,0.06)'}`,
+                                                            background: mode === opt.value
+                                                                ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08))'
+                                                                : 'rgba(255,255,255,0.02)',
+                                                            cursor: 'pointer',
+                                                            textAlign: 'center',
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                    >
+                                                        <div style={{ fontSize: '18px', marginBottom: '2px' }}>{opt.icon}</div>
+                                                        <div style={{
+                                                            fontSize: '11px',
+                                                            fontWeight: '600',
+                                                            color: mode === opt.value ? '#c7d2fe' : '#a1a1aa',
+                                                        }}>{opt.label}</div>
+                                                        <div style={{
+                                                            fontSize: '9px',
+                                                            color: '#52525b',
+                                                            marginTop: '1px',
+                                                        }}>{opt.desc}</div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Start Button */}
+                                        <button
+                                            onClick={handleStart}
+                                            disabled={!canStart}
+                                            style={{
+                                                width: '100%',
+                                                padding: '12px 18px',
+                                                borderRadius: '12px',
+                                                border: 'none',
+                                                background: canStart
+                                                    ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                                                    : 'rgba(255,255,255,0.04)',
+                                                color: canStart ? '#fff' : '#52525b',
+                                                fontSize: '13px',
+                                                fontWeight: '700',
+                                                cursor: canStart ? 'pointer' : 'not-allowed',
+                                                boxShadow: canStart ? '0 4px 20px rgba(99, 102, 241, 0.3)' : 'none',
+                                                transition: 'all 0.3s',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '8px',
+                                            }}
+                                        >
+                                            <span style={{ fontSize: '15px' }}>▶</span>
+                                            Mulai Sortir di Browser{isTrial ? ` (Maks ${TRIAL_LIMIT})` : ''}
+                                        </button>
+
+                                        {/* ── MAGIC-SORT CARD (DI BAWAH UNTUK CHROME) ── */}
+                                        <div style={{
+                                            marginTop: '2px',
+                                            padding: '12px 14px',
+                                            borderRadius: '12px',
+                                            background: 'rgba(255, 255, 255, 0.02)',
+                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '8px',
+                                        }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <span style={{ fontSize: '14px' }}>✨</span>
+                                                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#f4f4f5' }}>
+                                                        Magic-Sort
+                                                    </span>
+                                                </div>
+                                                <span style={{
+                                                    fontSize: '10px',
+                                                    fontWeight: '600',
+                                                    background: 'rgba(99, 102, 241, 0.15)',
+                                                    color: '#a5b4fc',
+                                                    padding: '1px 6px',
+                                                    borderRadius: '6px',
+                                                }}>
+                                                    ⚡ 1-Klik Instan
+                                                </span>
+                                            </div>
+
+                                            <p style={{
+                                                margin: 0,
+                                                fontSize: '11px',
+                                                color: '#94a3b8',
+                                                lineHeight: '1.45',
+                                            }}>
+                                                Sortir otomatis tanpa browser. Unduh skrip, letakkan di folder RAW, lalu klik ganda (*double click*).
+                                            </p>
+
+                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => downloadMagicScript(fileNames, projectName, 'mac', mode)}
+                                                    disabled={fileNames.length === 0}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '8px 10px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        background: 'rgba(255,255,255,0.04)',
+                                                        color: '#f4f4f5',
+                                                        fontSize: '11px',
+                                                        fontWeight: '600',
+                                                        cursor: fileNames.length === 0 ? 'not-allowed' : 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '5px',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+                                                >
+                                                    <span>🍏</span> Mac (.command)
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => downloadMagicScript(fileNames, projectName, 'windows', mode)}
+                                                    disabled={fileNames.length === 0}
+                                                    style={{
+                                                        flex: 1,
+                                                        padding: '8px 10px',
+                                                        borderRadius: '8px',
+                                                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                                                        background: 'rgba(59, 130, 246, 0.1)',
+                                                        color: '#93c5fd',
+                                                        fontSize: '11px',
+                                                        fontWeight: '600',
+                                                        cursor: fileNames.length === 0 ? 'not-allowed' : 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '5px',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.18)'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'; }}
+                                                >
+                                                    <span>🪟</span> Windows (.bat)
+                                                </button>
+                                            </div>
+
+                                            <div style={{
+                                                borderRadius: '6px',
+                                                background: 'rgba(0, 0, 0, 0.2)',
+                                                border: '1px solid rgba(255, 255, 255, 0.04)',
+                                                overflow: 'hidden',
+                                            }}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowMagicGuide(!showMagicGuide)}
+                                                    style={{
+                                                        width: '100%',
+                                                        padding: '6px 10px',
+                                                        background: 'transparent',
+                                                        border: 'none',
+                                                        color: '#71717a',
+                                                        fontSize: '10px',
+                                                        fontWeight: '500',
+                                                        cursor: 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        transition: 'background 0.15s',
+                                                    }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.color = '#a1a1aa'; }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#71717a'; }}
+                                                >
+                                                    <span>📖 Panduan Singkat</span>
+                                                    <span style={{ fontSize: '9px' }}>{showMagicGuide ? '▲ Tutup' : '▼ Lihat'}</span>
+                                                </button>
+
+                                                {showMagicGuide && (
+                                                    <div style={{
+                                                        padding: '8px 10px',
+                                                        borderTop: '1px solid rgba(255, 255, 255, 0.04)',
+                                                        fontSize: '10.5px',
+                                                        color: '#a1a1aa',
+                                                        lineHeight: '1.5',
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        gap: '4px',
+                                                        animation: 'fadeIn 0.15s ease',
+                                                    }}>
+                                                        <div>1. <strong>Unduh:</strong> Pilih skrip Mac atau Windows di atas.</div>
+                                                        <div>2. <strong>Pindahkan:</strong> Taruh file skrip ke folder foto RAW Anda.</div>
+                                                        <div>3. <strong>Jalankan:</strong> Klik ganda skrip untuk sortir instan.</div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </>
                                 )}
-
-                                {/* Start Button */}
-                                <button
-                                    onClick={handleStart}
-                                    disabled={!canStart}
-                                    style={{
-                                        width: '100%',
-                                        padding: '14px 20px',
-                                        borderRadius: '12px',
-                                        border: 'none',
-                                        background: canStart
-                                            ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
-                                            : 'rgba(255,255,255,0.04)',
-                                        color: canStart ? '#fff' : '#3f3f46',
-                                        fontSize: '14px',
-                                        fontWeight: '700',
-                                        cursor: canStart ? 'pointer' : 'not-allowed',
-                                        boxShadow: canStart ? '0 4px 20px rgba(99, 102, 241, 0.3)' : 'none',
-                                        transition: 'all 0.3s',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        marginTop: 'auto',
-                                    }}
-                                    onMouseEnter={e => {
-                                        if (canStart) e.target.style.boxShadow = '0 6px 28px rgba(99, 102, 241, 0.45)';
-                                    }}
-                                    onMouseLeave={e => {
-                                        if (canStart) e.target.style.boxShadow = '0 4px 20px rgba(99, 102, 241, 0.3)';
-                                    }}
-                                >
-                                    <span style={{ fontSize: '16px' }}>▶</span>
-                                    Mulai Sortir{isTrial ? ` (Maks ${TRIAL_LIMIT} file)` : ''}
-                                </button>
                             </div>
                         </div>
                     )}

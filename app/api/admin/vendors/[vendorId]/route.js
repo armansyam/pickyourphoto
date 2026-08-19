@@ -181,13 +181,11 @@ export async function DELETE(request, { params }) {
 
         runDelete();
 
-        // Delete vendor physical files from public/staging_uploads directory
-        const vendorDir = path.join(process.cwd(), 'public', 'staging_uploads', `vendor_${vendorId}`);
-        if (fs.existsSync(vendorDir)) {
-            try {
-                fs.rmSync(vendorDir, { recursive: true, force: true });
-            } catch (err) {
-                console.error(`Failed to delete directory ${vendorDir}:`, err);
+        // Clean up vendor logo if exists
+        if (targetVendor.logoUrl && targetVendor.logoUrl.startsWith('/vendor_logos/')) {
+            const logoPath = path.join(process.cwd(), 'public', targetVendor.logoUrl);
+            if (fs.existsSync(logoPath)) {
+                try { fs.unlinkSync(logoPath); } catch (e) {}
             }
         }
 

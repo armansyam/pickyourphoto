@@ -9,115 +9,115 @@
 <link rel="shortcut icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,450;1,9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,450;1,9..144,600&family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0B0918;--bg-alt:#131024;--card:#15122A;
-    --paper:#EAE8F7;--paper-dim:#D8D5EE;--ink:#EAE8F7;
-    --brass:#6366F1;--brass-dim:#A5B4FC;--brass-bright:#818CF8;
-    --mark:#A78BFA;--muted:#9791B8;--muted-dark:#57517A;
-    --line: rgba(129,140,248,0.16);--radius: 10px;
-    --serif: "Fraunces", Georgia, serif;--sans: "Inter", -apple-system, sans-serif;--mono: "IBM Plex Mono", monospace;
+    --bg:#FAF8F5;--bg-alt:#F3ECE0;--card:#FFFFFF;
+    --paper:#1C1917;--paper-dim:#292524;--ink:#1C1917;
+    --brass:#C5A059;--brass-dim:#E6D7BD;--brass-bright:#D4AF37;--brass-dark:#8C6D23;
+    --mark:#C5A059;--muted:#57534E;--muted-dark:#8C827A;
+    --line: rgba(197, 160, 89, 0.28);--radius: 10px;
+    --serif: "Fraunces", Georgia, serif;--sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;--mono: "IBM Plex Mono", monospace;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html{scroll-behavior:smooth;}
-  body{background:radial-gradient(90% 50% at 50% 0%, rgba(99,102,241,0.10), transparent 60%),radial-gradient(60% 40% at 85% 15%, rgba(167,139,250,0.08), transparent 60%),var(--bg);color:var(--paper);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  body{background:radial-gradient(90% 50% at 50% 0%, rgba(197,160,89,0.12), transparent 60%),radial-gradient(60% 40% at 85% 15%, rgba(212,175,55,0.06), transparent 60%),var(--bg);color:var(--paper);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
   a{color:inherit;text-decoration:none;}
   img{max-width:100%;display:block;}
   .wrap{max-width:1180px;margin:0 auto;padding:0 32px;}
-  ::selection{background:var(--mark);color:var(--paper);}
+  ::selection{background:#E8DCC4;color:#1C1917;}
   .sprocket-rule{display:flex;align-items:center;gap:10px;padding:6px 0;}
   .sprocket-rule .line{flex:1;height:1px;background:var(--line);}
   .sprocket-rule .dots{display:flex;gap:8px;}
-  .sprocket-rule .dots span{width:5px;height:5px;border-radius:1px;background:var(--muted-dark);}
+  .sprocket-rule .dots span{width:5px;height:5px;border-radius:1px;background:var(--brass-dim);}
 
   /* NAV */
-  header{position:sticky;top:0;z-index:50;background:rgba(11,9,24,0.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  header{position:sticky;top:0;z-index:50;background:rgba(250,248,245,0.94);backdrop-filter:blur(12px);border-bottom:1px solid var(--line);}
   nav{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;max-width:1180px;margin:0 auto;}
-  .logo{font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;background:linear-gradient(100deg,var(--brass-bright),var(--mark));-webkit-background-clip:text;background-clip:text;color:transparent;}
-  .logo .dot{width:8px;height:8px;border-radius:50%;background:var(--mark);display:inline-block;-webkit-background-clip:initial;background-clip:initial;}
+  .logo{font-family:var(--serif);font-weight:700;font-size:21px;letter-spacing:0.2px;display:flex;align-items:center;gap:8px;background:linear-gradient(100deg,#8C6D23,#C5A059,#D4AF37);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .logo .dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#D4AF37,#C5A059);display:inline-block;box-shadow:0 0 8px rgba(197,160,89,0.6);}
   .nav-links{display:flex;gap:36px;font-size:14.5px;color:var(--muted);}
   .nav-links a:hover{color:var(--paper);}
   @media(max-width:820px){.nav-links{display:none;}}
-  .lang-switch{display:flex;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:3px;gap:2px;}
+  .lang-switch{display:flex;align-items:center;background:#FFFFFF;border:1px solid var(--line);border-radius:20px;padding:3px;gap:2px;}
   .lang-btn{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:0.04em;color:var(--muted);background:transparent;border:none;cursor:pointer;padding:6px 12px;border-radius:16px;transition:background .2s ease, color .2s ease;}
-  .lang-btn.active{background:var(--brass);color:var(--ink);}
+  .lang-btn.active{background:linear-gradient(135deg, #C5A059, #996515);color:#ffffff;}
   .lang-btn:not(.active):hover{color:var(--paper);}
 
   /* HERO */
   .hero{padding:96px 0 80px;display:grid;grid-template-columns:1.05fr 0.95fr;gap:56px;align-items:center;}
   @media(max-width:960px){.hero{grid-template-columns:1fr;padding:56px 0 48px;}}
-  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--brass);display:flex;align-items:center;gap:10px;margin-bottom:22px;}
-  .eyebrow::before{content:"";width:24px;height:1px;background:var(--brass);}
-  h1{font-family:var(--serif);font-weight:600;font-size:clamp(34px,4.6vw,58px);line-height:1.06;letter-spacing:-0.015em;color:var(--paper);margin-bottom:26px;}
-  h1 em{font-style:italic;font-weight:450;color:var(--brass);}
-  .hero p.lead{font-size:17.5px;color:var(--muted);max-width:480px;margin-bottom:36px;}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--brass-dark);font-weight:600;display:flex;align-items:center;gap:10px;margin-bottom:22px;}
+  .eyebrow::before{content:"";width:24px;height:1.5px;background:var(--brass);}
+  h1{font-family:var(--serif);font-weight:700;font-size:clamp(34px,4.6vw,58px);line-height:1.08;letter-spacing:-0.015em;color:var(--paper);margin-bottom:26px;}
+  h1 em{font-style:italic;font-weight:450;color:var(--brass-dark);}
+  .hero p.lead{font-size:17.5px;color:var(--muted);max-width:480px;margin-bottom:36px;line-height:1.65;}
   .hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:40px;}
-  .btn-primary{background:var(--brass);color:var(--ink);font-weight:600;font-size:15px;padding:14px 26px;border-radius:2px;transition:transform .15s ease, background .2s ease;display:inline-flex;align-items:center;gap:8px;}
-  .btn-primary:hover{background:var(--brass-bright);transform:translateY(-1px);}
-  .btn-secondary{border:1px solid var(--line);color:var(--paper);font-weight:500;font-size:15px;padding:14px 24px;border-radius:2px;transition:border-color .2s ease, background .2s ease;}
-  .btn-secondary:hover{border-color:var(--brass);background:rgba(99,102,241,0.08);}
+  .btn-primary{background:linear-gradient(135deg, #C5A059, #996515);color:#ffffff;font-weight:600;font-size:15px;padding:14px 26px;border-radius:8px;transition:transform .15s ease, background .2s ease, box-shadow .2s ease;display:inline-flex;align-items:center;gap:8px;border:none;box-shadow:0 4px 16px rgba(197, 160, 89, 0.35);}
+  .btn-primary:hover{background:linear-gradient(135deg, #D4AF37, #B38728);transform:translateY(-1px);box-shadow:0 6px 22px rgba(197, 160, 89, 0.5);}
+  .btn-secondary{background:#FFFFFF;border:1px solid rgba(197,160,89,0.45);color:var(--paper);font-weight:600;font-size:15px;padding:14px 24px;border-radius:8px;transition:border-color .2s ease, background .2s ease, transform .2s ease;box-shadow:0 2px 8px rgba(197,160,89,0.08);}
+  .btn-secondary:hover{border-color:var(--brass);background:#FAF5EB;transform:translateY(-1px);}
   .trust-line{font-family:var(--mono);font-size:12px;color:var(--muted-dark);display:flex;gap:20px;flex-wrap:wrap;}
 
   /* CONTACT SHEET */
-  .contact-sheet{background:var(--bg-alt);border:1px solid var(--line);border-radius:4px;padding:18px;position:relative;overflow:hidden;}
-  .cs-head{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:var(--muted-dark);padding:0 4px 14px;border-bottom:1px solid var(--line);margin-bottom:14px;position:relative;z-index:2;}
-  .cs-head .rec{color:var(--mark);display:flex;align-items:center;gap:6px;}
-  .cs-head .rec::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--mark);animation:pulse 1.8s infinite;}
+  .contact-sheet{background:#FFFFFF;border:1px solid var(--line);border-radius:6px;padding:18px;position:relative;overflow:hidden;box-shadow:0 16px 40px rgba(197, 160, 89, 0.12), 0 2px 8px rgba(0,0,0,0.03);}
+  .cs-head{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:var(--muted);padding:0 4px 14px;border-bottom:1px solid var(--line);margin-bottom:14px;position:relative;z-index:2;}
+  .cs-head .rec{color:var(--brass-dark);font-weight:700;display:flex;align-items:center;gap:6px;}
+  .cs-head .rec::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--brass);animation:pulse 1.8s infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
   .cs-marquee-wrap{position:relative;height:420px;overflow:hidden;}
   .cs-marquee-wrap::before,.cs-marquee-wrap::after{content:"";position:absolute;left:0;right:0;height:60px;z-index:2;pointer-events:none;}
-  .cs-marquee-wrap::before{top:0;background:linear-gradient(to bottom,var(--bg-alt),transparent);}
-  .cs-marquee-wrap::after{bottom:0;background:linear-gradient(to top,var(--bg-alt),transparent);}
+  .cs-marquee-wrap::before{top:0;background:linear-gradient(to bottom,#FFFFFF,transparent);}
+  .cs-marquee-wrap::after{bottom:0;background:linear-gradient(to top,#FFFFFF,transparent);}
   .cs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;height:100%;}
   .cs-col{display:flex;flex-direction:column;gap:9px;animation:marqueeUp var(--speed,22s) linear infinite;}
   .cs-col:nth-child(2){animation-duration:28s;animation-direction:reverse;}
   .cs-col:nth-child(3){animation-duration:24s;}
   .cs-col:hover,.cs-grid:hover .cs-col{animation-play-state:paused;}
   @keyframes marqueeUp{0%{transform:translateY(0);}100%{transform:translateY(-50%);}}
-  .cs-frame{position:relative;border-radius:3px;overflow:hidden;flex-shrink:0;background:linear-gradient(155deg,var(--f1,#3a3226),var(--f2,#1a1611));transition:transform 0.4s ease,box-shadow 0.4s ease;}
-  .cs-frame:hover{transform:scale(1.04);box-shadow:0 8px 30px rgba(99,102,241,0.25);z-index:3;}
-  .cs-frame .fname{position:absolute;bottom:4px;left:5px;font-family:var(--mono);font-size:8px;color:rgba(243,238,227,0.55);}
+  .cs-frame{position:relative;border-radius:3px;overflow:hidden;flex-shrink:0;background:linear-gradient(155deg,var(--f1,#F4ECE1),var(--f2,#E8DEC8));border:1px solid rgba(197,160,89,0.25);transition:transform 0.4s ease,box-shadow 0.4s ease;}
+  .cs-frame:hover{transform:scale(1.04);box-shadow:0 8px 30px rgba(197,160,89,0.35);z-index:3;}
+  .cs-frame .fname{position:absolute;bottom:4px;left:5px;font-family:var(--mono);font-size:8px;color:#44403C;font-weight:600;}
   .cs-frame svg{position:absolute;inset:0;width:100%;height:100%;}
-  .cs-frame path{fill:none;stroke:var(--mark);stroke-width:2.5;stroke-linecap:round;stroke-dasharray:220;stroke-dashoffset:220;animation:draw 1s ease forwards var(--delay,0s);}
+  .cs-frame path{fill:none;stroke:var(--brass);stroke-width:2.8;stroke-linecap:round;stroke-dasharray:220;stroke-dashoffset:220;animation:draw 1s ease forwards var(--delay,0s);}
   @keyframes draw{to{stroke-dashoffset:0;}}
   @media(prefers-reduced-motion:reduce){.cs-col{animation:none !important;}.cs-frame path{animation:none;stroke-dashoffset:0;}.cs-head .rec::before{animation:none;}}
   @media(max-width:960px){.cs-marquee-wrap{height:320px;}}
-  .cs-foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted-dark);position:relative;z-index:2;}
-  .cs-foot .count{color:var(--brass);}
+  .cs-foot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11px;color:var(--muted);position:relative;z-index:2;}
+  .cs-foot .count{color:var(--brass-dark);font-weight:700;}
 
   /* SECTION */
   section{padding:88px 0;}
   section[id]{scroll-margin-top:90px;}
   .section-head{max-width:600px;margin-bottom:56px;}
-  .section-head .eyebrow{color:var(--muted-dark);}
-  .section-head .eyebrow::before{background:var(--muted-dark);}
-  h2{font-family:var(--serif);font-weight:600;font-size:clamp(26px,3.2vw,38px);letter-spacing:-0.01em;color:var(--paper);margin-bottom:14px;}
+  .section-head .eyebrow{color:var(--brass-dark);}
+  .section-head .eyebrow::before{background:var(--brass-dark);}
+  h2{font-family:var(--serif);font-weight:700;font-size:clamp(26px,3.2vw,38px);letter-spacing:-0.01em;color:var(--paper);margin-bottom:14px;}
   .section-head p{color:var(--muted);font-size:16px;max-width:520px;}
 
   /* COMPARE */
-  .compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:0 10px 30px rgba(197,160,89,0.08);}
   @media(max-width:760px){.compare{grid-template-columns:1fr;}}
-  .compare-col{background:var(--bg);padding:36px 32px;}
-  .compare-col.after{background:var(--bg-alt);}
+  .compare-col{background:#FFFFFF;padding:36px 32px;}
+  .compare-col.after{background:#FFFDF9;}
   .compare-tag{font-family:var(--mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:18px;display:inline-block;padding:4px 10px;border-radius:2px;}
-  .compare-col.before .compare-tag{color:#fb7185;background:rgba(251,113,133,0.12);}
-  .compare-col.after .compare-tag{color:var(--brass-dim);background:rgba(99,102,241,0.14);}
+  .compare-col.before .compare-tag{color:#b91c1c;background:rgba(239,68,68,0.12);}
+  .compare-col.after .compare-tag{color:var(--brass-dark);background:rgba(197,160,89,0.18);border:1px solid rgba(197,160,89,0.3);}
   .compare-col ul{list-style:none;}
   .compare-col li{font-size:15px;padding:11px 0;border-top:1px solid var(--line);color:var(--muted);display:flex;gap:10px;}
   .compare-col li:first-child{border-top:none;}
-  .compare-col.before li::before{content:"✕";color:#e11d48;font-family:var(--mono);flex-shrink:0;}
-  .compare-col.after li::before{content:"✓";color:var(--brass);font-family:var(--mono);flex-shrink:0;}
-  .compare-col.after li{color:var(--paper);}
+  .compare-col.before li::before{content:"✕";color:#dc2626;font-family:var(--mono);flex-shrink:0;font-weight:bold;}
+  .compare-col.after li::before{content:"✓";color:var(--brass-dark);font-family:var(--mono);flex-shrink:0;font-weight:bold;}
+  .compare-col.after li{color:var(--paper);font-weight:500;}
 
   /* TIMELINE */
   .timeline{position:relative;padding-top:8px;}
   .tl-rail-h{position:absolute;top:28px;left:16.6667%;right:16.6667%;height:2px;background:var(--line);border-radius:2px;overflow:visible;}
-  .tl-rail-h .tl-rail-fill{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,var(--brass),var(--mark));transition:transform 1.5s cubic-bezier(.4,0,.2,1) .1s;}
+  .tl-rail-h .tl-rail-fill{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,var(--brass),var(--brass-bright));transition:transform 1.5s cubic-bezier(.4,0,.2,1) .1s;}
   .tl-rail-v{display:none;position:absolute;top:28px;bottom:28px;left:27px;width:2px;background:var(--line);border-radius:2px;overflow:visible;}
-  .tl-rail-v .tl-rail-fill{position:absolute;inset:0;transform-origin:top;transform:scaleY(0);background:linear-gradient(180deg,var(--brass),var(--mark));transition:transform 1.5s cubic-bezier(.4,0,.2,1) .1s;}
+  .tl-rail-v .tl-rail-fill{position:absolute;inset:0;transform-origin:top;transform:scaleY(0);background:linear-gradient(180deg,var(--brass),var(--brass-bright));transition:transform 1.5s cubic-bezier(.4,0,.2,1) .1s;}
   .timeline.in .tl-rail-fill{transform:scale(1);}
-  .tl-pulse{position:absolute;top:50%;left:0;width:9px;height:9px;border-radius:50%;background:var(--brass-bright);box-shadow:0 0 10px 3px rgba(129,140,248,0.65), 0 0 22px 7px rgba(167,139,250,0.3);transform:translate(-50%,-50%);opacity:0;}
+  .tl-pulse{position:absolute;top:50%;left:0;width:9px;height:9px;border-radius:50%;background:var(--brass);box-shadow:0 0 10px 3px rgba(197,160,89,0.6), 0 0 22px 7px rgba(212,175,55,0.3);transform:translate(-50%,-50%);opacity:0;}
   .timeline.in .tl-rail-h .tl-pulse{animation:railPulseH 4.2s cubic-bezier(.45,0,.4,1) 2.3s infinite;}
   @keyframes railPulseH{0%{left:0%;opacity:0;}6%{opacity:1;}92%{opacity:1;}100%{left:100%;opacity:0;}}
   .tl-rail-v .tl-pulse{top:0;left:50%;}
@@ -125,11 +125,11 @@
   @keyframes railPulseV{0%{top:0%;opacity:0;}6%{opacity:1;}92%{opacity:1;}100%{top:100%;opacity:0;}}
   .tl-track{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;position:relative;}
   .tl-step{display:flex;flex-direction:column;align-items:center;text-align:center;}
-  .tl-node{position:relative;width:56px;height:56px;border-radius:50%;background:var(--bg-alt);border:1.5px solid var(--brass-dim);display:flex;align-items:center;justify-content:center;margin-bottom:22px;flex-shrink:0;opacity:0;transform:scale(.4);box-shadow:0 0 0 rgba(129,140,248,0);}
+  .tl-node{position:relative;width:56px;height:56px;border-radius:50%;background:#FFFFFF;border:1.5px solid var(--brass);display:flex;align-items:center;justify-content:center;margin-bottom:22px;flex-shrink:0;opacity:0;transform:scale(.4);box-shadow:0 4px 14px rgba(197,160,89,0.15);}
   .timeline.in .tl-step:nth-child(1) .tl-node{animation:nodePop .55s cubic-bezier(.34,1.56,.64,1) .15s both, nodeBeat 4.2s ease-in-out 2.3s infinite;}
   .timeline.in .tl-step:nth-child(2) .tl-node{animation:nodePop .55s cubic-bezier(.34,1.56,.64,1) .55s both, nodeBeat 4.2s ease-in-out 4.4s infinite;}
   .timeline.in .tl-step:nth-child(3) .tl-node{animation:nodePop .55s cubic-bezier(.34,1.56,.64,1) .95s both, nodeBeat 4.2s ease-in-out 6.5s infinite;}
-  @keyframes nodePop{0%{opacity:0;transform:scale(.4);}65%{opacity:1;transform:scale(1.12);box-shadow:0 0 0 10px rgba(129,140,248,0.08);}100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 rgba(129,140,248,0);}}
+  @keyframes nodePop{0%{opacity:0;transform:scale(.4);}65%{opacity:1;transform:scale(1.12);box-shadow:0 0 0 10px rgba(197,160,89,0.12);}100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 rgba(197,160,89,0);}}
   .tl-node::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid var(--brass-bright);opacity:0;transform:scale(1);}
   .timeline.in .tl-step:nth-child(1) .tl-node::after{animation:ringPing .9s ease-out .35s;}
   .timeline.in .tl-step:nth-child(2) .tl-node::after{animation:ringPing .9s ease-out .75s;}
@@ -140,9 +140,9 @@
   .timeline.in .tl-step:nth-child(2) .tl-ring-loop{animation:ringLoop 4.2s ease-out 4.4s infinite;}
   .timeline.in .tl-step:nth-child(3) .tl-ring-loop{animation:ringLoop 4.2s ease-out 6.5s infinite;}
   @keyframes ringLoop{0%{opacity:.6;transform:scale(.85);}16%{opacity:0;transform:scale(1.55);}100%{opacity:0;transform:scale(1.55);}}
-  @keyframes nodeBeat{0%{border-color:var(--brass-bright);transform:scale(1);}8%{border-color:var(--brass-bright);transform:scale(1.08);}20%{border-color:var(--brass-dim);transform:scale(1);}100%{border-color:var(--brass-dim);transform:scale(1);}}
+  @keyframes nodeBeat{0%{border-color:var(--brass-bright);transform:scale(1);}8%{border-color:var(--brass-bright);transform:scale(1.08);}20%{border-color:var(--brass);transform:scale(1);}100%{border-color:var(--brass);transform:scale(1);}}
   .tl-node svg{width:26px;height:26px;overflow:visible;}
-  .tl-node svg path,.tl-node svg circle,.tl-node svg rect{fill:none;stroke:var(--brass-dim);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;}
+  .tl-node svg path,.tl-node svg circle,.tl-node svg rect{fill:none;stroke:var(--brass-dark);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;}
   .timeline.in .tl-step:nth-child(1) .tl-node svg *{animation:tlDraw .5s ease forwards .45s;}
   .timeline.in .tl-step:nth-child(2) .tl-node svg *{animation:tlDraw .5s ease forwards .85s;}
   .timeline.in .tl-step:nth-child(3) .tl-node svg *{animation:tlDraw .5s ease forwards 1.25s;}
@@ -152,67 +152,162 @@
   .timeline.in .tl-step:nth-child(2) .tl-content{transition-delay:.9s;}
   .timeline.in .tl-step:nth-child(3) .tl-content{transition-delay:1.3s;}
   .timeline.in .tl-content{opacity:1;transform:none;}
-  .step-num{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--brass-dim);margin-bottom:10px;}
-  .tl-content h3{font-family:var(--serif);font-weight:600;font-size:20px;margin-bottom:10px;}
+  .step-num{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--brass-dark);font-weight:600;margin-bottom:10px;}
+  .tl-content h3{font-family:var(--serif);font-weight:700;font-size:20px;margin-bottom:10px;}
   .tl-content p{color:var(--muted);font-size:14px;max-width:280px;margin:0 auto;}
   .tl-content .tag{font-family:var(--mono);font-size:11px;color:var(--muted-dark);margin-top:14px;display:block;}
   @media(max-width:820px){.tl-rail-h{display:none;}.tl-rail-v{display:block;}.tl-track{grid-template-columns:1fr;gap:38px;}.tl-step{flex-direction:row;align-items:flex-start;text-align:left;gap:20px;}.tl-node{margin-bottom:0;}.tl-content p{max-width:none;margin:0;}}
   @media(prefers-reduced-motion:reduce){.tl-rail-fill{transition:none;transform:scale(1);}.tl-node{animation:none !important;opacity:1;transform:scale(1);}.tl-node::after{animation:none !important;display:none;}.tl-node svg *{animation:none !important;stroke-dashoffset:0;}.tl-content{transition:none;opacity:1;transform:none;}.tl-pulse{display:none;}.tl-ring-loop{display:none;}}
 
   /* FEATURES */
-  .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+  .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:0 10px 30px rgba(197,160,89,0.08);}
   @media(max-width:900px){.feature-grid{grid-template-columns:repeat(2,1fr);}}
   @media(max-width:600px){.feature-grid{grid-template-columns:1fr;}}
-  .feature{background:var(--bg);padding:32px 28px;transition:background .2s ease;}
-  .feature:hover{background:var(--bg-alt);}
-  .feature .mark{width:34px;height:34px;border:1.5px solid var(--mark);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-family:var(--mono);font-size:12px;color:var(--mark);}
-  .feature h3{font-family:var(--serif);font-weight:600;font-size:18px;margin-bottom:10px;color:var(--paper);}
+  .feature{background:#FFFFFF;padding:32px 28px;transition:background .2s ease;}
+  .feature:hover{background:#FDFBF7;}
+  .feature .mark{width:34px;height:34px;border:1.5px solid var(--brass);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:20px;font-family:var(--mono);font-size:12px;color:var(--brass-dark);background:rgba(197,160,89,0.08);}
+  .feature h3{font-family:var(--serif);font-weight:700;font-size:18px;margin-bottom:10px;color:var(--paper);}
   .feature p{font-size:14px;color:var(--muted);}
 
   /* AUDIENCE */
   .audience-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
   @media(max-width:900px){.audience-grid{grid-template-columns:1fr;}}
-  .audience-card{background:var(--card);color:var(--paper);border-radius:var(--radius);padding:30px 26px;border:1px solid var(--line);position:relative;overflow:hidden;transition:border-color .2s ease, transform .2s ease;}
-  .audience-card:hover{border-color:var(--brass);transform:translateY(-2px);}
-  .audience-card .role{font-family:var(--mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--brass-dim);margin-bottom:16px;}
-  .audience-card h3{font-family:var(--serif);font-weight:600;font-size:21px;margin-bottom:10px;color:var(--paper);}
+  .audience-card{background:#FFFFFF;color:var(--paper);border-radius:var(--radius);padding:30px 26px;border:1px solid var(--line);position:relative;overflow:hidden;transition:border-color .2s ease, transform .2s ease, box-shadow .2s ease;box-shadow:0 6px 20px rgba(197,160,89,0.08);}
+  .audience-card:hover{border-color:var(--brass);transform:translateY(-2px);box-shadow:0 12px 30px rgba(197,160,89,0.16);}
+  .audience-card .role{font-family:var(--mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--brass-dark);font-weight:700;margin-bottom:16px;}
+  .audience-card h3{font-family:var(--serif);font-weight:700;font-size:21px;margin-bottom:10px;color:var(--paper);}
   .audience-card p{font-size:14px;color:var(--muted);}
 
   /* STATS */
-  .stats-bar{background:var(--bg-alt);border:1px solid var(--line);border-radius:4px;display:grid;grid-template-columns:repeat(4,1fr);}
+  .stats-bar{background:#FFFFFF;border:1px solid var(--line);border-radius:8px;display:grid;grid-template-columns:repeat(4,1fr);box-shadow:0 6px 24px rgba(197,160,89,0.08);}
   @media(max-width:820px){.stats-bar{grid-template-columns:repeat(2,1fr);}}
   .stat{padding:34px 24px;border-right:1px solid var(--line);}
   .stat:last-child{border-right:none;}
   @media(max-width:820px){.stat:nth-child(2){border-right:none;}}
-  .stat .num{font-family:var(--serif);font-weight:600;font-size:34px;color:var(--brass);}
+  .stat .num{font-family:var(--serif);font-weight:700;font-size:34px;color:var(--brass-dark);}
   .stat .label{font-size:13px;color:var(--muted);margin-top:6px;}
 
   /* PRICING */
   .tier-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
   @media(max-width:900px){.tier-grid{grid-template-columns:1fr;}}
-  .tier{border:1px solid var(--line);border-radius:4px;padding:32px 28px;display:flex;flex-direction:column;}
-  .tier.featured{border-color:var(--brass);background:var(--bg-alt);position:relative;}
-  .tier-badge{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:var(--ink);background:var(--brass);padding:4px 10px;border-radius:2px;position:absolute;top:-11px;left:28px;}
-  .tier-name{font-family:var(--serif);font-weight:600;font-size:20px;margin-bottom:6px;}
-  .tier-note{font-size:13px;color:var(--muted-dark);margin-bottom:22px;}
+  .tier{background:#FFFFFF;border:1px solid var(--line);border-radius:8px;padding:32px 28px;display:flex;flex-direction:column;box-shadow:0 6px 24px rgba(197,160,89,0.08);transition:transform .2s ease, box-shadow .2s ease;}
+  .tier:hover{transform:translateY(-3px);box-shadow:0 12px 36px rgba(197,160,89,0.15);}
+  .tier.featured{border:2px solid var(--brass);background:#FFFDF9;position:relative;box-shadow:0 14px 40px rgba(197,160,89,0.2);}
+  .tier-badge{font-family:var(--mono);font-size:10px;letter-spacing:0.08em;color:#ffffff;background:linear-gradient(135deg, #C5A059, #996515);padding:4px 10px;border-radius:2px;position:absolute;top:-11px;left:28px;font-weight:bold;}
+  .tier-name{font-family:var(--serif);font-weight:700;font-size:20px;margin-bottom:6px;color:var(--paper);}
+  .tier-note{font-size:13px;color:var(--muted);margin-bottom:22px;}
   .tier ul{list-style:none;flex:1;}
   .tier li{font-size:13.5px;color:var(--muted);padding:8px 0;border-top:1px solid var(--line);display:flex;gap:8px;}
   .tier li:first-child{border-top:none;}
-  .tier li::before{content:"—";color:var(--brass-dim);flex-shrink:0;}
+  .tier li::before{content:"—";color:var(--brass-dark);font-weight:bold;flex-shrink:0;}
 
   /* FINAL CTA */
-  .final-cta{background:radial-gradient(120% 160% at 50% 0%, rgba(99,102,241,0.20), transparent 60%), var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:64px 56px;text-align:center;}
+  .final-cta{background:radial-gradient(120% 160% at 50% 0%, rgba(197,160,89,0.22), transparent 70%), #FFFFFF;border:1.5px solid var(--line);border-radius:var(--radius);padding:64px 56px;text-align:center;box-shadow:0 20px 60px rgba(197,160,89,0.14);}
   @media(max-width:640px){.final-cta{padding:48px 24px;}}
   .final-cta h2{color:var(--paper);}
   .final-cta p{color:var(--muted);max-width:460px;margin:0 auto 32px;font-size:16px;}
-  .btn-wa{background:var(--brass);color:var(--ink);font-weight:600;font-size:15px;padding:15px 30px;border-radius:8px;display:inline-flex;align-items:center;gap:10px;transition:transform .15s ease, background .2s ease;}
-  .btn-wa:hover{background:var(--brass-bright);transform:translateY(-1px);}
+  .btn-wa{background:linear-gradient(135deg, #C5A059, #996515);color:#ffffff;font-weight:600;font-size:15px;padding:15px 30px;border-radius:8px;display:inline-flex;align-items:center;gap:10px;transition:transform .15s ease, background .2s ease, box-shadow .2s ease;box-shadow:0 4px 18px rgba(197,160,89,0.4);border:none;}
+  .btn-wa:hover{background:linear-gradient(135deg, #D4AF37, #B38728);transform:translateY(-1px);box-shadow:0 6px 24px rgba(197,160,89,0.5);}
 
   /* FOOTER */
-  footer{border-top:1px solid var(--line);padding:44px 0;}
-  .foot-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;}
-  .foot-row .logo{font-size:17px;}
-  footer .fnote{font-family:var(--mono);font-size:12px;color:var(--muted-dark);}
+  footer {
+    border-top: 2px solid var(--brass);
+    background: linear-gradient(180deg, #1C1917 0%, #12100E 100%);
+    color: #E7E5E4;
+    padding: 72px 0 36px;
+    margin-top: 40px;
+  }
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2.2fr 1fr 1.1fr 1.1fr;
+    gap: 48px 32px;
+    margin-bottom: 56px;
+  }
+  @media(max-width: 960px) {
+    .footer-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 36px 24px;
+    }
+  }
+  @media(max-width: 560px) {
+    .footer-grid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+    }
+  }
+  .footer-brand .logo {
+    font-size: 20px;
+    margin-bottom: 14px;
+    display: inline-flex;
+    background: linear-gradient(100deg, #D4AF37, #E6D7BD);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .footer-brand p {
+    font-size: 13.5px;
+    color: #A8A29E;
+    line-height: 1.65;
+    max-width: 320px;
+    margin-bottom: 18px;
+  }
+  .footer-security-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(197,160,89,0.3);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 11.5px;
+    color: #E7E5E4;
+    font-family: var(--mono);
+  }
+  .footer-col-title {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brass-bright);
+    margin-bottom: 18px;
+  }
+  .footer-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .footer-links li a {
+    color: #A8A29E;
+    font-size: 13.5px;
+    text-decoration: none;
+    transition: color 0.2s ease, transform 0.2s ease;
+    display: inline-block;
+  }
+  .footer-links li a:hover {
+    color: #FFFFFF;
+    transform: translateX(3px);
+  }
+  .footer-bottom {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 12.5px;
+    color: #78716C;
+  }
+  .footer-bottom .fnote {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #78716C;
+    letter-spacing: 0.04em;
+  }
 
   .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease, transform .6s ease;}
   .reveal.in{opacity:1;transform:none;}
@@ -245,13 +340,13 @@
     bottom: 84px;
     right: 24px;
     width: 320px;
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid var(--line);
     border-radius: 20px;
     padding: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px rgba(197, 160, 89, 0.15);
     z-index: 9998;
     animation: slideUpFade 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     display: flex;
@@ -273,12 +368,12 @@
     align-items: center;
     gap: 8px;
     font-size: 11px;
-    color: #0f766e;
-    background: #f0fdfa;
+    color: #8C6D23;
+    background: #FAF5EB;
     padding: 4px 10px;
     border-radius: 99px;
     width: fit-content;
-    border: 1px solid #ccfbf1;
+    border: 1px solid rgba(197,160,89,0.3);
     font-weight: 600;
     font-family: var(--mono);
   }
@@ -286,13 +381,13 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #14b8a6;
-    box-shadow: 0 0 8px #14b8a6;
+    background: #C5A059;
+    box-shadow: 0 0 8px #C5A059;
     animation: pulseGlow 2s infinite;
   }
   @keyframes pulseGlow {
     0% { transform: scale(1); opacity: 0.6; }
-    50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #14b8a6; }
+    50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #C5A059; }
     100% { transform: scale(1); opacity: 0.6; }
   }
 </style>
@@ -308,7 +403,7 @@
     </span>
   </div>
 
-  <header style="position: relative; top: auto; background: rgba(11,9,24,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line);">
+  <header style="position: relative; top: auto; background: rgba(250,248,245,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line);">
     <nav>
       <div class="logo"><span class="dot"></span>Pick Your Photo</div>
       <div class="nav-links">
@@ -323,7 +418,7 @@
           <button type="button" class="lang-btn active" data-lang="id">ID</button>
           <button type="button" class="lang-btn" data-lang="en">EN</button>
         </div>
-        <a href="/login" style="font-size:14.5px;color:var(--muted);font-weight:500;" data-i18n="nav.masuk">Masuk</a>
+        <a href="/login" style="font-size:14.5px;color:var(--muted);font-weight:600;" data-i18n="nav.masuk">Masuk</a>
       </div>
     </nav>
   </header>
@@ -338,7 +433,7 @@
       <h1 data-i18n="hero.h1">Klien pilih fotonya.<br>Anda langsung buka <em>Lightroom</em>.</h1>
       <p class="lead" data-i18n="hero.lead">Kami urus galeri seleksinya — klien buka satu tautan, pilih foto yang mau diedit, selesai. Tidak ada lagi bolak-balik WhatsApp, tidak ada Excel yang hilang.</p>
       <div class="hero-ctas">
-        <a id="heroTrialCtaLink" href="#trial-box" class="btn-primary" style="background: linear-gradient(135deg, #6366f1, #9333ea); color: #ffffff; font-weight: bold;">Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;</a>
+        <a id="heroTrialCtaLink" href="#trial-box" class="btn-primary" style="background: linear-gradient(135deg, #C5A059, #996515); color: #ffffff; font-weight: bold;">Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;</a>
         <a href="/register" class="btn-secondary" data-i18n="hero.ctaPrimary">Daftar &rarr;</a>
       </div>
       <div class="trust-line">
@@ -364,14 +459,14 @@
 
   <!-- INSTANT TRIAL BOX SECTION -->
   <section id="trial-box" style="padding: 40px 0 60px 0;">
-    <div style="background: linear-gradient(145deg, #15122A, #0B0918); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 20px; padding: 40px 32px; max-width: 720px; margin: 0 auto; text-align: center; box-shadow: 0 20px 50px rgba(99, 102, 241, 0.15);">
-      <div id="trialBadgeHeader" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.3); padding: 6px 16px; border-radius: 20px; font-size: 12px; color: #a5b4fc; font-weight: bold; font-family: var(--mono); margin-bottom: 16px;">
+    <div style="background: linear-gradient(145deg, #FFFFFF, #FAF6EE); border: 1.5px solid rgba(197, 160, 89, 0.4); border-radius: 20px; padding: 40px 32px; max-width: 720px; margin: 0 auto; text-align: center; box-shadow: 0 20px 50px rgba(197, 160, 89, 0.12), 0 2px 10px rgba(0, 0, 0, 0.03);">
+      <div id="trialBadgeHeader" style="display: inline-flex; align-items: center; gap: 8px; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); padding: 6px 16px; border-radius: 20px; font-size: 12px; color: #8C6D23; font-weight: bold; font-family: var(--mono); margin-bottom: 16px;">
         <span data-i18n="trial.badgePrefix">FREE INSTANT TRIAL</span> (<span class="trial-duration-val-upper">1 JAM</span>) — <span data-i18n="trial.badgeSuffix">TANPA REGISTRASI</span>
       </div>
-      <h2 id="trialHeadlineTitle" style="font-family: var(--serif); font-size: 32px; font-weight: 600; color: #EAE8F7; margin-bottom: 12px;">
+      <h2 id="trialHeadlineTitle" style="font-family: var(--serif); font-size: 32px; font-weight: 700; color: #1C1917; margin-bottom: 12px;">
         <span data-i18n="trial.h2">Uji Coba Kecepatan Galeri Seleksi Live</span>
       </h2>
-      <p id="trialHeadlineSubtitle" style="color: #9791B8; font-size: 15px; max-width: 540px; margin: 0 auto 28px; line-height: 1.6;">
+      <p id="trialHeadlineSubtitle" style="color: #57534E; font-size: 15px; max-width: 540px; margin: 0 auto 28px; line-height: 1.6;">
         <span data-i18n="trial.p">Tempelkan link folder Google Drive publik Anda di bawah ini. Galeri seleksi foto simulasi akan dibuat dalam <strong>1-2 detik</strong> tanpa mendownload foto ke server!</span>
       </p>
 
@@ -379,7 +474,7 @@
       <button
         type="button"
         id="trialCTABtn"
-        style="width: 100%; background: linear-gradient(135deg, #6366f1, #9333ea); color: #fff; border: none; padding: 16px 24px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--sans);"
+        style="width: 100%; background: linear-gradient(135deg, #C5A059, #996515); color: #fff; border: none; padding: 16px 24px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 20px rgba(197, 160, 89, 0.35); transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--sans);"
       >
         <span data-i18n="trial.ctaBtn">Mulai Uji Coba Gratis</span> <span style="font-size: 18px;">→</span>
       </button>
@@ -388,7 +483,7 @@
       <div id="trialFormWrapper" style="max-height: 0; overflow: hidden; transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease; opacity: 0;">
       <form id="landingTrialForm" style="display: flex; flex-direction: column; gap: 16px; text-align: left; padding-top: 4px;">
         <div>
-          <label style="display: block; font-size: 13px; font-weight: 600; color: #D8D5EE; margin-bottom: 6px; font-family: var(--mono);">
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #1C1917; margin-bottom: 6px; font-family: var(--mono);">
             <span data-i18n="trial.labelUrl">Link Folder Google Drive (Public) *</span>
           </label>
           <input
@@ -396,28 +491,28 @@
             id="trialFolderUrl"
             placeholder="https://drive.google.com/drive/folders/..."
             required
-            style="width: 100%; padding: 14px 18px; background: rgba(11, 9, 24, 0.8); border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 10px; color: #EAE8F7; font-size: 14px; outline: none; font-family: var(--sans);"
+            style="width: 100%; padding: 14px 18px; background: #FFFFFF; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 10px; color: #1C1917; font-size: 14px; outline: none; font-family: var(--sans); box-shadow: 0 2px 6px rgba(0,0,0,0.02);"
           />
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #71717a;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #78716C;">
             <span><span data-i18n="trial.noteUrl">* Pastikan folder diset: "Siapa saja yang memiliki link dapat melihat".</span></span>
-            <span id="trialMaxPhotosLabel" style="color: #a5b4fc; font-weight: bold;">Maksimal 50 Foto per Folder Trial</span>
+            <span id="trialMaxPhotosLabel" style="color: #8C6D23; font-weight: bold;">Maksimal 50 Foto per Folder Trial</span>
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
           <div>
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #D8D5EE; margin-bottom: 6px; font-family: var(--mono);">
+            <label style="display: block; font-size: 13px; font-weight: 600; color: #1C1917; margin-bottom: 6px; font-family: var(--mono);">
               <span data-i18n="trial.labelTitle">Judul Galeri (Opsional)</span>
             </label>
             <input
               type="text"
               id="trialTitle"
               placeholder="Contoh: Wisuda Sarah 2026"
-              style="width: 100%; padding: 12px 14px; background: rgba(11, 9, 24, 0.8); border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 10px; color: #EAE8F7; font-size: 14px; outline: none; font-family: var(--sans);"
+              style="width: 100%; padding: 12px 14px; background: #FFFFFF; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 10px; color: #1C1917; font-size: 14px; outline: none; font-family: var(--sans); box-shadow: 0 2px 6px rgba(0,0,0,0.02);"
             />
           </div>
           <div>
-            <label style="display: block; font-size: 13px; font-weight: 600; color: #D8D5EE; margin-bottom: 6px; font-family: var(--mono);">
+            <label style="display: block; font-size: 13px; font-weight: 600; color: #1C1917; margin-bottom: 6px; font-family: var(--mono);">
               <span data-i18n="trial.labelMaxSelect">Batas Foto Dipilih (Kuota)</span>
             </label>
             <input
@@ -426,13 +521,13 @@
               min="1"
               max="10000"
               value="10"
-              style="width: 100%; padding: 12px 14px; background: rgba(11, 9, 24, 0.8); border: 1px solid rgba(129, 140, 248, 0.3); border-radius: 10px; color: #EAE8F7; font-size: 14px; outline: none; font-family: var(--sans);"
+              style="width: 100%; padding: 12px 14px; background: #FFFFFF; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 10px; color: #1C1917; font-size: 14px; outline: none; font-family: var(--sans); box-shadow: 0 2px 6px rgba(0,0,0,0.02);"
             />
           </div>
         </div>
 
         <div>
-          <label style="display: block; font-size: 13px; font-weight: 600; color: #D8D5EE; margin-bottom: 6px; font-family: var(--mono);">
+          <label style="display: block; font-size: 13px; font-weight: 600; color: #1C1917; margin-bottom: 6px; font-family: var(--mono);">
             <span data-i18n="trial.labelLogo">Upload Logo Studio Anda (Opsional - Simulasi White-Label)</span>
           </label>
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -440,89 +535,89 @@
               type="file"
               id="trialLogoFile"
               accept="image/png, image/jpeg, image/webp"
-              style="flex: 1; padding: 10px 14px; background: rgba(11, 9, 24, 0.8); border: 1px dashed rgba(129, 140, 248, 0.4); border-radius: 10px; color: #9791B8; font-size: 13px; cursor: pointer; font-family: var(--sans);"
+              style="flex: 1; padding: 10px 14px; background: #FFFFFF; border: 1px dashed rgba(197, 160, 89, 0.5); border-radius: 10px; color: #57534E; font-size: 13px; cursor: pointer; font-family: var(--sans);"
             />
             <div id="trialLogoPreviewBox" style="display: none; position: relative; align-items: center;">
-              <img id="trialLogoPreviewImg" src="" alt="Preview Logo" style="height: 38px; width: auto; max-height: 38px; border-radius: 6px; border: 1px solid rgba(129, 140, 248, 0.5); background: rgba(19, 16, 36, 0.8); padding: 4px; object-fit: contain;" />
-              <button type="button" id="removeTrialLogoBtn" style="position: absolute; top: -6px; right: -6px; background: #ef4444; color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+              <img id="trialLogoPreviewImg" src="" alt="Preview Logo" style="height: 38px; width: auto; max-height: 38px; border-radius: 6px; border: 1px solid #C5A059; background: #FAF5EB; padding: 4px; object-fit: contain;" />
+              <button type="button" id="removeTrialLogoBtn" style="position: absolute; top: -6px; right: -6px; background: #dc2626; color: #fff; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
             </div>
           </div>
-          <div style="font-size: 11px; color: #71717a; margin-top: 4px;">
+          <div style="font-size: 11px; color: #78716C; margin-top: 4px;">
             <span data-i18n="trial.noteLogo">* Maks 5MB • Format: PNG/JPG/WebP • Otomatis dikompres ke WebP saat upload</span>
           </div>
         </div>
 
-        <div id="trialErrorMsg" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; padding: 12px; border-radius: 8px; font-size: 13px;"></div>
+        <div id="trialErrorMsg" style="display: none; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #b91c1c; padding: 12px; border-radius: 8px; font-size: 13px;"></div>
 
         <div style="display: flex; gap: 10px;">
           <button
             type="submit"
             id="trialSubmitBtn"
-            style="flex: 1; background: linear-gradient(135deg, #6366f1, #818cf8); color: #ffffff; border: none; padding: 16px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35); font-family: var(--sans); display: flex; align-items: center; justify-content: center; gap: 8px;"
+            style="flex: 1; background: linear-gradient(135deg, #C5A059, #996515); color: #ffffff; border: none; padding: 16px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 6px 20px rgba(197, 160, 89, 0.35); font-family: var(--sans); display: flex; align-items: center; justify-content: center; gap: 8px;"
           >
             <span id="trialSubmitBtnText">Buat Galeri Trial (Aktif 1 Jam)</span>
           </button>
           <button
             type="button"
             id="trialCollapseBtn"
-            style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #71717a; padding: 14px 16px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s ease;"
+            style="background: #FFFFFF; border: 1px solid rgba(197,160,89,0.35); color: #78716C; padding: 14px 16px; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s ease;"
           >✕</button>
         </div>
       </form>
       </div>
 
       <!-- RESULT CARD WITH COPY URLS (INLINE DISPLAY) -->
-      <div id="trialResultCard" style="display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); text-align: left; background: rgba(0,0,0,0.3); border: 1px solid #6366f1; border-radius: 14px; padding: 24px; margin-top: 20px;">
-        <div style="font-size: 20px; font-weight: bold; color: #34d399; margin-bottom: 6px;">Galeri Trial Instan Berhasil Dibuat!</div>
-        <p style="color: #9791B8; font-size: 13px; margin: 0 0 20px 0;">Folder Google Drive Anda berhasil terhubung (0 Bytes disk server terpakai). Silakan salin link di bawah ini:</p>
+      <div id="trialResultCard" style="display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); text-align: left; background: #FFFFFF; border: 1.5px solid #C5A059; border-radius: 14px; padding: 24px; margin-top: 20px; box-shadow: 0 10px 30px rgba(197, 160, 89, 0.15);">
+        <div style="font-size: 20px; font-weight: bold; color: #8C6D23; margin-bottom: 6px;">Galeri Trial Instan Berhasil Dibuat!</div>
+        <p style="color: #57534E; font-size: 13px; margin: 0 0 20px 0;">Folder Google Drive Anda berhasil terhubung (0 Bytes disk server terpakai). Silakan salin link di bawah ini:</p>
 
         <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
           <!-- Box 1: Link Galeri Klien -->
-          <div style="background: rgba(11,9,24,0.8); border: 1px solid rgba(129,140,248,0.3); padding: 12px; border-radius: 10px;">
-            <span style="font-size: 11px; color: #818cf8; font-weight: bold; display: block; margin-bottom: 4px;">Link Galeri Klien (Halaman Seleksi Foto):</span>
+          <div style="background: #FAF7F2; border: 1px solid rgba(197, 160, 89, 0.3); padding: 12px; border-radius: 10px;">
+            <span style="font-size: 11px; color: #8C6D23; font-weight: bold; display: block; margin-bottom: 4px;">Link Galeri Klien (Halaman Seleksi Foto):</span>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-              <code id="resClientUrlText" style="font-size: 12px; color: #EAE8F7; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></code>
-              <button type="button" id="copyClientUrlBtn" style="background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;">Salin</button>
+              <code id="resClientUrlText" style="font-size: 12px; color: #1C1917; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></code>
+              <button type="button" id="copyClientUrlBtn" style="background: linear-gradient(135deg, #C5A059, #996515); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0;">Salin</button>
             </div>
           </div>
 
           <!-- Box 2: Link Hasil Seleksi & Live Button -->
-          <div style="background: rgba(11,9,24,0.8); border: 1px solid rgba(16,185,129,0.3); padding: 14px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="background: #FAF7F2; border: 1px solid rgba(197, 160, 89, 0.4); padding: 14px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 11px; color: #34d399; font-weight: bold;">Link Hasil Seleksi (Halaman Lightroom Ready):</span>
-              <button type="button" id="copyResultUrlBtn" style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: #34d399; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">Salin Link</button>
+              <span style="font-size: 11px; color: #8C6D23; font-weight: bold;">Link Hasil Seleksi (Halaman Lightroom Ready):</span>
+              <button type="button" id="copyResultUrlBtn" style="background: rgba(197,160,89,0.15); border: 1px solid rgba(197,160,89,0.4); color: #8C6D23; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; transition: all 0.2s;">Salin Link</button>
             </div>
-            <code id="resResultUrlText" style="font-size: 12px; color: #9791B8; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></code>
+            <code id="resResultUrlText" style="font-size: 12px; color: #57534E; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></code>
 
-            <button type="button" id="openLiveCardBtn" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 12px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3); transition: transform 0.2s, box-shadow 0.2s;">
+            <button type="button" id="openLiveCardBtn" style="width: 100%; background: linear-gradient(135deg, #C5A059, #996515); color: #fff; border: none; padding: 12px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(197, 160, 89, 0.3); transition: transform 0.2s, box-shadow 0.2s;">
               <span>Cek Hasil Seleksi Live (In-App) &rarr;</span>
             </button>
           </div>
         </div>
 
         <div style="display: flex; gap: 12px;">
-          <a id="openGalleryBtn" href="#" target="_blank" style="flex: 1; background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; text-align: center; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; text-decoration: none;">Buka &amp; Tes Galeri Seleksi &rarr;</a>
-          <button type="button" id="resetTrialFormBtn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9791B8; padding: 14px 18px; border-radius: 10px; font-size: 13px; cursor: pointer;">↺ Buat Baru</button>
+          <a id="openGalleryBtn" href="#" target="_blank" style="flex: 1; background: linear-gradient(135deg, #C5A059, #996515); color: #fff; text-align: center; padding: 14px; border-radius: 10px; font-weight: bold; font-size: 14px; text-decoration: none; box-shadow: 0 4px 14px rgba(197, 160, 89, 0.3);">Buka &amp; Tes Galeri Seleksi &rarr;</a>
+          <button type="button" id="resetTrialFormBtn" style="background: #FFFFFF; border: 1px solid rgba(197, 160, 89, 0.35); color: #57534E; padding: 14px 18px; border-radius: 10px; font-size: 13px; cursor: pointer;">↺ Buat Baru</button>
         </div>
       </div>
 
       <!-- CARD 3: LIVE VIEW HASIL SELEKSI (IN-APP DISPLAY) -->
-      <div id="trialLiveCard" style="display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); text-align: left; background: rgba(15, 23, 42, 0.95); border: 1px solid #10b981; border-radius: 14px; padding: 24px; margin-top: 20px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+      <div id="trialLiveCard" style="display: none; opacity: 0; transform: translateY(10px); transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1); text-align: left; background: #FFFFFF; border: 1.5px solid #C5A059; border-radius: 14px; padding: 24px; margin-top: 20px; box-shadow: 0 10px 30px rgba(197, 160, 89, 0.15);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid rgba(197, 160, 89, 0.2); padding-bottom: 12px;">
           <div>
-            <span style="font-size: 10px; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); padding: 3px 8px; border-radius: 12px; font-weight: bold; letter-spacing: 0.5px;">LIVE RESULT</span>
-            <h3 id="liveCardTitle" style="font-size: 17px; font-weight: bold; color: #fff; margin: 4px 0 0 0;">Hasil Seleksi Foto Trial</h3>
+            <span style="font-size: 10px; background: rgba(197, 160, 89, 0.15); color: #8C6D23; border: 1px solid rgba(197, 160, 89, 0.4); padding: 3px 8px; border-radius: 12px; font-weight: bold; letter-spacing: 0.5px;">LIVE RESULT</span>
+            <h3 id="liveCardTitle" style="font-size: 17px; font-weight: bold; color: #1C1917; margin: 4px 0 0 0;">Hasil Seleksi Foto Trial</h3>
           </div>
-          <button type="button" id="refreshLiveResultBtn" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #38bdf8; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+          <button type="button" id="refreshLiveResultBtn" style="background: #FAF7F2; border: 1px solid rgba(197, 160, 89, 0.3); color: #8C6D23; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
             <span>Sync Live</span>
           </button>
         </div>
 
-        <div id="liveStatusBox" style="background: rgba(11,9,24,0.8); border: 1px solid rgba(129,140,248,0.2); padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-          <div style="font-size: 13px; color: #cbd5e1;">
-            Status: <strong id="liveStatusBadge" style="color: #fbbf24;">Menunggu Pilihan Klien...</strong>
+        <div id="liveStatusBox" style="background: #FAF7F2; border: 1px solid rgba(197, 160, 89, 0.25); padding: 12px 14px; border-radius: 10px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div style="font-size: 13px; color: #57534E;">
+            Status: <strong id="liveStatusBadge" style="color: #B45309;">Menunggu Pilihan Klien...</strong>
           </div>
-          <div style="font-size: 13px; color: #34d399; font-weight: bold;" id="liveSelectedCountText">
+          <div style="font-size: 13px; color: #8C6D23; font-weight: bold;" id="liveSelectedCountText">
             0 Foto Dipilih
           </div>
         </div>
@@ -530,19 +625,19 @@
         <!-- LIGHTROOM READY FILENAMES CONTAINER -->
         <div style="margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <span style="font-size: 12px; color: #94a3b8; font-weight: 600;">List Nama File (Format Lightroom Filter):</span>
-            <button type="button" id="copyLiveFilenamesBtn" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s;">Salin Nama File</button>
+            <span style="font-size: 12px; color: #57534E; font-weight: 600;">List Nama File (Format Lightroom Filter):</span>
+            <button type="button" id="copyLiveFilenamesBtn" style="background: linear-gradient(135deg, #C5A059, #996515); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s;">Salin Nama File</button>
           </div>
-          <div id="liveFilenamesBox" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(16,185,129,0.3); padding: 14px; border-radius: 10px; font-family: var(--mono, monospace); font-size: 13px; color: #38bdf8; min-height: 56px; max-height: 120px; overflow-y: auto; word-break: break-all; line-height: 1.6;">
+          <div id="liveFilenamesBox" style="background: #FAF7F2; border: 1px solid rgba(197, 160, 89, 0.3); padding: 14px; border-radius: 10px; font-family: var(--mono, monospace); font-size: 13px; color: #1C1917; min-height: 56px; max-height: 120px; overflow-y: auto; word-break: break-all; line-height: 1.6;">
             <em>Klien belum memilih foto. Buka tab Galeri Klien untuk simulasi memilih foto.</em>
           </div>
         </div>
 
         <!-- NAVIGATION BUTTONS -->
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-          <button type="button" id="backToLinksBtn" style="flex: 1; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #eae8f7; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s;">← Kembali ke Link Galeri</button>
-          <a id="openFullResultBtn" href="#" target="_blank" style="background: linear-gradient(135deg, #6366f1, #818cf8); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 6px;">Halaman RAW Sorter →</a>
-          <button type="button" id="resetLiveFormBtn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #9791B8; padding: 12px 16px; border-radius: 10px; font-size: 13px; cursor: pointer;">↺ Buat Baru</button>
+          <button type="button" id="backToLinksBtn" style="flex: 1; background: #FFFFFF; border: 1px solid rgba(197, 160, 89, 0.35); color: #1C1917; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; transition: all 0.2s;">← Kembali ke Link Galeri</button>
+          <a id="openFullResultBtn" href="#" target="_blank" style="background: linear-gradient(135deg, #C5A059, #996515); color: #fff; padding: 12px 16px; border-radius: 10px; font-size: 13px; font-weight: bold; text-decoration: none; display: flex; align-items: center; gap: 6px;">Halaman RAW Sorter →</a>
+          <button type="button" id="resetLiveFormBtn" style="background: #FFFFFF; border: 1px solid rgba(197, 160, 89, 0.35); color: #57534E; padding: 12px 16px; border-radius: 10px; font-size: 13px; cursor: pointer;">↺ Buat Baru</button>
         </div>
       </div>
     </div>
@@ -988,35 +1083,35 @@
   <!-- INTEGRASI GOOGLE DRIVE BYOS SHOWCASE -->
   <section id="gdrive-integration" style="padding: 60px 0;">
     <div class="section-head reveal">
-      <div class="eyebrow" style="color: #34d399; background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.3); padding: 4px 14px; border-radius: 20px; display: inline-block;" data-i18n="byos.eyebrow">INTEGRASI CLOUD STORAGE</div>
+      <div class="eyebrow" style="color: #8C6D23; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); padding: 4px 14px; border-radius: 20px; display: inline-block;" data-i18n="byos.eyebrow">INTEGRASI CLOUD STORAGE</div>
       <h2 data-i18n="byos.h2">Penyimpanan Berkas Foto di Google Drive Pribadi atau Dedicated Cloud Storage</h2>
-      <p data-i18n="byos.p">Platform memberikan fleksibilitas penuh untuk menyimpan berkas foto secara gratis menggunakan akun Google Drive pribadi Anda, atau memanfaatkan Dedicated Cloud Storage berkecepatan tinggi dari platform.</p>
+      <p data-i18n="byos.p">Platform memberikan fleksibilitas penuh untuk menyimpan berkas foto menggunakan akun Google Drive pribadi Anda, atau menyewa Dedicated Cloud Storage berkecepatan tinggi dari platform.</p>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 36px;" class="reveal">
       <!-- Card 1: BYOS Google Drive -->
-      <div style="background: linear-gradient(145deg, rgba(52, 211, 153, 0.06), rgba(11, 9, 24, 0.8)); border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 20px; padding: 32px; position: relative;">
+      <div style="background: #FFFFFF; border: 1.5px solid rgba(197, 160, 89, 0.35); border-radius: 20px; padding: 32px; position: relative; box-shadow: 0 10px 30px rgba(197, 160, 89, 0.08);">
         <div style="font-size: 36px; margin-bottom: 14px;"></div>
-        <span style="font-size: 11px; font-weight: 700; font-family: var(--mono); color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); padding: 4px 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px;" data-i18n="byos.c1.badge">INTEGRASI GOOGLE DRIVE PRIBADI</span>
-        <h3 style="font-family: var(--serif); font-size: 22px; color: #ffffff; margin-bottom: 12px;" data-i18n="byos.c1.h3">Google Drive Studio Milik Anda (Vendor Owner)</h3>
+        <span style="font-size: 11px; font-weight: 700; font-family: var(--mono); color: #8C6D23; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); padding: 4px 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px;" data-i18n="byos.c1.badge">INTEGRASI GOOGLE DRIVE PRIBADI</span>
+        <h3 style="font-family: var(--serif); font-size: 22px; color: #1C1917; margin-bottom: 12px; font-weight: 700;" data-i18n="byos.c1.h3">Google Drive Studio Milik Anda (Vendor Owner)</h3>
         <p style="font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px;" data-i18n="byos.c1.p">Hubungkan akun Gmail/Drive studio Anda dalam 1-Klik OAuth 2.0. Berkas foto fisik tersimpan utuh di Drive Anda tanpa beban sewa storage tambahan.</p>
-        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: #d4d4d8; display: flex; flex-direction: column; gap: 10px;">
-          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #34d399; font-weight: bold;">✓</span> <span data-i18n="byos.c1.li1">Hak Akses dan Kepemilikan Berkas Foto 100% Berada di Google Drive Anda</span></li>
-          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #34d399; font-weight: bold;">✓</span> <span data-i18n="byos.c1.li2">Otomatis Membentuk Folder Penampung Proyek di Google Drive Studio</span></li>
-          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #34d399; font-weight: bold;">✓</span> <span data-i18n="byos.c1.li3">Bebas Biaya Penyimpanan Tambahan ke Platform</span></li>
+        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: #292524; display: flex; flex-direction: column; gap: 10px;">
+          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #8C6D23; font-weight: bold;">✓</span> <span data-i18n="byos.c1.li1">Hak Akses dan Kepemilikan Berkas Foto 100% Berada di Google Drive Anda</span></li>
+          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #8C6D23; font-weight: bold;">✓</span> <span data-i18n="byos.c1.li2">Otomatis Membentuk Folder Penampung Proyek di Google Drive Studio</span></li>
+          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #8C6D23; font-weight: bold;">✓</span> <span data-i18n="byos.c1.li3">Gunakan Kapasitas Drive Sendiri (Tanpa Biaya Hosting Foto ke Platform)</span></li>
         </ul>
       </div>
 
       <!-- Card 2: Dedicated SaaS Cloud Storage -->
-      <div style="background: linear-gradient(145deg, rgba(99, 102, 241, 0.08), rgba(11, 9, 24, 0.8)); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 20px; padding: 32px; position: relative;">
+      <div style="background: #FFFDF9; border: 1.5px solid #C5A059; border-radius: 20px; padding: 32px; position: relative; box-shadow: 0 14px 40px rgba(197, 160, 89, 0.14);">
         
-        <span style="font-size: 11px; font-weight: 700; font-family: var(--mono); color: #818cf8; background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.4); padding: 4px 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px;" data-i18n="byos.c2.badge">DEDICATED CLOUD STORAGE</span>
-        <h3 style="font-family: var(--serif); font-size: 22px; color: #ffffff; margin-bottom: 12px;" data-i18n="byos.c2.h3">Penyimpanan Cloud Dedicated SaaS</h3>
+        <span style="font-size: 11px; font-weight: 700; font-family: var(--mono); color: #8C6D23; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); padding: 4px 12px; border-radius: 12px; display: inline-block; margin-bottom: 12px;" data-i18n="byos.c2.badge">DEDICATED CLOUD STORAGE</span>
+        <h3 style="font-family: var(--serif); font-size: 22px; color: #1C1917; margin-bottom: 12px; font-weight: 700;" data-i18n="byos.c2.h3">Penyimpanan Cloud Dedicated SaaS</h3>
         <p style="font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 20px;" data-i18n="byos.c2.p">Solusi praktis untuk studio yang membutuhkan kapasitas penyimpanan tambahan. Sewa Dedicated Cloud Storage berkecepatan tinggi dengan fitur akselerasi unggah hingga 10 jalur paralel.</p>
-        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: #d4d4d8; display: flex; flex-direction: column; gap: 10px;">
-          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #818cf8; font-weight: bold;">✓</span> <span data-i18n="byos.c2.li1">Pilihan Add-On Fleksibel 10 GB, 25 GB, hingga 50 GB</span></li>
-          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #818cf8; font-weight: bold;">✓</span> <span data-i18n="byos.c2.li2">Fitur Akselerasi Unggah Paralel hingga 10 Thread</span></li>
-          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #818cf8; font-weight: bold;">✓</span> <span data-i18n="byos.c2.li3">Dapat Digunakan Langsung Tanpa Pengaturan Otorisasi Tambahan</span></li>
+        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: #292524; display: flex; flex-direction: column; gap: 10px;">
+          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #8C6D23; font-weight: bold;">✓</span> <span data-i18n="byos.c2.li1">Pilihan Add-On Fleksibel 10 GB, 25 GB, hingga 50 GB</span></li>
+          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #8C6D23; font-weight: bold;">✓</span> <span data-i18n="byos.c2.li2">Fitur Akselerasi Unggah Paralel hingga 10 Thread</span></li>
+          <li style="display: flex; align-items: center; gap: 8px;"><span style="color: #8C6D23; font-weight: bold;">✓</span> <span data-i18n="byos.c2.li3">Dapat Digunakan Langsung Tanpa Pengaturan Otorisasi Tambahan</span></li>
         </ul>
       </div>
     </div>
@@ -1102,44 +1197,44 @@
     <div class="tier-grid reveal" id="landingTierGrid">
       <div class="tier">
         <div class="tier-name" data-i18n="pricing.t1.name">Starter Plan</div>
-        <div style="font-size: 22px; font-weight: 850; color: var(--brass-bright); margin-bottom: 4px;">Rp 49.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
+        <div style="font-size: 22px; font-weight: 850; color: var(--brass-dark); margin-bottom: 4px;">Rp 49.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
         <div class="tier-note" data-i18n="pricing.t1.note">Cocok untuk fotografer pemula / freelance</div>
         <ul>
           <li>✓ Maksimal 5 Project Aktif</li>
           <li>✓ Bebas Jumlah Foto per Proyek</li>
           <li>✓ Galeri Online &amp; Seleksi Foto Klien</li>
-          <li style="color: rgba(255,255,255,0.4);">• Logo Platform Standard</li>
-          <li style="color: rgba(255,255,255,0.4);">• Fitur RAW Selector Nonaktif</li>
+          <li style="color: var(--muted-dark);">• Logo Platform Standard</li>
+          <li style="color: var(--muted-dark);">• Fitur RAW Selector Nonaktif</li>
         </ul>
       </div>
       <div class="tier featured">
         <span class="tier-badge" data-i18n="pricing.badge">PALING DIPILIH</span>
         <div class="tier-name" data-i18n="pricing.t2.name">Pro Studio Plan</div>
-        <div style="font-size: 22px; font-weight: 850; color: #fbbf24; margin-bottom: 4px;">Rp 129.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
+        <div style="font-size: 22px; font-weight: 850; color: #8C6D23; margin-bottom: 4px;">Rp 129.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
         <div class="tier-note" data-i18n="pricing.t2.note">Untuk fotografer profesional &amp; tim studio</div>
         <ul>
           <li>✓ Maksimal 20 Project Aktif</li>
           <li>✓ Bebas Jumlah Foto per Proyek</li>
           <li>✓ Galeri Online &amp; Seleksi Foto Klien</li>
-          <li style="color: #34d399; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>
-          <li style="color: rgba(255,255,255,0.4);">• Fitur RAW Selector Nonaktif</li>
+          <li style="color: #8C6D23; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>
+          <li style="color: var(--muted-dark);">• Fitur RAW Selector Nonaktif</li>
         </ul>
       </div>
       <div class="tier">
         <div class="tier-name" data-i18n="pricing.t3.name">Business Studio Plan</div>
-        <div style="font-size: 22px; font-weight: 850; color: var(--brass-bright); margin-bottom: 4px;">Rp 249.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
+        <div style="font-size: 22px; font-weight: 850; color: var(--brass-dark); margin-bottom: 4px;">Rp 249.000 <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ 30 hari</span></div>
         <div class="tier-note" data-i18n="pricing.t3.note">Untuk studio besar &amp; vendor volume tinggi</div>
         <ul>
           <li>✓ Maksimal 60 Project Aktif</li>
           <li>✓ Bebas Jumlah Foto per Proyek</li>
           <li>✓ Galeri Online &amp; Seleksi Foto Klien</li>
-          <li style="color: #34d399; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>
-          <li style="color: #34d399; font-weight: bold;">✓ Fitur Auto-Sorter / Selector File RAW</li>
+          <li style="color: #8C6D23; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>
+          <li style="color: #8C6D23; font-weight: bold;">✓ Fitur Auto-Sorter / Selector File RAW</li>
         </ul>
       </div>
     </div>
     <div style="text-align: center; margin-top: 28px; font-size: 13.5px; color: var(--muted); font-family: var(--sans);" class="reveal">
-      <span style="background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.3); color: #34d399; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; font-family: var(--mono); margin-right: 8px;" data-i18n="pricing.addonBadge">Add-On Storage Ready</span>
+      <span style="background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); color: #8C6D23; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; font-family: var(--mono); margin-right: 8px;" data-i18n="pricing.addonBadge">Add-On Storage Ready</span>
       <span data-i18n="pricing.addonNote">Semua paket mendukung penambahan kapasitas Dedicated Cloud Storage kapan saja sesuai kebutuhan studio Anda.</span>
     </div>
   </section>
@@ -1151,13 +1246,13 @@
       <h2 data-i18n="about.h2">Tentang Pick Your Photo &amp; Google Sign-In</h2>
       <p data-i18n="about.p">Pick Your Photo adalah platform meja kerja seleksi foto interaktif yang dirancang khusus untuk studio foto dan fotografer profesional.</p>
     </div>
-    <div style="background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 32px; color: var(--paper-dim); font-size: 15px; line-height: 1.8;">
+    <div style="background: #FFFFFF; border: 1px solid var(--line); border-radius: 8px; padding: 32px; color: var(--muted); font-size: 15px; line-height: 1.8; box-shadow: 0 6px 24px rgba(197,160,89,0.08);">
       <p style="margin-bottom: 16px;">
-        <strong data-i18n="about.q1Title">Mengapa Kami Menggunakan Google Sign-In?</strong><br>
+        <strong style="color: #1C1917;" data-i18n="about.q1Title">Mengapa Kami Menggunakan Google Sign-In?</strong><br>
         <span data-i18n="about.q1Text">Kami mengintegrasikan Google Sign-In untuk memberikan kemudahan otentikasi 1-klik bagi para vendor studio foto tanpa perlu mengingat kata sandi baru. Data profil publik Anda (Nama dan Alamat Email) digunakan semata-mata untuk mengidentifikasi akun vendor Anda secara aman.</span>
       </p>
       <p style="margin-bottom: 0;">
-        <strong data-i18n="about.q2Title">Privasi &amp; Keamanan Foto di Google Drive</strong><br>
+        <strong style="color: #1C1917;" data-i18n="about.q2Title">Privasi &amp; Keamanan Foto di Google Drive</strong><br>
         <span data-i18n="about.q2Text">Dengan koneksi langsung ke Google Drive, foto yang Anda tunjukkan ke klien tidak pernah disimpan di server kami. Privasi dan hak cipta karya fotografi Anda tetap 100% aman di dalam Google Drive Anda sendiri.</span>
       </p>
     </div>
@@ -1175,14 +1270,60 @@
 </main>
 
 <footer>
-  <div class="wrap foot-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
-    <div class="logo"><span class="dot"></span>Pick Your Photo</div>
-    <div class="fnote" data-i18n="footer.tagline">GALERI SELEKSI FOTO &mdash; MEJA KERJA SEMENTARA UNTUK VENDOR PROFESIONAL</div>
-    <div style="display: flex; gap: 16px; font-size: 13px;">
-      <a href="/privacy" style="color: var(--brass-bright); text-decoration: underline;">Privacy Policy</a>
-      <a href="/terms" style="color: var(--brass-bright); text-decoration: underline;">Terms of Service</a>
+  <div class="wrap">
+    <div class="footer-grid">
+      <!-- Col 1: Brand & Bio -->
+      <div class="footer-brand">
+        <div class="logo"><span class="dot"></span>Pick Your Photo</div>
+        <p>Platform seleksi foto digital &amp; alur kerja cerdas untuk fotografer freelance, studio foto, dan agensi visual di Indonesia.</p>
+        <div class="footer-security-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Enkripsi SSL &amp; Gateway Terverifikasi
+        </div>
+      </div>
+
+      <!-- Col 2: Produk & Fitur -->
+      <div>
+        <div class="footer-col-title">Produk &amp; Fitur</div>
+        <ul class="footer-links">
+          <li><a href="#features">Galeri Seleksi Klien</a></li>
+          <li><a href="#features">RAW Auto-Sorter (Lightroom)</a></li>
+          <li><a href="#pricing">Dedicated Cloud Storage</a></li>
+          <li><a href="#pricing">Paket Berlangganan</a></li>
+          <li><a href="#trial-box">Uji Coba Gratis</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 3: Legalitas & Kebijakan -->
+      <div>
+        <div class="footer-col-title">Legalitas &amp; Kebijakan</div>
+        <ul class="footer-links">
+          <li><a href="/about">Tentang Kami</a></li>
+          <li><a href="/privacy">Kebijakan Privasi</a></li>
+          <li><a href="/terms">Syarat &amp; Ketentuan</a></li>
+          <li><a href="/refund">Kebijakan Refund &amp; Aktivasi</a></li>
+        </ul>
+      </div>
+
+      <!-- Col 4: Dukungan & Bantuan -->
+      <div>
+        <div class="footer-col-title">Pusat Bantuan</div>
+        <ul class="footer-links">
+          <li><a href="/contact">Hubungi Kami</a></li>
+          <li><span style="color: #A8A29E; font-size: 13px; display: block; line-height: 1.4;">Senin – Sabtu: 08:00 – 17:00 WIB</span></li>
+          <li style="margin-top: 4px;"><a href="/contact" style="color: var(--brass-bright); font-weight: 600;">Kirim Tiket Dukungan &rarr;</a></li>
+        </ul>
+      </div>
     </div>
-    <div class="fnote">&copy; 2026 Pick Your Photo</div>
+
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+      <div>&copy; 2026 Pick Your Photo. Hak Cipta Dilindungi Undang-Undang.</div>
+      <div class="fnote" data-i18n="footer.tagline">GALERI SELEKSI FOTO &mdash; MEJA KERJA SEMENTARA UNTUK VENDOR PROFESIONAL</div>
+    </div>
   </div>
 </footer>
 
@@ -1193,7 +1334,7 @@
 
 <div class="dev-watermark-popup" id="devWatermarkPopup" style="display: none;">
   <div style="display: flex; justify-content: space-between; align-items: center;">
-    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 700; font-family: var(--sans);">Developer Credit</span>
+    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8C6D23; font-weight: 700; font-family: var(--sans);">Developer Credit</span>
     <div class="dev-watermark-status">
       <span class="dev-watermark-dot"></span>
       <span>Active Release</span>
@@ -1201,26 +1342,26 @@
   </div>
   <div>
     <img src="/ams-logo.png" alt="AMS Logo" style="height: 36px; object-fit: contain; margin-bottom: 8px; display: block;" />
-    <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.4; font-family: var(--sans);">
+    <p style="margin: 0; font-size: 12px; color: #57534E; line-height: 1.4; font-family: var(--sans);">
       Designed, built, and optimized with Next.js, Prisma, and custom styling.
     </p>
   </div>
-  <div style="border-top: 1px solid rgba(0,0,0,0.06); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: var(--sans);">
-    <span style="color: #64748b;">System Version</span>
-    <strong style="color: #1e293b;">v1.0.0</strong>
+  <div style="border-top: 1px solid var(--line); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: var(--sans);">
+    <span style="color: #78716C;">System Version</span>
+    <strong style="color: #8C6D23;">v1.0.0</strong>
   </div>
   <div style="display: flex; gap: 8px; margin-top: 4px;">
     <a 
       href="https://github.com/armansyam"
       target="_blank" 
       rel="noopener noreferrer"
-      style="flex: 1; text-align: center; background: #6366F1; color: white; padding: 8px 0; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2); font-family: var(--sans);"
+      style="flex: 1; text-align: center; background: linear-gradient(135deg, #C5A059, #996515); color: white; padding: 8px 0; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(197, 160, 89, 0.3); font-family: var(--sans);"
     >
       GitHub Profile
     </a>
     <button 
       id="devWatermarkClose"
-      style="padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; color: #64748b; font-size: 12px; cursor: pointer; font-weight: 600; font-family: var(--sans);"
+      style="padding: 8px 12px; border: 1px solid rgba(197, 160, 89, 0.35); border-radius: 8px; background: white; color: #57534E; font-size: 12px; cursor: pointer; font-weight: 600; font-family: var(--sans);"
     >
       Tutup
     </button>
@@ -1233,25 +1374,25 @@
   const grid = document.getElementById('csGrid');
   const columns = [
     {photos:[
-      {name:'DSC_0412.jpg',ratio:'3/4',selected:false,f1:'#3d3a6b',f2:'#181530'},
-      {name:'DSC_0418.jpg',ratio:'4/3',selected:true, f1:'#33406b',f2:'#141a2e'},
-      {name:'DSC_0421.jpg',ratio:'3/4',selected:true, f1:'#4a3768',f2:'#1c1530'},
-      {name:'DSC_0480.jpg',ratio:'1/1',selected:false,f1:'#3a4570',f2:'#161d30'},
-      {name:'DSC_0495.jpg',ratio:'3/4',selected:true, f1:'#453d72',f2:'#1a1632'},
+      {name:'DSC_0412.jpg',ratio:'3/4',selected:false,f1:'#F4ECE1',f2:'#E8DEC8'},
+      {name:'DSC_0418.jpg',ratio:'4/3',selected:true, f1:'#FAF1E3',f2:'#ECE0CC'},
+      {name:'DSC_0421.jpg',ratio:'3/4',selected:true, f1:'#F6EDE0',f2:'#E6D9C3'},
+      {name:'DSC_0480.jpg',ratio:'1/1',selected:false,f1:'#F1E8DC',f2:'#E4D7C5'},
+      {name:'DSC_0495.jpg',ratio:'3/4',selected:true, f1:'#F8F0E4',f2:'#E9DECB'},
     ]},
     {photos:[
-      {name:'DSC_0430.jpg',ratio:'4/3',selected:false,f1:'#38366a',f2:'#15132a'},
-      {name:'DSC_0439.jpg',ratio:'3/4',selected:true, f1:'#43407a',f2:'#181630'},
-      {name:'DSC_0447.jpg',ratio:'3/4',selected:true, f1:'#354276',f2:'#141a32'},
-      {name:'DSC_0501.jpg',ratio:'4/3',selected:false,f1:'#3c3870',f2:'#17142e'},
-      {name:'DSC_0510.jpg',ratio:'3/4',selected:true, f1:'#4d3f76',f2:'#1d1832'},
+      {name:'DSC_0430.jpg',ratio:'4/3',selected:false,f1:'#F3EAE0',f2:'#E5D8CA'},
+      {name:'DSC_0439.jpg',ratio:'3/4',selected:true, f1:'#FAF2E6',f2:'#ECE2D0'},
+      {name:'DSC_0447.jpg',ratio:'3/4',selected:true, f1:'#F2E7DA',f2:'#E3D5C4'},
+      {name:'DSC_0501.jpg',ratio:'4/3',selected:false,f1:'#F5EEE2',f2:'#E7DCcb'},
+      {name:'DSC_0510.jpg',ratio:'3/4',selected:true, f1:'#F7F0E5',f2:'#EAE0CF'},
     ]},
     {photos:[
-      {name:'DSC_0452.jpg',ratio:'3/4',selected:false,f1:'#3e3a6e',f2:'#171532'},
-      {name:'DSC_0461.jpg',ratio:'4/3',selected:true, f1:'#4a3c74',f2:'#1c1730'},
-      {name:'DSC_0470.jpg',ratio:'3/4',selected:true, f1:'#37396e',f2:'#151530'},
-      {name:'DSC_0520.jpg',ratio:'1/1',selected:false,f1:'#3b4272',f2:'#161a30'},
-      {name:'DSC_0535.jpg',ratio:'3/4',selected:true, f1:'#463e74',f2:'#1b1630'},
+      {name:'DSC_0452.jpg',ratio:'3/4',selected:false,f1:'#F4ECE1',f2:'#E6DBCA'},
+      {name:'DSC_0461.jpg',ratio:'4/3',selected:true, f1:'#F9F2E7',f2:'#ECE3D2'},
+      {name:'DSC_0470.jpg',ratio:'3/4',selected:true, f1:'#F1E6D8',f2:'#E2D4C2'},
+      {name:'DSC_0520.jpg',ratio:'1/1',selected:false,f1:'#F5ECE0',f2:'#E7DDCD'},
+      {name:'DSC_0535.jpg',ratio:'3/4',selected:true, f1:'#FAF3E8',f2:'#EDE4D4'},
     ]}
   ];
   columns.forEach(function(col){
@@ -1341,13 +1482,13 @@
         "timeline.step3.tag": "1-klik sortir raw · 100% lokal",
         "byos.eyebrow": "INTEGRASI CLOUD STORAGE",
         "byos.h2": "Penyimpanan Berkas Foto di Google Drive Pribadi atau Dedicated Cloud Storage",
-        "byos.p": "Platform memberikan fleksibilitas penuh untuk menyimpan berkas foto secara gratis menggunakan akun Google Drive pribadi Anda, atau memanfaatkan Dedicated Cloud Storage berkecepatan tinggi dari platform.",
+        "byos.p": "Platform memberikan fleksibilitas penuh untuk menyimpan berkas foto menggunakan akun Google Drive pribadi Anda, atau menyewa Dedicated Cloud Storage berkecepatan tinggi dari platform.",
         "byos.c1.badge": "INTEGRASI GOOGLE DRIVE PRIBADI",
         "byos.c1.h3": "Google Drive Studio Milik Anda (Vendor Owner)",
         "byos.c1.p": "Hubungkan akun Gmail/Drive studio Anda dalam 1-Klik OAuth 2.0. Berkas foto fisik tersimpan utuh di Drive Anda tanpa beban sewa storage tambahan.",
         "byos.c1.li1": "Hak Akses dan Kepemilikan Berkas Foto 100% Berada di Google Drive Anda",
         "byos.c1.li2": "Otomatis Membentuk Folder Penampung Proyek di Google Drive Studio",
-        "byos.c1.li3": "Bebas Biaya Penyimpanan Tambahan ke Platform",
+        "byos.c1.li3": "Gunakan Kapasitas Drive Sendiri (Tanpa Biaya Hosting Foto ke Platform)",
         "byos.c2.badge": "DEDICATED CLOUD STORAGE",
         "byos.c2.h3": "Penyimpanan Cloud Dedicated SaaS",
         "byos.c2.p": "Solusi praktis untuk studio yang membutuhkan kapasitas penyimpanan tambahan. Sewa Dedicated Cloud Storage berkecepatan tinggi dengan fitur akselerasi unggah hingga 10 jalur paralel.",
@@ -1481,13 +1622,13 @@
         "timeline.step3.tag": "1-click raw sorter · 100% local",
         "byos.eyebrow": "CLOUD STORAGE INTEGRATION",
         "byos.h2": "Photo Storage on Personal Google Drive or Dedicated Cloud Storage",
-        "byos.p": "The platform offers complete flexibility to store photo files for free using your personal Google Drive account, or utilize high-speed Dedicated Cloud Storage provided by the platform.",
+        "byos.p": "The platform offers complete flexibility to store photo files using your personal Google Drive account, or utilize high-speed Dedicated Cloud Storage provided by the platform.",
         "byos.c1.badge": "PERSONAL GOOGLE DRIVE INTEGRATION",
         "byos.c1.h3": "Your Studio Google Drive (Vendor Owner)",
         "byos.c1.p": "Connect your studio Gmail/Drive account in 1-Click OAuth 2.0. Original physical photo files stay intact in your Drive without extra storage fees.",
         "byos.c1.li1": "100% File Ownership & Access Rights Stay in Your Google Drive",
         "byos.c1.li2": "Automatically Creates a Project Container Folder in Your Studio Drive",
-        "byos.c1.li3": "No Additional Storage Fees Charged by the Platform",
+        "byos.c1.li3": "Utilize Your Own Drive Storage (No Extra Hosting Fees Charged by Platform)",
         "byos.c2.badge": "DEDICATED CLOUD STORAGE",
         "byos.c2.h3": "Dedicated SaaS Cloud Storage",
         "byos.c2.p": "A practical solution for studios requiring extra storage capacity. Rent high-speed Dedicated Cloud Storage with up to 10 parallel upload threads.",
@@ -1598,11 +1739,11 @@
       var gdriveText = isEn ? 'Direct Google Drive Integration' : 'Integrasi Langsung Google Drive';
 
       var logoTextHtml = p.allowCustomLogo 
-        ? '<li style="color: #818cf8; font-weight: bold;">' + (isEn ? '✓ Custom Studio Logo (White-Label)' : '✓ Custom Logo Studio (White-Label)') + '</li>'
+        ? '<li style="color: #8C6D23; font-weight: bold;">' + (isEn ? '✓ Custom Studio Logo (White-Label)' : '✓ Custom Logo Studio (White-Label)') + '</li>'
         : '<li style="color: var(--muted-dark);">' + (isEn ? '• Default Platform Logo' : '• Logo Default Platform') + '</li>';
 
       var rawTextHtml = p.allowRawSelector
-        ? '<li style="color: #10b981; font-weight: bold;">' + (isEn ? '✓ 1-Click RAW File Auto-Sorter' : '✓ Fitur Auto-Sorter / Selector File RAW') + '</li>'
+        ? '<li style="color: #8C6D23; font-weight: bold;">' + (isEn ? '✓ 1-Click RAW File Auto-Sorter' : '✓ Fitur Auto-Sorter / Selector File RAW') + '</li>'
         : '<li style="color: var(--muted-dark);">' + (isEn ? '• RAW Selector Feature Disabled' : '• Fitur RAW Selector Nonaktif') + '</li>';
 
       var badgeText = isDiscounted
@@ -1616,7 +1757,7 @@
       return '<div class="tier ' + (isFeatured ? 'featured' : '') + '">' +
         (badgeText ? '<span class="tier-badge" ' + (isDiscounted ? 'style="background: linear-gradient(135deg, #ef4444, #dc2626);"' : '') + '>' + badgeText + '</span>' : '') +
         '<div class="tier-name">' + p.name + '</div>' +
-        '<div style="font-size: 22px; font-weight: 850; color: ' + (isFeatured ? '#fbbf24' : 'var(--brass-bright)') + '; margin-bottom: 4px;">' + priceFormatted + ' <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ ' + period + (isEn ? ' days' : ' hari') + '</span></div>' +
+        '<div style="font-size: 22px; font-weight: 850; color: ' + (isFeatured ? '#8C6D23' : 'var(--brass-dark)') + '; margin-bottom: 4px;">' + priceFormatted + ' <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ ' + period + (isEn ? ' days' : ' hari') + '</span></div>' +
         '<div class="tier-note">' + noteText + '</div>' +
         '<ul>' +
           '<li>' + maxProjectsText + '</li>' +
@@ -1678,11 +1819,11 @@
               if (heroCta) {
                 if (data.enableFreeTrial !== false) {
                   heroCta.href = '#trial-box';
-                  heroCta.style.background = 'linear-gradient(135deg, #6366f1, #9333ea)';
+                  heroCta.style.background = 'linear-gradient(135deg, #C5A059, #996515)';
                   heroCta.innerHTML = 'Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;';
                 } else {
                   heroCta.href = '#pricing';
-                  heroCta.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+                  heroCta.style.background = 'linear-gradient(135deg, #C5A059, #8C6D23)';
                   heroCta.innerHTML = 'Lihat Paket Berlangganan &rarr;';
                 }
               }
@@ -1701,11 +1842,11 @@
         if (heroCta) {
           if (data.enableFreeTrial !== false && !flashPromo.active) {
             heroCta.href = '#trial-box';
-            heroCta.style.background = 'linear-gradient(135deg, #6366f1, #9333ea)';
+            heroCta.style.background = 'linear-gradient(135deg, #C5A059, #996515)';
             heroCta.innerHTML = 'Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;';
           } else {
             heroCta.href = '#pricing';
-            heroCta.style.background = 'linear-gradient(135deg, #6366f1, #4f46e5)';
+            heroCta.style.background = 'linear-gradient(135deg, #C5A059, #8C6D23)';
             heroCta.innerHTML = 'Lihat Paket Berlangganan &rarr;';
           }
         }

@@ -1,0 +1,96 @@
+{
+  "dbReads": {
+    "total": 1000,
+    "successes": 1000,
+    "durationMs": "1.85",
+    "qps": 541406,
+    "avgLatencyMs": "0.0018",
+    "memoryDeltaKb": -681
+  },
+  "dbWrites": {
+    "total": 100,
+    "successes": 100,
+    "durationMs": "1.35",
+    "qps": 74244,
+    "avgLatencyMs": "0.0135"
+  },
+  "jwtSpeed": {
+    "total": 10000,
+    "validCount": 10000,
+    "durationMs": "389.37",
+    "opsPerSec": 25682,
+    "avgLatencyUs": "38.94"
+  },
+  "rateLimitStress": {
+    "total": 100000,
+    "allowedCount": 5000,
+    "blockedCount": 95000,
+    "durationMs": "18.93",
+    "checksPerSec": 5283748,
+    "heapDeltaKb": -201
+  },
+  "webhookVerifications": [
+    {
+      "provider": "Midtrans",
+      "test": "Valid Signature",
+      "passed": true
+    },
+    {
+      "provider": "Midtrans",
+      "test": "Tampered Amount Rejected",
+      "passed": true
+    },
+    {
+      "provider": "Tripay",
+      "test": "Valid HMAC-SHA256",
+      "passed": true
+    },
+    {
+      "provider": "Tripay",
+      "test": "Tampered Signature Rejected",
+      "passed": true
+    },
+    {
+      "provider": "Duitku",
+      "test": "Valid MD5 Checksum",
+      "passed": false
+    },
+    {
+      "provider": "iPaymu",
+      "test": "Valid HMAC-SHA256 Signature",
+      "passed": false
+    }
+  ],
+  "missingDataEdgeCases": [
+    {
+      "case": "Query Non-Existent Vendor ID",
+      "behavior": "HANDLED_SAFELY_NULL",
+      "safe": true
+    },
+    {
+      "case": "Non-Existent Client Access Key Verification",
+      "behavior": "HANDLED_SAFELY_NULL",
+      "safe": true
+    },
+    {
+      "case": "Empty Project Photos Array Handling",
+      "behavior": "HANDLED_SAFELY_EMPTY_SET",
+      "safe": true
+    },
+    {
+      "case": "Storage Bytes Math Underflow Protection (MAX(0, x-y))",
+      "behavior": "PROTECTED_ZERO_CLAMP",
+      "safe": true
+    }
+  ],
+  "securityTamperTests": [],
+  "memoryProfile": {
+    "rssMb": "68.09",
+    "heapTotalMb": "11.98",
+    "heapUsedMb": "8.90",
+    "externalMb": "2.09",
+    "nodeVersion": "v24.16.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  }
+}

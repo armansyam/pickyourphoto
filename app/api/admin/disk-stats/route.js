@@ -81,18 +81,18 @@ export async function GET() {
         const warnThr = settings.disk_warning_threshold_percent;
         const critThr = settings.disk_critical_threshold_percent;
 
-        // Path Staging Foto
-        const defaultStagingPath = path.join(process.cwd(), 'public', 'staging_uploads');
-        const stagingPath = process.env.STAGING_STORAGE_PATH || (fs.existsSync(defaultStagingPath) ? defaultStagingPath : process.cwd());
+        // Path Private Storage
+        const defaultPrivatePath = path.join(process.cwd(), 'data', 'private_storage');
+        const privateStoragePath = fs.existsSync(defaultPrivatePath) ? defaultPrivatePath : path.join(process.cwd(), 'data');
 
         // Path Database & System
         const defaultDbPath = path.join(process.cwd(), 'data');
         const dbPath = process.env.DB_STORAGE_PATH || (fs.existsSync(defaultDbPath) ? defaultDbPath : process.cwd());
 
-        const stagingStats = await getVolumeStats(stagingPath, warnThr, critThr);
+        const stagingStats = await getVolumeStats(privateStoragePath, warnThr, critThr);
         const systemStats = await getVolumeStats(dbPath, warnThr, critThr);
 
-        const folderSizeBytes = getFolderSizeBytes(defaultStagingPath);
+        const folderSizeBytes = getFolderSizeBytes(defaultPrivatePath);
         const folderSizeMB = (folderSizeBytes / (1024 * 1024)).toFixed(2);
 
         // SQLite DB File Size

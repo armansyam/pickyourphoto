@@ -29,6 +29,8 @@ public/staging_uploads/
 public/vendor_logos/
 public/staging_uploads/*
 public/vendor_logos/*
+data/private_storage/
+data/private_storage/*
 
 # Operating System files
 .DS_Store

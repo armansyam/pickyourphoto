@@ -152,12 +152,6 @@ export async function POST(request) {
         const insertClient = db.prepare('INSERT INTO clients (email, projectId, accessKey, clientPhone) VALUES (?, ?, ?, ?)');
         insertClient.run('client@example.com', projectId, clientAccessKey, clientPhone || '');
 
-        // 3. Create public upload directory for the project using structured paths
-        const uploadDir = path.join(process.cwd(), 'public', 'staging_uploads', `vendor_${vendor.id}`, `project_${projectId}_${slug}`);
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
         // Start background processing (un-awaited)
         processImagesInBackground(projectId, folderId).catch(err => {
             console.error(`Background processing failed for project ${projectId}:`, err);

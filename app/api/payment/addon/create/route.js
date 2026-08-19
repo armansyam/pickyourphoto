@@ -112,12 +112,12 @@ export async function POST(req) {
       let transferProofPath = 'Manual Bank Transfer';
       if (paymentProofFile && typeof paymentProofFile.arrayBuffer === 'function') {
         const buffer = Buffer.from(await paymentProofFile.arrayBuffer());
-        const proofDir = path.join(process.cwd(), 'public', 'staging_uploads', 'payment_proofs');
+        const proofDir = path.join(process.cwd(), 'data', 'private_storage', 'proofs');
         if (!fs.existsSync(proofDir)) fs.mkdirSync(proofDir, { recursive: true });
         const ext = path.extname(paymentProofFile.name || 'proof.jpg') || '.jpg';
         const filename = `addon_${vendor.id}_${Date.now()}${ext}`;
         fs.writeFileSync(path.join(proofDir, filename), buffer);
-        transferProofPath = `/staging_uploads/payment_proofs/${filename}`;
+        transferProofPath = `/api/admin/proofs/${filename}`;
       }
 
       // Simpan permohonan Add-On Storage ke subscription_requests & update pending flags di vendors

@@ -130,8 +130,8 @@ export async function POST(request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Setup uploads folder
-        const uploadDir = path.join(process.cwd(), 'public', 'staging_uploads', 'payment_proofs');
+        // Setup private storage folder
+        const uploadDir = path.join(process.cwd(), 'data', 'private_storage', 'proofs');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -140,7 +140,7 @@ export async function POST(request) {
         const fileName = `proof_${vendor.id}_${Date.now()}${ext}`;
         const filePath = path.join(uploadDir, fileName);
         fs.writeFileSync(filePath, buffer);
-        const webPath = `/staging_uploads/payment_proofs/${fileName}`;
+        const webPath = `/api/admin/proofs/${fileName}`;
 
         const addonPlanId = formData.get('addonPlanId');
         let addonQuotaBytes = 0;

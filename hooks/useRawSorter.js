@@ -1,9 +1,8 @@
-"use client";
-
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 /**
  * useRawSorter — Client-side RAW file sorter using File System Access API
+ * and Magic-Sort 1-Click Script Generator for macOS (.command) and Windows (.bat).
  * 
  * Matches selected photo names (from the API) against files in a local folder,
  * then copies or moves matching RAW files to a destination folder.
@@ -19,7 +18,15 @@ export default function useRawSorter() {
     const [logs, setLogs] = useState([]);
     const [progress, setProgress] = useState({ current: 0, total: 0 });
     const [summary, setSummary] = useState(null);
+    const [isSupported, setIsSupported] = useState(true);
     const abortRef = useRef(null);
+
+    // Check browser compatibility on client mount to avoid Next.js SSR hydration false
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            setIsSupported(typeof window.showDirectoryPicker === 'function');
+        }
+    }, []);
 
     // Emit a log entry with timestamp
     const emitLog = useCallback((type, message, file = '') => {
@@ -31,6 +38,10 @@ export default function useRawSorter() {
     // Pick source folder (where RAW files live)
     const pickSourceFolder = useCallback(async () => {
         try {
+            if (typeof window === 'undefined' || typeof window.showDirectoryPicker !== 'function') {
+                alert('Browser Anda (Brave/Safari/Firefox) membatasi akses folder langsung dari web demi privasi.\n\nSilakan gunakan opsi Magic-Sort di bawah atau gunakan Google Chrome / Microsoft Edge.');
+                return null;
+            }
             const handle = await window.showDirectoryPicker({ mode: 'read' });
             setSourceHandle(handle);
             setSourceName(handle.name);
@@ -44,6 +55,10 @@ export default function useRawSorter() {
     // Pick destination folder (where matched files will be copied/moved to)
     const pickDestFolder = useCallback(async () => {
         try {
+            if (typeof window === 'undefined' || typeof window.showDirectoryPicker !== 'function') {
+                alert('Browser Anda (Brave/Safari/Firefox) membatasi akses folder langsung dari web demi privasi.\n\nSilakan gunakan opsi Magic-Sort di bawah atau gunakan Google Chrome / Microsoft Edge.');
+                return null;
+            }
             const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
             setDestHandle(handle);
             setDestName(handle.name);
@@ -64,8 +79,6 @@ export default function useRawSorter() {
                     const name = entry.name;
                     const dotIndex = name.lastIndexOf('.');
                     const baseName = (dotIndex > 0 ? name.substring(0, dotIndex) : name).toLowerCase();
-                    // If multiple files share the same base name, keep all of them 
-                    // (e.g. DSC_0201.ARW and DSC_0201.CR2)
                     if (!fileMap.has(baseName)) {
                         fileMap.set(baseName, { handle: entry, fullName: name });
                     }
@@ -85,7 +98,6 @@ export default function useRawSorter() {
         const destFileHandle = await destDirHandle.getFileHandle(destFileName, { create: true });
         const writable = await destFileHandle.createWritable();
         
-        // Stream the file for memory efficiency with large RAW files
         const reader = file.stream().getReader();
         try {
             while (true) {
@@ -105,7 +117,6 @@ export default function useRawSorter() {
             return;
         }
 
-        // Create abort controller
         const controller = new AbortController();
         abortRef.current = controller;
 
@@ -127,19 +138,15 @@ export default function useRawSorter() {
         const errorFiles = [];
 
         try {
-            // Step 1: Scan source folder
             const fileMap = await scanFolder(sourceHandle);
             emitLog('info', `Ditemukan ${fileMap.size} file di folder sumber.`);
 
-            // Step 2: Loop through selected file names
             for (let i = 0; i < fileNames.length; i++) {
-                // Check abort
                 if (controller.signal.aborted) {
                     emitLog('warning', 'Proses dibatalkan oleh pengguna.');
                     break;
                 }
 
-                // Check trial limit
                 if (successCount >= maxFiles) {
                     trialLimited = true;
                     emitLog('trial-limit', `Batas ${maxFiles} file trial tercapai. Upgrade untuk sortir semua.`);
@@ -150,21 +157,17 @@ export default function useRawSorter() {
                 const dotIndex = fileName.lastIndexOf('.');
                 const baseName = (dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName).toLowerCase();
 
-                // Lookup in file map (case-insensitive by base name)
                 const match = fileMap.get(baseName);
 
                 if (match) {
                     try {
-                        // Copy file to destination
                         await copyFile(match.handle, destHandle, match.fullName);
 
-                        // If mode is 'move', remove source after successful copy
                         if (mode === 'move') {
                             try {
                                 await match.handle.remove();
                                 emitLog('success', `${match.fullName} ✓ dipindahkan`, match.fullName);
                             } catch (removeErr) {
-                                // Copy succeeded but remove failed — not critical
                                 emitLog('warning', `${match.fullName} ✓ disalin (gagal hapus sumber)`, match.fullName);
                             }
                         } else {
@@ -185,7 +188,6 @@ export default function useRawSorter() {
                 setProgress({ current: i + 1, total: fileNames.length });
             }
 
-            // Step 3: Summary
             const skippedByTrial = trialLimited ? (fileNames.length - successCount - notFoundCount - errorCount) : 0;
             
             const summaryData = {
@@ -233,7 +235,6 @@ export default function useRawSorter() {
         setLogs([]);
         setProgress({ current: 0, total: 0 });
         setSummary(null);
-        // Keep folder handles so user doesn't have to re-pick
     }, []);
 
     // Full reset including folder handles
@@ -245,8 +246,169 @@ export default function useRawSorter() {
         setDestName('');
     }, [reset]);
 
-    // Check if browser supports File System Access API
-    const isSupported = typeof window !== 'undefined' && 'showDirectoryPicker' in window;
+    // Download Magic-Sort Script for macOS (.command) or Windows (.bat)
+    const downloadMagicScript = useCallback((fileNames, projectName = 'Galeri Foto', osType = 'mac', mode = 'copy') => {
+        if (!fileNames || fileNames.length === 0) return;
+
+        const cleanProjectName = (projectName || 'PickYourPhoto').replace(/[^a-zA-Z0-9_\-]/g, '_');
+        const isMove = mode === 'move';
+
+        if (osType === 'mac') {
+            const filesList = fileNames.map(f => {
+                const dot = f.lastIndexOf('.');
+                const base = dot > 0 ? f.substring(0, dot) : f;
+                return `  "${base}"`;
+            }).join('\n');
+
+            const content = `#!/bin/bash
+# ==========================================================
+# 🚀 PICK YOUR PHOTO — MAGIC RAW SORTER (macOS)
+# Project: ${projectName}
+# Total Target: ${fileNames.length} File (${isMove ? 'Mode: Pindah/Move' : 'Mode: Salin/Copy'})
+# ==========================================================
+
+cd "$(dirname "$0")"
+TARGET_DIR="FOTO_TERPILIH_KLIEN"
+mkdir -p "$TARGET_DIR"
+clear
+
+echo "=========================================================="
+echo "  🚀 PICK YOUR PHOTO — MAGIC RAW SORTER (macOS)"
+echo "  Project: ${projectName}"
+echo "  Mode: ${isMove ? 'Pindah (Move)' : 'Salin (Copy)'}"
+echo "  Target Folder: $TARGET_DIR"
+echo "=========================================================="
+echo "  Memproses sortir ${fileNames.length} foto terpilih (semua format)..."
+echo "----------------------------------------------------------"
+
+FILES=(
+${filesList}
+)
+
+SUCCESS=0
+NOT_FOUND=0
+
+# Enable nullglob & case-insensitive matching if available
+shopt -s nullglob nocaseglob 2>/dev/null
+
+for base in "\${FILES[@]}"; do
+  MATCHED=0
+  for f in "$base".* ; do
+    if [ -f "$f" ]; then
+      EXT="\${f##*.}"
+      # Skip script files and target folder
+      if [[ "$EXT" =~ ^(command|bat|sh|txt)$ ]]; then
+        continue
+      fi
+      ${isMove ? 'mv "$f" "$TARGET_DIR/" 2>/dev/null' : 'cp -n "$f" "$TARGET_DIR/" 2>/dev/null'}
+      if [ $? -eq 0 ]; then
+        echo "  [✓] ${isMove ? 'Dipindahkan' : 'Disalin'}: $f"
+        MATCHED=1
+      fi
+    fi
+  done
+
+  if [ $MATCHED -eq 1 ]; then
+    ((SUCCESS++))
+  else
+    echo "  [?] Tidak ditemukan: $base.*"
+    ((NOT_FOUND++))
+  fi
+done
+
+echo "----------------------------------------------------------"
+echo "  ✨ SELESAI!"
+echo "  Total Berhasil Disortir: $SUCCESS dari ${fileNames.length} foto"
+if [ $NOT_FOUND -gt 0 ]; then
+  echo "  ⚠️  Tidak Ditemukan: $NOT_FOUND foto"
+fi
+echo "  Folder Tujuan: $(pwd)/$TARGET_DIR"
+echo "=========================================================="
+echo "  Tekan sembarang tombol untuk keluar..."
+read -n 1 -s
+`;
+            const blob = new Blob([content], { type: 'application/x-sh;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `magic_sort_${cleanProjectName}_mac.command`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } else {
+            // Windows .bat
+            const callsList = fileNames.map(f => {
+                const dot = f.lastIndexOf('.');
+                const base = dot > 0 ? f.substring(0, dot) : f;
+                return `call :ProcessFile "${base}"`;
+            }).join('\r\n');
+
+            const content = `@echo off
+setlocal enabledelayedexpansion
+chcp 65001 >nul
+cd /d "%~dp0"
+set "TARGET_DIR=FOTO_TERPILIH_KLIEN"
+if not exist "%TARGET_DIR%" mkdir "%TARGET_DIR%"
+cls
+echo ==========================================================
+echo   🚀 PICK YOUR PHOTO — MAGIC RAW SORTER (Windows)
+echo   Project: ${projectName}
+echo   Mode: ${isMove ? 'Pindah (Move)' : 'Salin (Copy)'}
+echo   Target Folder: %TARGET_DIR%
+echo ==========================================================
+echo   Memproses sortir ${fileNames.length} foto terpilih (semua format)...
+echo ----------------------------------------------------------
+
+set "SUCCESS=0"
+set "NOT_FOUND=0"
+
+${callsList}
+
+goto :Done
+
+:ProcessFile
+set "BASE=%~1"
+set "MATCHED=0"
+for %%F in ("%BASE%.*") do (
+  if /i not "%%~xF"==".bat" if /i not "%%~xF"==".command" if /i not "%%~xF"==".txt" (
+    ${isMove ? 'move /Y "%%F" "%TARGET_DIR%\\" >nul 2>&1' : 'copy "%%F" "%TARGET_DIR%\\" /Y >nul 2>&1'}
+    echo   [✓] ${isMove ? 'Dipindahkan' : 'Disalin'}: %%~nxF
+    set "MATCHED=1"
+  )
+)
+
+if "!MATCHED!"=="1" (
+  set /a SUCCESS+=1
+) else (
+  echo   [?] Tidak ditemukan: %BASE%.*
+  set /a NOT_FOUND+=1
+)
+exit /b
+
+:Done
+echo ----------------------------------------------------------
+echo   ✨ SELESAI!
+echo   Total Berhasil Disortir: !SUCCESS! dari ${fileNames.length} foto
+if !NOT_FOUND! GTR 0 (
+  echo   ⚠️  Tidak Ditemukan: !NOT_FOUND! foto
+)
+echo   Folder Tujuan: %~dp0%TARGET_DIR%
+echo ==========================================================
+echo   Tekan sembarang tombol untuk keluar...
+pause >nul
+`;
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `magic_sort_${cleanProjectName}_windows.bat`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    }, []);
 
     return {
         // State
@@ -268,5 +430,6 @@ export default function useRawSorter() {
         abort,
         reset,
         fullReset,
+        downloadMagicScript,
     };
 }

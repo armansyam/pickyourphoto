@@ -112,7 +112,7 @@ export async function GET() {
 
         // Calculate folder size and file count of static assets (vendor_logos & payment_proofs)
         const logosDir = path.join(process.cwd(), 'public', 'vendor_logos');
-        const proofsDir = path.join(process.cwd(), 'public', 'staging_uploads', 'payment_proofs');
+        const proofsDir = path.join(process.cwd(), 'data', 'private_storage', 'proofs');
 
         function getFolderStats(dirPath) {
             if (!fs.existsSync(dirPath)) return { bytes: 0, count: 0 };

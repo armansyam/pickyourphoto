@@ -10,10 +10,8 @@ services:
       - JWT_SECRET=${JWT_SECRET}
 
     volumes:
-      # Database & System Data Path (Default: ./data)
+      # Database & Private Data Path (Default: ./data)
       - ${DB_PATH:-./data}:/app/data
-      # Staging Photos Path (Default: ./public/staging_uploads)
-      - ${STAGING_PATH:-./public/staging_uploads}:/app/public/staging_uploads
       # Vendor Logos Path (Default: ./public/vendor_logos)
       - ${LOGOS_PATH:-./public/vendor_logos}:/app/public/vendor_logos
     restart: always

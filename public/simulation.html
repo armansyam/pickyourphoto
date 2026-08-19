@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulasi Sistem Pick Your Photo — Alur Vendor-Klien & Ekosistem Vendor-Platform</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,450;1,9..144,600&family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAF8F5;
+    --card: #FFFFFF;
+    --card-surface: #FBF9F5;
+    --paper: #1C1917;
+    --muted: #57534E;
+    --muted-dark: #8C827A;
+    --brass: #C5A059;
+    --brass-bright: #D4AF37;
+    --brass-dark: #8C6D23;
+    --line: rgba(197, 160, 89, 0.28);
+    --shadow-gold: 0 20px 50px rgba(197, 160, 89, 0.14), 0 4px 14px rgba(0, 0, 0, 0.04);
+    --font-serif: "Fraunces", Georgia, serif;
+    --font-sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: "IBM Plex Mono", monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: radial-gradient(90% 50% at 50% 0%, rgba(197,160,89,0.12), transparent 60%), radial-gradient(60% 40% at 85% 15%, rgba(212,175,55,0.06), transparent 60%), var(--bg);
+    color: var(--paper);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    padding: 36px 20px 100px;
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1120px;
+    margin: 0 auto;
+  }
+
+  .back-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    margin-bottom: 24px;
+    transition: color 0.2s;
+  }
+  .back-nav:hover {
+    color: var(--brass-dark);
+  }
+
+  /* Section Header */
+  .section-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .section-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--brass-dark);
+    font-weight: 700;
+    background: rgba(197, 160, 89, 0.15);
+    border: 1px solid rgba(197, 160, 89, 0.4);
+    padding: 6px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: clamp(26px, 3.6vw, 38px);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    color: var(--paper);
+  }
+  .section-title em {
+    font-style: italic;
+    color: var(--brass-dark);
+  }
+  .section-desc {
+    font-size: 14.5px;
+    color: var(--muted);
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  /* Mac Window Canvas Frame */
+  .mac-window {
+    background: #FFFFFF;
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 20px 50px rgba(197, 160, 89, 0.14), 0 6px 18px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    position: relative;
+    user-select: none;
+    margin-bottom: 18px;
+  }
+  .mac-topbar {
+    background: #FDFBF7;
+    border-bottom: 1px solid var(--line);
+    padding: 10px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mac-dots {
+    display: flex;
+    gap: 6px;
+  }
+  .mac-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .dot-r { background: #FF5F56; border: 1px solid #E0443E; }
+  .dot-y { background: #FFBD2E; border: 1px solid #DEA123; }
+  .dot-g { background: #27C93F; border: 1px solid #1AAB29; }
+
+  .mac-title-tag {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--paper);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .live-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    background: rgba(197, 160, 89, 0.15);
+    color: var(--brass-dark);
+    padding: 2px 7px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pulse-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #C5A059;
+    animation: blinkPulse 1.4s infinite;
+  }
+  @keyframes blinkPulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  /* Canvas Stage Viewports */
+  .canvas-stage-area {
+    min-height: 490px;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, rgba(197,160,89,0.03) 0%, transparent 70%), #FFFFFF;
+  }
+  .stage-panel {
+    position: absolute;
+    inset: 0;
+    padding: 22px 28px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px) scale(0.98);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .stage-panel.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  /* Fake Cursor Overlay */
+  .fake-cursor-box {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .cursor-tag-bubble {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    background: #1C1917;
+    color: #FDFBF7;
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-top: -2px;
+    margin-left: 10px;
+    border: 1px solid rgba(197, 160, 89, 0.5);
+    white-space: nowrap;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Toast Notification */
+  .sim-toast-msg {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--brass);
+    border-radius: 9px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(197, 160, 89, 0.22);
+    font-size: 12px;
+    font-weight: 600;
+    color: #1C1917;
+    z-index: 85;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .sim-toast-msg.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Bottom Stepper Tab Navigator */
+  .stepper-tabs-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .stepper-pill-bar {
+    background: #FFFFFF;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 5px;
+    display: flex;
+    gap: 5px;
+    box-shadow: 0 6px 20px rgba(197, 160, 89, 0.08);
+    flex-wrap: wrap;
+  }
+  .stepper-tab-btn {
+    position: relative;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: color 0.2s ease;
+  }
+  .stepper-tab-btn:hover {
+    color: var(--paper);
+  }
+  .stepper-tab-btn.active {
+    color: #8C6D23;
+    font-weight: 700;
+  }
+  .stepper-tab-btn .tab-progress-line {
+    position: absolute;
+    inset: 0;
+    background: rgba(197, 160, 89, 0.15);
+    border-radius: 8px;
+    width: 0%;
+    z-index: 0;
+  }
+  .stepper-tab-btn.active .tab-progress-line {
+    animation: tabProgressFill 7.8s linear forwards;
+  }
+  @keyframes tabProgressFill {
+    from { width: 0%; }
+    to { width: 100%; }
+  }
+  .tab-label-text {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  /* Shared Action Banner */
+  .banner-action-bar {
+    background: #FFFDF9;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.06);
+  }
+  .btn-gold-main {
+    background: linear-gradient(135deg, #C5A059, #996515);
+    color: #FFFFFF;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 11px 20px;
+    border-radius: 8px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.28);
+    transition: transform 0.15s, box-shadow 0.15s;
+    width: 100%;
+  }
+  .btn-gold-main.clicked {
+    transform: scale(0.97);
+  }
+  .btn-badge-action {
+    background: linear-gradient(135deg, #C5A059, #996515);
+    color: #FFFFFF;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 0.2s;
+    box-shadow: 0 3px 8px rgba(197, 160, 89, 0.25);
+  }
+  .btn-badge-action.copied {
+    background: #15803D;
+    box-shadow: 0 3px 8px rgba(21, 128, 61, 0.25);
+  }
+
+  /* ── 1. VENDOR <-> CLIENT ELEMENTS (5 LANGKAH UTUH) ── */
+  .drive-input-box {
+    background: #FFFFFF;
+    border: 1.5px solid rgba(197, 160, 89, 0.35);
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--paper);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .drive-input-box.focus {
+    border-color: #C5A059;
+    box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.2);
+  }
+  .cursor-blink {
+    display: inline-block;
+    width: 2px;
+    height: 14px;
+    background: #C5A059;
+    margin-left: 2px;
+    vertical-align: middle;
+    animation: blink 0.9s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+  .gallery-grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+  }
+  .photo-tile {
+    background: linear-gradient(135deg, #FAF4E8, #EDE2CD);
+    border: 1.5px solid rgba(197, 160, 89, 0.3);
+    border-radius: 8px;
+    height: 105px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .photo-tile-watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 800;
+    color: rgba(140, 109, 35, 0.2);
+    letter-spacing: 0.1em;
+    transform: rotate(-25deg);
+    pointer-events: none;
+    text-transform: uppercase;
+  }
+  .photo-tile-tag {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    font-family: var(--font-mono);
+    font-size: 8px;
+    font-weight: 600;
+    color: #57534E;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  .photo-check-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1.5px solid var(--brass);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    transition: all 0.2s ease;
+  }
+  .photo-tile.selected {
+    border-color: #C5A059;
+    box-shadow: 0 5px 16px rgba(197, 160, 89, 0.32);
+    transform: scale(1.02);
+  }
+  .photo-tile.selected .photo-check-btn {
+    background: linear-gradient(135deg, #C5A059, #996515);
+    border-color: #C5A059;
+  }
+  .photo-tile.selected .photo-check-btn svg {
+    display: block;
+  }
+  .photo-check-btn svg { display: none; }
+
+  /* Lightroom Container */
+  .lr-dark-box {
+    max-width: 860px;
+    margin: 0 auto;
+    background: #1A1A1E;
+    border: 1px solid #33333E;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35);
+    color: #E4E4E7;
+  }
+  .lr-dark-grid {
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 7px;
+    background: #151518;
+  }
+  .lr-dark-thumb {
+    height: 55px;
+    background: #2A2A32;
+    border-radius: 4px;
+    border: 1px solid #3F3F46;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 3px;
+    font-family: var(--font-mono);
+    font-size: 7px;
+    color: #71717A;
+    opacity: 0.3;
+    transition: all 0.3s ease;
+  }
+  .lr-dark-thumb.matched {
+    opacity: 1;
+    border-color: #38BDF8;
+    box-shadow: 0 0 8px rgba(56, 189, 248, 0.35);
+    background: #1E293B;
+    color: #E2E8F0;
+  }
+
+  /* RAW Sorter Workspace */
+  .raw-workspace-card {
+    background: #111118;
+    color: #F4F4F5;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 14px 35px rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(197, 160, 89, 0.3);
+  }
+  .finder-native-popup {
+    position: absolute;
+    inset: 10px 25px;
+    background: #ECECEE;
+    border-radius: 10px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.2);
+    z-index: 70;
+    display: flex;
+    flex-direction: column;
+    color: #1C1917;
+    opacity: 0;
+    transform: scale(0.92);
+    pointer-events: none;
+    transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .finder-native-popup.open {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+
+  /* Magic Sort Grid */
+  .magic-grid-mac {
+    padding: 14px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    background: #FFFDF9;
+  }
+  .file-item-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 8px 5px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: all 0.25s;
+    gap: 4px;
+  }
+  .file-item-box.target-script {
+    border-color: #C5A059;
+    background: rgba(197, 160, 89, 0.12);
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.2);
+  }
+  .file-item-box.out-folder {
+    border-color: #10B981;
+    background: #ECFDF5;
+    animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes popIn { from{opacity:0; transform:scale(0.8);} to{opacity:1; transform:scale(1);} }
+
+  /* ── 2. VENDOR <-> PLATFORM (REGISTRASI, DASHBOARD, SETUP STORAGE SPLIT) ── */
+  .divider-section {
+    margin-top: 70px;
+    padding-top: 45px;
+    border-top: 1.5px dashed var(--line);
+  }
+
+  /* Stages Container inside Tab 1 */
+  .reg-transition-container {
+    max-width: 640px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 380px;
+    position: relative;
+  }
+  .reg-sub-view {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px) scale(0.96);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .reg-sub-view.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+  }
+
+  /* Sub View 1: Google Register Card */
+  .google-reg-card {
+    background: #FFFDF9;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(197, 160, 89, 0.08);
+  }
+  .btn-google-signup {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    color: #1E293B;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 12px 20px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
+  }
+  .btn-google-signup.clicked {
+    transform: scale(0.97);
+    border-color: #C5A059;
+    box-shadow: 0 0 0 3px rgba(197, 160, 89, 0.2);
+  }
+
+  /* Sub View 2: Plan Selection Cards */
+  .plan-select-card {
+    background: #FFFDF9;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(197, 160, 89, 0.08);
+  }
+  .plan-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0;
+  }
+  .plan-choice-box {
+    background: #FFFFFF;
+    border: 1.5px solid rgba(197, 160, 89, 0.3);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .plan-choice-box.selected {
+    border-color: #C5A059;
+    background: #FFF9EE;
+    box-shadow: 0 5px 16px rgba(197, 160, 89, 0.25);
+  }
+
+  /* Sub View 3: Native QRIS Card */
+  .qris-display-card {
+    background: #FFFFFF;
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 22px 24px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(197, 160, 89, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .qris-qr-box {
+    width: 140px;
+    height: 140px;
+    border: 2px solid #1C1917;
+    border-radius: 10px;
+    padding: 8px;
+    background: #FFFFFF;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .qris-success-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(21, 128, 61, 0.95);
+    color: #FFFFFF;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 13.5px;
+    font-weight: 800;
+    opacity: 0;
+    transform: scale(0.85);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .qris-success-overlay.show {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* ── TAB 2: VENDOR DASHBOARD & LIVE PROJECT TRACKER ── */
+  .dash-main-container {
+    max-width: 880px;
+    margin: 0 auto;
+    width: 100%;
+    position: relative;
+  }
+  .dash-top-bar {
+    background: #FFFDF9;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .btn-new-project {
+    background: linear-gradient(135deg, #C5A059, #996515);
+    color: #FFFFFF;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 12px rgba(197, 160, 89, 0.25);
+  }
+  .btn-new-project.clicked {
+    transform: scale(0.96);
+  }
+
+  /* Modal Create Project */
+  .dash-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(28, 25, 23, 0.5);
+    backdrop-filter: blur(3px);
+    z-index: 60;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .dash-modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .dash-modal-box {
+    background: #FFFFFF;
+    border: 1.5px solid var(--brass);
+    border-radius: 12px;
+    width: 440px;
+    padding: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    transform: scale(0.92);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .dash-modal-overlay.open .dash-modal-box {
+    transform: scale(1);
+  }
+
+  /* Dashboard Project Card */
+  .dash-project-card {
+    background: #FFFFFF;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 8px 24px rgba(197, 160, 89, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.3s ease;
+  }
+  .dash-project-card.highlight {
+    border-color: #C5A059;
+    box-shadow: 0 10px 30px rgba(197, 160, 89, 0.2);
+  }
+  .progress-track {
+    height: 6px;
+    background: rgba(197, 160, 89, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #C5A059, #15803D);
+    transition: width 1.2s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+  .card-action-btn-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 6px;
+    border-top: 1px solid rgba(197, 160, 89, 0.2);
+  }
+  .card-btn-action {
+    background: #FAF8F5;
+    border: 1px solid var(--line);
+    color: var(--paper);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .card-btn-action.active-gold {
+    background: linear-gradient(135deg, #C5A059, #996515);
+    color: #FFFFFF;
+    border-color: #C5A059;
+    box-shadow: 0 3px 8px rgba(197, 160, 89, 0.3);
+  }
+
+  /* ── TAB 3: SPLIT WINDOW STORAGE (KIRI: BYOS VS KANAN: ADD-ON TURBO) ── */
+  .split-storage-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    max-width: 960px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .split-pane {
+    background: #FFFFFF;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 24px rgba(197, 160, 89, 0.08);
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+  .split-pane.pane-left {
+    border-color: rgba(16, 185, 129, 0.4);
+  }
+  .split-pane.pane-right {
+    border-color: rgba(197, 160, 89, 0.6);
+    background: #FFFEFB;
+  }
+  .split-pane-header {
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--line);
+  }
+  .split-pane-body {
+    padding: 14px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  /* Dropzone & Drag Folder in Split Right */
+  .split-dropzone-box {
+    background: #FAF8F5;
+    border: 2px dashed rgba(197, 160, 89, 0.45);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+    margin: 8px 0;
+    position: relative;
+    transition: all 0.25s;
+  }
+  .split-dropzone-box.highlight {
+    background: #FFF9EE;
+    border-color: #C5A059;
+    box-shadow: 0 0 14px rgba(197, 160, 89, 0.25);
+  }
+  .floating-drag-folder {
+    position: absolute;
+    top: 40px;
+    left: 20px;
+    background: #FFFFFF;
+    border: 1.5px solid var(--brass);
+    border-radius: 7px;
+    padding: 5px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #1C1917;
+    box-shadow: 0 8px 20px rgba(197, 160, 89, 0.35);
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+  }
+
+  .split-worker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin: 6px 0;
+  }
+  .split-worker-card {
+    background: #181824;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 4px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .split-worker-bar-bg {
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .split-worker-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #38BDF8, #34D399);
+    transition: width 1s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="/" class="back-nav">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    <span>Kembali ke Beranda Pick Your Photo</span>
+  </a>
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- BAGIAN 1: ALUR VENDOR ⟷ KLIEN (5 LANGKAH SELEKSI FOTO LENGKAP) -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="section-header">
+    <div class="section-eyebrow">1. ALUR KERJA VENDOR ⟷ KLIEN (SELEKSI FOTO)</div>
+    <h1 class="section-title">Dari Google Drive ke <em>Lightroom, RAW Sorter &amp; Magic-Sort</em></h1>
+    <p class="section-desc">Alur kerja praktis seleksi foto studio: Vendor membuat galeri ➔ Klien memilih foto ➔ 1-Klik Salin ke Lightroom ➔ RAW Sorter &amp; Magic-Sort otomatis.</p>
+  </div>
+
+  <!-- WINDOW 1: VENDOR <-> CLIENT -->
+  <div class="mac-window">
+    <div class="mac-topbar">
+      <div class="mac-dots">
+        <div class="mac-dot dot-r"></div>
+        <div class="mac-dot dot-y"></div>
+        <div class="mac-dot dot-g"></div>
+      </div>
+      <div class="mac-title-tag">
+        <span>project_hana-dimas_wedding</span>
+        <span class="live-badge"><span class="pulse-dot"></span> WORKFLOW SIMULATION</span>
+      </div>
+      <div style="font-family: var(--font-mono); font-size: 11px; color: #8C827A;">Pick Your Photo Studio Hub</div>
+    </div>
+
+    <!-- STAGE 1: VENDOR <-> CLIENT -->
+    <div class="canvas-stage-area" id="vcStage">
+
+      <!-- FAKE CURSOR VC -->
+      <div class="fake-cursor-box" id="vcCursor">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M4 2L20 10L12 13L9 21L4 2Z" fill="#1C1917" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <span class="cursor-tag-bubble" id="vcCursorTag">Fotografer Studio</span>
+      </div>
+
+      <!-- TOAST VC -->
+      <div class="sim-toast-msg" id="vcToast">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="vcToastMsg">Pilihan berhasil disimpan!</span>
+      </div>
+
+      <!-- VC-STEP 1: BUAT GALERI -->
+      <div class="stage-panel active" id="vcStep1">
+        <div style="max-width: 660px; margin: 0 auto; background: #FFFDF9; border: 1.5px solid var(--line); border-radius: 12px; padding: 24px 28px; box-shadow: 0 10px 25px rgba(197, 160, 89, 0.08);">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div style="width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg, rgba(197, 160, 89, 0.2), rgba(212, 175, 55, 0.1)); border: 1px solid rgba(197, 160, 89, 0.45); display: flex; align-items: center; justify-content: center; color: var(--brass-dark);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+            </div>
+            <div>
+              <h3 style="font-size: 16.5px; font-weight: 700; color: #1C1917;">1-Klik Buat Galeri Seleksi</h3>
+              <p style="font-size: 12px; color: var(--muted);">Cukup tempel link folder Google Drive foto Anda. Ratusan foto langsung siap dipilih klien dalam sekejap.</p>
+            </div>
+          </div>
+          <div class="drive-input-box" id="vcDriveInputBox">
+            <span id="vcDriveUrlText" style="color: #A8A29E;">https://drive.google.com/drive/folders/...</span>
+            <span class="cursor-blink" id="vcBlinker1"></span>
+          </div>
+          <button type="button" class="btn-gold-main" id="vcConnectBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>Buat Galeri &amp; Siapkan Foto</span>
+          </button>
+          <div style="height: 4px; background: rgba(197, 160, 89, 0.2); border-radius: 2px; margin-top: 14px; overflow: hidden;">
+            <div id="vcSyncFill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #C5A059, #8C6D23); transition: width 0.8s cubic-bezier(0.1, 0.9, 0.2, 1);"></div>
+          </div>
+          <div id="vcSyncBadge" style="margin-top: 14px; display: none; align-items: center; justify-content: space-between; background: #F0FDF4; border: 1px solid #86EFAC; padding: 9px 14px; border-radius: 7px; font-size: 12px; color: #15803D; font-weight: 600;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Galeri Seleksi Siap (240 Foto Berhasil Dimuat)</span>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 11px;">0.9 Detik</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VC-STEP 2: KLIEN MEMILIH -->
+      <div class="stage-panel" id="vcStep2">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line);">
+          <div>
+            <div style="font-size: 10.5px; font-weight: 700; font-family: var(--font-mono); color: var(--brass-dark);">GALERI SELEKSI KLIEN (DESKTOP &amp; MOBILE)</div>
+            <div style="font-size: 15px; font-weight: 700; color: var(--paper);">Hana &amp; Dimas — Wedding Selection</div>
+          </div>
+          <div style="background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); padding: 3px 10px; border-radius: 20px; font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; color: var(--brass-dark);">
+            KUOTA: <span id="vcQuotaText" style="color: #8C6D23;">41 / 50 FOTO</span>
+          </div>
+        </div>
+        <div class="gallery-grid-4">
+          <div class="photo-tile selected" id="vcPhoto1">
+            <div class="photo-tile-watermark">PREVIEW ONLY</div>
+            <span class="photo-tile-tag">DSC_0412.jpg</span>
+            <div class="photo-check-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div class="photo-tile" id="vcPhoto2">
+            <div class="photo-tile-watermark">PREVIEW ONLY</div>
+            <span class="photo-tile-tag">DSC_0418.jpg</span>
+            <div class="photo-check-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div class="photo-tile selected" id="vcPhoto3">
+            <div class="photo-tile-watermark">PREVIEW ONLY</div>
+            <span class="photo-tile-tag">DSC_0421.jpg</span>
+            <div class="photo-check-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div class="photo-tile" id="vcPhoto4">
+            <div class="photo-tile-watermark">PREVIEW ONLY</div>
+            <span class="photo-tile-tag">DSC_0430.jpg</span>
+            <div class="photo-check-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div class="photo-tile selected" id="vcPhoto5">
+            <div class="photo-tile-watermark">PREVIEW ONLY</div>
+            <span class="photo-tile-tag">DSC_0439.jpg</span>
+            <div class="photo-check-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div class="photo-tile" id="vcPhoto6">
+            <div class="photo-tile-watermark">PREVIEW ONLY</div>
+            <span class="photo-tile-tag">DSC_0447.jpg</span>
+            <div class="photo-check-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div class="photo-tile selected" id="vcPhoto7">
+            <div class="photo-tile-watermark">PREVIEW ONLY</div>
+            <span class="photo-tile-tag">DSC_0495.jpg</span>
+            <div class="photo-check-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+          <div class="photo-tile" id="vcPhoto8">
+            <div class="photo-tile-watermark">PREVIEW ONLY</div>
+            <span class="photo-tile-tag">DSC_0510.jpg</span>
+            <div class="photo-check-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+          </div>
+        </div>
+        <div style="margin-top: 10px; padding: 8px 14px; background: #FFFDF9; border: 1px solid var(--line); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 12px; color: var(--muted);">Klien telah memilih 43 foto favorit.</span>
+          <button type="button" class="btn-gold-main" id="vcSubmitClientBtn" style="width:auto; padding: 7px 16px; font-size: 12px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <span>Kirim Hasil Pilihan ke Studio</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- VC-STEP 3: SALIN KE LIGHTROOM -->
+      <div class="stage-panel" id="vcStep3">
+        <div class="banner-action-bar" style="margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 7px; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.35); display: flex; align-items: center; justify-content: center; color: var(--brass-dark);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #1C1917;">HASIL SELEKSI KLIEN: HANA &amp; DIMAS (43 FOTO)</div>
+              <div style="font-size: 10.5px; color: #78716C;">1-Klik salin string nama file untuk filter Lightroom</div>
+            </div>
+          </div>
+          <button type="button" class="btn-badge-action" id="vcCopyLrBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <span id="vcCopyLrLabel">1-Klik Salin Query Lightroom</span>
+          </button>
+        </div>
+
+        <div style="text-align: center; margin: 4px 0 8px; font-size: 10px; font-weight: 700; color: #8C6D23; font-family: var(--font-mono);">
+          ⬇ BERALIH KE ADOBE LIGHTROOM &amp; PASTE QUERY ⬇
+        </div>
+
+        <div class="lr-dark-box">
+          <div style="background: #121215; padding: 7px 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #27272A;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <span style="background: #002244; color: #38BDF8; font-weight: 800; font-size: 10px; padding: 2px 5px; border-radius: 3px;">LrC</span>
+              <span style="font-size: 11px; font-weight: 600;">Adobe Lightroom Classic — Library Text Filter</span>
+            </div>
+            <span style="font-size: 9.5px; color: #71717A; font-family: var(--font-mono);">LIBRARY FILTER MODE</span>
+          </div>
+          <div style="background: #24242A; padding: 7px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #33333E;">
+            <span style="font-size: 10.5px; color: #A1A1AA;">Filter Filename:</span>
+            <div style="flex: 1; background: #121216; border: 1px solid #3F3F46; border-radius: 5px; padding: 4px 8px; font-family: var(--font-mono); font-size: 10.5px; color: #F4F4F5; display: flex; align-items: center;" id="vcLrSearchField">
+              <span id="vcLrSearchText" style="color: #71717A;">Paste query nama file di sini...</span>
+              <span class="cursor-blink" id="vcLrBlinker"></span>
+            </div>
+          </div>
+          <div class="lr-dark-grid">
+            <div class="lr-dark-thumb matched" id="vcLrThumb1"><span>DSC_0412.CR3</span></div>
+            <div class="lr-dark-thumb matched" id="vcLrThumb2"><span>DSC_0418.CR3</span></div>
+            <div class="lr-dark-thumb matched" id="vcLrThumb3"><span>DSC_0421.CR3</span></div>
+            <div class="lr-dark-thumb matched" id="vcLrThumb4"><span>DSC_0430.CR3</span></div>
+            <div class="lr-dark-thumb matched" id="vcLrThumb5"><span>DSC_0439.CR3</span></div>
+            <div class="lr-dark-thumb matched" id="vcLrThumb6"><span>DSC_0447.CR3</span></div>
+            <div class="lr-dark-thumb matched" id="vcLrThumb7"><span>DSC_0495.CR3</span></div>
+            <div class="lr-dark-thumb" id="vcLrThumb8"><span>DSC_0501.CR3</span></div>
+            <div class="lr-dark-thumb" id="vcLrThumb9"><span>DSC_0508.CR3</span></div>
+            <div class="lr-dark-thumb matched" id="vcLrThumb10"><span>DSC_0510.CR3</span></div>
+            <div class="lr-dark-thumb" id="vcLrThumb11"><span>DSC_0522.CR3</span></div>
+            <div class="lr-dark-thumb" id="vcLrThumb12"><span>DSC_0530.CR3</span></div>
+          </div>
+          <div style="background: #101014; padding: 7px 12px; border-top: 1px solid #27272A; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #A1A1AA;">
+            <span style="color: #38BDF8; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              43 dari 240 Foto Terfilter Otomatis
+            </span>
+            <span style="color: #38BDF8;">Siap Color Grading &amp; Editing!</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VC-STEP 4: RAW SORTER -->
+      <div class="stage-panel" id="vcStep4">
+        <div style="max-width: 860px; margin: 0 auto; position: relative;">
+          
+          <!-- Finder Native Popup -->
+          <div class="finder-native-popup" id="vcFinderPopup">
+            <div style="background: linear-gradient(180deg, #F6F6F6, #E8E8E8); padding: 7px 12px; border-bottom: 1px solid #D1D1D6; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700;">
+              <div class="mac-dots"><div class="mac-dot dot-r"></div><div class="mac-dot dot-y"></div><div class="mac-dot dot-g"></div></div>
+              <span>Pilih Folder Foto RAW</span>
+              <div style="width: 20px;"></div>
+            </div>
+            <div style="display: grid; grid-template-columns: 120px 1fr; flex: 1; min-height: 0; background: #FFFFFF;">
+              <div style="background: #F2F2F7; border-right: 1px solid #E5E5EA; padding: 6px; font-size: 10px; color: #57534E;">
+                <div style="font-weight: 700; margin-bottom: 4px; color: #8C827A;">FAVORIT</div>
+                <div style="padding: 4px; border-radius: 4px; background: #D1D1D6; font-weight: 700; color: #1C1917; display: flex; align-items: center; gap: 5px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+                  <span>SSD_SANDISK</span>
+                </div>
+                <div style="padding: 4px; display: flex; align-items: center; gap: 5px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                  <span>Downloads</span>
+                </div>
+                <div style="padding: 4px; display: flex; align-items: center; gap: 5px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                  <span>Pictures</span>
+                </div>
+              </div>
+              <div style="padding: 6px 10px; font-size: 11px;">
+                <div style="padding: 5px 8px; border-radius: 5px; background: #007AFF; color: #FFF; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    <strong>HANA_WEDDING_RAW</strong>
+                  </span>
+                  <span style="font-size: 10px; opacity: 0.85;">240 file (.CR3)</span>
+                </div>
+              </div>
+            </div>
+            <div style="background: #F2F2F7; border-top: 1px solid #D1D1D6; padding: 6px 12px; display: flex; justify-content: flex-end; gap: 6px; border-radius: 0 0 10px 10px;">
+              <button type="button" style="padding: 3px 10px; border-radius: 4px; font-size: 10.5px; border: 1px solid #C7C7CC; background: #FFF;">Batal</button>
+              <button type="button" id="vcFinderOpenBtn" style="padding: 3px 10px; border-radius: 4px; font-size: 10.5px; background: #007AFF; color: #FFF; border: none; font-weight: 600;">Pilih / Open</button>
+            </div>
+          </div>
+
+          <!-- RAW Workspace Card -->
+          <div class="raw-workspace-card">
+            <div style="background: #181822; padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C5A059" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                <div>
+                  <div style="font-size: 12.5px; font-weight: 700; color: #F4F4F5;">RAW Sorter (Pemisah File Otomatis)</div>
+                  <div style="font-size: 10.5px; color: #71717A; font-family: var(--font-mono);">Memindahkan / Menyalin File RAW Langsung di Harddisk Komputer</div>
+                </div>
+              </div>
+              <span style="font-size: 10.5px; background: rgba(52, 211, 153, 0.15); color: #6EE7B7; padding: 2px 8px; border-radius: 10px; border: 1px solid rgba(52, 211, 153, 0.3); display: flex; align-items: center; gap: 4px;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                Langsung di Laptop Anda
+              </span>
+            </div>
+            
+            <div style="background: #181824; border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding: 5px 16px; display: flex; justify-content: space-between; align-items: center; font-size: 10.5px;">
+              <span style="color: #38BDF8;"><strong>Browser Support:</strong> Google Chrome &amp; Microsoft Edge</span>
+              <span style="color: #A1A1AA;">Safari / Firefox &rarr; Gunakan Magic-Sort (Tab 05)</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.1fr 1fr; height: 260px;">
+              <div style="padding: 12px 14px; border-right: 1px solid rgba(255, 255, 255, 0.06); display: flex; flex-direction: column;">
+                <div style="font-size: 10.5px; font-weight: 700; color: #A1A1AA; margin-bottom: 6px;">DAFTAR PILIHAN KLIEN (43 FOTO)</div>
+                <div style="flex:1; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.05); border-radius:6px; padding:5px; font-family:var(--font-mono); font-size:10px; overflow-y:auto; color:#D4D4D8;">
+                  <div style="padding:3px 6px; border-bottom:1px solid rgba(255,255,255,0.03); display:flex; justify-content:space-between;"><span>1. DSC_0412.CR3</span><span style="color:#34D399;">Ada</span></div>
+                  <div style="padding:3px 6px; border-bottom:1px solid rgba(255,255,255,0.03); display:flex; justify-content:space-between;"><span>2. DSC_0418.CR3</span><span style="color:#34D399;">Ada</span></div>
+                  <div style="padding:3px 6px; border-bottom:1px solid rgba(255,255,255,0.03); display:flex; justify-content:space-between;"><span>3. DSC_0421.CR3</span><span style="color:#34D399;">Ada</span></div>
+                </div>
+              </div>
+              <div style="padding: 12px 14px; display: flex; flex-direction: column; gap: 7px; background: #14141E;">
+                <div>
+                  <label style="font-size: 10.5px; color: #A1A1AA; display: block; margin-bottom: 3px;">1. Folder Sumber RAW</label>
+                  <div id="vcSrcNativeBtn" style="background: rgba(255, 255, 255, 0.04); border: 1.5px dashed rgba(255, 255, 255, 0.15); color: #A1A1AA; padding: 7px 10px; border-radius: 6px; font-size: 10.5px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    <span id="vcSrcNativeText">Klik untuk Pilih Folder Sumber...</span>
+                  </div>
+                </div>
+                <div>
+                  <label style="font-size: 10.5px; color: #A1A1AA; display: block; margin-bottom: 3px;">2. Folder Tujuan Terpilih</label>
+                  <div style="background: rgba(52, 211, 153, 0.08); border: 1.5px solid #34D399; color: #6EE7B7; padding: 7px 10px; border-radius: 6px; font-size: 10.5px; display: flex; align-items: center; gap: 6px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    <span>/Volumes/SSD_SANDISK/HANA_EDIT_TERPILIH/</span>
+                  </div>
+                </div>
+                <button type="button" class="btn-gold-main" id="vcStartNativeSortBtn" style="padding: 8px; font-size: 11.5px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span>Mulai Sortir File RAW di Harddisk</span>
+                </button>
+                <div style="background: #000; border: 1px solid rgba(255,255,255,0.08); border-radius:5px; padding:5px 8px; font-family:var(--font-mono); font-size:9.5px; height:45px; color:#A1A1AA;" id="vcNativeTermLog">
+                  <div>[Standby] Menunggu folder sumber...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- VC-STEP 5: MAGIC-SORT -->
+      <div class="stage-panel" id="vcStep5">
+        <div class="banner-action-bar" style="margin-bottom: 8px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="width: 36px; height: 36px; border-radius: 7px; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.35); display: flex; align-items: center; justify-content: center; color: var(--brass-dark);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #1C1917;">MAGIC-SORT (OPSI PRAKTIS TANPA BUKA BROWSER)</div>
+              <div style="font-size: 10.5px; color: #78716C;">Unduh Magic-Sort untuk memisahkan file foto langsung di harddisk komputer</div>
+            </div>
+          </div>
+          <button type="button" class="btn-badge-action" id="vcDownloadScriptBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="vcDownloadScriptLabel">Unduh Magic-Sort (Mac)</span>
+          </button>
+        </div>
+
+        <div style="text-align: center; margin: 4px 0 8px; font-size: 10px; font-weight: 700; color: #8C6D23; font-family: var(--font-mono);">
+          ⬇ BUKA FOLDER FOTO DI LAPTOP &amp; KLIK GANDA MAGIC-SORT ⬇
+        </div>
+
+        <div style="max-width: 860px; margin: 0 auto; background: #FFFFFF; border: 1.5px solid var(--line); border-radius: 12px; overflow: hidden; box-shadow: 0 14px 35px rgba(197, 160, 89, 0.12);">
+          <div style="background: #FAF8F5; border-bottom: 1px solid var(--line); padding: 8px 14px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C5A059" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+              <div>
+                <strong style="font-size: 11.5px; color: #1C1917;">Folder: /Volumes/SSD_PRO/HANA_RAW/</strong>
+                <div style="font-size: 9.5px; color: #8C827A;">240 file foto mentah (.CR3) + Magic-Sort</div>
+              </div>
+            </div>
+            <span style="font-size: 10px; font-weight: 700; background: #DCFCE7; color: #15803D; padding: 2px 7px; border-radius: 15px;">macOS &amp; Windows Ready</span>
+          </div>
+
+          <div class="magic-grid-mac">
+            <div class="file-item-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="1.8"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span style="font-size: 9px; font-family: var(--font-mono); color: #57534E;">DSC_0001.CR3</span>
+            </div>
+            <div class="file-item-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="1.8"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span style="font-size: 9px; font-family: var(--font-mono); color: #57534E;">DSC_0002.CR3</span>
+            </div>
+            <div class="file-item-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#78716C" stroke-width="1.8"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <span style="font-size: 9px; font-family: var(--font-mono); color: #57534E;">DSC_0003.CR3</span>
+            </div>
+            <div class="file-item-box target-script" id="vcMagicScriptItem">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C5A059" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+              <span style="font-size: 9px; font-family: var(--font-mono); font-weight: 700; color: #8C6D23;">Magic-Sort</span>
+            </div>
+            <div class="file-item-box out-folder" id="vcMagicResultFolder" style="display: none;">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+              <span style="font-size: 9px; font-family: var(--font-mono); font-weight: 700; color: #10B981;">FOTO_TERPILIH (43)</span>
+            </div>
+          </div>
+
+          <div style="background: #FAF5EB; padding: 8px 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #8C6D23;">
+            <span><strong>Keunggulan Magic-Sort:</strong> Tidak perlu buka browser, sortir 1-klik offline.</span>
+            <span style="font-weight: 700; font-family: var(--font-mono);">2.1 Detik Selesai</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TABS 1: VENDOR <-> CLIENT (5 LANGKAH) -->
+  <div class="stepper-tabs-wrap">
+    <div class="stepper-pill-bar" id="vcTabBar">
+      
+      <button type="button" class="stepper-tab-btn active" data-vcstep="1">
+        <div class="tab-progress-line"></div>
+        <div class="tab-label-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+          <span>01. Buat Galeri</span>
+        </div>
+      </button>
+
+      <button type="button" class="stepper-tab-btn" data-vcstep="2">
+        <div class="tab-progress-line"></div>
+        <div class="tab-label-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>02. Klien Memilih</span>
+        </div>
+      </button>
+
+      <button type="button" class="stepper-tab-btn" data-vcstep="3">
+        <div class="tab-progress-line"></div>
+        <div class="tab-label-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+          <span>03. Salin ke Lightroom</span>
+        </div>
+      </button>
+
+      <button type="button" class="stepper-tab-btn" data-vcstep="4">
+        <div class="tab-progress-line"></div>
+        <div class="tab-label-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          <span>04. RAW Sorter</span>
+        </div>
+      </button>
+
+      <button type="button" class="stepper-tab-btn" data-vcstep="5">
+        <div class="tab-progress-line"></div>
+        <div class="tab-label-text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+          <span>05. Magic-Sort</span>
+        </div>
+      </button>
+
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <!-- BAGIAN 2: ALUR VENDOR ⟷ PLATFORM (3 TAB LENGKAP & SPLIT SCREEN) -->
+  <!-- ════════════════════════════════════════════════════════════════ -->
+  <div class="divider-section">
+    <div class="section-header">
+      <div class="section-eyebrow" style="background: rgba(56, 189, 248, 0.12); color: #0284C7; border-color: rgba(56, 189, 248, 0.35);">
+        2. ALUR VENDOR ⟷ PLATFORM
+      </div>
+      <h2 class="section-title">Pendaftaran, Dashboard &amp; <em>Setup Storage (Split Comparison)</em></h2>
+      <p class="section-desc">Ekosistem lengkap vendor di platform: Pendaftaran cepat Google &amp; QRIS ➔ Dashboard Project &amp; Live Seleksi ➔ Komparasi Nyata Drive Sendiri vs Dedicated Turbo Upload.</p>
+    </div>
+
+    <!-- WINDOW 2: VENDOR <-> PLATFORM -->
+    <div class="mac-window">
+      <div class="mac-topbar">
+        <div class="mac-dots">
+          <div class="mac-dot dot-r"></div>
+          <div class="mac-dot dot-y"></div>
+          <div class="mac-dot dot-g"></div>
+        </div>
+        <div class="mac-title-tag">
+          <span>vendor_platform_ecosystem.hub</span>
+          <span class="live-badge" style="background: rgba(56, 189, 248, 0.15); color: #0284C7;"><span class="pulse-dot" style="background: #0284C7;"></span> PLATFORM HUB</span>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 11px; color: #8C827A;">Pick Your Photo SaaS Platform</div>
+      </div>
+
+      <!-- STAGE 2: VENDOR <-> PLATFORM -->
+      <div class="canvas-stage-area" id="vpStage">
+
+        <!-- FAKE CURSOR VP -->
+        <div class="fake-cursor-box" id="vpCursor">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M4 2L20 10L12 13L9 21L4 2Z" fill="#1C1917" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+          </svg>
+          <span class="cursor-tag-bubble" id="vpCursorTag">Vendor Baru</span>
+        </div>
+
+        <!-- TOAST VP -->
+        <div class="sim-toast-msg" id="vpToast">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          <span id="vpToastMsg">Akun Berhasil Didaftarkan!</span>
+        </div>
+
+        <!-- FLOATING DRAG FOLDER (UNTUK TAB 3 TURBO) -->
+        <div class="floating-drag-folder" id="vpDragFolder">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C5A059" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+          <span>HANA_WEDDING_JPG (240 files • 1.4 GB)</span>
+        </div>
+
+        <!-- VP-STEP 1: FLOW REGISTRASI GOOGLE ➔ PILIH PAKET ➔ SCAN QRIS -->
+        <div class="stage-panel active" id="vpStep1">
+          <div class="reg-transition-container">
+            
+            <!-- SUB-VIEW 1: KLIK REGISTRASI GOOGLE -->
+            <div class="reg-sub-view active" id="vpSub1">
+              <div class="google-reg-card">
+                <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; color: var(--brass-dark);">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+                </div>
+                <h3 style="font-size: 18px; font-weight: 700; color: #1C1917; margin-bottom: 4px;">Daftar Akun Studio Fotografi</h3>
+                <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 20px;">Mulai dalam 1 menit, otomatis terintegrasi cloud &amp; payment gateway.</p>
+                
+                <button type="button" class="btn-google-signup" id="vpGoogleSignupBtn">
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.29 21.43 7.37 24 12 24Z"/>
+                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.17 0 9.99 0 12s.46 3.83 1.26 5.42l4.02-3.15Z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.37 0 3.29 2.57 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"/>
+                  </svg>
+                  <span>Daftar Cepat dengan Google</span>
+                </button>
+
+                <div style="margin-top: 14px; font-size: 11px; color: #8C827A; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Tanpa perlu verifikasi email manual</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SUB-VIEW 2: PILIHAN PAKET & ADD-ON -->
+            <div class="reg-sub-view" id="vpSub2">
+              <div class="plan-select-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <h3 style="font-size: 16px; font-weight: 700; color: #1C1917;">Pilih Paket Langganan Studio</h3>
+                    <p style="font-size: 11.5px; color: var(--muted);">Pilih paket yang sesuai dengan kapasitas proyek Anda.</p>
+                  </div>
+                  <span style="font-size: 10.5px; font-family: var(--font-mono); background: #DCFCE7; color: #15803D; padding: 2px 8px; border-radius: 12px; font-weight: 700;">Langkah 2/3</span>
+                </div>
+
+                <div class="plan-grid-2">
+                  <div class="plan-choice-box" id="vpPlanBox1">
+                    <div style="font-size: 11px; font-weight: 700; color: #78716C;">PAKET STARTER</div>
+                    <div style="font-size: 13.5px; font-weight: 800; color: #1C1917;">Rp 49.000<span style="font-size: 10px; font-weight: 500; color: #A8A29E;">/bln</span></div>
+                    <div style="font-size: 10.5px; color: #78716C; margin-top: 4px;">5 Proyek Aktif • BYOS Drive</div>
+                  </div>
+                  <div class="plan-choice-box selected" id="vpPlanBox2">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 11px; font-weight: 700; color: #8C6D23;">UNLIMITED STUDIO</span>
+                      <span style="font-size: 9px; background: #C5A059; color: #FFF; padding: 1px 5px; border-radius: 8px; font-weight: 700;">POPULER</span>
+                    </div>
+                    <div style="font-size: 13.5px; font-weight: 800; color: #8C6D23;">Rp 149.000<span style="font-size: 10px; font-weight: 500; color: #A8A29E;">/bln</span></div>
+                    <div style="font-size: 10.5px; color: #78716C; margin-top: 4px;">Unlimited Proyek • Add-On Ready</div>
+                  </div>
+                </div>
+
+                <button type="button" class="btn-gold-main" id="vpSelectPlanBtn">
+                  <span>Lanjut ke Pembayaran QRIS &rarr;</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- SUB-VIEW 3: EMBEDDED QRIS DISPLAY & SCAN SUKSES -->
+            <div class="reg-sub-view" id="vpSub3">
+              <div class="qris-display-card">
+                <div style="background: #DC2626; color: #FFFFFF; font-family: var(--font-mono); font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; letter-spacing: 0.08em; margin-bottom: 6px;">
+                  NATIVE QRIS EMBEDDED
+                </div>
+                <h3 style="font-size: 15px; font-weight: 700; color: #1C1917;">Scan QRIS untuk Aktivasi Instan</h3>
+                <p style="font-size: 11px; color: var(--muted);">Buka aplikasi BCA, Mandiri, GoPay, OVO, atau ShopeePay</p>
+
+                <div class="qris-qr-box">
+                  <svg width="110" height="110" viewBox="0 0 100 100" fill="none">
+                    <rect width="100" height="100" fill="white"/>
+                    <rect x="5" y="5" width="28" height="28" fill="#1C1917"/>
+                    <rect x="9" y="9" width="20" height="20" fill="white"/>
+                    <rect x="13" y="13" width="12" height="12" fill="#1C1917"/>
+
+                    <rect x="67" y="5" width="28" height="28" fill="#1C1917"/>
+                    <rect x="71" y="9" width="20" height="20" fill="white"/>
+                    <rect x="75" y="13" width="12" height="12" fill="#1C1917"/>
+
+                    <rect x="5" y="67" width="28" height="28" fill="#1C1917"/>
+                    <rect x="9" y="71" width="20" height="20" fill="white"/>
+                    <rect x="13" y="75" width="12" height="12" fill="#1C1917"/>
+
+                    <rect x="40" y="8" width="6" height="6" fill="#1C1917"/>
+                    <rect x="52" y="8" width="6" height="6" fill="#1C1917"/>
+                    <rect x="40" y="20" width="6" height="6" fill="#1C1917"/>
+                    <rect x="48" y="26" width="6" height="6" fill="#1C1917"/>
+                    <rect x="10" y="42" width="6" height="6" fill="#1C1917"/>
+                    <rect x="22" y="42" width="6" height="6" fill="#1C1917"/>
+                    <rect x="34" y="42" width="6" height="6" fill="#1C1917"/>
+                    <rect x="46" y="42" width="6" height="6" fill="#1C1917"/>
+                    <rect x="58" y="42" width="6" height="6" fill="#1C1917"/>
+                    <rect x="70" y="42" width="6" height="6" fill="#1C1917"/>
+                    <rect x="82" y="42" width="6" height="6" fill="#1C1917"/>
+                    <rect x="42" y="54" width="6" height="6" fill="#1C1917"/>
+                    <rect x="54" y="54" width="6" height="6" fill="#1C1917"/>
+                    <rect x="66" y="54" width="6" height="6" fill="#1C1917"/>
+                    <rect x="78" y="66" width="6" height="6" fill="#1C1917"/>
+                    <rect x="42" y="78" width="6" height="6" fill="#1C1917"/>
+                    <rect x="54" y="78" width="6" height="6" fill="#1C1917"/>
+                    <rect x="66" y="78" width="6" height="6" fill="#1C1917"/>
+                    <rect x="78" y="78" width="6" height="6" fill="#1C1917"/>
+                  </svg>
+
+                  <div class="qris-success-overlay" id="vpQrisSuccessOverlay">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>LUNAS</span>
+                    <span style="font-size: 10px; font-weight: 500; opacity: 0.9;">AKTIF INSTAN</span>
+                  </div>
+                </div>
+
+                <div style="font-family: var(--font-mono); font-size: 14px; font-weight: 800; color: #1C1917;" id="vpQrisAmount">
+                  Rp 149.000
+                </div>
+                <div style="font-size: 10.5px; color: #78716C; margin-top: 2px;" id="vpQrisStatus">
+                  Menunggu Scan &amp; Pembayaran...
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- VP-STEP 2: DASHBOARD STUDIO & LIVE PROJECT TRACKER -->
+        <div class="stage-panel" id="vpStep2">
+          <div class="dash-main-container">
+            
+            <!-- Modal Popup Create Project -->
+            <div class="dash-modal-overlay" id="vpCreateModal">
+              <div class="dash-modal-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--line);">
+                  <div style="display: flex; align-items: center; gap: 7px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C5A059" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                    <span style="font-size: 13.5px; font-weight: 700; color: #1C1917;">Buat Project Baru</span>
+                  </div>
+                  <span style="font-size: 10.5px; font-family: var(--font-mono); color: #8C827A;">Studio Lumina</span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                  <div>
+                    <label style="font-size: 10.5px; font-weight: 600; color: #57534E; display: block; margin-bottom: 2px;">Nama Project / Klien</label>
+                    <div style="background: #FAF8F5; border: 1.5px solid var(--brass); border-radius: 6px; padding: 6px 10px; font-size: 11.5px; font-weight: 600; color: #1C1917;" id="vpModalNameField">
+                      Hana &amp; Dimas Wedding
+                    </div>
+                  </div>
+                  <div>
+                    <label style="font-size: 10.5px; font-weight: 600; color: #57534E; display: block; margin-bottom: 2px;">Link Folder Google Drive</label>
+                    <div style="background: #FAF8F5; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 6px; padding: 6px 10px; font-size: 10.5px; font-family: var(--font-mono); color: #57534E;">
+                      https://drive.google.com/drive/folders/1A8z7x9...
+                    </div>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                      <label style="font-size: 10.5px; font-weight: 600; color: #57534E; display: block; margin-bottom: 2px;">Maksimal Pilihan Klien</label>
+                      <div style="background: #FAF8F5; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 6px; padding: 6px 10px; font-size: 11px; font-weight: 700; color: #8C6D23;">
+                        50 Foto
+                      </div>
+                    </div>
+                    <div>
+                      <label style="font-size: 10.5px; font-weight: 600; color: #57534E; display: block; margin-bottom: 2px;">WhatsApp Klien</label>
+                      <div style="background: #FAF8F5; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 6px; padding: 6px 10px; font-size: 11px; color: #57534E;">
+                        0812-8899-7711
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button type="button" class="btn-gold-main" id="vpModalSaveBtn" style="padding: 8px; font-size: 12px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>Simpan &amp; Mulai Sinkronisasi</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Top Dashboard Bar -->
+            <div class="dash-top-bar">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.35); display: flex; align-items: center; justify-content: center; color: var(--brass-dark);">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
+                <div>
+                  <div style="font-size: 13px; font-weight: 700; color: #1C1917;">Lumina Photography Studio</div>
+                  <div style="font-size: 10.5px; color: #78716C; font-family: var(--font-mono);">Paket Unlimited Studio (Masa Aktif 30 Hari)</div>
+                </div>
+              </div>
+              <button type="button" class="btn-new-project" id="vpNewProjectBtn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>Buat Project</span>
+              </button>
+            </div>
+
+            <!-- Dashboard Project Card Live -->
+            <div class="dash-project-card" id="vpProjectCard">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="vpCardStatusBadge" style="font-size: 10.5px; font-weight: 700; background: #FEF3C7; color: #D97706; padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                  <span style="width: 5px; height: 5px; border-radius: 50%; background: #D97706;"></span>
+                  <span id="vpCardStatusText">Menunggu Seleksi</span>
+                </span>
+                <span style="font-size: 10.5px; font-family: var(--font-mono); color: #8C827A; display: flex; align-items: center; gap: 4px;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  2d 14:28:10
+                </span>
+              </div>
+
+              <div>
+                <h4 style="font-size: 15px; font-weight: 700; color: #1C1917; margin-bottom: 2px;">Hana &amp; Dimas — Wedding Selection</h4>
+                <div style="font-size: 11px; color: #78716C;">Sumber: Google Drive (240 Foto Dimuat)</div>
+              </div>
+
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-bottom: 4px;">
+                  <span style="color: #57534E; font-weight: 600;">Pilihan Klien (Live Tracker):</span>
+                  <strong style="color: #8C6D23; font-family: var(--font-mono);" id="vpLiveCountText">0 / 50 Foto (0%)</strong>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill-bar" id="vpLiveProgressBar"></div>
+                </div>
+              </div>
+
+              <!-- Action Buttons Menyala Saat Foto Terpilih -->
+              <div class="card-action-btn-group">
+                <button type="button" class="card-btn-action" id="vpBtnCopyLr">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  <span id="vpBtnCopyLrText">Salin Lightroom (43)</span>
+                </button>
+                <button type="button" class="card-btn-action" id="vpBtnRawSorter">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <span>RAW Sorter</span>
+                </button>
+                <button type="button" class="card-btn-action" id="vpBtnMagicSort">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+                  <span>Magic-Sort</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- VP-STEP 3: SPLIT WINDOW STORAGE COMPARISON (KIRI: BYOS VS KANAN: ADD-ON TURBO) -->
+        <div class="stage-panel" id="vpStep3">
+          <div class="split-storage-container">
+            
+            <!-- SISI KIRI: DRIVE SENDIRI (BYOS GOOGLE DRIVE) -->
+            <div class="split-pane pane-left" id="vpPaneLeft">
+              <div class="split-pane-header" style="background: #F0FDF4;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                  <strong style="font-size: 11.5px; color: #15803D;">OPSI 1: DRIVE SENDIRI (BYOS)</strong>
+                </div>
+                <span style="font-size: 9.5px; font-weight: 700; background: #DCFCE7; color: #15803D; padding: 1px 6px; border-radius: 8px;">TERHUBUNG</span>
+              </div>
+
+              <div class="split-pane-body">
+                <div>
+                  <div style="font-size: 12px; font-weight: 700; color: #1C1917; margin-bottom: 2px;">Akun Google Fotografer</div>
+                  <div style="font-size: 10.5px; color: #57534E; font-family: var(--font-mono);">lumina.studio@gmail.com</div>
+                  
+                  <div style="margin-top: 10px; background: #FAF8F5; border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 3px;">
+                      <span style="color: #78716C;">Kapasitas Drive:</span>
+                      <strong style="color: #15803D; font-family: var(--font-mono);">8.2 GB / 15 GB</strong>
+                    </div>
+                    <div style="height: 4px; background: #E2E8F0; border-radius: 2px; overflow: hidden;">
+                      <div style="height: 100%; width: 54%; background: #15803D;"></div>
+                    </div>
+                    <div style="margin-top: 5px; font-size: 9.5px; color: #78716C;">
+                      Sisa 6.8 GB Kosong • Berkas 100% di Drive Anda
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 10px; font-size: 10.5px; color: #57534E; line-height: 1.4;">
+                    <strong>Jalur Upload:</strong> Browser API Standar (Single-Thread)<br>
+                    <strong>Kecepatan:</strong> ~5 - 10 MB/s (Tergantung koneksi Google)
+                  </div>
+                </div>
+
+                <div style="margin-top: 12px;">
+                  <button type="button" class="btn-badge-action" id="vpBtnSyncDrive" style="background: #15803D; width: 100%; justify-content: center; padding: 7px; font-size: 11px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    <span id="vpBtnSyncText">Tarik Update (Sync GDrive)</span>
+                  </button>
+                  <div style="margin-top: 6px; font-size: 9.5px; color: #78716C; text-align: center;" id="vpSyncStatusLog">
+                    Terakhir disinkronkan: Baru saja
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SISI KANAN: ADD-ON DEDICATED CLOUD (+ TURBO UPLOAD MULTI-WORKER) -->
+            <div class="split-pane pane-right" id="vpPaneRight">
+              <div class="split-pane-header" style="background: #FFF9EE;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8C6D23" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  <strong style="font-size: 11.5px; color: #8C6D23;">OPSI 2: ADD-ON TURBO CLOUD</strong>
+                </div>
+                <span style="font-size: 9.5px; font-weight: 800; background: linear-gradient(135deg, #C5A059, #996515); color: #FFFFFF; padding: 1px 6px; border-radius: 8px;">
+                  85 MB/s TURBO
+                </span>
+              </div>
+
+              <div class="split-pane-body">
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <div style="font-size: 12px; font-weight: 700; color: #1C1917;">Dedicated Cloud 50 GB</div>
+                      <div style="font-size: 10px; color: #0284C7; font-weight: 700;">8 Worker Nodes Concurrency</div>
+                    </div>
+                    <span style="font-size: 10px; font-family: var(--font-mono); color: #8C6D23; font-weight: 700;">Batch Folder</span>
+                  </div>
+
+                  <!-- Dropzone Box in Right Pane -->
+                  <div class="split-dropzone-box" id="vpSplitDropzone">
+                    <div style="font-size: 11px; font-weight: 700; color: #1C1917;" id="vpSplitDropTitle">
+                      Tarik &amp; Lepas 1 Folder Penuh ke Sini
+                    </div>
+                    <div style="font-size: 9.5px; color: var(--muted);" id="vpSplitDropSubtitle">
+                      Batch recursive upload seluruh subfolder sekaligus
+                    </div>
+                  </div>
+
+                  <!-- 8 Worker Nodes Grid -->
+                  <div style="background: #111118; border-radius: 6px; padding: 6px 8px; color: #F4F4F5;">
+                    <div style="display: flex; justify-content: space-between; font-size: 9px; color: #38BDF8; font-weight: 700; margin-bottom: 2px;">
+                      <span>8 WORKER THREADS SIMULTAN</span>
+                      <span id="vpSplitWorkerSpeed" style="color: #34D399;">85 MB/s</span>
+                    </div>
+                    <div class="split-worker-grid">
+                      <div class="split-worker-card"><div class="split-worker-bar-bg"><div class="split-worker-bar-fill" id="vpSpFill1"></div></div></div>
+                      <div class="split-worker-card"><div class="split-worker-bar-bg"><div class="split-worker-bar-fill" id="vpSpFill2"></div></div></div>
+                      <div class="split-worker-card"><div class="split-worker-bar-bg"><div class="split-worker-bar-fill" id="vpSpFill3"></div></div></div>
+                      <div class="split-worker-card"><div class="split-worker-bar-bg"><div class="split-worker-bar-fill" id="vpSpFill4"></div></div></div>
+                      <div class="split-worker-card"><div class="split-worker-bar-bg"><div class="split-worker-bar-fill" id="vpSpFill5"></div></div></div>
+                      <div class="split-worker-card"><div class="split-worker-bar-bg"><div class="split-worker-bar-fill" id="vpSpFill6"></div></div></div>
+                      <div class="split-worker-card"><div class="split-worker-bar-bg"><div class="split-worker-bar-fill" id="vpSpFill7"></div></div></div>
+                      <div class="split-worker-card"><div class="split-worker-bar-bg"><div class="split-worker-bar-fill" id="vpSpFill8"></div></div></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-top: 8px;">
+                  <button type="button" class="btn-gold-main" id="vpSplitStartBtn" style="padding: 7px; font-size: 11px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span id="vpSplitStartText">Mulai Turbo Upload 240 Foto</span>
+                  </button>
+                  <div style="margin-top: 4px; font-size: 9.5px; color: #8C6D23; text-align: center; font-weight: 600;" id="vpSplitEtaText">
+                    Performa: 10x Lebih Cepat dari Upload Biasa
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TABS 2: VENDOR <-> PLATFORM (3 TABS) -->
+    <div class="stepper-tabs-wrap">
+      <div class="stepper-pill-bar" id="vpTabBar">
+        
+        <button type="button" class="stepper-tab-btn active" data-vpstep="1">
+          <div class="tab-progress-line"></div>
+          <div class="tab-label-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+            <span>01. Flow Daftar Google ➔ QRIS</span>
+          </div>
+        </button>
+
+        <button type="button" class="stepper-tab-btn" data-vpstep="2">
+          <div class="tab-progress-line"></div>
+          <div class="tab-label-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>02. Dashboard &amp; Live Tracker Project</span>
+          </div>
+        </button>
+
+        <button type="button" class="stepper-tab-btn" data-vpstep="3">
+          <div class="tab-progress-line"></div>
+          <div class="tab-label-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            <span>03. Komparasi Storage (Drive vs Turbo Add-On)</span>
+          </div>
+        </button>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // ═══════════════════════════════════════════════════════════════
+  // 1. ENGINE CONTROLLER: ALUR VENDOR ⟷ KLIEN (5 LANGKAH UTUH)
+  // ═══════════════════════════════════════════════════════════════
+  var currentVc = 1;
+  var vcTimer = null;
+  var vcDuration = 5600;
+
+  var vcCursor = document.getElementById('vcCursor');
+  var vcCursorTag = document.getElementById('vcCursorTag');
+  var vcToast = document.getElementById('vcToast');
+  var vcToastMsg = document.getElementById('vcToastMsg');
+
+  function showVcToast(msg) {
+    if (!vcToast) return;
+    vcToastMsg.innerText = msg;
+    vcToast.classList.add('show');
+    setTimeout(function(){ vcToast.classList.remove('show'); }, 2200);
+  }
+
+  function moveVcCursor(x, y, tag) {
+    if (!vcCursor) return;
+    if (tag) vcCursorTag.innerText = tag;
+    vcCursor.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+  }
+
+  function resetVcAnimations() {
+    // Step 1
+    var driveText = document.getElementById('vcDriveUrlText');
+    var syncFill = document.getElementById('vcSyncFill');
+    var syncBadge = document.getElementById('vcSyncBadge');
+    var driveBox = document.getElementById('vcDriveInputBox');
+    if (driveText) driveText.innerText = 'https://drive.google.com/drive/folders/...';
+    if (syncFill) syncFill.style.width = '0%';
+    if (syncBadge) syncBadge.style.display = 'none';
+    if (driveBox) driveBox.classList.remove('focus');
+
+    // Step 2
+    var p2 = document.getElementById('vcPhoto2');
+    var p4 = document.getElementById('vcPhoto4');
+    var quota = document.getElementById('vcQuotaText');
+    if (p2) p2.classList.remove('selected');
+    if (p4) p4.classList.remove('selected');
+    if (quota) quota.innerText = '41 / 50 FOTO';
+
+    // Step 3
+    var copyBtn = document.getElementById('vcCopyLrBtn');
+    var copyLabel = document.getElementById('vcCopyLrLabel');
+    var lrText = document.getElementById('vcLrSearchText');
+    if (copyBtn) {
+      copyBtn.classList.remove('copied');
+      if (copyLabel) copyLabel.innerText = '1-Klik Salin Query Lightroom';
+    }
+    if (lrText) {
+      lrText.innerText = 'Paste query nama file di sini...';
+      lrText.style.color = '#71717A';
+    }
+
+    // Step 4
+    var finder = document.getElementById('vcFinderPopup');
+    var srcBtn = document.getElementById('vcSrcNativeBtn');
+    var srcText = document.getElementById('vcSrcNativeText');
+    var termLog = document.getElementById('vcNativeTermLog');
+    if (finder) finder.classList.remove('open');
+    if (srcBtn) srcBtn.style.borderStyle = 'dashed';
+    if (srcText) srcText.innerText = 'Klik untuk Pilih Folder Sumber...';
+    if (termLog) termLog.innerHTML = '<div>[Standby] Menunggu folder sumber...</div>';
+
+    // Step 5
+    var dlBtn = document.getElementById('vcDownloadScriptBtn');
+    var dlLabel = document.getElementById('vcDownloadScriptLabel');
+    var magicFolder = document.getElementById('vcMagicResultFolder');
+    if (dlBtn) {
+      dlBtn.classList.remove('copied');
+      if (dlLabel) dlLabel.innerText = 'Unduh Magic-Sort (Mac)';
+    }
+    if (magicFolder) magicFolder.style.display = 'none';
+  }
+
+  function runVcStep1() {
+    moveVcCursor(160, 210, 'Fotografer Studio');
+    setTimeout(function(){
+      var driveBox = document.getElementById('vcDriveInputBox');
+      if (driveBox) driveBox.classList.add('focus');
+      var driveText = document.getElementById('vcDriveUrlText');
+      if (driveText) {
+        driveText.style.color = '#1C1917';
+        driveText.innerText = 'https://drive.google.com/drive/folders/1A8z7...';
+      }
+    }, 800);
+
+    setTimeout(function(){
+      var connectBtn = document.getElementById('vcConnectBtn');
+      if (connectBtn) {
+        var rect = connectBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 140, rect.top - stageRect.top + 15, 'Fotografer Studio');
+      }
+    }, 1600);
+
+    setTimeout(function(){
+      var connectBtn = document.getElementById('vcConnectBtn');
+      if (connectBtn) connectBtn.classList.add('clicked');
+      var syncFill = document.getElementById('vcSyncFill');
+      if (syncFill) syncFill.style.width = '100%';
+    }, 2200);
+
+    setTimeout(function(){
+      var connectBtn = document.getElementById('vcConnectBtn');
+      if (connectBtn) connectBtn.classList.remove('clicked');
+      var syncBadge = document.getElementById('vcSyncBadge');
+      if (syncBadge) syncBadge.style.display = 'flex';
+      showVcToast('Galeri 240 Foto Siap Dimuat!');
+    }, 2800);
+  }
+
+  function runVcStep2() {
+    moveVcCursor(150, 160, 'Klien (Hana)');
+
+    setTimeout(function(){
+      var p2 = document.getElementById('vcPhoto2');
+      if (p2) {
+        var rect = p2.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 60, rect.top - stageRect.top + 60, 'Klien (Hana)');
+      }
+    }, 800);
+
+    setTimeout(function(){
+      var p2 = document.getElementById('vcPhoto2');
+      if (p2) p2.classList.add('selected');
+      var quota = document.getElementById('vcQuotaText');
+      if (quota) quota.innerText = '42 / 50 FOTO';
+    }, 1500);
+
+    setTimeout(function(){
+      var p4 = document.getElementById('vcPhoto4');
+      if (p4) {
+        var rect = p4.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 60, rect.top - stageRect.top + 60, 'Klien (Hana)');
+      }
+    }, 2200);
+
+    setTimeout(function(){
+      var p4 = document.getElementById('vcPhoto4');
+      if (p4) p4.classList.add('selected');
+      var quota = document.getElementById('vcQuotaText');
+      if (quota) quota.innerText = '43 / 50 FOTO';
+    }, 2800);
+
+    setTimeout(function(){
+      var sendBtn = document.getElementById('vcSubmitClientBtn');
+      if (sendBtn) {
+        var rect = sendBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 80, rect.top - stageRect.top + 14, 'Klien (Hana)');
+      }
+    }, 3400);
+
+    setTimeout(function(){
+      showVcToast('43 Foto Pilihan Berhasil Dikirim ke Studio!');
+    }, 4000);
+  }
+
+  function runVcStep3() {
+    moveVcCursor(700, 75, 'Studio Editor');
+
+    setTimeout(function(){
+      var copyBtn = document.getElementById('vcCopyLrBtn');
+      if (copyBtn) {
+        var rect = copyBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 100, rect.top - stageRect.top + 14, 'Studio Editor');
+      }
+    }, 600);
+
+    setTimeout(function(){
+      var copyBtn = document.getElementById('vcCopyLrBtn');
+      var copyLabel = document.getElementById('vcCopyLrLabel');
+      if (copyBtn) {
+        copyBtn.classList.add('copied');
+        if (copyLabel) copyLabel.innerText = 'Query 43 Foto Disalin ke Clipboard!';
+      }
+      showVcToast('Query 43 Foto Berhasil Disalin!');
+    }, 1400);
+
+    setTimeout(function(){
+      var lrField = document.getElementById('vcLrSearchField');
+      if (lrField) {
+        var rect = lrField.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 150, rect.top - stageRect.top + 14, 'Studio Editor');
+      }
+    }, 2200);
+
+    setTimeout(function(){
+      var lrText = document.getElementById('vcLrSearchText');
+      if (lrText) {
+        lrText.style.color = '#38BDF8';
+        lrText.innerText = 'DSC_0412, DSC_0418, DSC_0421, DSC_0430, DSC_0439...';
+      }
+      showVcToast('Query Dipaste di Library Filter Lightroom!');
+    }, 3000);
+
+    setTimeout(function(){
+      showVcToast('43 Foto Otomatis Terfilter di Lightroom!');
+    }, 4200);
+  }
+
+  function runVcStep4() {
+    moveVcCursor(480, 220, 'Studio Editor');
+
+    setTimeout(function(){
+      var srcBtn = document.getElementById('vcSrcNativeBtn');
+      if (srcBtn) {
+        var rect = srcBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 120, rect.top - stageRect.top + 14, 'Studio Editor');
+      }
+    }, 700);
+
+    setTimeout(function(){
+      var finder = document.getElementById('vcFinderPopup');
+      if (finder) finder.classList.add('open');
+      showVcToast('Jendela Pilih Folder Terbuka!');
+    }, 1400);
+
+    setTimeout(function(){
+      var openBtn = document.getElementById('vcFinderOpenBtn');
+      if (openBtn) {
+        var rect = openBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 30, rect.top - stageRect.top + 10, 'Studio Editor');
+      }
+    }, 2200);
+
+    setTimeout(function(){
+      var finder = document.getElementById('vcFinderPopup');
+      if (finder) finder.classList.remove('open');
+      var srcBtn = document.getElementById('vcSrcNativeBtn');
+      var srcText = document.getElementById('vcSrcNativeText');
+      if (srcBtn) srcBtn.style.borderStyle = 'solid';
+      if (srcText) srcText.innerText = '/Volumes/SSD_SANDISK/HANA_RAW/';
+      showVcToast('Folder Sumber RAW Terhubung!');
+    }, 2800);
+
+    setTimeout(function(){
+      var startBtn = document.getElementById('vcStartNativeSortBtn');
+      if (startBtn) {
+        var rect = startBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 120, rect.top - stageRect.top + 14, 'Studio Editor');
+      }
+    }, 3400);
+
+    setTimeout(function(){
+      var termLog = document.getElementById('vcNativeTermLog');
+      if (termLog) {
+        termLog.innerHTML = '<div style="color:#34D399;">[10:14:02] Memindahkan 43 file RAW (180 MB/s)... Selesai!</div>';
+      }
+      showVcToast('43 File RAW Berhasil Dipindahkan ke Folder Tujuan!');
+    }, 4200);
+  }
+
+  function runVcStep5() {
+    moveVcCursor(700, 75, 'Fotografer');
+
+    setTimeout(function(){
+      var dlBtn = document.getElementById('vcDownloadScriptBtn');
+      if (dlBtn) {
+        var rect = dlBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 80, rect.top - stageRect.top + 14, 'Fotografer');
+      }
+    }, 600);
+
+    setTimeout(function(){
+      var dlBtn = document.getElementById('vcDownloadScriptBtn');
+      var dlLabel = document.getElementById('vcDownloadScriptLabel');
+      if (dlBtn) {
+        dlBtn.classList.add('copied');
+        if (dlLabel) dlLabel.innerText = 'Magic-Sort Siap di Laptop!';
+      }
+      showVcToast('Magic-Sort Berhasil Diunduh!');
+    }, 1400);
+
+    setTimeout(function(){
+      var scriptItem = document.getElementById('vcMagicScriptItem');
+      if (scriptItem) {
+        var rect = scriptItem.getBoundingClientRect();
+        var stageRect = document.getElementById('vcStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 35, rect.top - stageRect.top + 25, 'Fotografer');
+      }
+    }, 2400);
+
+    setTimeout(function(){
+      var magicFolder = document.getElementById('vcMagicResultFolder');
+      if (magicFolder) {
+        magicFolder.style.display = 'flex';
+      }
+      showVcToast('Double-Click: Folder FOTO_TERPILIH Otomatis Terbuat!');
+    }, 3200);
+
+    setTimeout(function(){
+      showVcToast('43 File RAW Otomatis Terpisah dengan Magic-Sort!');
+    }, 4400);
+  }
+
+  function setVcStep(idx) {
+    currentVc = idx;
+    resetVcAnimations();
+
+    document.querySelectorAll('#vcStage .stage-panel').forEach(function(el, i){
+      el.classList.toggle('active', (i + 1) === idx);
+    });
+
+    document.querySelectorAll('#vcTabBar .stepper-tab-btn').forEach(function(btn){
+      var btnStep = parseInt(btn.getAttribute('data-vcstep'), 10);
+      btn.classList.toggle('active', btnStep === idx);
+      var prog = btn.querySelector('.tab-progress-line');
+      if (prog) {
+        prog.style.animation = 'none';
+        prog.offsetHeight;
+        if (btnStep === idx) {
+          prog.style.animation = 'tabProgressFill 5.6s linear forwards';
+        }
+      }
+    });
+
+    if (idx === 1) runVcStep1();
+    if (idx === 2) runVcStep2();
+    if (idx === 3) runVcStep3();
+    if (idx === 4) runVcStep4();
+    if (idx === 5) runVcStep5();
+  }
+
+  function startVcLoop() {
+    clearInterval(vcTimer);
+    vcTimer = setInterval(function(){
+      var next = currentVc + 1;
+      if (next > 5) next = 1;
+      setVcStep(next);
+    }, vcDuration);
+  }
+
+  document.querySelectorAll('#vcTabBar .stepper-tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var step = parseInt(btn.getAttribute('data-vcstep'), 10);
+      setVcStep(step);
+      startVcLoop();
+    });
+  });
+
+  setVcStep(1);
+  startVcLoop();
+
+
+  // ═══════════════════════════════════════════════════════════════
+  // 2. ENGINE CONTROLLER: ALUR VENDOR ⟷ PLATFORM (3 TABS)
+  // ═══════════════════════════════════════════════════════════════
+  var currentVp = 1;
+  var vpTimer = null;
+  var vpDuration = 8200; // 8.2 detik untuk siklus animasi lengkap dan jelas
+
+  var vpCursor = document.getElementById('vpCursor');
+  var vpCursorTag = document.getElementById('vpCursorTag');
+  var vpToast = document.getElementById('vpToast');
+  var vpToastMsg = document.getElementById('vpToastMsg');
+
+  function showVpToast(msg) {
+    if (!vpToast) return;
+    vpToastMsg.innerText = msg;
+    vpToast.classList.add('show');
+    setTimeout(function(){ vpToast.classList.remove('show'); }, 2200);
+  }
+
+  function moveVpCursor(x, y, tag) {
+    if (!vpCursor) return;
+    if (tag) vpCursorTag.innerText = tag;
+    vpCursor.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+  }
+
+  function setVpSubView(subIdx) {
+    var sub1 = document.getElementById('vpSub1');
+    var sub2 = document.getElementById('vpSub2');
+    var sub3 = document.getElementById('vpSub3');
+    if (sub1) sub1.classList.toggle('active', subIdx === 1);
+    if (sub2) sub2.classList.toggle('active', subIdx === 2);
+    if (sub3) sub3.classList.toggle('active', subIdx === 3);
+  }
+
+  function resetVpAnimations() {
+    // Reset Tab 1 (Google ➔ Paket ➔ QRIS)
+    setVpSubView(1);
+    var googleBtn = document.getElementById('vpGoogleSignupBtn');
+    if (googleBtn) googleBtn.classList.remove('clicked');
+    var planBox1 = document.getElementById('vpPlanBox1');
+    var planBox2 = document.getElementById('vpPlanBox2');
+    if (planBox1) planBox1.classList.remove('selected');
+    if (planBox2) planBox2.classList.add('selected');
+    var planBtn = document.getElementById('vpSelectPlanBtn');
+    if (planBtn) planBtn.classList.remove('clicked');
+    var successOverlay = document.getElementById('vpQrisSuccessOverlay');
+    var qrisStatus = document.getElementById('vpQrisStatus');
+    if (successOverlay) successOverlay.classList.remove('show');
+    if (qrisStatus) {
+      qrisStatus.innerText = 'Menunggu Scan & Pembayaran...';
+      qrisStatus.style.color = '#78716C';
+      qrisStatus.style.fontWeight = 'normal';
+    }
+
+    // Reset Tab 2 (Dashboard & Live Tracker)
+    var modal = document.getElementById('vpCreateModal');
+    var newProjBtn = document.getElementById('vpNewProjectBtn');
+    var saveBtn = document.getElementById('vpModalSaveBtn');
+    var card = document.getElementById('vpProjectCard');
+    var liveCount = document.getElementById('vpLiveCountText');
+    var liveBar = document.getElementById('vpLiveProgressBar');
+    var statusBadge = document.getElementById('vpCardStatusBadge');
+    var statusText = document.getElementById('vpCardStatusText');
+    var btnCopyLr = document.getElementById('vpBtnCopyLr');
+    var btnRaw = document.getElementById('vpBtnRawSorter');
+    var btnMagic = document.getElementById('vpBtnMagicSort');
+
+    if (modal) modal.classList.remove('open');
+    if (newProjBtn) newProjBtn.classList.remove('clicked');
+    if (saveBtn) saveBtn.classList.remove('clicked');
+    if (card) card.classList.remove('highlight');
+    if (liveCount) liveCount.innerText = '0 / 50 Foto (0%)';
+    if (liveBar) liveBar.style.width = '0%';
+    if (statusBadge) {
+      statusBadge.style.background = '#FEF3C7';
+      statusBadge.style.color = '#D97706';
+    }
+    if (statusText) statusText.innerText = 'Menunggu Seleksi';
+    if (btnCopyLr) btnCopyLr.classList.remove('active-gold');
+    if (btnRaw) btnRaw.classList.remove('active-gold');
+    if (btnMagic) btnMagic.classList.remove('active-gold');
+
+    // Reset Tab 3 (Split Storage Comparison)
+    var syncBtn = document.getElementById('vpBtnSyncDrive');
+    var syncText = document.getElementById('vpBtnSyncText');
+    var syncLog = document.getElementById('vpSyncStatusLog');
+    var dragFolder = document.getElementById('vpDragFolder');
+    var splitDropzone = document.getElementById('vpSplitDropzone');
+    var splitDropTitle = document.getElementById('vpSplitDropTitle');
+    var splitDropSubtitle = document.getElementById('vpSplitDropSubtitle');
+    var splitStartBtn = document.getElementById('vpSplitStartBtn');
+    var splitStartText = document.getElementById('vpSplitStartText');
+    var splitSpeed = document.getElementById('vpSplitWorkerSpeed');
+    var splitEta = document.getElementById('vpSplitEtaText');
+
+    if (syncBtn) syncBtn.classList.remove('copied');
+    if (syncText) syncText.innerText = 'Tarik Update (Sync GDrive)';
+    if (syncLog) syncLog.innerText = 'Terakhir disinkronkan: Baru saja';
+    if (dragFolder) {
+      dragFolder.style.opacity = '0';
+      dragFolder.style.transform = 'translate3d(0, 0, 0)';
+    }
+    if (splitDropzone) splitDropzone.classList.remove('highlight');
+    if (splitDropTitle) splitDropTitle.innerText = 'Tarik & Lepas 1 Folder Penuh ke Sini';
+    if (splitDropSubtitle) splitDropSubtitle.innerText = 'Batch recursive upload seluruh subfolder sekaligus';
+    if (splitStartBtn) splitStartBtn.classList.remove('clicked');
+    if (splitStartText) splitStartText.innerText = 'Mulai Turbo Upload 240 Foto';
+    if (splitSpeed) splitSpeed.innerText = '85 MB/s';
+    if (splitEta) splitEta.innerText = 'Performa: 10x Lebih Cepat dari Upload Biasa';
+
+    for (var i = 1; i <= 8; i++) {
+      var f = document.getElementById('vpSpFill' + i);
+      if (f) f.style.width = '0%';
+    }
+  }
+
+  function runVpStep1() {
+    // ── FASE 1: KLIK DAFTAR GOOGLE ──
+    moveVpCursor(240, 200, 'Vendor Baru');
+
+    setTimeout(function(){
+      var googleBtn = document.getElementById('vpGoogleSignupBtn');
+      if (googleBtn) {
+        var rect = googleBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vpStage').getBoundingClientRect();
+        moveVpCursor(rect.left - stageRect.left + 150, rect.top - stageRect.top + 18, 'Vendor Baru');
+      }
+    }, 700);
+
+    setTimeout(function(){
+      var googleBtn = document.getElementById('vpGoogleSignupBtn');
+      if (googleBtn) googleBtn.classList.add('clicked');
+      showVpToast('Otentikasi Google Berhasil!');
+    }, 1500);
+
+    // ── FASE 2: TRANSISI KE PILIH PAKET ──
+    setTimeout(function(){
+      setVpSubView(2);
+      moveVpCursor(320, 210, 'Vendor Baru');
+    }, 2100);
+
+    setTimeout(function(){
+      var planBtn = document.getElementById('vpSelectPlanBtn');
+      if (planBtn) {
+        var rect = planBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vpStage').getBoundingClientRect();
+        moveVpCursor(rect.left - stageRect.left + 160, rect.top - stageRect.top + 16, 'Pilih Paket Unlimited');
+      }
+    }, 2900);
+
+    setTimeout(function(){
+      var planBtn = document.getElementById('vpSelectPlanBtn');
+      if (planBtn) planBtn.classList.add('clicked');
+    }, 3600);
+
+    // ── FASE 3: TRANSISI KE DISPLAY QRIS & SCAN ──
+    setTimeout(function(){
+      setVpSubView(3);
+      moveVpCursor(320, 240, 'Scan QRIS (BCA/GoPay)');
+    }, 4200);
+
+    // ── FASE 4: SCAN LANGSUNG BERHASIL ──
+    setTimeout(function(){
+      var successOverlay = document.getElementById('vpQrisSuccessOverlay');
+      var qrisStatus = document.getElementById('vpQrisStatus');
+      if (successOverlay) successOverlay.classList.add('show');
+      if (qrisStatus) {
+        qrisStatus.innerText = 'Pembayaran Berhasil! Akun Studio Aktif';
+        qrisStatus.style.color = '#15803D';
+        qrisStatus.style.fontWeight = '700';
+      }
+      showVpToast('Pembayaran QRIS Sukses! Studio Aktif Instan');
+    }, 5600);
+  }
+
+  function runVpStep2() {
+    // ── FASE 1: KLIK TOMBOL BUAT PROJECT DI DASHBOARD ──
+    moveVpCursor(580, 75, 'Vendor Studio');
+
+    setTimeout(function(){
+      var newProjBtn = document.getElementById('vpNewProjectBtn');
+      if (newProjBtn) {
+        var rect = newProjBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vpStage').getBoundingClientRect();
+        moveVpCursor(rect.left - stageRect.left + 50, rect.top - stageRect.top + 14, 'Vendor Studio');
+      }
+    }, 600);
+
+    setTimeout(function(){
+      var newProjBtn = document.getElementById('vpNewProjectBtn');
+      var modal = document.getElementById('vpCreateModal');
+      if (newProjBtn) newProjBtn.classList.add('clicked');
+      if (modal) modal.classList.add('open');
+      showVpToast('Form Project Baru Terbuka!');
+    }, 1300);
+
+    // ── FASE 2: SIMPAN PROJECT BARU DARI MODAL ──
+    setTimeout(function(){
+      var saveBtn = document.getElementById('vpModalSaveBtn');
+      if (saveBtn) {
+        var rect = saveBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vpStage').getBoundingClientRect();
+        moveVpCursor(rect.left - stageRect.left + 120, rect.top - stageRect.top + 14, 'Vendor Studio');
+      }
+    }, 2000);
+
+    setTimeout(function(){
+      var saveBtn = document.getElementById('vpModalSaveBtn');
+      var modal = document.getElementById('vpCreateModal');
+      var card = document.getElementById('vpProjectCard');
+      if (saveBtn) saveBtn.classList.add('clicked');
+      if (modal) modal.classList.remove('open');
+      if (card) card.classList.add('highlight');
+      showVpToast('Project Hana & Dimas Aktif di Dashboard!');
+    }, 2700);
+
+    // ── FASE 3: LIVE TRACKER HITUNGAN KLIEN BERGERAK REAL-TIME ──
+    setTimeout(function(){
+      moveVpCursor(320, 220, 'Klien Memilih (Live)');
+      var liveCount = document.getElementById('vpLiveCountText');
+      var liveBar = document.getElementById('vpLiveProgressBar');
+      if (liveCount) liveCount.innerText = '24 / 50 Foto (48%)';
+      if (liveBar) liveBar.style.width = '48%';
+    }, 3800);
+
+    setTimeout(function(){
+      var liveCount = document.getElementById('vpLiveCountText');
+      var liveBar = document.getElementById('vpLiveProgressBar');
+      var statusBadge = document.getElementById('vpCardStatusBadge');
+      var statusText = document.getElementById('vpCardStatusText');
+      var btnCopyLr = document.getElementById('vpBtnCopyLr');
+      var btnRaw = document.getElementById('vpBtnRawSorter');
+      var btnMagic = document.getElementById('vpBtnMagicSort');
+
+      if (liveCount) liveCount.innerText = '43 / 50 Foto (86%)';
+      if (liveBar) liveBar.style.width = '86%';
+      if (statusBadge) {
+        statusBadge.style.background = '#DCFCE7';
+        statusBadge.style.color = '#15803D';
+      }
+      if (statusText) statusText.innerText = 'Selesai Dipilih';
+      if (btnCopyLr) btnCopyLr.classList.add('active-gold');
+      if (btnRaw) btnRaw.classList.add('active-gold');
+      if (btnMagic) btnMagic.classList.add('active-gold');
+      showVpToast('43 Foto Selesai Dipilih Klien!');
+    }, 4800);
+
+    // ── FASE 4: VENDOR 1-KLIK SALIN LIGHTROOM DARI PROJECT CARD ──
+    setTimeout(function(){
+      var btnCopyLr = document.getElementById('vpBtnCopyLr');
+      if (btnCopyLr) {
+        var rect = btnCopyLr.getBoundingClientRect();
+        var stageRect = document.getElementById('vpStage').getBoundingClientRect();
+        moveVpCursor(rect.left - stageRect.left + 60, rect.top - stageRect.top + 12, 'Studio Editor');
+      }
+    }, 5800);
+
+    setTimeout(function(){
+      showVpToast('Query 43 Foto Berhasil Disalin ke Clipboard!');
+    }, 6600);
+  }
+
+  function runVpStep3() {
+    // ── FASE 1: DEMO SISI KIRI (DRIVE SENDIRI / SYNC GDRIVE) ──
+    moveVpCursor(200, 200, 'Vendor Studio');
+
+    setTimeout(function(){
+      var syncBtn = document.getElementById('vpBtnSyncDrive');
+      if (syncBtn) {
+        var rect = syncBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vpStage').getBoundingClientRect();
+        moveVcCursor(rect.left - stageRect.left + 80, rect.top - stageRect.top + 12, 'Sync GDrive');
+      }
+    }, 700);
+
+    setTimeout(function(){
+      var syncBtn = document.getElementById('vpBtnSyncDrive');
+      var syncText = document.getElementById('vpBtnSyncText');
+      var syncLog = document.getElementById('vpSyncStatusLog');
+      if (syncBtn) syncBtn.classList.add('copied');
+      if (syncText) syncText.innerText = 'Sinkronisasi Selesai!';
+      if (syncLog) syncLog.innerText = '240 Foto Terbaru dari Google Drive Terhubung';
+      showVpToast('Google Drive Studio Berhasil Disinkronkan!');
+    }, 1500);
+
+    // ── FASE 2: DEMO SISI KANAN (DRAG & DROP FOLDER KE TURBO CLOUD) ──
+    var dragFolder = document.getElementById('vpDragFolder');
+    var splitDropzone = document.getElementById('vpSplitDropzone');
+
+    setTimeout(function(){
+      if (dragFolder) {
+        dragFolder.style.opacity = '1';
+        moveVpCursor(520, 100, 'Tarik Folder Proyek');
+      }
+    }, 2400);
+
+    setTimeout(function(){
+      moveVpCursor(680, 210, 'Tarik Folder Proyek');
+      if (dragFolder) dragFolder.style.transform = 'translate3d(400px, 90px, 0)';
+      if (splitDropzone) splitDropzone.classList.add('highlight');
+    }, 3200);
+
+    setTimeout(function(){
+      if (dragFolder) dragFolder.style.opacity = '0';
+      var splitDropTitle = document.getElementById('vpSplitDropTitle');
+      var splitDropSubtitle = document.getElementById('vpSplitDropSubtitle');
+      if (splitDropTitle) splitDropTitle.innerText = 'HANA_WEDDING_JPG Siap Diunggah!';
+      if (splitDropSubtitle) splitDropSubtitle.innerText = '240 Berkas Siap Diunggah 8-Worker Paralel';
+      showVpToast('Folder Proyek Masuk ke Dropzone Turbo!');
+    }, 4000);
+
+    // ── FASE 3: 8 WORKER CONCURRENCY PARALEL AKTIF (85 MB/s) ──
+    setTimeout(function(){
+      var startBtn = document.getElementById('vpSplitStartBtn');
+      if (startBtn) {
+        var rect = startBtn.getBoundingClientRect();
+        var stageRect = document.getElementById('vpStage').getBoundingClientRect();
+        moveVpCursor(rect.left - stageRect.left + 120, rect.top - stageRect.top + 12, 'Vendor Studio');
+      }
+    }, 4700);
+
+    setTimeout(function(){
+      var startBtn = document.getElementById('vpSplitStartBtn');
+      var startText = document.getElementById('vpSplitStartText');
+      var splitEta = document.getElementById('vpSplitEtaText');
+      if (startBtn) startBtn.classList.add('clicked');
+      if (startText) startText.innerText = '8 Worker Sedang Mengunggah...';
+      if (splitEta) splitEta.innerText = 'Kecepatan Transfer: 85 MB/s (~2.4s tersisa)';
+
+      for (var i = 1; i <= 8; i++) {
+        (function(idx){
+          setTimeout(function(){
+            var f = document.getElementById('vpSpFill' + idx);
+            if (f) f.style.width = '100%';
+          }, idx * 75);
+        })(i);
+      }
+      showVpToast('8 Worker Nodes Paralel Mengunggah Berkas!');
+    }, 5400);
+
+    setTimeout(function(){
+      var startText = document.getElementById('vpSplitStartText');
+      var splitEta = document.getElementById('vpSplitEtaText');
+      var splitSpeed = document.getElementById('vpSplitWorkerSpeed');
+      if (startText) startText.innerText = '240 Foto Selesai Diunggah!';
+      if (splitSpeed) splitSpeed.innerText = 'Selesai (2.8s)';
+      if (splitEta) splitEta.innerText = 'Status: 240 Foto Siap Dipilih Klien di Cloud';
+      showVpToast('Turbo Upload Selesai Kilat dalam 2.8 Detik!');
+    }, 6800);
+  }
+
+  function setVpStep(idx) {
+    currentVp = idx;
+    resetVpAnimations();
+
+    document.querySelectorAll('#vpStage .stage-panel').forEach(function(el, i){
+      el.classList.toggle('active', (i + 1) === idx);
+    });
+
+    document.querySelectorAll('#vpTabBar .stepper-tab-btn').forEach(function(btn){
+      var btnStep = parseInt(btn.getAttribute('data-vpstep'), 10);
+      btn.classList.toggle('active', btnStep === idx);
+      var prog = btn.querySelector('.tab-progress-line');
+      if (prog) {
+        prog.style.animation = 'none';
+        prog.offsetHeight;
+        if (btnStep === idx) {
+          prog.style.animation = 'tabProgressFill 8.2s linear forwards';
+        }
+      }
+    });
+
+    if (idx === 1) runVpStep1();
+    if (idx === 2) runVpStep2();
+    if (idx === 3) runVpStep3();
+  }
+
+  function startVpLoop() {
+    clearInterval(vpTimer);
+    vpTimer = setInterval(function(){
+      var next = currentVp + 1;
+      if (next > 3) next = 1;
+      setVpStep(next);
+    }, vpDuration);
+  }
+
+  document.querySelectorAll('#vpTabBar .stepper-tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var step = parseInt(btn.getAttribute('data-vpstep'), 10);
+      setVpStep(step);
+      startVpLoop();
+    });
+  });
+
+  setVpStep(1);
+  startVpLoop();
+
+})();
+</script>
+
+</body>
+</html>

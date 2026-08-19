@@ -52,9 +52,47 @@ export async function GET(request) {
     const config = getPaymentGatewayConfig();
     let isSettled = transaction.status === 'paid';
 
-    // If transaction is not paid yet, check live status from Midtrans API directly
-    // (Only applicable when active provider is Midtrans — other providers use webhook callbacks)
-    if (!isSettled && config.enabled && config.serverKey && config.provider === 'midtrans') {
+    // If transaction is not paid yet, check live status from API directly (Midtrans or IPaymu)
+    if (!isSettled && config.enabled && config.provider === 'ipaymu') {
+      try {
+        let trxId = null;
+        try {
+          const rawObj = JSON.parse(transaction.rawResponse || '{}');
+          trxId = rawObj.Data?.TransactionId || rawObj.Data?.transactionId || rawObj.TransactionId;
+        } catch (e) {}
+
+        if (trxId) {
+          const { checkIPaymuTransactionStatus } = await import('@/lib/payment-gateway/ipaymu.js');
+          const ipaymuCheck = await checkIPaymuTransactionStatus({ transactionId: trxId, config });
+          if (ipaymuCheck.valid) {
+            if (ipaymuCheck.isPaid) {
+              isSettled = true;
+              db.prepare("UPDATE payment_transactions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE id = ?").run(transaction.id);
+              try {
+                db.prepare("UPDATE payment_sessions SET status = 'paid', paidAt = CURRENT_TIMESTAMP WHERE orderId = ?").run(orderId);
+              } catch (e) {}
+            } else if (ipaymuCheck.isFailed) {
+              const newTxStatus = 'expired';
+              db.prepare("UPDATE payment_transactions SET status = ? WHERE id = ?").run(newTxStatus, transaction.id);
+              try {
+                db.prepare("UPDATE payment_sessions SET status = ? WHERE orderId = ?").run(newTxStatus, orderId);
+              } catch (e) {}
+
+              db.prepare("UPDATE vendors SET status = ?, archivedAt = CURRENT_TIMESTAMP WHERE id = ? AND status != 'active'").run('expired_draft', transaction.vendorId);
+
+              return NextResponse.json({
+                paid: false,
+                status: newTxStatus,
+                expired: true,
+                message: 'Transaksi QRIS ini telah kedaluwarsa atau dibatalkan.'
+              });
+            }
+          }
+        }
+      } catch (ipaymuErr) {
+        console.error('[IPaymu Live Status Fetch Error]:', ipaymuErr);
+      }
+    } else if (!isSettled && config.enabled && config.serverKey && config.provider === 'midtrans') {
       try {
         const midtransStatusUrl = config.isProduction
           ? `https://api.midtrans.com/v2/${orderId}/status`

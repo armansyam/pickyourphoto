@@ -6,6 +6,16 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
     // Deteksi provider dari pendingOrder (dikirim dari /api/payment/create response)
     const provider = (pendingOrder?.provider || 'midtrans').toLowerCase();
     const isMidtrans = provider === 'midtrans';
+    const isDirectQr = Boolean(
+        provider === 'ipaymu' || 
+        pendingOrder?.qrImage || 
+        (pendingOrder?.qrUrl && (
+            pendingOrder.qrUrl.includes('googleusercontent') ||
+            pendingOrder.qrUrl.includes('storage.googleapis.com') ||
+            pendingOrder.qrUrl.includes('/qr/') ||
+            pendingOrder.qrUrl.match(/\.(png|jpg|jpeg|svg|webp)($|\?)/i)
+        ))
+    );
     const [timeLeft, setTimeLeft] = useState('');
     const [isExpired, setIsExpired] = useState(false);
     const [checkingStatus, setCheckingStatus] = useState(false);
@@ -227,12 +237,13 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                         </div>
                     </div>
 
-                    {/* QR Area — snap.embed for real QRIS / expired overlay */}
+                    {/* QR Area — Direct QRIS Image (IPaymu) OR snap.embed (Midtrans) OR Iframe (Fallback) */}
                     <div style={{
                         width: '100%', maxWidth: '380px',
                         background: '#fff', borderRadius: '12px', overflow: 'hidden',
                         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                        position: 'relative', minHeight: '680px',
+                        position: 'relative', minHeight: isDirectQr ? '320px' : '680px',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         boxSizing: 'border-box'
                     }}>
                         {/* Expired / Regenerating Overlay */}
@@ -254,28 +265,50 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                                 )}
                             </div>
                         )}
-                        {/* QR/Payment Area:
-                            - Midtrans: snap.embed renders into #midtrans-snap-embed
-                            - Xendit/Tripay/Duitku/Doku: iframe dari redirectUrl
-                        */}
-                        <div id="midtrans-snap-embed" style={{ width: '100%', minHeight: '600px' }}>
-                          {/* Iframe fallback: untuk non-Midtrans atau saat snap.embed belum siap */}
-                          {!isMidtrans && (pendingOrder?.redirectUrl || pendingOrder?.paymentUrl) && (
-                            <iframe
-                              src={pendingOrder.redirectUrl || pendingOrder.paymentUrl}
-                              style={{ width: '100%', height: '620px', border: 'none', borderRadius: '12px', background: '#ffffff' }}
-                              title="Payment Gateway"
-                            />
-                          )}
-                          {/* Midtrans: iframe sebagai last-resort fallback jika snap.embed gagal */}
-                          {isMidtrans && !snapEmbedDone.current && (pendingOrder?.paymentUrl || pendingOrder?.redirectUrl) && (
-                            <iframe
-                              src={pendingOrder.paymentUrl || pendingOrder.redirectUrl}
-                              style={{ width: '100%', height: '620px', border: 'none', borderRadius: '12px', background: '#ffffff' }}
-                              title="QRIS Instant Payment"
-                            />
-                          )}
-                        </div>
+                        {/* MODE 1: DIRECT QRIS IMAGE (IPaymu / Native Direct QR) */}
+                        {isDirectQr ? (
+                            <div style={{ width: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                                <div style={{
+                                    background: '#ffffff',
+                                    padding: '10px',
+                                    borderRadius: '12px',
+                                    border: '1.5px solid #e2e8f0',
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
+                                    <img 
+                                        src={pendingOrder.qrImage || pendingOrder.qrUrl} 
+                                        alt="QRIS Barcode" 
+                                        style={{ width: '250px', height: '250px', objectFit: 'contain', display: 'block', borderRadius: '6px' }} 
+                                    />
+                                </div>
+                                <div style={{ marginTop: '14px', textAlign: 'center' }}>
+                                    <span style={{ fontSize: '11px', color: '#475569', fontWeight: '600' }}>
+                                        Scan dengan aplikasi e-Wallet atau Mobile Banking apa saja
+                                    </span>
+                                </div>
+                            </div>
+                        ) : (
+                            /* MODE 2: MIDTRANS SNAP OR IFRAME */
+                            <div id="midtrans-snap-embed" style={{ width: '100%', minHeight: '600px' }}>
+                              {!isMidtrans && (pendingOrder?.redirectUrl || pendingOrder?.paymentUrl) && (
+                                <iframe
+                                  src={pendingOrder.redirectUrl || pendingOrder.paymentUrl}
+                                  style={{ width: '100%', height: '620px', border: 'none', borderRadius: '12px', background: '#ffffff' }}
+                                  title="Payment Gateway"
+                                />
+                              )}
+                              {isMidtrans && !snapEmbedDone.current && (pendingOrder?.paymentUrl || pendingOrder?.redirectUrl) && (
+                                <iframe
+                                  src={pendingOrder.paymentUrl || pendingOrder.redirectUrl}
+                                  style={{ width: '100%', height: '620px', border: 'none', borderRadius: '12px', background: '#ffffff' }}
+                                  title="QRIS Instant Payment"
+                                />
+                              )}
+                            </div>
+                        )}
                         <style jsx global>{`
                             #midtrans-snap-embed {
                                 width: 100% !important;

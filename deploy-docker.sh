@@ -1,34 +1,49 @@
 #!/bin/bash
 
 # =============================================================================
-# deploy-pm2.sh — Script Deploy Otomatis (PM2) — Pick Your Photo SaaS
-# Cocok untuk: VPS resource minim tanpa Docker (RAM ≥ 1 GB)
-# Diperbarui: 10 Agustus 2026
-# Gunakan: chmod +x deploy-pm2.sh && ./deploy-pm2.sh
+# deploy-docker.sh — Script Deploy Otomatis (Docker Compose) — Pick Your Photo SaaS
+# Diperbarui: 19 Agustus 2026
+# Gunakan: chmod +x deploy-docker.sh && ./deploy-docker.sh
 # =============================================================================
 
 # Keluar segera jika ada perintah yang gagal
 set -e
 
-echo "=========================================="
-echo "🚀 MEMULAI DEPLOYMENT PM2..."
-echo "=========================================="
+# Format Warna Terminal ANSI
+CYAN='\033[1;36m'
+GOLD='\033[1;33m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+PURPLE='\033[1;35m'
+BOLD='\033[1m'
+NC='\033[0m'
 
-# Cek versi Node.js minimum (v18+)
-NODE_MAJOR=$(node -e "process.stdout.write(String(process.version.split('.')[0].slice(1)))" 2>/dev/null || echo "0")
-if [ "$NODE_MAJOR" -lt 18 ]; then
-    echo "❌ Node.js v${NODE_MAJOR} terdeteksi. Minimum yang dibutuhkan: v18.x LTS."
-    echo "   Install via: https://nodejs.org atau gunakan nvm: nvm install 20"
-    exit 1
-fi
-echo "✅ Node.js v$(node --version) — OK"
+echo -e "${CYAN}"
+cat << "EOF"
+    ___    __  ________      ____  _______ _    __
+   /   |  /  |/  / ___/     / __ \/ ____/ | |  / /
+  / /| | / /|_/ /\__ \     / / / / __/  | | / / 
+ / ___ |/ /  / /___/ /    / /_/ / /___  | |/ /  
+/_/  |_/_/  /_//____/____/_____/_____/  |___/   
+                    /_____/                      
+EOF
+echo -e "${NC}"
+echo -e "${GOLD}=============================================================================${NC}"
+echo -e " 📸 ${BOLD}PICK YOUR PHOTO — SaaS Platform for Photographers${NC}"
+echo -e " ⚡ ${GREEN}Developed by${NC} : ${BOLD}AMS DEV${NC}"
+echo -e " 🛡️  ${BLUE}License${NC}      : Proprietary & Non-Commercial License"
+echo -e " 🌐 ${PURPLE}GitHub${NC}       : https://github.com/armansyam"
+echo -e "${GOLD}=============================================================================${NC}"
+echo ""
+echo -e "${GREEN}🚀 MEMULAI PROSES DEPLOYMENT (DOCKER)...${NC}"
+echo ""
 
 # 1. Ambil kode terbaru dari Git
-echo "📥 [1/6] Menarik pembaruan kode terbaru dari Git (main branch)..."
+echo "📥 [1/5] Menarik pembaruan kode terbaru dari Git (main branch)..."
 git pull origin main
 
 # 2. Setup & Garansi Lengkap Berkas .env.local dan .env dari .env.example
-echo "📄 [2/6] Memeriksa dan menyiapkan berkas .env.local dan .env..."
+echo "📄 [2/5] Memeriksa dan menyiapkan berkas .env.local dan .env..."
 
 ensure_env_file() {
     local target_file="$1"
@@ -86,36 +101,20 @@ echo "🔑    Memvalidasi .env.local & .env..."
 ensure_env_file ".env.local"
 ensure_env_file ".env"
 
-# 3. Install semua dependensi
-echo "📦 [3/6] Menginstal semua dependensi..."
-npm install
+# 3. Build & Jalankan Container Docker baru
+echo "📦 [3/5] Membangun ulang image Docker dan me-restart container..."
+docker compose up -d --build --remove-orphans
 
-# 4. Build aplikasi Next.js
-echo "🏗️  [4/6] Membangun aplikasi Next.js..."
-rm -rf .next
-NODE_OPTIONS="--max-old-space-size=768" npm run build
+# 4. Bersihkan cache image Docker lama
+echo "🧹 [4/5] Membersihkan image Docker lama yang tidak terpakai (prune)..."
+docker image prune -f
 
-# 5. Bersihkan devDependencies setelah build
-echo "🧹 [5/6] Membersihkan devDependencies setelah build..."
-npm prune --production
-
-# 6. Reload/Start aplikasi di PM2
-echo "🔄 [6/6] Melakukan reload service di PM2..."
-if pm2 describe "pick-your-photo" > /dev/null 2>&1; then
-    echo "   ⚡ Service ditemukan → zero-downtime reload..."
-    pm2 reload "pick-your-photo"
-else
-    echo "   🆕 Service belum terdaftar → mendaftarkan dan menjalankan baru..."
-    pm2 start npm --name "pick-your-photo" -- start
-    echo ""
-    echo "   ⚠️  CATATAN: Jalankan perintah berikut agar PM2 auto-start saat reboot:"
-    echo "   pm2 save && pm2 startup"
-fi
-
-# Simpan state PM2 terkini
-pm2 save
-
-echo ""
+# 5. Tampilkan status container
 echo "=========================================="
-echo "✅ DEPLOYMENT PM2 SELESAI DENGAN SUKSES!"
+echo "📊 [5/5] STATUS CONTAINER SAAT INI:"
+echo "=========================================="
+docker compose ps
+
+echo "=========================================="
+echo "✅ DEPLOYMENT DOCKER SELESAI DENGAN SUKSES!"
 echo "=========================================="

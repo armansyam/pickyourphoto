@@ -150,7 +150,7 @@ export default function AdminVendors({
   const isQrisVendor = (v) => {
     return v.status === 'pending_payment' || 
            v.paymentProof === 'via_payment_gateway' || 
-           (v.paymentProof && v.paymentProof.includes('Midtrans'));
+           (v.paymentProof && v.paymentProof.toLowerCase().includes('automatic payment'));
   };
 
   // ── Counts ────────────────────────────────────────────────────────────────
@@ -653,7 +653,7 @@ export default function AdminVendors({
                 onClick={() => { setActiveProofUrl({ url: activeMenuVendor.paymentProof, status: activeMenuVendor.status, name: activeMenuVendor.name, email: activeMenuVendor.email }); setActiveMenuVendor(null); }}
                 style={{ padding: '8px 10px', fontSize: '12px', background: 'none', border: 'none', color: '#e4e4e7', borderRadius: '6px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                {(activeMenuVendor.paymentProof === 'via_payment_gateway' || activeMenuVendor.paymentProof?.includes('Midtrans')) ? '⚡ Info Pembayaran QRIS' : '👁 Bukti Transfer'}
+                {(activeMenuVendor.paymentProof === 'via_payment_gateway' || activeMenuVendor.paymentProof?.toLowerCase().includes('automatic payment')) ? '⚡ Info Pembayaran QRIS' : '👁 Bukti Transfer'}
               </button>
             )}
             <button onClick={() => { setEditingVendor(activeMenuVendor); setActiveMenuVendor(null); }}

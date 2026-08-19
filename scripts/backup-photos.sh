@@ -1,24 +1,24 @@
 #!/bin/bash
-# backup-photos.sh — Jalankan via cron (misal: tiap 24 jam)
-# Contoh entri crontab: 0 2 * * * /Users/armansyam/Documents/Project\ AmsDev/pick-your-photo/scripts/backup-photos.sh
+# backup-photos.sh — Backup lokal untuk asset persisten (Logo Vendor & Bukti Transfer)
+# Diperbarui: 19 Agustus 2026
 
-# Path direktori proyek (dinamis otomatis mendeteksi root project)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
-SRC_DIR="$PROJECT_DIR/public/staging_uploads/"
-# Tempat penyimpanan cadangan eksternal (idealnya di disk fisik yang berbeda)
-DEST_DIR="$PROJECT_DIR/backups/staging_uploads_backup/"
+BACKUP_DIR="$PROJECT_DIR/backups/assets_backup"
 
-# Pastikan direktori cadangan eksternal telah dibuat
-mkdir -p "$DEST_DIR"
+mkdir -p "$BACKUP_DIR"
 
-# Jalankan rsync incremental backup untuk menyalin seluruh folder unggahan
-# --delete akan memastikan file yang dihapus di live juga terhapus di backup jika sinkron
-rsync -av --delete "$SRC_DIR" "$DEST_DIR"
-
-if [ $? -eq 0 ]; then
-    echo "[$(date)] Incremental backup foto selesai dengan sukses."
-else
-    echo "[$(date)] Incremental backup foto GAGAL." >&2
-    exit 1
+# 1. Backup logo vendor jika folder ada
+if [ -d "$PROJECT_DIR/public/vendor_logos" ]; then
+    mkdir -p "$BACKUP_DIR/vendor_logos"
+    rsync -a --delete "$PROJECT_DIR/public/vendor_logos/" "$BACKUP_DIR/vendor_logos/"
 fi
+
+# 2. Backup private storage proofs jika folder ada
+if [ -d "$PROJECT_DIR/data/private_storage" ]; then
+    mkdir -p "$BACKUP_DIR/private_storage"
+    rsync -a --delete "$PROJECT_DIR/data/private_storage/" "$BACKUP_DIR/private_storage/"
+fi
+
+echo "[$(date)] Backup asset persisten (Logo & Proofs) selesai dengan sukses."
+

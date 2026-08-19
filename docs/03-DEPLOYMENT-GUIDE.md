@@ -33,15 +33,14 @@ pick-your-photo/
 │   ├── staging_uploads/   # Upload sementara (bukti bayar, logo) — perlu persisted
 │   └── vendor_logos/      # Logo vendor yang diunggah
 ├── .env.local             # Environment variables (JANGAN commit ke Git!)
-├── deploy.sh              # Script deployment Docker Compose
-├── deploy-pm2.sh          # Script deployment PM2
+├── deploy.sh              # Script deployment PM2 (Default / Rekomendasi)
+├── deploy-docker.sh       # Script deployment Docker Compose
 ├── docker-compose.yml     # Konfigurasi Docker Compose
 └── Dockerfile
 ```
 
 **Yang WAJIB di-persist (volume mounting Docker / VPS):**
-- `data/` — database SQLite (`database.db`)
-- `public/staging_uploads/` — bukti transfer & file upload vendor
+- `data/` — database SQLite (`database.db`) & private storage bukti bayar
 - `public/vendor_logos/` — logo brand vendor
 
 ---
@@ -60,7 +59,6 @@ ADMIN_PASSWORD=password_aman
 
 # Path storage (default sudah aman, ubah hanya jika pakai external disk)
 DB_PATH=./data
-STAGING_PATH=./public/staging_uploads
 LOGOS_PATH=./public/vendor_logos
 
 # Google OAuth (opsional di .env, bisa juga di-set via Admin Panel)
@@ -74,18 +72,18 @@ LOGOS_PATH=./public/vendor_logos
 
 ---
 
-## 📦 4. Alur Deployment Otomatis (`deploy-pm2.sh` & `deploy.sh`)
+## 📦 4. Alur Deployment Otomatis (`deploy.sh` & `deploy-docker.sh`)
 
-### Opsi A: Deployment PM2 (Rekomendasi VPS RAM 1 GB+)
+### Opsi A: Deployment PM2 (Rekomendasi VPS RAM 1 GB+ / Default)
 
-Gunakan script `deploy-pm2.sh` untuk deployment 1-klik:
+Gunakan script `deploy.sh` untuk deployment 1-klik:
 
 ```bash
-chmod +x deploy-pm2.sh
-./deploy-pm2.sh
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-**Isi dan Langkah `deploy-pm2.sh`:**
+**Isi dan Langkah `deploy.sh`:**
 1. **Verifikasi Node.js:** Memastikan versi Node.js minimal v18+.
 2. **Git Pull:** Menarik kode terbaru dari branch `main`.
 3. **Penyimpanan `.env.local` & Auto JWT:** Membuat `.env.local` dari `.env.example` jika belum ada dan otomatis generate 64 hex random key untuk `JWT_SECRET`.
@@ -96,16 +94,16 @@ chmod +x deploy-pm2.sh
 
 ---
 
-### Opsi B: Deployment Docker (`deploy.sh`)
+### Opsi B: Deployment Docker (`deploy-docker.sh`)
 
-Gunakan script `deploy.sh`:
+Gunakan script `deploy-docker.sh`:
 
 ```bash
-chmod +x deploy.sh
-./deploy.sh
+chmod +x deploy-docker.sh
+./deploy-docker.sh
 ```
 
-**Isi dan Langkah `deploy.sh`:**
+**Isi dan Langkah `deploy-docker.sh`:**
 1. **Git Pull:** Menarik kode terbaru dari branch `main`.
 2. **Setup `.env`:** Memastikan `.env` terkonfigurasi dan generate `JWT_SECRET`.
 3. **Docker Compose Rebuild:** Eksekusi `docker compose up -d --build --remove-orphans`.
@@ -146,8 +144,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./data:/app/data                             # 📂 SQLite DB
-      - ./public/staging_uploads:/app/public/staging_uploads
+      - ./data:/app/data                             # 📂 SQLite DB & Private Storage
       - ./public/vendor_logos:/app/public/vendor_logos
     environment:
       - NODE_ENV=production
@@ -174,7 +171,6 @@ cp data/database.db data/database_backup_$(date +%Y%m%d).db
 
 - Server VPS **bebas dari file foto fisik** (Zero-Storage).
 - Memory footprint sangat efisien karena proxy gambar menggunakan **True Pipe Stream** (`ReadableStream`) tanpa buffering ke RAM server.
-- Monitoring berkas upload sementara di `./public/staging_uploads/`.
 
 ---
 

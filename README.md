@@ -96,16 +96,16 @@ Buka [http://localhost:3000](http://localhost:3000) di browser.
 
 ## 🚀 Quick Deploy (Produksi)
 
-### Opsi A — PM2 (Rekomendasi VPS)
+### Opsi A — PM2 (Rekomendasi VPS / Default)
 ```bash
-chmod +x deploy-pm2.sh
-./deploy-pm2.sh
+chmod +x deploy.sh
+./deploy.sh
 ```
 
 ### Opsi B — Docker Compose
 ```bash
-chmod +x deploy.sh
-./deploy.sh
+chmod +x deploy-docker.sh
+./deploy-docker.sh
 ```
 
 > Kedua script secara otomatis men-generate `JWT_SECRET` acak yang aman jika belum dikonfigurasi.
