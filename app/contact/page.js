@@ -10,20 +10,22 @@ export const metadata = {
 
 function getSettings() {
     try {
-        const rows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('contact_email', 'saas_support_email', 'contact_whatsapp', 'saas_name', 'company_address', 'operational_hours')").all() || [];
+        const rows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('contact_email', 'saas_support_email', 'contact_whatsapp', 'saas_name', 'saas_domain', 'company_address', 'operational_hours')").all() || [];
         const map = {};
         rows.forEach(r => { map[r.key] = r.value; });
         const email = map.saas_support_email || map.contact_email || process.env.ADMIN_EMAIL || 'support@pickyourphoto.id';
         const whatsapp = map.contact_whatsapp || '';
         const saasName = map.saas_name || 'Pick Your Photo';
+        const saasDomain = map.saas_domain || '';
         const companyAddress = map.company_address || '';
         const operationalHours = map.operational_hours || 'Senin – Sabtu: 08:00 – 17:00 WIB';
-        return { email, whatsapp, saasName, companyAddress, operationalHours, ...map };
+        return { email, whatsapp, saasName, saasDomain, companyAddress, operationalHours, ...map };
     } catch (e) {
         return { 
             email: process.env.ADMIN_EMAIL || 'support@pickyourphoto.id', 
             whatsapp: '',
             saasName: 'Pick Your Photo',
+            saasDomain: '',
             companyAddress: '',
             operationalHours: 'Senin – Sabtu: 08:00 – 17:00 WIB'
         };
@@ -33,13 +35,9 @@ function getSettings() {
 export default function ContactPage() {
     const settings = getSettings();
 
-    // Resolve domain name dynamically
-    let domainName = 'photota.my.id';
-    try {
-        if (process.env.NEXT_PUBLIC_APP_URL) {
-            domainName = new URL(process.env.NEXT_PUBLIC_APP_URL).hostname.replace('www.', '');
-        }
-    } catch (_) {}
+    // Resolve domain name dynamically from saas_settings -> process.env -> host fallback
+    let rawDomain = settings.saasDomain || process.env.NEXT_PUBLIC_APP_URL || 'photota.my.id';
+    let domainName = rawDomain.replace(/^https?:\/\//, '').replace(/\/.*$/, '').replace('www.', '');
 
     // Format WhatsApp Link
     let cleanWaPhone = (settings.whatsapp || '').replace(/[^0-9]/g, '');

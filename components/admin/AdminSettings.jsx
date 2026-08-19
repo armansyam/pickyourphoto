@@ -11,6 +11,7 @@ export default function AdminSettings({
   maxUploadConcurrencyThreads = 4, setMaxUploadConcurrencyThreads,
 
   saasName = 'Pick Your Photo', setSaasName,
+  saasDomain = '', setSaasDomain,
   saasLogoUrl = '/logo.png', setSaasLogoUrl,
   companyAddress = '', setCompanyAddress,
   operationalHours = 'Senin – Sabtu: 08:00 – 17:00 WIB', setOperationalHours,
@@ -109,6 +110,7 @@ export default function AdminSettings({
         body: JSON.stringify({
           saasSettings: {
             saas_name: saasName || 'Pick Your Photo',
+            saas_domain: saasDomain,
             contact_email: contactEmail,
             saas_support_email: contactEmail,
             contact_whatsapp: contactWhatsapp,
@@ -1024,6 +1026,18 @@ export default function AdminSettings({
                     placeholder="Contoh: Pick Your Photo / Photota"
                     value={saasName}
                     onChange={e => setSaasName(e.target.value)}
+                    disabled={!isEditingIdentity || savingSection === 'identity'}
+                  />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>🌐 Nama Domain / URL Resmi Platform</label>
+                  <input
+                    type="text"
+                    className="input-text"
+                    placeholder="Contoh: photota.my.id atau https://photota.my.id"
+                    value={saasDomain}
+                    onChange={e => setSaasDomain(e.target.value)}
                     disabled={!isEditingIdentity || savingSection === 'identity'}
                   />
                 </div>
