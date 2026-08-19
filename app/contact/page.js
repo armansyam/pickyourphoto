@@ -33,12 +33,20 @@ function getSettings() {
 export default function ContactPage() {
     const settings = getSettings();
 
+    // Resolve domain name dynamically
+    let domainName = 'photota.my.id';
+    try {
+        if (process.env.NEXT_PUBLIC_APP_URL) {
+            domainName = new URL(process.env.NEXT_PUBLIC_APP_URL).hostname.replace('www.', '');
+        }
+    } catch (_) {}
+
     // Format WhatsApp Link
     let cleanWaPhone = (settings.whatsapp || '').replace(/[^0-9]/g, '');
     if (cleanWaPhone.startsWith('0')) {
         cleanWaPhone = '62' + cleanWaPhone.slice(1);
     }
-    const waText = encodeURIComponent(`Halo Tim Support ${settings.saasName}, saya ingin berkonsultasi dan butuh bantuan terkait aplikasi foto.`);
+    const waText = encodeURIComponent(`Halo Tim Support ${domainName}, saya butuh bantuan terkait galeri foto.`);
     const waUrl = cleanWaPhone ? `https://api.whatsapp.com/send?phone=${cleanWaPhone}&text=${waText}` : null;
 
     return (
