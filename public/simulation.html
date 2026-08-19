@@ -94,7 +94,11 @@
     margin: 0 auto;
   }
 
-  /* Mac Window Canvas Frame */
+  /* Mac Window Canvas Frame Wrapper (Railway Style) */
+  .mac-simulation-wrapper {
+    position: relative;
+    margin-bottom: 56px;
+  }
   .mac-window {
     background: #FFFFFF;
     border: 1.5px solid var(--line);
@@ -103,7 +107,7 @@
     overflow: hidden;
     position: relative;
     user-select: none;
-    margin-bottom: 18px;
+    margin-bottom: 0;
   }
   .mac-topbar {
     background: #FDFBF7;
@@ -165,7 +169,7 @@
   .stage-panel {
     position: absolute;
     inset: 0;
-    padding: 22px 28px;
+    padding: 22px 28px 48px;
     opacity: 0;
     pointer-events: none;
     transform: translateY(10px) scale(0.98);
@@ -233,20 +237,27 @@
     transform: translateY(0);
   }
 
-  /* Bottom Stepper Tab Navigator */
+  /* Bottom Stepper Tab Navigator (Overlapping Docked like Railway) */
   .stepper-tabs-wrap {
+    position: absolute;
+    bottom: -22px;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    z-index: 40;
+    pointer-events: none;
+    margin-bottom: 0;
   }
   .stepper-pill-bar {
+    pointer-events: auto;
     background: #FFFFFF;
     border: 1.5px solid var(--line);
     border-radius: 12px;
     padding: 5px;
     display: flex;
     gap: 5px;
-    box-shadow: 0 6px 20px rgba(197, 160, 89, 0.08);
+    box-shadow: 0 10px 30px rgba(197, 160, 89, 0.22), 0 2px 10px rgba(0, 0, 0, 0.06);
     flex-wrap: wrap;
   }
   .stepper-tab-btn {
@@ -936,7 +947,8 @@
   </div>
 
   <!-- WINDOW 1: VENDOR <-> CLIENT -->
-  <div class="mac-window">
+  <div class="mac-simulation-wrapper">
+    <div class="mac-window">
     <div class="mac-topbar">
       <div class="mac-dots">
         <div class="mac-dot dot-r"></div>
@@ -1292,50 +1304,51 @@
     </div>
   </div>
 
-  <!-- TABS 1: VENDOR <-> CLIENT (5 LANGKAH) -->
-  <div class="stepper-tabs-wrap">
-    <div class="stepper-pill-bar" id="vcTabBar">
-      
-      <button type="button" class="stepper-tab-btn active" data-vcstep="1">
-        <div class="tab-progress-line"></div>
-        <div class="tab-label-text">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
-          <span>01. Buat Galeri</span>
-        </div>
-      </button>
+    <!-- TABS 1: VENDOR <-> CLIENT (5 LANGKAH) -->
+    <div class="stepper-tabs-wrap">
+      <div class="stepper-pill-bar" id="vcTabBar">
+        
+        <button type="button" class="stepper-tab-btn active" data-vcstep="1">
+          <div class="tab-progress-line"></div>
+          <div class="tab-label-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+            <span>01. Buat Galeri</span>
+          </div>
+        </button>
 
-      <button type="button" class="stepper-tab-btn" data-vcstep="2">
-        <div class="tab-progress-line"></div>
-        <div class="tab-label-text">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          <span>02. Klien Memilih</span>
-        </div>
-      </button>
+        <button type="button" class="stepper-tab-btn" data-vcstep="2">
+          <div class="tab-progress-line"></div>
+          <div class="tab-label-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            <span>02. Klien Memilih</span>
+          </div>
+        </button>
 
-      <button type="button" class="stepper-tab-btn" data-vcstep="3">
-        <div class="tab-progress-line"></div>
-        <div class="tab-label-text">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
-          <span>03. Salin ke Lightroom</span>
-        </div>
-      </button>
+        <button type="button" class="stepper-tab-btn" data-vcstep="3">
+          <div class="tab-progress-line"></div>
+          <div class="tab-label-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+            <span>03. Salin ke Lightroom</span>
+          </div>
+        </button>
 
-      <button type="button" class="stepper-tab-btn" data-vcstep="4">
-        <div class="tab-progress-line"></div>
-        <div class="tab-label-text">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <span>04. RAW Sorter</span>
-        </div>
-      </button>
+        <button type="button" class="stepper-tab-btn" data-vcstep="4">
+          <div class="tab-progress-line"></div>
+          <div class="tab-label-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>04. RAW Sorter</span>
+          </div>
+        </button>
 
-      <button type="button" class="stepper-tab-btn" data-vcstep="5">
-        <div class="tab-progress-line"></div>
-        <div class="tab-label-text">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-          <span>05. Magic-Sort</span>
-        </div>
-      </button>
+        <button type="button" class="stepper-tab-btn" data-vcstep="5">
+          <div class="tab-progress-line"></div>
+          <div class="tab-label-text">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+            <span>05. Magic-Sort</span>
+          </div>
+        </button>
 
+      </div>
     </div>
   </div>
 
@@ -1353,7 +1366,8 @@
     </div>
 
     <!-- WINDOW 2: VENDOR <-> PLATFORM -->
-    <div class="mac-window">
+    <div class="mac-simulation-wrapper">
+      <div class="mac-window">
       <div class="mac-topbar">
         <div class="mac-dots">
           <div class="mac-dot dot-r"></div>
@@ -1752,34 +1766,35 @@
       </div>
     </div>
 
-    <!-- TABS 2: VENDOR <-> PLATFORM (3 TABS) -->
-    <div class="stepper-tabs-wrap">
-      <div class="stepper-pill-bar" id="vpTabBar">
-        
-        <button type="button" class="stepper-tab-btn active" data-vpstep="1">
-          <div class="tab-progress-line"></div>
-          <div class="tab-label-text">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
-            <span>01. Flow Daftar Google ➔ QRIS</span>
-          </div>
-        </button>
+      <!-- TABS 2: VENDOR <-> PLATFORM (3 TABS) -->
+      <div class="stepper-tabs-wrap">
+        <div class="stepper-pill-bar" id="vpTabBar">
+          
+          <button type="button" class="stepper-tab-btn active" data-vpstep="1">
+            <div class="tab-progress-line"></div>
+            <div class="tab-label-text">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>
+              <span>01. Flow Daftar Google ➔ QRIS</span>
+            </div>
+          </button>
 
-        <button type="button" class="stepper-tab-btn" data-vpstep="2">
-          <div class="tab-progress-line"></div>
-          <div class="tab-label-text">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            <span>02. Dashboard &amp; Live Tracker Project</span>
-          </div>
-        </button>
+          <button type="button" class="stepper-tab-btn" data-vpstep="2">
+            <div class="tab-progress-line"></div>
+            <div class="tab-label-text">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <span>02. Dashboard &amp; Live Tracker Project</span>
+            </div>
+          </button>
 
-        <button type="button" class="stepper-tab-btn" data-vpstep="3">
-          <div class="tab-progress-line"></div>
-          <div class="tab-label-text">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-            <span>03. Komparasi Storage (Drive vs Turbo Add-On)</span>
-          </div>
-        </button>
+          <button type="button" class="stepper-tab-btn" data-vpstep="3">
+            <div class="tab-progress-line"></div>
+            <div class="tab-label-text">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+              <span>03. Komparasi Storage (Drive vs Turbo Add-On)</span>
+            </div>
+          </button>
 
+        </div>
       </div>
     </div>
 
