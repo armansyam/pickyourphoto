@@ -221,6 +221,47 @@ export default function ClientGalleryPage({ params }) {
 
     useEffect(() => { fetchGallery(); }, [projectId, clientKey]);
 
+    const [draftStatus, setDraftStatus] = useState('saved'); // 'saved', 'saving', 'error'
+    const draftTimerRef = useRef(null);
+    const isInitialMount = useRef(true);
+
+    // Auto-Save Cloud Draft di Latar Belakang (Debounced 800ms)
+    useEffect(() => {
+        if (loading) return;
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+        if (submitted || !clientKey || project?.isProjectExpired) return;
+
+        setDraftStatus('saving');
+        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+
+        draftTimerRef.current = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/projects/${projectId}/select?key=${clientKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        photoIds: Array.from(selectedIds),
+                        action: 'draft'
+                    })
+                });
+                if (res.ok) {
+                    setDraftStatus('saved');
+                } else {
+                    setDraftStatus('error');
+                }
+            } catch (e) {
+                setDraftStatus('error');
+            }
+        }, 800);
+
+        return () => {
+            if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+        };
+    }, [selectedIds, projectId, clientKey, submitted, project?.isProjectExpired, loading]);
+
     const maxSelection = project?.maxSelection || 0;
 
     const handleToggleSelect = (photoId) => {
@@ -254,15 +295,21 @@ export default function ClientGalleryPage({ params }) {
     const handleConfirmAndSubmit = async () => {
         setShowConfirmModal(false);
         setSubmitting(true);
+        if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
+
         try {
             const res = await fetch(`/api/projects/${projectId}/select?key=${clientKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ photoIds: Array.from(selectedIds) })
+                body: JSON.stringify({ 
+                    photoIds: Array.from(selectedIds),
+                    action: 'submit'
+                })
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.message || 'Gagal mengirim pilihan.');
             setSubmitted(true);
+            setDraftStatus('saved');
             setShowSuccessOverlay(true);
             addToast('✅ Pilihan foto berhasil dikirim dan terkunci!', 'success', 5000);
         } catch (err) {
@@ -549,8 +596,25 @@ export default function ClientGalleryPage({ params }) {
                                         {maxSelection > 0 && <span className="counter-max">{maxSelection}</span>}
                                     </div>
                                     <div className="action-tray-meta">
-                                        <span className="action-tray-label">Foto Dipilih</span>
-                                        <span className="action-tray-hint">{submitted ? 'Pilihan terkunci' : project.isProjectExpired ? 'Kedaluwarsa' : isAtLimit ? 'Batas tercapai!' : 'Klik foto untuk memilih'}</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                            <span className="action-tray-label">Foto Dipilih</span>
+                                            {!submitted && !project.isProjectExpired && (
+                                                <span style={{ 
+                                                    fontSize: '10px', 
+                                                    padding: '2px 7px', 
+                                                    borderRadius: '10px', 
+                                                    background: draftStatus === 'saving' ? 'rgba(251,191,36,0.15)' : draftStatus === 'error' ? 'rgba(239,68,68,0.15)' : 'rgba(52,211,153,0.15)',
+                                                    color: draftStatus === 'saving' ? '#fbbf24' : draftStatus === 'error' ? '#f87171' : '#34d399',
+                                                    fontWeight: '600',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '3px'
+                                                }}>
+                                                    {draftStatus === 'saving' ? '💾 Menyimpan...' : draftStatus === 'error' ? '⚠️ Belum tersinkron' : '✓ Draft aman'}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="action-tray-hint">{submitted ? 'Pilihan terkunci' : project.isProjectExpired ? 'Kedaluwarsa' : isAtLimit ? 'Batas tercapai!' : 'Klik foto untuk memilih / batal'}</span>
                                     </div>
                                 </div>
                                 <div className="action-tray-actions">
@@ -573,8 +637,8 @@ export default function ClientGalleryPage({ params }) {
                                     ) : (
                                         <button className="tray-btn tray-btn-submit" onClick={handleSubmitSelection} disabled={submitting || selectedIds.size === 0}>
                                             {submitting ? (
-                                                <><span className="tray-spinner" /> Kirim...</>
-                                            ) : 'Kirim'}
+                                                <><span className="tray-spinner" /> Mengirim...</>
+                                            ) : 'Kirim Pilihan'}
                                         </button>
                                     )}
                                 </div>
@@ -600,11 +664,57 @@ export default function ClientGalleryPage({ params }) {
 
             {showSuccessOverlay && (
                 <div className="modal-overlay-t" style={{ zIndex: 1100 }}>
-                    <div className="modal-content-t" style={{ textAlign: 'center', maxWidth: '420px' }}>
-                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '24px', margin: '0 0 12px 0' }}>Selections Finalized!</h3>
-                        <p style={{ color: 'var(--text-muted)', margin: '0 0 24px 0', fontSize: '14px', lineHeight: '1.5' }}>Pilihan foto Anda telah berhasil dikirim ke fotografer. Terima kasih!</p>
-                        <button className="btn-primary-t" style={{ width: '100%', marginBottom: '12px' }} onClick={() => { setShowSuccessOverlay(false); setShowSubmittedPreview(true); }}>Lihat Foto yang Sudah Dikirim</button>
-                        <button className="btn-secondary-t" style={{ width: '100%' }} onClick={() => setShowSuccessOverlay(false)}>Tutup</button>
+                    <div className="modal-content-t" style={{ textAlign: 'center', maxWidth: '440px', padding: '32px 28px' }}>
+                        <div style={{
+                            width: '56px',
+                            height: '56px',
+                            borderRadius: '50%',
+                            background: 'rgba(16,185,129,0.15)',
+                            border: '1px solid rgba(16,185,129,0.3)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginBottom: '16px',
+                            fontSize: '24px'
+                        }}>
+                            ✓
+                        </div>
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', margin: '0 0 10px 0', color: 'var(--text)' }}>Pilihan Berhasil Dikirim!</h3>
+                        <p style={{ color: 'var(--text-muted)', margin: '0 0 24px 0', fontSize: '13.5px', lineHeight: '1.6' }}>
+                            Pilihan <strong>{selectedIds.size} foto</strong> Anda telah berhasil dikunci dan diteruskan ke <strong>{branding?.brandName || 'Studio Fotografer'}</strong>.
+                        </p>
+
+                        {branding?.whatsapp && (
+                            <a
+                                href={`https://api.whatsapp.com/send?phone=${branding.whatsapp.replace(/\D/g, '').startsWith('0') ? '62' + branding.whatsapp.replace(/\D/g, '').slice(1) : branding.whatsapp.replace(/\D/g, '')}&text=${encodeURIComponent(`Halo ${branding.brandName || 'Studio'}, saya telah selesai memilih ${selectedIds.size} foto untuk project *${project.name}*. Mohon segera diproses ya. Terima kasih! 🙏`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-primary-t"
+                                style={{ 
+                                    width: '100%', 
+                                    marginBottom: '12px', 
+                                    background: 'linear-gradient(135deg, #10b981, #059669)', 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center', 
+                                    gap: '8px', 
+                                    color: '#ffffff', 
+                                    textDecoration: 'none', 
+                                    padding: '13px 20px', 
+                                    borderRadius: '10px', 
+                                    fontWeight: '700',
+                                    fontSize: '14px',
+                                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                                    boxSizing: 'border-box'
+                                }}
+                            >
+                                <WhatsAppIcon size={18} color="#ffffff" />
+                                <span>Konfirmasi ke WhatsApp Studio</span>
+                            </a>
+                        )}
+
+                        <button className="btn-primary-t" style={{ width: '100%', marginBottom: '10px', boxSizing: 'border-box' }} onClick={() => { setShowSuccessOverlay(false); setShowSubmittedPreview(true); }}>Lihat Foto yang Sudah Dikirim</button>
+                        <button className="btn-secondary-t" style={{ width: '100%', boxSizing: 'border-box' }} onClick={() => setShowSuccessOverlay(false)}>Tutup</button>
                     </div>
                 </div>
             )}

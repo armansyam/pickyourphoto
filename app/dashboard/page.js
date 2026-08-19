@@ -1698,18 +1698,23 @@ export default function DashboardPage() {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                                     <span className={`status-badge ${project.status === 'completed' ? 'status-completed' :
                                             project.status === 'importing' ? 'status-pending' :
-                                                project.status === 'failed' ? 'status-failed' : 'status-pending'
+                                                project.status === 'failed' ? 'status-failed' : 
+                                                    (project.selectedPhotosCount > 0 ? 'status-warning' : 'status-pending')
                                         }`} style={{
                                             background: project.status === 'importing' ? 'rgba(99,102,241,0.15)' :
-                                                project.status === 'failed' ? 'rgba(239,68,68,0.15)' : '',
+                                                project.status === 'failed' ? 'rgba(239,68,68,0.15)' : 
+                                                    (project.status !== 'completed' && project.selectedPhotosCount > 0 ? 'rgba(251,191,36,0.12)' : ''),
                                             color: project.status === 'importing' ? '#818cf8' :
-                                                project.status === 'failed' ? '#f87171' : '',
+                                                project.status === 'failed' ? '#f87171' : 
+                                                    (project.status !== 'completed' && project.selectedPhotosCount > 0 ? '#fbbf24' : ''),
                                             borderColor: project.status === 'importing' ? 'rgba(99,102,241,0.3)' :
-                                                project.status === 'failed' ? 'rgba(239,68,68,0.25)' : ''
+                                                project.status === 'failed' ? 'rgba(239,68,68,0.25)' : 
+                                                    (project.status !== 'completed' && project.selectedPhotosCount > 0 ? 'rgba(251,191,36,0.3)' : '')
                                         }}>
-                                        {project.status === 'completed' ? '✓ Selesai Dipilih' :
+                                        {project.status === 'completed' ? `✓ Selesai (${project.selectedPhotosCount || 0} Foto)` :
                                             project.status === 'importing' ? '⏳ Sedang Mengindeks...' :
-                                                project.status === 'failed' ? '❌ Impor Gagal' : '● Menunggu Seleksi'}
+                                                project.status === 'failed' ? '❌ Impor Gagal' : 
+                                                    (project.selectedPhotosCount > 0 ? `🟡 Draft (${project.selectedPhotosCount}/${project.maxSelection || '∞'})` : '● Menunggu Seleksi')}
                                     </span>
                                     
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
