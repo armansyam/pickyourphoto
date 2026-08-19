@@ -2,32 +2,32 @@
   "dbReads": {
     "total": 1000,
     "successes": 1000,
-    "durationMs": "1.81",
-    "qps": 553250,
-    "avgLatencyMs": "0.0018",
-    "memoryDeltaKb": -707
+    "durationMs": "2.27",
+    "qps": 441395,
+    "avgLatencyMs": "0.0023",
+    "memoryDeltaKb": -713
   },
   "dbWrites": {
     "total": 100,
     "successes": 100,
-    "durationMs": "1.21",
-    "qps": 82508,
-    "avgLatencyMs": "0.0121"
+    "durationMs": "1.39",
+    "qps": 71981,
+    "avgLatencyMs": "0.0139"
   },
   "jwtSpeed": {
     "total": 10000,
     "validCount": 10000,
-    "durationMs": "388.05",
-    "opsPerSec": 25770,
-    "avgLatencyUs": "38.80"
+    "durationMs": "416.60",
+    "opsPerSec": 24004,
+    "avgLatencyUs": "41.66"
   },
   "rateLimitStress": {
     "total": 100000,
     "allowedCount": 5000,
     "blockedCount": 95000,
-    "durationMs": "18.85",
-    "checksPerSec": 5303926,
-    "heapDeltaKb": -181
+    "durationMs": "21.03",
+    "checksPerSec": 4755555,
+    "heapDeltaKb": -128
   },
   "webhookVerifications": [
     {
@@ -85,9 +85,9 @@
   ],
   "securityTamperTests": [],
   "memoryProfile": {
-    "rssMb": "68.14",
-    "heapTotalMb": "11.73",
-    "heapUsedMb": "8.85",
+    "rssMb": "67.95",
+    "heapTotalMb": "11.98",
+    "heapUsedMb": "9.07",
     "externalMb": "2.09",
     "nodeVersion": "v24.16.0",
     "platform": "darwin",
