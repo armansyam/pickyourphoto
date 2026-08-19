@@ -132,7 +132,7 @@ export default function RefundPage() {
                     </div>
                     <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '12px', padding: '18px 20px', marginBottom: '14px' }}>
                         <p style={{ color: '#15803D', fontSize: '14.5px', margin: 0, fontWeight: '500' }}>
-                            ⚡ <strong>Aktivasi Instan Otomatis:</strong> Setelah pembayaran melalui saluran Payment Gateway resmi (seperti QRIS atau Virtual Account) terverifikasi lunas oleh sistem (status <em>settlement</em>), akun vendor dan kuota proyek/storage Anda akan <strong>langsung aktif secara otomatis seketika itu juga (0–60 detik)</strong>.
+                            <strong>Aktivasi Instan Otomatis:</strong> Setelah pembayaran melalui saluran Payment Gateway resmi (seperti QRIS atau Virtual Account) terverifikasi lunas oleh sistem (status <em>settlement</em>), akun vendor dan kuota proyek/storage Anda akan <strong>langsung aktif secara otomatis seketika itu juga (0–60 detik)</strong>.
                         </p>
                     </div>
                     <p style={{ color: '#44403C', fontSize: '15px' }}>

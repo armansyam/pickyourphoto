@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { AlertTriangleIcon } from '@/components/StorageIcons.jsx';
 
 export default function AdminError({ error, reset }) {
   useEffect(() => {
@@ -28,7 +29,9 @@ export default function AdminError({ error, reset }) {
         maxWidth: '500px',
         width: '100%'
       }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+          <AlertTriangleIcon size={48} color="#ef4444" />
+        </div>
         <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>
           Terjadi Kesalahan Admin Panel
         </h2>

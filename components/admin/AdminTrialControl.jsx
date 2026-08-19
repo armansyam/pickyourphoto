@@ -81,7 +81,7 @@ export default function AdminTrialControl({ addToast }) {
     const [enableFlashPromo, setEnableFlashPromo] = useState(false);
     const [flashDiscountPercent, setFlashDiscountPercent] = useState(20);
     const [flashEndsAt, setFlashEndsAt] = useState('');
-    const [flashTitle, setFlashTitle] = useState('⚡ FLASH SALE PROMO');
+    const [flashTitle, setFlashTitle] = useState('FLASH SALE PROMO');
     const [flashBannerText, setFlashBannerText] = useState('Diskon Spesial Paket Berlangganan!');
     const [selectedDurationHours, setSelectedDurationHours] = useState(24);
 
@@ -132,7 +132,7 @@ export default function AdminTrialControl({ addToast }) {
                     setSelectedDurationHours(closest);
                 }
             }
-            setFlashTitle(s.flash_promo_title || '⚡ FLASH SALE PROMO');
+            setFlashTitle((s.flash_promo_title || 'FLASH SALE PROMO').replace(/^[⚡\s]+/, ''));
             setFlashBannerText(s.flash_promo_banner_text || 'Diskon Spesial Paket Berlangganan!');
             setFlashPromoType(s.flash_promo_type || 'percent');
             setFlashBundlePlanId(s.flash_bundle_plan_id || (json.availablePlans?.[1]?.id || json.availablePlans?.[0]?.id || null));

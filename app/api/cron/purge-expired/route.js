@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { getAuthVendor } from '@/lib/auth';
 import { getWorkerDriveClient } from '@/lib/google-master-drive';
 
 export const dynamic = 'force-dynamic';
@@ -14,21 +15,26 @@ export async function POST(req) {
 
 async function handlePurge(req) {
   try {
-    // 0. Keamanan: Validasi otorisasi CRON_SECRET
-    const cronSecret = process.env.CRON_SECRET;
-    const authHeader = req.headers.get('authorization') || '';
-    const customHeader = req.headers.get('x-cron-secret') || '';
-    const providedToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : customHeader.trim();
+    // 0. Keamanan: Validasi otorisasi (Admin Session ATAU CRON_SECRET token)
+    const adminUser = getAuthVendor();
+    const isAdmin = adminUser && adminUser.role === 'admin';
 
-    if (cronSecret) {
-      if (!providedToken || providedToken !== cronSecret) {
-        return NextResponse.json({ success: false, error: 'Unauthorized: Invalid or missing CRON_SECRET token.' }, { status: 401 });
+    if (!isAdmin) {
+      const cronSecret = process.env.CRON_SECRET;
+      const authHeader = req.headers.get('authorization') || '';
+      const customHeader = req.headers.get('x-cron-secret') || '';
+      const providedToken = authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : customHeader.trim();
+
+      if (cronSecret) {
+        if (!providedToken || providedToken !== cronSecret) {
+          return NextResponse.json({ success: false, error: 'Unauthorized: Invalid or missing CRON_SECRET token.' }, { status: 401 });
+        }
+      } else if (process.env.NODE_ENV === 'production') {
+        console.warn('[Purge Cron Warning]: CRON_SECRET belum dikonfigurasi di environment production.');
+        return NextResponse.json({ success: false, error: 'Unauthorized: CRON_SECRET environment variable is missing.' }, { status: 401 });
+      } else {
+        console.warn('[Purge Cron Dev Notice]: Mengeksekusi purge cron dalam mode development tanpa CRON_SECRET.');
       }
-    } else if (process.env.NODE_ENV === 'production') {
-      console.warn('[Purge Cron Warning]: CRON_SECRET belum dikonfigurasi di environment production.');
-      return NextResponse.json({ success: false, error: 'Unauthorized: CRON_SECRET environment variable is missing.' }, { status: 401 });
-    } else {
-      console.warn('[Purge Cron Dev Notice]: Mengeksekusi purge cron dalam mode development tanpa CRON_SECRET.');
     }
 
     // 1. Ambil durasi masa tenggang dari saas_settings
@@ -42,7 +48,7 @@ async function handlePurge(req) {
     const vendors = db.prepare(`
       SELECT id, email, name, expiresAt, status 
       FROM vendors 
-      WHERE expiresAt IS NOT NULL AND status != 'purged'
+      WHERE expiresAt IS NOT NULL AND status != 'purged' AND status != 'suspended'
     `).all();
 
     const expiredVendorsToPurge = vendors.filter(v => {
@@ -50,11 +56,17 @@ async function handlePurge(req) {
       return expTime > 0 && nowTime > (expTime + graceMs);
     });
 
+    // Catat waktu purge terakhir ke system_settings
+    try {
+      db.prepare("UPDATE system_settings SET last_hard_purge_at = datetime('now') WHERE id = 1").run();
+    } catch (_) {}
+
     if (expiredVendorsToPurge.length === 0) {
       return NextResponse.json({
         success: true,
         message: `Tidak ada vendor yang melewati masa tenggang (${graceDays} hari).`,
-        purgedVendorsCount: 0
+        purgedVendorsCount: 0,
+        totalFilesDeletedFromDrive: 0
       });
     }
 

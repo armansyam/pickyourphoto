@@ -136,6 +136,29 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ message: 'Vendor not found.' }, { status: 404 });
         }
 
+        // [LOW-04 FIX] Revoke BYOS Google OAuth Refresh Token saat vendor dihapus
+        // Agar token tidak tetap aktif di Google setelah data vendor dihapus dari DB
+        try {
+            const vendorOAuth = db.prepare('SELECT externalDriveRefreshToken FROM vendors WHERE id = ?').get(vendorId);
+            if (vendorOAuth?.externalDriveRefreshToken) {
+                const getSaasSetting = (key) => {
+                    try { const r = db.prepare('SELECT value FROM saas_settings WHERE key = ?').get(key); return r ? r.value : null; } catch { return null; }
+                };
+                const clientId = process.env.GOOGLE_CLIENT_ID || getSaasSetting('google_client_id');
+                const clientSecret = process.env.GOOGLE_CLIENT_SECRET || getSaasSetting('google_client_secret');
+                if (clientId && clientSecret) {
+                    const { google } = await import('googleapis');
+                    const oauth = new google.auth.OAuth2(clientId, clientSecret);
+                    oauth.setCredentials({ refresh_token: vendorOAuth.externalDriveRefreshToken });
+                    await oauth.revokeCredentials();
+                    console.log(`[Delete Vendor] Berhasil revoke OAuth token BYOS vendor ID ${vendorId}.`);
+                }
+            }
+        } catch (revokeErr) {
+            // Non-fatal: log saja, jangan hentikan proses delete
+            console.warn(`[Delete Vendor] Gagal revoke OAuth token untuk vendor ${vendorId}:`, revokeErr.message);
+        }
+
         // Delete dependencies recursively inside a transaction
         const runDelete = db.transaction(() => {
             // Get all projects of this vendor

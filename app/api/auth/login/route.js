@@ -28,6 +28,12 @@ export async function POST(request) {
         const stmt = db.prepare('SELECT id, name, email, password, role, status FROM vendors WHERE email = ?');
         const vendor = stmt.get(email.toLowerCase().trim());
 
+        // [MED-02 FIX] Blokir email yang terdaftar di tabel admins — cegah cross-table login
+        const isRegisteredAdmin = db.prepare('SELECT id FROM admins WHERE email = ?').get(email.toLowerCase().trim());
+        if (isRegisteredAdmin) {
+            return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
+        }
+
         if (!vendor) {
             return NextResponse.json({ message: 'Invalid credentials.' }, { status: 401 });
         }

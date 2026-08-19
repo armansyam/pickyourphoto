@@ -31,13 +31,16 @@ export async function GET(request, { params }) {
             ORDER BY p.originalPath ASC
         `).all(projectId);
 
-        // Extract just the file name from originalPath 
-        // originalPath may be a full path or just a filename
+        // Extract clean file name from originalPath (strip query params and decode URI)
         const fileNames = selectedPhotos.map(row => {
             const fullPath = row.originalPath || '';
-            // Get the last segment after any slash
-            const segments = fullPath.split('/');
-            return segments[segments.length - 1];
+            const noQuery = fullPath.split('?')[0];
+            const rawName = noQuery.split('/').pop() || '';
+            try {
+                return decodeURIComponent(rawName).trim();
+            } catch (_) {
+                return rawName.trim();
+            }
         }).filter(name => name.length > 0);
 
         return NextResponse.json({

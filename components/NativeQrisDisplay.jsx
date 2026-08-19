@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { SparklesUpgradeIcon, RefreshCwIcon, ClockIcon } from '@/components/StorageIcons.jsx';
 
 export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
     // Deteksi provider dari pendingOrder (dikirim dari /api/payment/create response)
@@ -198,8 +199,9 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                         <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '99px', height: '3px', marginBottom: '16px', overflow: 'hidden' }}>
                             <div style={{ height: '100%', width: `${(redirectCountdown / 5) * 100}%`, background: 'linear-gradient(90deg,#16a34a,#4ade80)', borderRadius: '99px', transition: 'width 0.9s linear' }}></div>
                         </div>
-                        <button onClick={triggerRedirectToDashboard} style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
-                            🚀 Masuk ke Dashboard Sekarang
+                        <button onClick={triggerRedirectToDashboard} style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                            <SparklesUpgradeIcon size={14} color="#fff" />
+                            <span>Masuk ke Dashboard Sekarang</span>
                         </button>
                     </div>
                 </div>
@@ -254,7 +256,9 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px',
                                 borderRadius: '12px'
                             }}>
-                                <div style={{ fontSize: '30px' }}>{regenerating ? '🔄' : '⏰'}</div>
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    {regenerating ? <RefreshCwIcon size={28} color="#fbbf24" /> : <ClockIcon size={28} color="#fbbf24" />}
+                                </div>
                                 <div style={{ fontSize: '13px', fontWeight: '700', color: '#fbbf24', textAlign: 'center' }}>
                                     {regenerating ? 'Membuat ulang QRIS...' : 'QRIS Kedaluwarsa'}
                                 </div>

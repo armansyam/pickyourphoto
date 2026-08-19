@@ -131,15 +131,15 @@ export default function AboutPage() {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '12px' }}>
                         <div style={{ background: '#FAF8F5', border: '1px solid rgba(197, 160, 89, 0.25)', borderRadius: '12px', padding: '20px' }}>
-                            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#8C6D23', marginBottom: '8px' }}>🎯 Visi Kami</h3>
+                            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#8C6D23', marginBottom: '8px' }}>Visi Kami</h3>
                             <p style={{ color: '#44403C', fontSize: '14px', margin: 0 }}>
                                 Menjadi standar infrastruktur digital utama bagi para fotografer profesional di Indonesia dalam menyajikan hasil karya visual ke klien secara elegan dan modern.
                             </p>
                         </div>
                         <div style={{ background: '#FAF8F5', border: '1px solid rgba(197, 160, 89, 0.25)', borderRadius: '12px', padding: '20px' }}>
-                            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#15803D', marginBottom: '8px' }}>🚀 Misi Kami</h3>
+                            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#15803D', marginBottom: '8px' }}>Misi Kami</h3>
                             <p style={{ color: '#44403C', fontSize: '14px', margin: 0 }}>
-                                Menghadirkan teknologi otomasi alur kerja (seperti Auto-Sorter RAW) dan galeri online berkecepatan tinggi dengan biaya terjangkau bagi semua skala studio.
+                                Menghadirkan teknologi otomasi alur kerja (seperti Auto-Sorter RAW) dan galeri online modern serta responsif dengan biaya terjangkau bagi semua skala studio.
                             </p>
                         </div>
                     </div>

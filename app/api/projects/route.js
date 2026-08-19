@@ -78,6 +78,7 @@ export async function GET() {
                 externalDriveEmail: vDb?.externalDriveEmail || null,
                 brandName: vendor.brandName || '',
                 brandLogo: vendor.brandLogo || '',
+                whatsapp: vendor.whatsapp || '',
                 copyDelimiter: vendor.copyDelimiter || ', ',
                 copyIncludeExt: vendor.copyIncludeExt !== undefined ? vendor.copyIncludeExt : 0,
                 copySortOrder: vendor.copySortOrder || 'name_asc',

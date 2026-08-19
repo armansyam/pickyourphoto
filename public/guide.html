@@ -1,29 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="footer.tagline">Cara Menggunakan Daftar Nama File Hasil Seleksi — Pick Your Photo</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,450;1,9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,450;0,9..144,600;0,9..144,700;1,9..144,450;1,9..144,600&family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0B0918;
-      --bg-alt: #131024;
-      --card: #15122A;
-      --paper: #EAE8F7;
-      --ink: #EAE8F7;
-      --brass: #6366F1;
-      --brass-dim: #A5B4FC;
-      --brass-bright: #818CF8;
-      --mark: #A78BFA;
-      --muted: #9791B8;
-      --muted-dark: #57517A;
-      --line: rgba(129, 140, 248, 0.16);
+      --bg: #FAF8F5;
+      --bg-alt: #F3ECE0;
+      --card: #FFFFFF;
+      --paper: #1C1917;
+      --paper-dim: #292524;
+      --ink: #1C1917;
+      --brass: #C5A059;
+      --brass-dim: #E6D7BD;
+      --brass-bright: #D4AF37;
+      --brass-dark: #8C6D23;
+      --mark: #C5A059;
+      --muted: #57534E;
+      --muted-dark: #8C827A;
+      --line: rgba(197, 160, 89, 0.28);
       --radius: 10px;
       --serif: "Fraunces", Georgia, serif;
-      --sans: "Inter", -apple-system, sans-serif;
+      --sans: "Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       --mono: "IBM Plex Mono", monospace;
     }
 
@@ -39,8 +44,8 @@
 
     body {
       background:
-        radial-gradient(90% 50% at 50% 0%, rgba(99, 102, 241, 0.10), transparent 60%),
-        radial-gradient(60% 40% at 85% 15%, rgba(167, 139, 250, 0.08), transparent 60%),
+        radial-gradient(90% 50% at 50% 0%, rgba(197, 160, 89, 0.12), transparent 60%),
+        radial-gradient(60% 40% at 85% 15%, rgba(212, 175, 55, 0.06), transparent 60%),
         var(--bg);
       color: var(--paper);
       font-family: var(--sans);
@@ -54,14 +59,14 @@
     }
 
     .wrap {
-      max-width: 920px;
+      max-width: 960px;
       margin: 0 auto;
       padding: 0 32px;
     }
 
     ::selection {
-      background: var(--mark);
-      color: var(--paper);
+      background: #E8DCC4;
+      color: #1C1917;
     }
 
     /* NAV */
@@ -69,8 +74,8 @@
       position: sticky;
       top: 0;
       z-index: 50;
-      background: rgba(11, 9, 24, 0.86);
-      backdrop-filter: blur(10px);
+      background: rgba(250, 248, 245, 0.94);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
     }
 
@@ -78,49 +83,49 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 18px 32px;
-      max-width: 920px;
+      padding: 20px 32px;
+      max-width: 960px;
       margin: 0 auto;
     }
 
     .logo {
       font-family: var(--serif);
-      font-weight: 600;
-      font-size: 19px;
+      font-weight: 700;
+      font-size: 21px;
+      letter-spacing: 0.2px;
       display: flex;
       align-items: center;
       gap: 8px;
-      background: linear-gradient(100deg, var(--brass-bright), var(--mark));
+      background: linear-gradient(100deg, #8C6D23, #C5A059, #D4AF37);
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
 
     .logo .dot {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      background: var(--mark);
+      background: linear-gradient(135deg, #D4AF37, #C5A059);
       display: inline-block;
-      -webkit-background-clip: initial;
-      background-clip: initial;
+      box-shadow: 0 0 8px rgba(197, 160, 89, 0.6);
     }
 
     .back-link {
       font-size: 13.5px;
       color: var(--muted);
-      font-weight: 500;
+      font-weight: 600;
       transition: color .2s ease;
     }
 
     .back-link:hover {
-      color: var(--paper);
+      color: var(--brass-dark);
     }
 
     .lang-switch {
       display: flex;
       align-items: center;
-      background: var(--card);
+      background: #FFFFFF;
       border: 1px solid var(--line);
       border-radius: 20px;
       padding: 3px;
@@ -142,8 +147,8 @@
     }
 
     .lang-btn.active {
-      background: var(--brass);
-      color: var(--ink);
+      background: linear-gradient(135deg, #C5A059, #996515);
+      color: #ffffff;
     }
 
     .lang-btn:not(.active):hover {
@@ -161,19 +166,24 @@
       font-size: 12px;
       letter-spacing: 0.14em;
       text-transform: uppercase;
-      color: var(--brass-dim);
+      color: var(--brass-dark);
       margin-bottom: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .hero h1 {
       font-family: var(--serif);
-      font-weight: 600;
+      font-weight: 700;
       font-size: clamp(28px, 4vw, 44px);
       line-height: 1.15;
       letter-spacing: -0.01em;
       color: var(--paper);
       margin-bottom: 24px;
-      max-width: 780px;
+      max-width: 820px;
       margin-left: auto;
       margin-right: auto;
     }
@@ -181,9 +191,9 @@
     .hero p.lead {
       font-size: 16px;
       color: var(--muted);
-      max-width: 620px;
+      max-width: 680px;
       margin: 0 auto 36px;
-      line-height: 1.6;
+      line-height: 1.65;
     }
 
     /* CHIP MOCKUP */
@@ -191,33 +201,36 @@
       background: var(--bg-alt);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 16px 20px;
-      max-width: 580px;
+      padding: 18px 22px;
+      max-width: 620px;
       margin: 0 auto;
       text-align: left;
+      box-shadow: 0 4px 16px rgba(197, 160, 89, 0.08);
     }
 
     .cm-head {
       display: flex;
       justify-content: space-between;
       font-family: var(--mono);
-      font-size: 10px;
-      color: var(--muted-dark);
+      font-size: 10.5px;
+      color: var(--brass-dark);
       letter-spacing: 0.05em;
       text-transform: uppercase;
+      font-weight: 700;
       padding-bottom: 10px;
       border-bottom: 1px solid var(--line);
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .cm-head span:last-child {
-      color: var(--mark);
+      color: var(--brass-dark);
+      font-weight: 700;
     }
 
     .chip-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 7px;
     }
 
     .chip {
@@ -225,9 +238,11 @@
       font-size: 11px;
       background: var(--card);
       border: 1px solid var(--line);
-      padding: 4px 10px;
-      border-radius: 4px;
+      padding: 5px 11px;
+      border-radius: 6px;
       color: var(--paper-dim);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .chip:last-child {
@@ -237,6 +252,26 @@
     }
 
     /* CONCEPT GRID */
+    .section-head {
+      margin: 48px 0 24px;
+      text-align: center;
+    }
+
+    .section-head h2 {
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--paper);
+      margin-bottom: 10px;
+    }
+
+    .section-head p {
+      font-size: 14.5px;
+      color: var(--muted);
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
     .concept-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -254,27 +289,33 @@
       background: var(--card);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 24px;
+      padding: 26px;
+      box-shadow: 0 2px 10px rgba(197, 160, 89, 0.05);
     }
 
     .concept .tag {
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--brass-dim);
+      color: var(--brass-dark);
+      font-weight: 700;
       display: inline-block;
       margin-bottom: 12px;
+      background: rgba(197, 160, 89, 0.15);
+      padding: 3px 8px;
+      border-radius: 4px;
     }
 
     .concept h3 {
       font-family: var(--serif);
       font-size: 19px;
       margin-bottom: 10px;
+      color: var(--paper);
     }
 
     .concept p {
-      font-size: 13.5px;
+      font-size: 14px;
       color: var(--muted);
       line-height: 1.6;
     }
@@ -291,6 +332,7 @@
       position: relative;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+      gap: 4px;
     }
 
     .tabs::-webkit-scrollbar {
@@ -298,28 +340,32 @@
     }
 
     .tab-btn {
-      padding: 12px 24px;
-      font-size: 14px;
-      font-weight: 500;
+      padding: 14px 20px;
+      font-size: 13.5px;
+      font-weight: 600;
       color: var(--muted);
       cursor: pointer;
       white-space: nowrap;
       transition: color .2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .tab-btn:hover {
-      color: var(--paper);
+      color: var(--brass-dark);
     }
 
     .tab-btn.active {
-      color: var(--brass-bright);
+      color: var(--brass-dark);
+      font-weight: 700;
     }
 
     .tab-indicator {
       position: absolute;
       bottom: -1px;
       height: 2px;
-      background: linear-gradient(90deg, var(--brass), var(--mark));
+      background: linear-gradient(90deg, #C5A059, #8C6D23);
       transition: left .3s cubic-bezier(.4, 0, .2, 1), width .3s cubic-bezier(.4, 0, .2, 1);
     }
 
@@ -390,10 +436,11 @@
       font-size: 14.5px;
       color: var(--paper-dim);
       margin-bottom: 24px;
-      background: rgba(99, 102, 241, 0.06);
-      border: 1px solid rgba(99, 102, 241, 0.12);
-      padding: 12px 18px;
-      border-radius: 4px;
+      background: rgba(197, 160, 89, 0.12);
+      border: 1px solid var(--line);
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-weight: 500;
     }
 
     .step-list {
@@ -409,6 +456,11 @@
       transform: translateY(12px);
       animation: cascadeIn .4s cubic-bezier(.34, 1.56, .64, 1) forwards;
       animation-delay: calc(var(--i) * 0.08s);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+      box-shadow: 0 2px 8px rgba(197, 160, 89, 0.04);
     }
 
     .tab-panel.active .step-item {
@@ -425,25 +477,25 @@
 
     .step-item::before {
       content: attr(data-n);
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
-      background: var(--card);
-      border: 1.5px solid var(--line);
-      color: var(--brass-dim);
+      background: linear-gradient(135deg, #C5A059, #996515);
+      color: #ffffff;
       font-family: var(--mono);
-      font-size: 11px;
-      font-weight: 600;
+      font-size: 12px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       margin-top: 2px;
+      box-shadow: 0 2px 6px rgba(197, 160, 89, 0.3);
     }
 
     .step-item h4 {
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--paper);
       margin-bottom: 4px;
     }
@@ -451,26 +503,29 @@
     .step-item p {
       font-size: 13.5px;
       color: var(--muted);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     .step-item kbd {
-      background: var(--card);
+      background: var(--bg-alt);
       border: 1px solid var(--line);
-      padding: 1px 5px;
-      border-radius: 3px;
+      padding: 2px 6px;
+      border-radius: 4px;
       font-family: var(--mono);
       font-size: 11px;
       color: var(--paper-dim);
+      font-weight: 600;
     }
 
     .callout {
-      margin-top: 28px;
-      border-left: 2px solid var(--mark);
-      padding: 4px 0 4px 18px;
-      font-size: 13px;
+      margin-top: 24px;
+      border-left: 3px solid var(--brass-dark);
+      background: rgba(197, 160, 89, 0.08);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 18px;
+      font-size: 13.5px;
       color: var(--muted);
-      line-height: 1.5;
+      line-height: 1.55;
     }
 
     .callout .cl-label {
@@ -478,7 +533,8 @@
       font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: var(--mark);
+      color: var(--brass-dark);
+      font-weight: 700;
       display: block;
       margin-bottom: 4px;
     }
@@ -490,9 +546,10 @@
       gap: 1px;
       background: var(--line);
       border: 1px solid var(--line);
-      border-radius: 4px;
+      border-radius: 8px;
       overflow: hidden;
       margin-top: 24px;
+      box-shadow: 0 4px 16px rgba(197, 160, 89, 0.06);
     }
 
     @media(max-width:760px) {
@@ -502,31 +559,33 @@
     }
 
     .compare-col {
-      background: var(--bg);
+      background: var(--card);
       padding: 30px 24px;
     }
 
     .compare-col:last-child {
-      background: var(--bg-alt);
+      background: #FCFAF6;
     }
 
     .compare-tag {
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 10.5px;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       margin-bottom: 12px;
       display: inline-block;
-      padding: 3px 8px;
-      border-radius: 2px;
-      background: rgba(99, 102, 241, 0.1);
-      color: var(--brass-dim);
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: rgba(197, 160, 89, 0.15);
+      color: var(--brass-dark);
+      font-weight: 700;
     }
 
     .compare-col h3 {
       font-family: var(--serif);
-      font-size: 18px;
+      font-size: 19px;
       margin-bottom: 14px;
+      color: var(--paper);
     }
 
     .compare-col ul {
@@ -535,7 +594,7 @@
 
     .compare-col li {
       font-size: 13.5px;
-      padding: 8px 0;
+      padding: 9px 0;
       border-top: 1px solid var(--line);
       color: var(--muted);
       display: flex;
@@ -548,7 +607,8 @@
 
     .compare-col li::before {
       content: "—";
-      color: var(--brass-dim);
+      color: var(--brass);
+      font-weight: 700;
       flex-shrink: 0;
     }
 
@@ -556,9 +616,11 @@
     details {
       background: var(--card);
       border: 1px solid var(--line);
-      border-radius: 6px;
-      margin-bottom: 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
       overflow: hidden;
+      transition: border-color .2s ease;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.03);
     }
 
     details[open] {
@@ -566,22 +628,22 @@
     }
 
     summary {
-      padding: 16px 20px;
-      font-size: 14.5px;
-      font-weight: 500;
+      padding: 18px 22px;
+      font-size: 15px;
+      font-weight: 600;
       cursor: pointer;
-      color: var(--paper-dim);
+      color: var(--paper);
       user-select: none;
       transition: color .2s ease;
     }
 
     summary:hover {
-      color: var(--paper);
+      color: var(--brass-dark);
     }
 
     details p {
-      padding: 0 20px 18px;
-      font-size: 13.5px;
+      padding: 0 22px 20px;
+      font-size: 14px;
       color: var(--muted);
       line-height: 1.6;
     }
@@ -589,8 +651,9 @@
     /* FOOTER */
     footer {
       border-top: 1px solid var(--line);
-      padding: 36px 0;
+      padding: 40px 0;
       margin-top: 80px;
+      background: var(--bg-alt);
     }
 
     .foot-row {
@@ -605,6 +668,8 @@
       font-family: var(--mono);
       font-size: 11.5px;
       color: var(--muted-dark);
+      letter-spacing: 0.05em;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -627,7 +692,10 @@
   <main class="wrap">
 
     <section class="hero">
-      <div class="eyebrow" data-i18n="hero.eyebrow">PANDUAN ALUR KERJA &amp; SORTIR RAW</div>
+      <div class="eyebrow" data-i18n="hero.eyebrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--brass-dark);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        PANDUAN ALUR KERJA &amp; SORTIR RAW
+      </div>
       <h1 data-i18n="hero.h1">Dari Pilihan Klien &rarr; Langsung ke Folder RAW &amp; Lightroom.</h1>
       <p class="lead" data-i18n="hero.lead">Kelola hasil seleksi foto klien secara otomatis dengan Automatic RAW Sorter 1-Klik 100% lokal, atau manfaatkan daftar nama file universal untuk pencarian cepat di Finder, Windows Explorer, Lightroom Classic, dan Capture One.</p>
 
@@ -650,7 +718,7 @@
       <div class="concept-grid">
         <div class="concept">
           <span class="tag" data-i18n="concept.c1.tag">Otomatisasi 1-Klik RAW Sorter</span>
-          <p id="conceptText1" data-i18n="concept.c1.text">Skrip <strong>Automatic RAW Sorter</strong> secara cerdas memindai folder lokal Anda, lalu memindahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) yang cocok ke folder baru <code>SELECTED_RAW</code> secara instan.</p>
+          <p id="conceptText1" data-i18n="concept.c1.text">Fitur <strong>Automatic RAW Sorter</strong> secara cerdas memindai folder lokal Anda, lalu memindahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) yang cocok ke folder baru <code>SELECTED_RAW</code> secara instan.</p>
         </div>
         <div class="concept">
           <span class="tag" data-i18n="concept.c2.tag">Pencarian Berbasis Nama File</span>
@@ -667,11 +735,26 @@
       </div>
 
       <div class="tabs" id="tabButtons">
-        <div class="tab-btn active" data-tab="rawsorter">⚡ RAW Sorter (1-Klik)</div>
-        <div class="tab-btn" data-tab="finder">macOS Finder</div>
-        <div class="tab-btn" data-tab="explorer">Windows Explorer</div>
-        <div class="tab-btn" data-tab="lightroom">Lightroom Classic</div>
-        <div class="tab-btn" data-tab="captureone">Capture One</div>
+        <div class="tab-btn active" data-tab="rawsorter">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          <span>RAW Sorter (1-Klik)</span>
+        </div>
+        <div class="tab-btn" data-tab="finder">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          <span>macOS Finder</span>
+        </div>
+        <div class="tab-btn" data-tab="explorer">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          <span>Windows Explorer</span>
+        </div>
+        <div class="tab-btn" data-tab="lightroom">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+          <span>Lightroom Classic</span>
+        </div>
+        <div class="tab-btn" data-tab="captureone">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="22" y1="12" x2="18" y2="12"></line><line x1="6" y1="12" x2="2" y2="12"></line><line x1="12" y1="6" x2="12" y2="2"></line><line x1="12" y1="22" x2="12" y2="18"></line></svg>
+          <span>Capture One</span>
+        </div>
         <div class="tab-indicator" id="tabIndicator"></div>
       </div>
 
@@ -679,23 +762,31 @@
 
         <!-- RAW SORTER (1-KLIK) -->
         <div class="tab-panel active" id="tab-rawsorter">
-          <div class="platform-note" data-i18n="rawsorter.note">⚡ Cara paling praktis &amp; otomatis — memisahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) pilihan klien secara 100% lokal langsung di komputer Anda tanpa pencarian manual.</div>
+          <div class="platform-note" data-i18n="rawsorter.note">Cara paling praktis &amp; otomatis — memisahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) pilihan klien secara 100% lokal langsung di komputer Anda tanpa pencarian manual.</div>
           <div class="step-list">
             <div class="step-item" data-n="1">
-              <h4 data-i18n="rawsorter.step1.h4">Salin Nama File dari Dashboard</h4>
-              <p data-i18n="rawsorter.step1.p">Di halaman project Pick Your Photo, klik tombol <strong>"Salin Nama File"</strong> untuk mengambil seluruh daftar nama foto pilihan klien.</p>
+              <div>
+                <h4 data-i18n="rawsorter.step1.h4">Salin Nama File dari Dashboard</h4>
+                <p data-i18n="rawsorter.step1.p">Di halaman project Pick Your Photo, klik tombol <strong>"Salin Nama File"</strong> untuk mengambil seluruh daftar nama foto pilihan klien.</p>
+              </div>
             </div>
             <div class="step-item" data-n="2">
-              <h4 data-i18n="rawsorter.step2.h4">Buka Folder Foto RAW di Komputer</h4>
-              <p data-i18n="rawsorter.step2.p">Buka folder di komputer atau harddisk eksternal yang menyimpan seluruh file foto RAW asli dari sesi tersebut.</p>
+              <div>
+                <h4 data-i18n="rawsorter.step2.h4">Buka Folder Foto RAW di Komputer</h4>
+                <p data-i18n="rawsorter.step2.p">Buka folder di komputer atau harddisk eksternal yang menyimpan seluruh file foto RAW asli dari sesi tersebut.</p>
+              </div>
             </div>
             <div class="step-item" data-n="3">
-              <h4 data-i18n="rawsorter.step3.h4">Jalankan 1-Click RAW Sorter</h4>
-              <p data-i18n="rawsorter.step3.p">Jalankan skrip Automatic RAW Sorter di folder tersebut dan tempelkan daftar nama file yang sudah disalin.</p>
+              <div>
+                <h4 data-i18n="rawsorter.step3.h4">Jalankan 1-Click RAW Sorter</h4>
+                <p data-i18n="rawsorter.step3.p">Jalankan fitur Automatic RAW Sorter di folder tersebut dan tempelkan daftar nama file yang sudah disalin.</p>
+              </div>
             </div>
             <div class="step-item" data-n="4">
-              <h4 data-i18n="rawsorter.step4.h4">Selesai — File RAW Terpisah Otomatis</h4>
-              <p data-i18n="rawsorter.step4.p">Seluruh file fisik RAW pilihan klien secara otomatis terkumpul rapi di folder baru <code>SELECTED_RAW</code>. Siap di-import ke Lightroom!</p>
+              <div>
+                <h4 data-i18n="rawsorter.step4.h4">Selesai — File RAW Terpisah Otomatis</h4>
+                <p data-i18n="rawsorter.step4.p">Seluruh file fisik RAW pilihan klien secara otomatis terkumpul rapi di folder baru <code>SELECTED_RAW</code>. Siap di-import ke Lightroom!</p>
+              </div>
             </div>
           </div>
           <div class="callout" data-i18n="rawsorter.callout">
@@ -705,128 +796,170 @@
 
         <!-- FINDER -->
         <div class="tab-panel" id="tab-finder">
-          <div class="platform-note" data-i18n="finder.note">📁 Perfect for gathering selected RAW + JPG files into a new folder before importing to any editing software.</div>
+          <div class="platform-note" data-i18n="finder.note">Cocok untuk mengumpulkan RAW + JPG hasil pilihan klien ke satu folder baru, sebelum masuk ke software edit apapun.</div>
           <div class="step-list">
             <div class="step-item" data-n="1">
-              <h4 data-i18n="finder.step1.h4">Open original photo folder</h4>
-              <p data-i18n="finder.step1.p">Open the folder storing all the shots (RAW and JPG) from that photo session.</p>
+              <div>
+                <h4 data-i18n="finder.step1.h4">Open original photo folder</h4>
+                <p data-i18n="finder.step1.p">Open the folder storing all the shots (RAW and JPG) from that photo session.</p>
+              </div>
             </div>
             <div class="step-item" data-n="2">
-              <h4 data-i18n="finder.step2.h4">Click the search bar</h4>
-              <p data-i18n="finder.step2.p">Click the magnifying glass icon in the top-right corner of the Finder window.</p>
+              <div>
+                <h4 data-i18n="finder.step2.h4">Click the search bar</h4>
+                <p data-i18n="finder.step2.p">Click the magnifying glass icon in the top-right corner of the Finder window.</p>
+              </div>
             </div>
             <div class="step-item" data-n="3">
-              <h4 data-i18n="finder.step3.h4">Paste the filename list</h4>
-              <p data-i18n="finder.step3.p">Paste using <kbd>Cmd</kbd> + <kbd>V</kbd>. Finder will instantly display every file whose name matches the list — both RAW and JPG of the same name will appear.</p>
+              <div>
+                <h4 data-i18n="finder.step3.h4">Paste the filename list</h4>
+                <p data-i18n="finder.step3.p">Paste using <kbd>Cmd</kbd> + <kbd>V</kbd>. Finder will instantly display every file whose name matches the list — both RAW and JPG of the same name will appear.</p>
+              </div>
             </div>
             <div class="step-item" data-n="4">
-              <h4 data-i18n="finder.step4.h4">Select all results</h4>
-              <p data-i18n="finder.step4.p">Press <kbd>Cmd</kbd> + <kbd>A</kbd> to select all displayed files, then <kbd>Cmd</kbd> + <kbd>C</kbd> to copy.</p>
+              <div>
+                <h4 data-i18n="finder.step4.h4">Select all results</h4>
+                <p data-i18n="finder.step4.p">Press <kbd>Cmd</kbd> + <kbd>A</kbd> to select all displayed files, then <kbd>Cmd</kbd> + <kbd>C</kbd> to copy.</p>
+              </div>
             </div>
             <div class="step-item" data-n="5">
-              <h4 data-i18n="finder.step5.h4">Collect in a new folder</h4>
-              <p data-i18n="finder.step5.p">Create a new empty folder, open it, then paste using <kbd>Cmd</kbd> + <kbd>V</kbd>. All selected files are now gathered in one place.</p>
+              <div>
+                <h4 data-i18n="finder.step5.h4">Collect in a new folder</h4>
+                <p data-i18n="finder.step5.p">Create a new empty folder, open it, then paste using <kbd>Cmd</kbd> + <kbd>V</kbd>. All selected files are now gathered in one place.</p>
+              </div>
             </div>
           </div>
           <div class="callout">
-            <span class="cl-label">Note</span>
-            <span data-i18n="finder.callout"><strong>Note:</strong> The Finder search bar has a limit of about 2,048 characters or ±99 filenames in a single paste. If the client list is longer, split and paste in batches.</span>
+            <span class="cl-label">Catatan</span>
+            <span data-i18n="finder.callout"><strong>Catatan:</strong> Kolom pencarian Finder punya batas sekitar 2.048 karakter atau ±99 nama file dalam satu kali tempel. Kalau daftar dari klien lebih panjang dari itu, bagi dan tempel bertahap per beberapa puluh nama.</span>
           </div>
         </div>
 
         <!-- EXPLORER -->
         <div class="tab-panel" id="tab-explorer">
-          <div class="platform-note" data-i18n="explorer.note">📁 Just like Finder, the end result is a new folder containing the files chosen by the client, ready to edit or import.</div>
+          <div class="platform-note" data-i18n="explorer.note">Sama seperti Finder, hasil akhirnya folder baru berisi file-file yang dipilih klien, siap dikirim ke editor atau di-import ke software manapun.</div>
           <div class="step-list">
             <div class="step-item" data-n="1">
-              <h4 data-i18n="explorer.step1.h4">Open original photo folder</h4>
-              <p data-i18n="explorer.step1.p">Open the folder storing all the shots from that photo session.</p>
+              <div>
+                <h4 data-i18n="explorer.step1.h4">Open original photo folder</h4>
+                <p data-i18n="explorer.step1.p">Open the folder storing all the shots from that photo session.</p>
+              </div>
             </div>
             <div class="step-item" data-n="2">
-              <h4 data-i18n="explorer.step2.h4">Click the search box</h4>
-              <p data-i18n="explorer.step2.p">Click the "Search" box in the top-right corner of the File Explorer window.</p>
+              <div>
+                <h4 data-i18n="explorer.step2.h4">Click the search box</h4>
+                <p data-i18n="explorer.step2.p">Click the "Search" box in the top-right corner of the File Explorer window.</p>
+              </div>
             </div>
             <div class="step-item" data-n="3">
-              <h4 data-i18n="explorer.step3.h4">Paste the filename list</h4>
-              <p data-i18n="explorer.step3.p">Paste using <kbd>Ctrl</kbd> + <kbd>V</kbd>. Explorer automatically filters and displays matching files, including RAW and JPG of the same name.</p>
+              <div>
+                <h4 data-i18n="explorer.step3.h4">Paste the filename list</h4>
+                <p data-i18n="explorer.step3.p">Paste using <kbd>Ctrl</kbd> + <kbd>V</kbd>. Explorer automatically filters and displays matching files, including RAW and JPG of the same name.</p>
+              </div>
             </div>
             <div class="step-item" data-n="4">
-              <h4 data-i18n="explorer.step4.h4">Select all results</h4>
-              <p data-i18n="explorer.step4.p">Press <kbd>Ctrl</kbd> + <kbd>A</kbd>, then <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy all displayed files.</p>
+              <div>
+                <h4 data-i18n="explorer.step4.h4">Select all results</h4>
+                <p data-i18n="explorer.step4.p">Press <kbd>Ctrl</kbd> + <kbd>A</kbd>, then <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy all displayed files.</p>
+              </div>
             </div>
             <div class="step-item" data-n="5">
-              <h4 data-i18n="explorer.step5.h4">Collect in a new folder</h4>
-              <p data-i18n="explorer.step5.p">Create a new empty folder, open it, then paste using <kbd>Ctrl</kbd> + <kbd>V</kbd>.</p>
+              <div>
+                <h4 data-i18n="explorer.step5.h4">Collect in a new folder</h4>
+                <p data-i18n="explorer.step5.p">Create a new empty folder, open it, then paste using <kbd>Ctrl</kbd> + <kbd>V</kbd>.</p>
+              </div>
             </div>
           </div>
           <div class="callout">
-            <span class="cl-label">Note</span>
-            <span data-i18n="explorer.callout"><strong>Note:</strong> The Explorer search bar has a tighter limit of about 259 characters per paste. For long lists, paste and process in batches (e.g. 15–20 names per batch).</span>
+            <span class="cl-label">Catatan</span>
+            <span data-i18n="explorer.callout"><strong>Catatan:</strong> Kolom pencarian Explorer punya batas lebih ketat, sekitar 259 karakter sekali tempel. Untuk daftar panjang, tempel dan proses secara bertahap — misalnya 15–20 nama per batch.</span>
           </div>
         </div>
 
         <!-- LIGHTROOM -->
         <div class="tab-panel" id="tab-lightroom">
-          <div class="platform-note" data-i18n="lightroom.note">⚡ The fastest way — no need to duplicate physical files; filter directly within your Lightroom Catalog.</div>
+          <div class="platform-note" data-i18n="lightroom.note">Cara paling cepat — tidak perlu menduplikat file fisik ke folder baru, langsung filter di dalam katalog Lightroom.</div>
           <div class="step-list">
             <div class="step-item" data-n="1">
-              <h4 data-i18n="lightroom.step1.h4">Ensure photos are imported</h4>
-              <p data-i18n="lightroom.step1.p">Open Lightroom Classic and make sure the folder or catalog containing this session's photos is imported.</p>
+              <div>
+                <h4 data-i18n="lightroom.step1.h4">Pastikan foto sudah ter-import</h4>
+                <p data-i18n="lightroom.step1.p">Buka Lightroom Classic dan pastikan folder atau katalog berisi foto sesi ini sudah masuk ke Lightroom.</p>
+              </div>
             </div>
             <div class="step-item" data-n="2">
-              <h4 data-i18n="lightroom.step2.h4">Select source photos</h4>
-              <p data-i18n="lightroom.step2.p">Click <strong>All Photographs</strong> in the Catalog panel on the left, or select the specific project folder, so the search queries all possible session photos.</p>
+              <div>
+                <h4 data-i18n="lightroom.step2.h4">Jangkau semua foto</h4>
+                <p data-i18n="lightroom.step2.p">Klik <strong>All Photographs</strong> di panel Catalog sebelah kiri, atau pilih folder proyek terkait, supaya pencarian mencakup seluruh foto yang mungkin ada di daftar.</p>
+              </div>
             </div>
             <div class="step-item" data-n="3">
-              <h4 data-i18n="lightroom.step3.h4">Open Library Filter Bar</h4>
-              <p data-i18n="lightroom.step3.p">Press the <kbd>\</kbd> key or click the filter area above the grid view, then select the <strong>Text</strong> category.</p>
+              <div>
+                <h4 data-i18n="lightroom.step3.h4">Buka Library Filter Bar</h4>
+                <p data-i18n="lightroom.step3.p">Tekan tombol <kbd>\</kbd> atau klik area filter di atas tampilan grid, lalu pilih kategori <strong>Text</strong>.</p>
+              </div>
             </div>
             <div class="step-item" data-n="4">
-              <h4 data-i18n="lightroom.step4.h4">Set to Filename / Contains</h4>
-              <p data-i18n="lightroom.step4.p">Change the first dropdown to <strong>Filename</strong> and the second to <strong>Contains</strong> — do NOT choose "Contains All", as that searches for files containing all words combined.</p>
+              <div>
+                <h4 data-i18n="lightroom.step4.h4">Atur ke Filename / Contains</h4>
+                <p data-i18n="lightroom.step4.p">Ubah dropdown pertama menjadi <strong>Filename</strong> dan dropdown kedua menjadi <strong>Contains</strong> — bukan "Contains All", karena itu akan mencari nama yang mengandung semua kata sekaligus.</p>
+              </div>
             </div>
             <div class="step-item" data-n="5">
-              <h4 data-i18n="lightroom.step5.h4">Paste the filename list</h4>
-              <p data-i18n="lightroom.step5.p">Click the search input box, then paste using <kbd>Cmd/Ctrl</kbd> + <kbd>V</kbd>. All matching photos will instantly appear in the grid, both RAW and JPG.</p>
+              <div>
+                <h4 data-i18n="lightroom.step5.h4">Tempel daftar nama</h4>
+                <p data-i18n="lightroom.step5.p">Klik kotak pencarian, tempel dengan <kbd>Cmd/Ctrl</kbd> + <kbd>V</kbd>. Semua foto yang namanya cocok langsung muncul di grid, RAW dan JPG sekaligus.</p>
+              </div>
             </div>
             <div class="step-item" data-n="6">
-              <h4 data-i18n="lightroom.step6.h4">Save as a Collection</h4>
-              <p data-i18n="lightroom.step6.p">Press <kbd>Cmd/Ctrl</kbd> + <kbd>A</kbd> to select all results, then create a new Collection to easily access them later during editing.</p>
+              <div>
+                <h4 data-i18n="lightroom.step6.h4">Simpan sebagai Collection</h4>
+                <p data-i18n="lightroom.step6.p">Tekan <kbd>Cmd/Ctrl</kbd> + <kbd>A</kbd> untuk memilih semua hasil, lalu buat Collection baru agar mudah dibuka kembali saat proses edit.</p>
+              </div>
             </div>
           </div>
           <div class="callout">
-            <span class="cl-label" data-i18n="nav.fitur">Penting</span>
-            <span data-i18n="lightroom.callout1"><strong>Important:</strong> Filenames in the list must be separated by spaces or commas — <strong>not one per line</strong>, as the filter won't work with newlines. The dashboard copy button formats this automatically.</span>
+            <span class="cl-label">Penting</span>
+            <span data-i18n="lightroom.callout1"><strong>Penting:</strong> Nama file di daftar harus dipisah spasi atau koma — <strong>bukan satu nama per baris</strong>, karena filter tidak akan bekerja jika ada baris baru. Tombol salin di dashboard sudah otomatis memformat ini untuk Anda.</span>
           </div>
           <div class="callout" style="border-left-color:var(--brass);">
-            <span class="cl-label" style="color:var(--brass-dim);">Info</span>
-            <span data-i18n="lightroom.callout2"><strong>Please Note:</strong> This feature is only available in <strong>Lightroom Classic</strong>. In the cloud-based Lightroom (non-Classic), filenames must be searched one by one.</span>
+            <span class="cl-label" style="color:var(--brass-dark);">Info</span>
+            <span data-i18n="lightroom.callout2"><strong>Perlu diketahui:</strong> Fitur ini hanya ada di <strong>Lightroom Classic</strong>. Di Lightroom versi cloud (bukan Classic), pencarian nama file baru bisa dilakukan satu per satu.</span>
           </div>
         </div>
 
         <!-- CAPTURE ONE -->
         <div class="tab-panel" id="tab-captureone">
-          <div class="platform-note" data-i18n="captureone.note">🎯 For editing in Capture One instead of Lightroom — this is a native Capture One feature.</div>
+          <div class="platform-note" data-i18n="captureone.note">Untuk yang mengedit di Capture One, bukan Lightroom — fitur ini bawaan resmi dari Capture One.</div>
           <div class="step-list">
             <div class="step-item" data-n="1">
-              <h4 data-i18n="captureone.step1.h4">Open folder or collection</h4>
-              <p data-i18n="captureone.step1.p">Open the folder/collection in Capture One containing all photos from this session.</p>
+              <div>
+                <h4 data-i18n="captureone.step1.h4">Buka folder atau collection</h4>
+                <p data-i18n="captureone.step1.p">Buka folder/collection di Capture One yang berisi seluruh foto sesi ini.</p>
+              </div>
             </div>
             <div class="step-item" data-n="2">
-              <h4 data-i18n="captureone.step2.h4">Open Select by File Name List</h4>
-              <p data-i18n="captureone.step2.p">From the menu bar, choose <strong>Select → Select by → File Name List…</strong></p>
+              <div>
+                <h4 data-i18n="captureone.step2.h4">Buka menu Select by File Name List</h4>
+                <p data-i18n="captureone.step2.p">Dari menu bar, pilih <strong>Select → Select by → File Name List…</strong></p>
+              </div>
             </div>
             <div class="step-item" data-n="3">
-              <h4 data-i18n="captureone.step3.h4">Paste the list</h4>
-              <p data-i18n="captureone.step3.p">Paste the filename list into the text box that appears.</p>
+              <div>
+                <h4 data-i18n="captureone.step3.h4">Tempel daftar nama</h4>
+                <p data-i18n="captureone.step3.p">Tempel daftar nama file ke kotak yang muncul.</p>
+              </div>
             </div>
             <div class="step-item" data-n="4">
-              <h4 data-i18n="captureone.step4.h4">Set separator and extension</h4>
-              <p data-i18n="captureone.step4.p">Choose <strong>Space</strong> as the separator, then check <strong>Ignore file extension</strong> so RAW and JPG of the same name are selected.</p>
+              <div>
+                <h4 data-i18n="captureone.step4.h4">Atur separator dan ekstensi</h4>
+                <p data-i18n="captureone.step4.p">Pilih <strong>Space</strong> sebagai separator, lalu centang <strong>Ignore file extension</strong> supaya RAW dan JPG dengan nama sama ikut terseleksi.</p>
+              </div>
             </div>
             <div class="step-item" data-n="5">
-              <h4 data-i18n="captureone.step5.h4">Click OK</h4>
-              <p data-i18n="captureone.step5.p">All matching files are instantly selected in the Capture One browser, ready to organize or edit.</p>
+              <div>
+                <h4 data-i18n="captureone.step5.h4">Klik OK</h4>
+                <p data-i18n="captureone.step5.p">Semua file yang cocok langsung terseleksi di browser Capture One, siap dijadikan album atau proses edit lanjutan.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -836,28 +969,28 @@
     <!-- PERBANDINGAN -->
     <section>
       <div class="section-head">
-        <h2 data-i18n="compare.h2">Lightroom direct filter, or collect in a folder first?</h2>
-        <p data-i18n="compare.p">Both methods are perfectly valid — choose the one that fits your workflow.</p>
+        <h2 data-i18n="compare.h2">Filter Langsung di Lightroom, atau Kumpulkan ke Folder Dulu?</h2>
+        <p data-i18n="compare.p">Dua cara ini sama-sama valid — pilih sesuai alur kerja studio Anda.</p>
       </div>
       <div class="compare">
         <div class="compare-col">
-          <span class="compare-tag" data-i18n="compare.c1.tag">Filter directly in Lightroom</span>
-          <h3 data-i18n="compare.c1.h3">Fastest</h3>
+          <span class="compare-tag" data-i18n="compare.c1.tag">Filter langsung di Lightroom</span>
+          <h3 data-i18n="compare.c1.h3">Paling Cepat</h3>
           <ul>
-            <li data-i18n="compare.c1.li1">No need to duplicate files into a new folder</li>
-            <li data-i18n="compare.c1.li2">Create a Collection and start editing immediately</li>
-            <li data-i18n="compare.c1.li3">Requires photos to be already imported in Lightroom Classic</li>
-            <li data-i18n="compare.c1.li4">Does not apply to cloud-based Lightroom</li>
+            <li data-i18n="compare.c1.li1">Tidak perlu menduplikat file ke folder baru</li>
+            <li data-i18n="compare.c1.li2">Langsung bisa dijadikan Collection dan diedit</li>
+            <li data-i18n="compare.c1.li3">Syaratnya foto harus sudah ter-import ke Lightroom Classic</li>
+            <li data-i18n="compare.c1.li4">Tidak berlaku di Lightroom versi cloud</li>
           </ul>
         </div>
         <div class="compare-col">
-          <span class="compare-tag" data-i18n="compare.c2.tag">Collect in folder (Finder / Explorer)</span>
-          <h3 data-i18n="compare.c2.h3">Most Flexible</h3>
+          <span class="compare-tag" data-i18n="compare.c2.tag">Kumpulkan ke folder (Finder / Explorer)</span>
+          <h3 data-i18n="compare.c2.h3">Paling Fleksibel</h3>
           <ul>
-            <li data-i18n="compare.c2.li1">No extra software needed, built into the OS</li>
-            <li data-i18n="compare.c2.li2">Great if you don't want to import everything to Lightroom yet</li>
-            <li data-i18n="compare.c2.li3">Creates a physical folder — easy to send to retouchers or editors</li>
-            <li data-i18n="compare.c2.li4">Pasting list has character limits per paste</li>
+            <li data-i18n="compare.c2.li1">Tidak butuh software tambahan, bawaan sistem operasi</li>
+            <li data-i18n="compare.c2.li2">Cocok kalau belum mau import semua foto ke Lightroom</li>
+            <li data-i18n="compare.c2.li3">Hasilnya folder fisik — mudah dikirim ke tim retouch atau editor lain</li>
+            <li data-i18n="compare.c2.li4">Ada batas panjang daftar per sekali tempel</li>
           </ul>
         </div>
       </div>
@@ -866,24 +999,24 @@
     <!-- FAQ -->
     <section>
       <div class="section-head">
-        <h2 data-i18n="faq.h2">Frequently Asked Questions</h2>
+        <h2 data-i18n="faq.h2">Pertanyaan yang Sering Diajukan</h2>
       </div>
 
       <details>
-        <summary data-i18n="faq.f1.q">Why is the search result empty after pasting?</summary>
-        <p data-i18n="faq.f1.a">For Lightroom, make sure names are separated by spaces or commas, not one per line. For Finder/Explorer, ensure the folder you opened actually contains the original files, and try pasting a smaller batch if the list is long.</p>
+        <summary data-i18n="faq.f1.q">Kenapa hasil pencariannya kosong, padahal sudah ditempel?</summary>
+        <p data-i18n="faq.f1.a">Untuk Lightroom, pastikan nama dipisah spasi atau koma — bukan satu nama per baris. Untuk Finder/Explorer, pastikan folder yang dibuka memang berisi file aslinya, dan coba tempel dalam jumlah lebih sedikit dulu kalau daftarnya panjang.</p>
       </details>
       <details>
-        <summary data-i18n="faq.f2.q">Why do RAW files show up when I copied filenames from a JPG gallery?</summary>
-        <p data-i18n="faq.f2.a">Because the search operates based on filenames regardless of extension. All files with the same name — both .jpg and .CR2/.NEF/.ARW — will be found. This is intentional so that your original RAW files are automatically gathered.</p>
+        <summary data-i18n="faq.f2.q">Kenapa file RAW ikut muncul padahal saya cuma menyalin nama dari galeri JPG?</summary>
+        <p data-i18n="faq.f2.a">Karena pencarian bekerja berdasarkan nama file tanpa memedulikan ekstensi. Semua file dengan nama sama — baik .jpg maupun .CR2/.NEF/.ARW — akan ikut ditemukan. Ini memang disengaja supaya file RAW asli otomatis ikut terbawa.</p>
       </details>
       <details>
-        <summary data-i18n="faq.f3.q">My client's filename list is extremely long, what should I do?</summary>
-        <p data-i18n="faq.f3.a">Split the list into several parts and paste in batches — especially in Windows Explorer which has a tighter limit (±259 characters). Finder holds more (±99 files), and Lightroom Classic can handle much longer lists in a single paste.</p>
+        <summary data-i18n="faq.f3.q">Daftar nama dari klien saya sangat panjang, apa yang harus dilakukan?</summary>
+        <p data-i18n="faq.f3.a">Bagi daftar menjadi beberapa bagian lalu tempel bertahap — terutama di Windows Explorer yang batasnya lebih ketat (±259 karakter). Finder bisa menampung lebih banyak (±99 file), dan Lightroom Classic pada praktiknya bisa menampung daftar yang jauh lebih panjang dalam satu kali tempel.</p>
       </details>
       <details>
-        <summary data-i18n="faq.f4.q">I don't use Lightroom or Capture One, can I still use this?</summary>
-        <p data-i18n="faq.f4.a">Yes. Simply use the Finder (Mac) or Explorer (Windows) method to gather files into a new folder, then open that folder in whatever editing software you use.</p>
+        <summary data-i18n="faq.f4.q">Saya tidak pakai Lightroom atau Capture One, apa masih bisa?</summary>
+        <p data-i18n="faq.f4.a">Bisa. Cukup gunakan cara Finder (Mac) atau Explorer (Windows) untuk mengumpulkan file ke folder baru, lalu buka folder tersebut di software edit apapun yang Anda pakai.</p>
       </details>
     </section>
 
@@ -892,7 +1025,7 @@
   <footer>
     <div class="wrap foot-row">
       <div class="logo" style="font-size:16px;"><span class="dot"></span>Pick Your Photo</div>
-      <div class="fnote" data-i18n="footer.tagline">FILENAME LIST USER GUIDE</div>
+      <div class="fnote" data-i18n="footer.tagline">PANDUAN PENGGUNAAN DAFTAR NAMA FILE</div>
     </div>
   </footer>
 
@@ -910,7 +1043,7 @@
       indicator.style.left = (btnRect.left - wrapRect.left) + 'px';
       indicator.style.width = btnRect.width + 'px';
       if (!animate) {
-        indicator.offsetHeight; // force reflow
+        indicator.offsetHeight;
         indicator.style.transition = '';
       }
     }
@@ -955,77 +1088,77 @@
         "hero.h1": "Dari Pilihan Klien &rarr; Langsung ke Folder RAW &amp; Lightroom.",
         "hero.lead": "Kelola hasil seleksi foto klien secara otomatis dengan Automatic RAW Sorter 1-Klik 100% lokal, atau manfaatkan daftar nama file universal untuk pencarian cepat di Finder, Windows Explorer, Lightroom Classic, dan Capture One.",
         "hero.copiedFrom": "hasil pilihan klien",
-        "hero.copiedStatus": "tersalin \u2713",
+        "hero.copiedStatus": "tersalin ✓",
         "hero.others": "+ 42 lainnya",
 
         "concept.h2": "Bagaimana Cara Kerja Pemisahan File RAW Pilihan Klien?",
         "concept.p": "Sistem menghubungkan galeri seleksi digital dengan file foto asli di komputer Anda secara aman tanpa mengunggah file mentah berukuran besar ke server.",
         "concept.c1.tag": "Otomatisasi 1-Klik RAW Sorter",
-        "concept.c1.text": "Skrip <strong>Automatic RAW Sorter</strong> secara cerdas memindai folder lokal Anda, lalu memindahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) yang cocok ke folder baru <code>SELECTED_RAW</code> secara instan.",
+        "concept.c1.text": "Fitur <strong>Automatic RAW Sorter</strong> secara cerdas memindai folder lokal Anda, lalu memindahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) yang cocok ke folder baru <code>SELECTED_RAW</code> secara instan.",
         "concept.c2.tag": "Pencarian Berbasis Nama File",
         "concept.c2.text": "Bagi Anda yang memilih metode manual, daftar nama file dipisah spasi tanpa ekstensi. Pencarian nama akan menemukan <strong>seluruh format file dengan nama sama</strong> (JPG &amp; RAW) di sistem operasi dan software edit favorit Anda.",
 
         "platform.h2": "Pilih cara sesuai perangkat & workflow Anda",
         "platform.p": "Gunakan Automatic RAW Sorter 1-klik untuk pemisahan instan 100% lokal, atau pilih tab software/OS pilihan Anda di bawah ini.",
 
-        "rawsorter.note": "⚡ Cara paling praktis &amp; otomatis — memisahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) pilihan klien secara 100% lokal langsung di komputer Anda tanpa pencarian manual.",
+        "rawsorter.note": "Cara paling praktis &amp; otomatis — memisahkan file fisik RAW (.CR3, .NEF, .ARW, .DNG) pilihan klien secara 100% lokal langsung di komputer Anda tanpa pencarian manual.",
         "rawsorter.step1.h4": "Salin Nama File dari Dashboard",
-        "rawsorter.step1.p": "Di halaman project Pick Your Photo, klik tombol <strong>\"Salin Nama File\"</strong> untuk mengambil seluruh daftar nama foto pilihan klien.",
+        "rawsorter.step1.p": "Di halaman project Pick Your Photo, klik tombol <strong>"Salin Nama File"</strong> untuk mengambil seluruh daftar nama foto pilihan klien.",
         "rawsorter.step2.h4": "Buka Folder Foto RAW di Komputer",
         "rawsorter.step2.p": "Buka folder di komputer atau harddisk eksternal yang menyimpan seluruh file foto RAW asli dari sesi tersebut.",
         "rawsorter.step3.h4": "Jalankan 1-Click RAW Sorter",
-        "rawsorter.step3.p": "Jalankan skrip Automatic RAW Sorter di folder tersebut dan tempelkan daftar nama file yang sudah disalin.",
+        "rawsorter.step3.p": "Jalankan fitur Automatic RAW Sorter di folder tersebut dan tempelkan daftar nama file yang sudah disalin.",
         "rawsorter.step4.h4": "Selesai — File RAW Terpisah Otomatis",
         "rawsorter.step4.p": "Seluruh file fisik RAW pilihan klien secara otomatis terkumpul rapi di folder baru <code>SELECTED_RAW</code>. Siap di-import ke Lightroom!",
         "rawsorter.callout": "<strong>100% Lokal &amp; Privasi Aman:</strong> Proses sortir RAW bekerja sepenuhnya offline di komputer Anda. File RAW berukuran besar tidak perlu diunggah ke server.",
 
-        "finder.note": "📁 Cocok untuk mengumpulkan RAW + JPG hasil pilihan klien ke satu folder baru, sebelum masuk ke software edit apapun.",
+        "finder.note": "Cocok untuk mengumpulkan RAW + JPG hasil pilihan klien ke satu folder baru, sebelum masuk ke software edit apapun.",
         "finder.step1.h4": "Buka folder foto asli",
         "finder.step1.p": "Buka folder yang menyimpan seluruh hasil jepretan (RAW dan JPG) dari sesi foto tersebut.",
         "finder.step2.h4": "Klik kolom pencarian",
         "finder.step2.p": "Klik ikon kaca pembesar di pojok kanan atas jendela Finder.",
         "finder.step3.h4": "Tempel daftar nama",
-        "finder.step3.p": "Tempel dengan <kbd>Cmd</kbd> + <kbd>V</kbd>. Finder langsung menampilkan setiap file yang namanya cocok dengan daftar \u2014 RAW dan JPG dengan nama sama akan sama-sama muncul.",
+        "finder.step3.p": "Tempel dengan <kbd>Cmd</kbd> + <kbd>V</kbd>. Finder langsung menampilkan setiap file yang namanya cocok dengan daftar — RAW dan JPG dengan nama sama akan sama-sama muncul.",
         "finder.step4.h4": "Pilih semua hasilnya",
         "finder.step4.p": "Tekan <kbd>Cmd</kbd> + <kbd>A</kbd> untuk memilih seluruh file yang tampil, lalu <kbd>Cmd</kbd> + <kbd>C</kbd> untuk menyalin.",
         "finder.step5.h4": "Kumpulkan ke folder baru",
         "finder.step5.p": "Buat folder kosong baru, buka, lalu tempel dengan <kbd>Cmd</kbd> + <kbd>V</kbd>. Semua file hasil pilihan klien kini terkumpul rapi di satu tempat.",
-        "finder.callout": "<strong>Catatan:</strong> Kolom pencarian Finder punya batas sekitar 2.048 karakter atau \u00b199 nama file dalam satu kali tempel. Kalau daftar dari klien lebih panjang dari itu, bagi dan tempel bertahap per beberapa puluh nama.",
+        "finder.callout": "<strong>Catatan:</strong> Kolom pencarian Finder punya batas sekitar 2.048 karakter atau ±99 nama file dalam satu kali tempel. Kalau daftar dari klien lebih panjang dari itu, bagi dan tempel bertahap per beberapa puluh nama.",
 
-        "explorer.note": "\ud83d\udcc1 Sama seperti Finder, hasil akhirnya folder baru berisi file-file yang dipilih klien, siap dikirim ke editor atau di-import ke software manapun.",
+        "explorer.note": "Sama seperti Finder, hasil akhirnya folder baru berisi file-file yang dipilih klien, siap dikirim ke editor atau di-import ke software manapun.",
         "explorer.step1.h4": "Buka folder foto asli",
         "explorer.step1.p": "Buka folder yang menyimpan seluruh hasil jepretan dari sesi foto tersebut.",
         "explorer.step2.h4": "Klik kolom pencarian",
-        "explorer.step2.p": "Klik kotak \"Search\" di pojok kanan atas jendela File Explorer.",
+        "explorer.step2.p": "Klik kotak "Search" di pojok kanan atas jendela File Explorer.",
         "explorer.step3.h4": "Tempel daftar nama",
         "explorer.step3.p": "Tempel dengan <kbd>Ctrl</kbd> + <kbd>V</kbd>. Explorer otomatis memfilter dan menampilkan file yang cocok, termasuk RAW dan JPG dengan nama sama.",
         "explorer.step4.h4": "Pilih semua hasilnya",
         "explorer.step4.p": "Tekan <kbd>Ctrl</kbd> + <kbd>A</kbd>, lalu <kbd>Ctrl</kbd> + <kbd>C</kbd> untuk menyalin seluruh file yang tampil.",
         "explorer.step5.h4": "Kumpulkan ke folder baru",
         "explorer.step5.p": "Buat folder kosong baru, buka, lalu tempel dengan <kbd>Ctrl</kbd> + <kbd>V</kbd>.",
-        "explorer.callout": "<strong>Catatan:</strong> Kolom pencarian Explorer punya batas lebih ketat, sekitar 259 karakter sekali tempel. Untuk daftar panjang, tempel dan proses secara bertahap \u2014 misalnya 15\u201320 nama per batch.",
+        "explorer.callout": "<strong>Catatan:</strong> Kolom pencarian Explorer punya batas lebih ketat, sekitar 259 karakter sekali tempel. Untuk daftar panjang, tempel dan proses secara bertahap — misalnya 15–20 nama per batch.",
 
-        "lightroom.note": "\u26a1 Cara paling cepat \u2014 tidak perlu menduplikat file fisik ke folder baru, langsung filter di dalam katalog Lightroom.",
+        "lightroom.note": "Cara paling cepat — tidak perlu menduplikat file fisik ke folder baru, langsung filter di dalam katalog Lightroom.",
         "lightroom.step1.h4": "Pastikan foto sudah ter-import",
         "lightroom.step1.p": "Buka Lightroom Classic dan pastikan folder atau katalog berisi foto sesi ini sudah masuk ke Lightroom.",
         "lightroom.step2.h4": "Jangkau semua foto",
         "lightroom.step2.p": "Klik <strong>All Photographs</strong> di panel Catalog sebelah kiri, atau pilih folder proyek terkait, supaya pencarian mencakup seluruh foto yang mungkin ada di daftar.",
         "lightroom.step3.h4": "Buka Library Filter Bar",
-        "lightroom.step3.p": "Tekan tombol <kbd>\\</kbd> atau klik area filter di atas tampilan grid, lalu pilih kategori <strong>Text</strong>.",
+        "lightroom.step3.p": "Tekan tombol <kbd>\</kbd> atau klik area filter di atas tampilan grid, lalu pilih kategori <strong>Text</strong>.",
         "lightroom.step4.h4": "Atur ke Filename / Contains",
-        "lightroom.step4.p": "Ubah dropdown pertama menjadi <strong>Filename</strong> dan dropdown kedua menjadi <strong>Contains</strong> \u2014 bukan \"Contains All\", karena itu akan mencari nama yang mengandung semua kata sekaligus.",
+        "lightroom.step4.p": "Ubah dropdown pertama menjadi <strong>Filename</strong> dan dropdown kedua menjadi <strong>Contains</strong> — bukan "Contains All", karena itu akan mencari nama yang mengandung semua kata sekaligus.",
         "lightroom.step5.h4": "Tempel daftar nama",
         "lightroom.step5.p": "Klik kotak pencarian, tempel dengan <kbd>Cmd/Ctrl</kbd> + <kbd>V</kbd>. Semua foto yang namanya cocok langsung muncul di grid, RAW dan JPG sekaligus.",
         "lightroom.step6.h4": "Simpan sebagai Collection",
         "lightroom.step6.p": "Tekan <kbd>Cmd/Ctrl</kbd> + <kbd>A</kbd> untuk memilih semua hasil, lalu buat Collection baru agar mudah dibuka kembali saat proses edit.",
-        "lightroom.callout1": "<strong>Penting:</strong> Nama file di daftar harus dipisah spasi atau koma \u2014 <strong>bukan satu nama per baris</strong>, karena filter tidak akan bekerja jika ada baris baru. Tombol salin di dashboard sudah otomatis memformat ini untuk Anda.",
+        "lightroom.callout1": "<strong>Penting:</strong> Nama file di daftar harus dipisah spasi atau koma — <strong>bukan satu nama per baris</strong>, karena filter tidak akan bekerja jika ada baris baru. Tombol salin di dashboard sudah otomatis memformat ini untuk Anda.",
         "lightroom.callout2": "<strong>Perlu diketahui:</strong> Fitur ini hanya ada di <strong>Lightroom Classic</strong>. Di Lightroom versi cloud (bukan Classic), pencarian nama file baru bisa dilakukan satu per satu.",
 
-        "captureone.note": "\ud83c\udfaf Untuk yang mengedit di Capture One, bukan Lightroom \u2014 fitur ini bawaan resmi dari Capture One.",
+        "captureone.note": "Untuk yang mengedit di Capture One, bukan Lightroom — fitur ini bawaan resmi dari Capture One.",
         "captureone.step1.h4": "Buka folder atau collection",
         "captureone.step1.p": "Buka folder/collection di Capture One yang berisi seluruh foto sesi ini.",
         "captureone.step2.h4": "Buka menu Select by File Name List",
-        "captureone.step2.p": "Dari menu bar, pilih <strong>Select \u2192 Select by \u2192 File Name List\u2026</strong>",
+        "captureone.step2.p": "Dari menu bar, pilih <strong>Select → Select by → File Name List…</strong>",
         "captureone.step3.h4": "Tempel daftar nama",
         "captureone.step3.p": "Tempel daftar nama file ke kotak yang muncul.",
         "captureone.step4.h4": "Atur separator dan ekstensi",
@@ -1034,7 +1167,7 @@
         "captureone.step5.p": "Semua file yang cocok langsung terseleksi di browser Capture One, siap dijadikan album atau proses edit lanjutan.",
 
         "compare.h2": "Lightroom langsung, atau kumpulkan ke folder dulu?",
-        "compare.p": "Dua cara ini sama-sama valid \u2014 pilih sesuai alur kerja Anda.",
+        "compare.p": "Dua cara ini sama-sama valid — pilih sesuai alur kerja Anda.",
         "compare.c1.tag": "Filter langsung di Lightroom",
         "compare.c1.h3": "Paling cepat",
         "compare.c1.li1": "Tidak perlu menduplikat file ke folder baru",
@@ -1045,16 +1178,16 @@
         "compare.c2.h3": "Paling fleksibel",
         "compare.c2.li1": "Tidak butuh software tambahan, bawaan sistem operasi",
         "compare.c2.li2": "Cocok kalau belum mau import semua foto ke Lightroom",
-        "compare.c2.li3": "Hasilnya folder fisik \u2014 mudah dikirim ke tim retouch atau editor lain",
+        "compare.c2.li3": "Hasilnya folder fisik — mudah dikirim ke tim retouch atau editor lain",
         "compare.c2.li4": "Ada batas panjang daftar per sekali tempel",
 
         "faq.h2": "Pertanyaan yang sering muncul",
         "faq.f1.q": "Kenapa hasil pencariannya kosong, padahal sudah ditempel?",
-        "faq.f1.a": "Untuk Lightroom, pastikan nama dipisah spasi atau koma \u2014 bukan satu nama per baris. Untuk Finder/Explorer, pastikan folder yang dibuka memang berisi file aslinya, dan coba tempel dalam jumlah lebih sedikit dulu kalau daftarnya panjang.",
+        "faq.f1.a": "Untuk Lightroom, pastikan nama dipisah spasi atau koma — bukan satu nama per baris. Untuk Finder/Explorer, pastikan folder yang dibuka memang berisi file aslinya, dan coba tempel dalam jumlah lebih sedikit dulu kalau daftarnya panjang.",
         "faq.f2.q": "Kenapa file RAW ikut muncul padahal saya cuma menyalin nama dari galeri JPG?",
-        "faq.f2.a": "Karena pencarian bekerja berdasarkan nama file tanpa memedulikan ekstensi. Semua file dengan nama sama \u2014 baik .jpg maupun .CR2/.NEF/.ARW \u2014 akan ikut ditemukan. Ini memang disengaja supaya file RAW asli otomatis ikut terbawa.",
+        "faq.f2.a": "Karena pencarian bekerja berdasarkan nama file tanpa memedulikan ekstensi. Semua file dengan nama sama — baik .jpg maupun .CR2/.NEF/.ARW — akan ikut ditemukan. Ini memang disengaja supaya file RAW asli otomatis ikut terbawa.",
         "faq.f3.q": "Daftar nama dari klien saya sangat panjang, apa yang harus dilakukan?",
-        "faq.f3.a": "Bagi daftar menjadi beberapa bagian lalu tempel bertahap \u2014 terutama di Windows Explorer yang batasnya lebih ketat (\u00b1259 karakter). Finder bisa menampung lebih banyak (\u00b199 file), dan Lightroom Classic pada praktiknya bisa menampung daftar yang jauh lebih panjang dalam satu kali tempel.",
+        "faq.f3.a": "Bagi daftar menjadi beberapa bagian lalu tempel bertahap — terutama di Windows Explorer yang batasnya lebih ketat (±259 karakter). Finder bisa menampung lebih banyak (±99 file), dan Lightroom Classic pada praktiknya bisa menampung daftar yang jauh lebih panjang dalam satu kali tempel.",
         "faq.f4.q": "Saya tidak pakai Lightroom atau Capture One, apa masih bisa?",
         "faq.f4.a": "Bisa. Cukup gunakan cara Finder (Mac) atau Explorer (Windows) untuk mengumpulkan file ke folder baru, lalu buka folder tersebut di software edit apapun yang Anda pakai.",
 
@@ -1066,65 +1199,65 @@
         "hero.h1": "From Client Selection &rarr; Straight to Your RAW Folder &amp; Lightroom.",
         "hero.lead": "Effortlessly process client selections with our 100% local 1-Click Automatic RAW Sorter, or use universal filename lists for instant filtering across Finder, File Explorer, Lightroom Classic, and Capture One.",
         "hero.copiedFrom": "client choices",
-        "hero.copiedStatus": "copied \u2713",
+        "hero.copiedStatus": "copied ✓",
         "hero.others": "+ 42 others",
 
         "concept.h2": "How Does Automated Client RAW File Selection Work?",
         "concept.p": "Our system connects digital selection galleries with original local files on your computer securely — without ever uploading heavy raw files to the server.",
         "concept.c1.tag": "1-Click RAW Automation",
-        "concept.c1.text": "The <strong>Automatic RAW Sorter</strong> script intelligently scans your local folder and gathers matching physical RAW files (.CR3, .NEF, .ARW, .DNG) into a new <code>SELECTED_RAW</code> folder instantly.",
+        "concept.c1.text": "The <strong>Automatic RAW Sorter</strong> intelligently scans your local folder and gathers matching physical RAW files (.CR3, .NEF, .ARW, .DNG) into a new <code>SELECTED_RAW</code> folder instantly.",
         "concept.c2.tag": "Universal Filename Match",
         "concept.c2.text": "For manual workflows, space-separated extensionless filenames match <strong>all file formats with the same name</strong> (JPG &amp; RAW) inside your OS search or favorite editing software.",
 
         "platform.h2": "Choose the method for your workflow",
         "platform.p": "Use the 1-Click Automatic RAW Sorter for instant 100% local sorting, or select your preferred software/OS tab below.",
 
-        "rawsorter.note": "⚡ The fastest &amp; most automated way — separates original physical RAW files (.CR3, .NEF, .ARW, .DNG) 100% locally on your computer with zero manual searching.",
+        "rawsorter.note": "The fastest &amp; most automated way — separates original physical RAW files (.CR3, .NEF, .ARW, .DNG) 100% locally on your computer with zero manual searching.",
         "rawsorter.step1.h4": "Copy Filenames from Dashboard",
-        "rawsorter.step1.p": "On your Pick Your Photo project page, click <strong>\"Copy Filenames\"</strong> to capture the complete list of client-selected photos.",
+        "rawsorter.step1.p": "On your Pick Your Photo project page, click <strong>"Copy Filenames"</strong> to capture the complete list of client-selected photos.",
         "rawsorter.step2.h4": "Open RAW Folder on Your Computer",
         "rawsorter.step2.p": "Open the directory on your PC or external hard drive containing all original RAW files from the session.",
         "rawsorter.step3.h4": "Run 1-Click RAW Sorter",
-        "rawsorter.step3.p": "Run the Automatic RAW Sorter script inside your RAW folder or execute the 1-click sorting tool.",
+        "rawsorter.step3.p": "Run the Automatic RAW Sorter tool inside your RAW folder or execute the 1-click sorting tool.",
         "rawsorter.step4.h4": "Done — RAW Files Automatically Separated",
         "rawsorter.step4.p": "All client-selected RAW files are gathered instantly into a new <code>SELECTED_RAW</code> folder. Ready to import straight into Lightroom!",
         "rawsorter.callout": "<strong>100% Local &amp; Privacy Safe:</strong> RAW sorting runs completely offline on your device. Your large RAW files are never uploaded or touched by our servers.",
 
-        "finder.note": "📁 Perfect for gathering selected RAW + JPG files into a new folder before importing to any editing software.",
+        "finder.note": "Perfect for gathering selected RAW + JPG files into a new folder before importing to any editing software.",
         "finder.step1.h4": "Open original photo folder",
         "finder.step1.p": "Open the folder storing all the shots (RAW and JPG) from that photo session.",
         "finder.step2.h4": "Click the search bar",
         "finder.step2.p": "Click the magnifying glass icon in the top-right corner of the Finder window.",
         "finder.step3.h4": "Paste the filename list",
-        "finder.step3.p": "Paste using <kbd>Cmd</kbd> + <kbd>V</kbd>. Finder will instantly display every file whose name matches the list \u2014 both RAW and JPG of the same name will appear.",
+        "finder.step3.p": "Paste using <kbd>Cmd</kbd> + <kbd>V</kbd>. Finder will instantly display every file whose name matches the list — both RAW and JPG of the same name will appear.",
         "finder.step4.h4": "Select all results",
         "finder.step4.p": "Press <kbd>Cmd</kbd> + <kbd>A</kbd> to select all displayed files, then <kbd>Cmd</kbd> + <kbd>C</kbd> to copy.",
         "finder.step5.h4": "Collect in a new folder",
         "finder.step5.p": "Create a new empty folder, open it, then paste using <kbd>Cmd</kbd> + <kbd>V</kbd>. All selected files are now gathered in one place.",
-        "finder.callout": "<strong>Note:</strong> The Finder search bar has a limit of about 2,048 characters or \u00b199 filenames in a single paste. If the client list is longer, split and paste in batches.",
+        "finder.callout": "<strong>Note:</strong> The Finder search bar has a limit of about 2,048 characters or ±99 filenames in a single paste. If the client list is longer, split and paste in batches.",
 
-        "explorer.note": "\ud83d\udcc1 Just like Finder, the end result is a new folder containing the files chosen by the client, ready to edit or import.",
+        "explorer.note": "Just like Finder, the end result is a new folder containing the files chosen by the client, ready to edit or import.",
         "explorer.step1.h4": "Open original photo folder",
         "explorer.step1.p": "Open the folder storing all the shots from that photo session.",
         "explorer.step2.h4": "Click the search box",
-        "explorer.step2.p": "Click the \"Search\" box in the top-right corner of the File Explorer window.",
+        "explorer.step2.p": "Click the "Search" box in the top-right corner of the File Explorer window.",
         "explorer.step3.h4": "Paste the filename list",
         "explorer.step3.p": "Paste using <kbd>Ctrl</kbd> + <kbd>V</kbd>. Explorer automatically filters and displays matching files, including RAW and JPG of the same name.",
         "explorer.step4.h4": "Select all results",
         "explorer.step4.p": "Press <kbd>Ctrl</kbd> + <kbd>A</kbd>, then <kbd>Ctrl</kbd> + <kbd>C</kbd> to copy all displayed files.",
         "explorer.step5.h4": "Collect in a new folder",
         "explorer.step5.p": "Create a new empty folder, open it, then paste using <kbd>Ctrl</kbd> + <kbd>V</kbd>.",
-        "explorer.callout": "<strong>Note:</strong> The Explorer search bar has a tighter limit of about 259 characters per paste. For long lists, paste and process in batches (e.g. 15\u201320 names per batch).",
+        "explorer.callout": "<strong>Note:</strong> The Explorer search bar has a tighter limit of about 259 characters per paste. For long lists, paste and process in batches (e.g. 15–20 names per batch).",
 
-        "lightroom.note": "\u26a1 The fastest way \u2014 no need to duplicate physical files; filter directly within your Lightroom Catalog.",
+        "lightroom.note": "The fastest way — no need to duplicate physical files; filter directly within your Lightroom Catalog.",
         "lightroom.step1.h4": "Ensure photos are imported",
         "lightroom.step1.p": "Open Lightroom Classic and make sure the folder or catalog containing this session's photos is imported.",
         "lightroom.step2.h4": "Select source photos",
         "lightroom.step2.p": "Click <strong>All Photographs</strong> in the Catalog panel on the left, or select the specific project folder, so the search queries all possible session photos.",
         "lightroom.step3.h4": "Open Library Filter Bar",
-        "lightroom.step3.p": "Press the <kbd>\\</kbd> key or click the filter area above the grid view, then select the <strong>Text</strong> category.",
+        "lightroom.step3.p": "Press the <kbd>\</kbd> key or click the filter area above the grid view, then select the <strong>Text</strong> category.",
         "lightroom.step4.h4": "Set to Filename / Contains",
-        "lightroom.step4.p": "Change the first dropdown to <strong>Filename</strong> and the second to <strong>Contains</strong> \u2014 do NOT choose \"Contains All\", as that searches for files containing all words combined.",
+        "lightroom.step4.p": "Change the first dropdown to <strong>Filename</strong> and the second to <strong>Contains</strong> — do NOT choose "Contains All", as that searches for files containing all words combined.",
         "lightroom.step5.h4": "Paste the filename list",
         "lightroom.step5.p": "Click the search input box, then paste using <kbd>Cmd/Ctrl</kbd> + <kbd>V</kbd>. All matching photos will instantly appear in the grid, both RAW and JPG.",
         "lightroom.step6.h4": "Save as a Collection",
@@ -1132,11 +1265,11 @@
         "lightroom.callout1": "<strong>Important:</strong> Filenames in the list must be separated by spaces or commas — <strong>not one per line</strong>, as the filter won't work with newlines. The dashboard copy button formats this automatically.",
         "lightroom.callout2": "<strong>Please Note:</strong> This feature is only available in <strong>Lightroom Classic</strong>. In the cloud-based Lightroom (non-Classic), filenames must be searched one by one.",
 
-        "captureone.note": "\ud83c\udfaf For editing in Capture One instead of Lightroom \u2014 this is a native Capture One feature.",
+        "captureone.note": "For editing in Capture One instead of Lightroom — this is a native Capture One feature.",
         "captureone.step1.h4": "Open folder or collection",
         "captureone.step1.p": "Open the folder/collection in Capture One containing all photos from this session.",
         "captureone.step2.h4": "Open Select by File Name List",
-        "captureone.step2.p": "From the menu bar, choose <strong>Select \u2192 Select by \u2192 File Name List\u2026</strong>",
+        "captureone.step2.p": "From the menu bar, choose <strong>Select → Select by → File Name List…</strong>",
         "captureone.step3.h4": "Paste the list",
         "captureone.step3.p": "Paste the filename list into the text box that appears.",
         "captureone.step4.h4": "Set separator and extension",
@@ -1145,7 +1278,7 @@
         "captureone.step5.p": "All matching files are instantly selected in the Capture One browser, ready to organize or edit.",
 
         "compare.h2": "Lightroom direct filter, or collect in a folder first?",
-        "compare.p": "Both methods are perfectly valid \u2014 choose the one that fits your workflow.",
+        "compare.p": "Both methods are perfectly valid — choose the one that fits your workflow.",
         "compare.c1.tag": "Filter directly in Lightroom",
         "compare.c1.h3": "Fastest",
         "compare.c1.li1": "No need to duplicate files into a new folder",
@@ -1156,7 +1289,7 @@
         "compare.c2.h3": "Most Flexible",
         "compare.c2.li1": "No extra software needed, built into the OS",
         "compare.c2.li2": "Great if you don't want to import everything to Lightroom yet",
-        "compare.c2.li3": "Creates a physical folder \u2014 easy to send to retouchers or editors",
+        "compare.c2.li3": "Creates a physical folder — easy to send to retouchers or editors",
         "compare.c2.li4": "Pasting list has character limits per paste",
 
         "faq.h2": "Frequently Asked Questions",

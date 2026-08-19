@@ -5,7 +5,11 @@ import db from '@/lib/db';
 export async function GET(request, { params }) {
   const { fileId } = params;
   const { searchParams } = new URL(request.url);
-  const sz = searchParams.get('sz') || 'w400';
+
+  // [MED-01 FIX] Whitelist parameter sz — cegah injeksi karakter ke URL Google CDN
+  const ALLOWED_SIZES = ['w200', 'w400', 'w600', 'w800', 'w1200', 'h200', 'h400', 'h800'];
+  const szParam = searchParams.get('sz') || 'w400';
+  const sz = ALLOWED_SIZES.includes(szParam) ? szParam : 'w400';
 
   if (!fileId || !/^[a-zA-Z0-9_-]{10,}$/.test(fileId)) {
     return NextResponse.json({ error: 'File ID tidak valid' }, { status: 400 });
@@ -13,6 +17,7 @@ export async function GET(request, { params }) {
 
   const primaryUrl = `https://lh3.googleusercontent.com/d/${fileId}=${sz}`;
   const fallbackUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=${sz}`;
+
 
   try {
     let response = await fetch(primaryUrl, {

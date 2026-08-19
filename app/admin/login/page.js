@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { LockIcon, AlertTriangleIcon } from '@/components/StorageIcons.jsx';
 
 export default function AdminLoginPage() {
+    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -27,8 +30,7 @@ export default function AdminLoginPage() {
                 throw new Error(data.message || 'Login admin gagal.');
             }
 
-            // Successfully authenticated as admin
-            window.location.href = '/admin';
+            router.push('/admin');
         } catch (err) {
             setError(err.message);
         } finally {
@@ -67,10 +69,9 @@ export default function AdminLoginPage() {
                         borderRadius: '14px',
                         background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
                         marginBottom: '14px',
-                        fontSize: '24px',
                         boxShadow: '0 8px 24px rgba(99, 102, 241, 0.35)'
                     }}>
-                        🛡️
+                        <LockIcon size={24} color="#ffffff" />
                     </div>
                     <h2 style={{
                         fontSize: '24px',
@@ -97,7 +98,10 @@ export default function AdminLoginPage() {
                         fontSize: '13px',
                         lineHeight: '1.5'
                     }}>
-                        ⚠️ {error}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <AlertTriangleIcon size={16} color="#f87171" />
+                            <span>{error}</span>
+                        </div>
                     </div>
                 )}
 
@@ -170,10 +174,21 @@ export default function AdminLoginPage() {
                             transition: 'all 0.2s ease',
                             boxShadow: '0 4px 16px rgba(99, 102, 241, 0.35)',
                             marginTop: '8px',
-                            opacity: loading ? 0.7 : 1
+                            opacity: loading ? 0.7 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '8px'
                         }}
                     >
-                        {loading ? 'Memverifikasi Kredensial...' : '🔒 Masuk ke Owner Console'}
+                        {loading ? (
+                            'Memverifikasi Kredensial...'
+                        ) : (
+                            <>
+                                <LockIcon size={14} color="#ffffff" />
+                                <span>Masuk ke Owner Console</span>
+                            </>
+                        )}
                     </button>
                 </form>
 

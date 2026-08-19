@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getAuthVendor } from '@/lib/auth';
-import { getWorkerDriveClient, createVendorRootFolder, setDriveFilePublic, ensureFolderWriterPermission } from '@/lib/google-master-drive';
+import { getWorkerDriveClient, createVendorRootFolder, setDriveFilePublic } from '@/lib/google-master-drive';
 import { Readable } from 'stream';
 
 export const dynamic = 'force-dynamic';
 
 const MAX_DAILY_PLATFORM_BYTES = 720 * 1024 * 1024 * 1024; // 720 GB Cap
 
-const ALLOWED_EXTENSIONS = /\.(jpe?g|png|webp|gif|bmp|heic|heif|mp4|mov|avi|mkv|cr2|cr3|arw|nef|dng|raw|orf|rw2)$/i;
-const FORBIDDEN_EXTENSIONS = /\.(zip|rar|7z|tar|gz|exe|bat|sh|php|js|html|py)$/i;
+// Kamus Format Media Fotografi & Videografi Lengkap (Semua Merk Kamera Dunia)
+const ALLOWED_EXTENSIONS = /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif|tiff?|svg|psd|psb|ai|cr2|cr3|crw|arw|srf|sr2|nef|nrw|raf|rw2|raw|orf|dng|rwl|3fr|fff|iiq|pef|ptx|mp4|mov|avi|mkv|m4v|webm|mts|m2ts|flv|wmv|3gp)$/i;
+
+// Blacklist Berkas Script, Executable & Coding
+const FORBIDDEN_EXTENSIONS = /\.(ts|tsx|js|jsx|mjs|cjs|json|map|css|scss|html|htm|py|php|rb|go|java|c|cpp|h|sh|bat|cmd|exe|dll|so|dylib|bin|zip|rar|7z|tar|gz|sql|env|lock|yml|yaml|md|txt)$/i;
 
 /**
  * POST /api/storage/upload/direct
@@ -33,7 +36,7 @@ export async function POST(req) {
 
     const fileName = file.name;
     const fileSizeBytes = file.size;
-    const mimeType = file.type || 'image/jpeg';
+    const mimeType = file.type || '';
 
     // 1. FILTER KEAMANAN EKSTENSI FILE & JUNK FILES OS (.DS_Store, Thumbs.db)
     if (fileName.startsWith('.') || fileName.startsWith('._') || fileName === 'Thumbs.db' || fileName === 'desktop.ini') {
@@ -46,23 +49,100 @@ export async function POST(req) {
     if (FORBIDDEN_EXTENSIONS.test(fileName)) {
       return NextResponse.json({
         success: false,
-        error: 'Format file terlarang (.zip, .rar, .exe). Demi keamanan cloud, hanya berkas foto dan video asli yang diizinkan.'
+        error: `Format berkas "${fileName}" ditolak. Demi keamanan cloud studio foto, hanya berkas foto, video, dan aset desain yang diizinkan.`
       }, { status: 400 });
     }
 
-    if (!ALLOWED_EXTENSIONS.test(fileName)) {
+    const isMimeMedia = mimeType && (mimeType.startsWith('image/') || mimeType.startsWith('video/'));
+    const isAllowedExt = ALLOWED_EXTENSIONS.test(fileName);
+
+    if (!isMimeMedia && !isAllowedExt) {
       return NextResponse.json({
         success: false,
-        error: `Format file "${fileName}" tidak didukung. Harap unggah foto (.jpg, .png, .raw) atau video (.mp4, .mov).`
+        error: `Format berkas "${fileName}" tidak didukung. Harap unggah foto (.jpg, .png, .raw, .dng, dll) atau video (.mp4, .mov, dll).`
       }, { status: 400 });
     }
 
-    const vendor = db.prepare('SELECT id, name, email, driveRootFolderId, hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes FROM vendors WHERE id = ?').get(session.id);
+    const vendor = db.prepare('SELECT id, name, email, driveRootFolderId, hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes, externalDriveConnected, externalDriveRefreshToken, activeStorageMode FROM vendors WHERE id = ?').get(session.id);
     if (!vendor) {
       return NextResponse.json({ success: false, error: 'Vendor tidak ditemukan.' }, { status: 404 });
     }
 
-    if (!vendor.hasStorageAddon) {
+    const targetMode = formData.get('storageMode') || (formData.get('isExternalDrive') === 'true' ? 'byos' : (vendor.activeStorageMode || (vendor.externalDriveConnected ? 'byos' : 'system')));
+
+    // A. JALUR UPLOAD DIRECT KE GOOGLE DRIVE VENDOR PRIBADI (BYOS)
+    if (targetMode === 'byos') {
+      if (!vendor.externalDriveConnected || !vendor.externalDriveRefreshToken) {
+        return NextResponse.json({
+          success: false,
+          error: 'Akun Google Drive pribadi Anda belum terhubung. Silakan hubungkan Google Drive terlebih dahulu.'
+        }, { status: 400 });
+      }
+
+      const { getVendorDriveClient } = await import('@/lib/google-master-drive');
+      const vendorDrive = await getVendorDriveClient(vendor.id);
+      if (!vendorDrive) throw new Error('Gagal menghubungkan ke Google Drive Vendor.');
+
+      const targetFolderId = (!parentFolderId || parentFolderId === 'root') ? 'root' : parentFolderId;
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const stream = Readable.from(buffer);
+
+      const driveRes = await vendorDrive.files.create({
+        requestBody: {
+          name: fileName,
+          parents: [targetFolderId],
+        },
+        media: {
+          mimeType: mimeType,
+          body: stream,
+        },
+        fields: 'id, name, mimeType, size, webViewLink, webContentLink',
+      });
+
+      const driveFileId = driveRes.data.id;
+
+      // Set public reader (non-blocking)
+      setDriveFilePublic(vendorDrive, driveFileId).catch(() => {});
+
+      // Registrasikan ke database storage_files dengan isExternalDrive = 1 (tanpa memotong kuota SaaS)
+      db.prepare(`
+        INSERT INTO storage_files (vendorId, parentFolderId, driveFileId, fileName, fileSizeBytes, mimeType, webViewLink, webContentLink, isExternalDrive)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+      `).run(
+        vendor.id,
+        targetFolderId,
+        driveFileId,
+        fileName,
+        fileSizeBytes,
+        mimeType,
+        driveRes.data.webViewLink || '',
+        driveRes.data.webContentLink || ''
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: `Berkas ${fileName} berhasil diunggah ke Google Drive Anda.`,
+        file: {
+          id: driveFileId,
+          fileName,
+          fileSizeBytes,
+          mimeType,
+          webViewLink: driveRes.data.webViewLink
+        }
+      });
+    }
+
+    // B. JALUR UPLOAD KE SAAS DEDICATED STORAGE ADMIN
+    const hasAddon = Boolean(vendor.hasStorageAddon || (vendor.addonStorageQuotaBytes && vendor.addonStorageQuotaBytes > 0));
+
+    if (vendor.addonStorageQuotaBytes > 0 && !vendor.hasStorageAddon) {
+      try {
+        db.prepare('UPDATE vendors SET hasStorageAddon = 1 WHERE id = ?').run(vendor.id);
+        vendor.hasStorageAddon = 1;
+      } catch (_) {}
+    }
+
+    if (!hasAddon) {
       return NextResponse.json({
         success: false,
         error: 'Anda belum memiliki Paket Add-On Storage aktif. Harap beli atau aktifkan paket storage terlebih dahulu.'
@@ -113,9 +193,6 @@ export async function POST(req) {
 
     const targetFolderId = parentFolderId && parentFolderId !== 'root' ? parentFolderId : rootFolderId;
 
-    // Pastikan target folder memiliki Writer permission agar Akun Worker Pool dapat menulis file
-    await ensureFolderWriterPermission(targetFolderId);
-
     // 5. STREAM PIPE UPLOAD VIA WORKER DRIVE CLIENT (Worker Account is File Owner)
     const { drive: workerDrive, workerAccount } = await getWorkerDriveClient();
     if (!workerDrive) throw new Error('Integrasi Google Drive Worker belum dikonfigurasi.');
@@ -137,8 +214,8 @@ export async function POST(req) {
 
     const driveFileId = driveRes.data.id;
 
-    // 6. AUTO SET HAK AKSES PUBLIK (Public Reader untuk Galeri Seleksi Klien)
-    await setDriveFilePublic(workerDrive, driveFileId);
+    // 6. AUTO SET HAK AKSES PUBLIK (Non-blocking background execution agar respons upload instan)
+    setDriveFilePublic(workerDrive, driveFileId).catch(() => {});
 
     // Update usedStorageBytes & status pada Akun Worker di Database
     if (workerAccount) {

@@ -26,6 +26,14 @@ const PUBLIC_SAFE_FIELDS = new Set([
     'flash_bundle_addon_name',
     'flash_bundle_addon_type',
     'flash_bundle_addon_value',
+    // Trial Public Configuration
+    'trial_max_photos',
+    'trial_max_selection',
+    'trial_preview_photos',
+    'trial_max_subfolders',
+    'raw_sorter_trial_limit',
+    'trial_cta_text',
+    'trial_cta_subtext',
 ]);
 
 export async function GET() {

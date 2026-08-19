@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import RawSorterDrawer from '@/components/RawSorterDrawer';
+import { 
+    CopyLinkIcon, FolderIcon, UploadCloudIcon, PaletteThemeIcon, PlusIcon, LockIcon, 
+    InfoLightIcon, AlertCircleIcon, AlertTriangleIcon, SpeedBoltIcon, RefreshCwIcon, 
+    ClockIcon, TrashIcon, SparklesUpgradeIcon, CheckCircleIcon, WhatsAppIcon, 
+    SettingsManageIcon, GalleryViewIcon, PhotoIcon, GridIcon, ListIcon 
+} from '@/components/StorageIcons.jsx';
 
 // Live countdown component — ticks every second
 function CountdownTimer({ expiresAt }) {
@@ -89,11 +95,14 @@ export default function DashboardPage() {
     const [galleryTheme, setGalleryTheme] = useState('default');
     const [showCreateThemePicker, setShowCreateThemePicker] = useState(false);
 
-    // Opsi Sumber Media Proyek (Internal Cloud Storage vs Google Drive Eksternal)
-    const [projectSourceType, setProjectSourceType] = useState('internal'); // 'internal' | 'external'
+    // Opsi Sumber Media Proyek (Link GDrive Eksternal vs BYOS Drive Pribadi vs Dedicated SaaS)
+    const [projectSourceType, setProjectSourceType] = useState('external'); // 'external' | 'byos' | 'internal'
     const [internalFoldersList, setInternalFoldersList] = useState([]);
     const [selectedInternalFolderId, setSelectedInternalFolderId] = useState('');
     const [loadingInternalFolders, setLoadingInternalFolders] = useState(false);
+    const [byosFoldersList, setByosFoldersList] = useState([]);
+    const [selectedByosFolderId, setSelectedByosFolderId] = useState('');
+    const [loadingByosFolders, setLoadingByosFolders] = useState(false);
 
     // Edit project settings states
     const [editingProject, setEditingProject] = useState(null);
@@ -126,6 +135,7 @@ export default function DashboardPage() {
     const [showBrandingModal, setShowBrandingModal] = useState(false);
     const [vendorName, setVendorName] = useState('');
     const [brandName, setBrandName] = useState('');
+    const [vendorWhatsapp, setVendorWhatsapp] = useState('');
     const [brandLogoFile, setBrandLogoFile] = useState(null);
     const [brandLogoPreview, setBrandLogoPreview] = useState('');
     const [copyDelimiter, setCopyDelimiter] = useState(', ');
@@ -232,6 +242,7 @@ export default function DashboardPage() {
                 setVendorDetails(cached.vendor);
                 setVendorName(cached.vendor.name || '');
                 setBrandName(cached.vendor.brandName || '');
+                setVendorWhatsapp(cached.vendor.whatsapp || '');
                 setBrandLogoPreview(cached.vendor.brandLogo || '');
                 if (cached.vendor.copyDelimiter !== undefined) setCopyDelimiter(cached.vendor.copyDelimiter);
                 if (cached.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(cached.vendor.copyIncludeExt);
@@ -250,6 +261,7 @@ export default function DashboardPage() {
                     setVendorDetails(data.vendor);
                     setVendorName(data.vendor.name || '');
                     setBrandName(data.vendor.brandName || '');
+                    setVendorWhatsapp(data.vendor.whatsapp || '');
                     setBrandLogoPreview(data.vendor.brandLogo || '');
                     if (data.vendor.copyDelimiter !== undefined) setCopyDelimiter(data.vendor.copyDelimiter);
                     if (data.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(data.vendor.copyIncludeExt);
@@ -268,7 +280,7 @@ export default function DashboardPage() {
     const fetchInternalFolders = async () => {
         try {
             setLoadingInternalFolders(true);
-            const res = await fetch('/api/storage/files?folderId=root');
+            const res = await fetch('/api/storage/files?mode=system&folderId=root');
             const data = await res.json();
             if (data.success && data.subFolders) {
                 setInternalFoldersList(data.subFolders || []);
@@ -279,9 +291,43 @@ export default function DashboardPage() {
         }
     };
 
+    const fetchByosFolders = async () => {
+        try {
+            setLoadingByosFolders(true);
+            const res = await fetch('/api/storage/files?mode=byos&folderId=root');
+            const data = await res.json();
+            if (data.success && data.subFolders) {
+                setByosFoldersList(data.subFolders || []);
+            }
+        } catch {
+        } finally {
+            setLoadingByosFolders(false);
+        }
+    };
+
     const handleSelectInternalFolder = (folderDriveId) => {
         setSelectedInternalFolderId(folderDriveId);
+        if (!folderDriveId) {
+            setNewProjectName('');
+            setNewFolderUrl('');
+            return;
+        }
         const found = internalFoldersList.find(f => (f.driveFolderId || f.id) === folderDriveId);
+        if (found) {
+            setNewProjectName(found.name);
+            const gdriveUrl = found.webViewLink || `https://drive.google.com/drive/folders/${found.driveFolderId || found.id}`;
+            setNewFolderUrl(gdriveUrl);
+        }
+    };
+
+    const handleSelectByosFolder = (folderDriveId) => {
+        setSelectedByosFolderId(folderDriveId);
+        if (!folderDriveId) {
+            setNewProjectName('');
+            setNewFolderUrl('');
+            return;
+        }
+        const found = byosFoldersList.find(f => (f.driveFolderId || f.id) === folderDriveId);
         if (found) {
             setNewProjectName(found.name);
             const gdriveUrl = found.webViewLink || `https://drive.google.com/drive/folders/${found.driveFolderId || found.id}`;
@@ -291,14 +337,15 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (showCreateModal) {
-            if (vendorDetails?.hasStorageAddon) {
-                setProjectSourceType('internal');
-            } else {
-                setProjectSourceType('external');
-            }
+            setProjectSourceType('external');
+            setSelectedInternalFolderId('');
+            setSelectedByosFolderId('');
+            setNewProjectName('');
+            setNewFolderUrl('');
             fetchInternalFolders();
+            fetchByosFolders();
         }
-    }, [showCreateModal, vendorDetails]);
+    }, [showCreateModal]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -782,12 +829,17 @@ export default function DashboardPage() {
 
     const handleCopyGalleryLink = (project) => {
         const origin = window.location.origin;
-        const link = `${origin}/gallery/${project.id}`;
-        navigator.clipboard.writeText(link).then(() => {
-            addToast('Link galeri klien berhasil disalin ke clipboard!', 'success');
-        }).catch(() => {
-            addToast('Gagal menyalin link.', 'error');
-        });
+        const keyParam = project.clientAccessKey ? `?key=${project.clientAccessKey}` : '';
+        const link = `${origin}/gallery/${project.id}${keyParam}`;
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(link).then(() => {
+                addToast('Link galeri klien berhasil disalin ke clipboard!', 'success');
+            }).catch(() => {
+                fallbackCopyToClipboard(link);
+            });
+        } else {
+            fallbackCopyToClipboard(link);
+        }
     };
 
 
@@ -849,12 +901,13 @@ export default function DashboardPage() {
 
     // Copy Client Gallery Link
     const handleCopyLink = (projectId, accessKey) => {
-        const link = `${window.location.origin}/gallery/${projectId}?key=${accessKey}`;
+        const keyParam = accessKey ? `?key=${accessKey}` : '';
+        const link = `${window.location.origin}/gallery/${projectId}${keyParam}`;
         
         // Try modern clipboard API first, fallback to textarea method
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(link)
-                .then(() => addToast('✅ Link klien berhasil disalin!', 'success'))
+                .then(() => addToast('Link klien berhasil disalin!', 'success'))
                 .catch(() => fallbackCopyToClipboard(link));
         } else {
             fallbackCopyToClipboard(link);
@@ -863,21 +916,23 @@ export default function DashboardPage() {
 
     // Open Gallery Page in New Tab
     const handleOpenGallery = (project) => {
-        if (!project || !project.clientAccessKey) {
-            addToast('Link galeri tidak ditemukan.', 'warning');
+        if (!project) {
+            addToast('Data project tidak ditemukan.', 'warning');
             return;
         }
-        window.open(`/gallery/${project.id}?key=${project.clientAccessKey}`, '_blank');
+        const keyParam = project.clientAccessKey ? `?key=${project.clientAccessKey}` : '';
+        window.open(`/gallery/${project.id}${keyParam}`, '_blank');
     };
 
     // Send Gallery Link via WhatsApp to Client using Direct WhatsApp API
     const handleSendWhatsApp = (project) => {
-        const link = `${window.location.origin}/gallery/${project.id}?key=${project.clientAccessKey}`;
+        const keyParam = project.clientAccessKey ? `?key=${project.clientAccessKey}` : '';
+        const link = `${window.location.origin}/gallery/${project.id}${keyParam}`;
         let rawPhone = (project.clientPhone || '').replace(/\D/g, '');
         if (rawPhone.startsWith('0')) {
             rawPhone = '62' + rawPhone.slice(1);
         }
-        const message = `Halo! Berikut link galeri foto *${project.name}* untuk Anda:\n\n${link}\n\nSilakan pilih foto favorit Anda melalui link di atas. Terima kasih! 📸`;
+        const message = `Halo! Berikut link galeri foto *${project.name}* untuk Anda:\n\n${link}\n\nSilakan pilih foto favorit Anda melalui link di atas. Terima kasih!`;
         const waUrl = rawPhone 
             ? `https://api.whatsapp.com/send?phone=${rawPhone}&text=${encodeURIComponent(message)}`
             : `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
@@ -895,7 +950,7 @@ export default function DashboardPage() {
         textarea.select();
         try {
             document.execCommand('copy');
-            addToast('✅ Link klien berhasil disalin!', 'success');
+            addToast('Link klien berhasil disalin!', 'success');
         } catch {
             prompt('Salin link ini secara manual:', text);
         }
@@ -936,6 +991,7 @@ export default function DashboardPage() {
             const fd = new FormData();
             fd.append('name', vendorName);
             fd.append('brandName', brandName);
+            fd.append('whatsapp', vendorWhatsapp);
             fd.append('copyDelimiter', copyDelimiter);
             fd.append('copyIncludeExt', copyIncludeExt.toString());
             fd.append('copySortOrder', copySortOrder);
@@ -1046,7 +1102,7 @@ export default function DashboardPage() {
             {vendorDetails && vendorDetails.isExpired && (
                 <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', lineHeight: '1.5' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '20px' }}>⚠️</span>
+                        <AlertTriangleIcon size={22} color="#f87171" />
                         <div>
                             <strong>Masa Aktif Paket Berlangganan Habis!</strong> Paket <strong>{vendorDetails.planName} Plan</strong> Anda telah berakhir pada {new Date(vendorDetails.expiresAt).toLocaleDateString()}. Fungsionalitas pembuatan project baru dan akses galeri klien dinonaktifkan sementara.
                         </div>
@@ -1055,9 +1111,10 @@ export default function DashboardPage() {
                         <button 
                             onClick={handleOpenUpgradeModal} 
                             className="btn-primary" 
-                            style={{ background: '#f87171', border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            style={{ background: '#f87171', border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                         >
-                            🔄 Perpanjang Sekarang
+                            <RefreshCwIcon size={14} color="#000" />
+                            <span>Perpanjang Sekarang</span>
                         </button>
                     )}
                 </div>
@@ -1066,7 +1123,7 @@ export default function DashboardPage() {
             {vendorDetails && vendorDetails.upgradeRequest && (
                 <div style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', color: '#fbbf24', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', lineHeight: '1.5' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{ fontSize: '20px' }}>⏳</span>
+                        <ClockIcon size={22} color="#fbbf24" />
                         <div>
                             <strong>Upgrade/Renewal Plan need confirmation!</strong> Permintaan Anda untuk paket <strong>{vendorDetails.upgradeRequest.planName}</strong> dengan biaya <strong>Rp {Number(vendorDetails.upgradeRequest.proratedPrice).toLocaleString('id-ID')}</strong> telah diajukan dan sedang menunggu verifikasi superadmin.
                         </div>
@@ -1077,9 +1134,10 @@ export default function DashboardPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-primary"
-                            style={{ background: '#fbbf24', border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', textDecoration: 'none', cursor: 'pointer' }}
+                            style={{ background: '#fbbf24', border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', textDecoration: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                         >
-                            💬 Hubungi Admin via WA
+                            <WhatsAppIcon size={15} color="#000" />
+                            <span>Hubungi Admin via WA</span>
                         </a>
                     )}
                 </div>
@@ -1091,7 +1149,7 @@ export default function DashboardPage() {
                     <p style={{ color: '#a1a1aa', margin: '4px 0 0 0', fontSize: '13px' }}>
                         Kelola project seleksi foto klien
                         {vendorDetails && (
-                            <span> — Paket: <strong>{vendorDetails.planName ? (vendorDetails.planName.endsWith('Plan') ? vendorDetails.planName : `${vendorDetails.planName} Plan`) : 'Basic Plan'}</strong> (Masa aktif s/d: {vendorDetails.expiresAt ? new Date(vendorDetails.expiresAt).toLocaleDateString() : 'Lifetime'})</span>
+                            <span> — Paket: <strong>{vendorDetails.planName ? (vendorDetails.planName.endsWith('Plan') ? vendorDetails.planName : `${vendorDetails.planName} Plan`) : 'Basic Plan'}</strong> (Masa aktif s/d: {vendorDetails.expiresAt ? new Date(vendorDetails.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Lifetime'})</span>
                         )}
                     </p>
                 </div>
@@ -1104,7 +1162,7 @@ export default function DashboardPage() {
                             title="Hubungi Admin via WhatsApp"
                             style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)', background: 'rgba(52,211,153,0.06)', borderRadius: '8px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
                         >
-                            💬 <span>WA Admin</span>
+                            <WhatsAppIcon size={14} color="#34d399" /> <span>WA Admin</span>
                         </a>
                     )}
                     <button
@@ -1112,14 +1170,14 @@ export default function DashboardPage() {
                         title="Lihat & Upgrade Plan"
                         style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)', background: 'rgba(251,191,36,0.06)', borderRadius: '8px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
                     >
-                        🚀 <span>Upgrade</span>
+                        <SparklesUpgradeIcon size={13} color="#fbbf24" /> <span>Upgrade</span>
                     </button>
                     <button
                         onClick={() => setShowBrandingModal(true)}
                         title="Pengaturan Brand"
                         style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
                     >
-                        ⚙️ <span>Brand</span>
+                        <SettingsManageIcon size={13} color="#a1a1aa" /> <span>Brand</span>
                     </button>
                 </div>
             </div>
@@ -1134,45 +1192,56 @@ export default function DashboardPage() {
                             {projects.length} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>/ {vendorDetails.maxProjects || '∞'} Project</span>
                         </p>
                     </div>
-                    <div style={{ background: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)', border: `1px solid ${(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)'}`, borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div style={{ background: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)', border: `1px solid ${(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)'}`, borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
-                            <p style={{ margin: 0, fontSize: '11px', color: (vendorDetails.externalDriveConnected || vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
-                                PUSAT STORAGE PROJECT
-                            </p>
-                            <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: (vendorDetails.externalDriveConnected || vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#e4e4e7' : '#34d399' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                                <p style={{ margin: 0, fontSize: '11px', color: (vendorDetails.externalDriveConnected || vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
+                                    PUSAT STORAGE PROJECT
+                                </p>
+                                <Link
+                                    href="/dashboard/storage"
+                                    style={{
+                                        color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) ? '#34d399' : '#fbbf24',
+                                        fontSize: '11px',
+                                        fontWeight: '600',
+                                        textDecoration: 'none',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '2px',
+                                        transition: 'opacity 0.2s',
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                    title="Kelola Storage"
+                                >
+                                    <span>Kelola</span>
+                                    <span>→</span>
+                                </Link>
+                            </div>
+                            <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {vendorDetails.externalDriveConnected 
-                                    ? 'Google Drive Studio ☁️' 
+                                    ? 'Storage Studio' 
                                     : (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) 
                                         ? `${((vendorDetails.storageUsedMb || 0) / 1024 < 0.1 ? (vendorDetails.storageUsedMb || 0).toFixed(1) + ' MB' : ((vendorDetails.storageUsedMb || 0) / 1024).toFixed(1) + ' GB')}`
-                                        : 'Google Drive Utama (Default) ☁️'
+                                        : 'Google Drive Utama'
                                 }
-                                <span style={{ fontSize: '12px', color: '#71717a', fontWeight: '400', marginLeft: '6px' }}>
-                                    {vendorDetails.externalDriveConnected 
-                                        ? `(${vendorDetails.externalDriveEmail || 'Connected'})` 
-                                        : (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) 
-                                            ? `/ ${vendorDetails.storageQuotaGb} GB SaaS Admin` 
-                                            : '(0 Byte di Storage Admin)'
-                                    }
-                                </span>
                             </p>
+                            {vendorDetails.externalDriveConnected && (
+                                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#71717a', fontWeight: '400', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {vendorDetails.externalDriveEmail || 'Connected'}
+                                </p>
+                            )}
+                            {!vendorDetails.externalDriveConnected && (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) && (
+                                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#71717a', fontWeight: '400' }}>
+                                    / {vendorDetails.storageQuotaGb} GB Cloud Storage
+                                </p>
+                            )}
+                            {!vendorDetails.externalDriveConnected && !vendorDetails.hasStorageAddon && vendorDetails.storageQuotaGb <= 0 && (
+                                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#71717a', fontWeight: '400' }}>
+                                    Default Google Drive
+                                </p>
+                            )}
                         </div>
-                        <Link
-                            href="/dashboard/storage"
-                            style={{
-                                marginTop: '10px',
-                                color: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) ? '#34d399' : '#fbbf24',
-                                fontSize: '11px',
-                                fontWeight: '600',
-                                textDecoration: 'none',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                            }}
-                        >
-                            {(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) 
-                                ? '⚙️ Kelola Storage Studio →' 
-                                : '🔗 Hubungkan Drive / Sewa Dedicated Storage →'}
-                        </Link>
                     </div>
                     <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
                         <p style={{ margin: 0, fontSize: '11px', color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Masa Aktif Akun</p>
@@ -1261,7 +1330,7 @@ export default function DashboardPage() {
                                 gap: '12px'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <span style={{ fontSize: '24px' }}>⚡</span>
+                                    <SpeedBoltIcon size={24} color="#34d399" />
                                     <div>
                                         <h4 style={{ margin: 0, fontSize: '15px', fontWeight: '700', color: '#34d399' }}>
                                             Terdapat {projects.filter(p => p.status === 'archived').length} Galeri Terarsip
@@ -1282,10 +1351,14 @@ export default function DashboardPage() {
                                         color: '#ffffff',
                                         border: 'none',
                                         borderRadius: '8px',
-                                        cursor: 'pointer'
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px'
                                     }}
                                 >
-                                    ⚡ Aktifkan Semua Galeri Terarsip
+                                    <SpeedBoltIcon size={14} color="#ffffff" />
+                                    <span>Aktifkan Semua Galeri Terarsip</span>
                                 </button>
                             </div>
                         )}
@@ -1375,7 +1448,7 @@ export default function DashboardPage() {
                                 <div style={{ position: 'relative', width: '180px' }}>
                                     <input
                                         type="text"
-                                        placeholder="🔍 Cari..."
+                                        placeholder="Cari project..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         style={{
@@ -1404,7 +1477,7 @@ export default function DashboardPage() {
                                     value={sortBy}
                                     onChange={(e) => setSortBy(e.target.value)}
                                     style={{
-                                        padding: '7px 10px',
+                                        padding: '7px 12px',
                                         fontSize: '12px',
                                         background: 'rgba(255,255,255,0.03)',
                                         border: '1px solid rgba(255,255,255,0.08)',
@@ -1414,12 +1487,12 @@ export default function DashboardPage() {
                                         outline: 'none'
                                     }}
                                 >
-                                    <option value="newest">🗓️ Terbaru</option>
-                                    <option value="oldest">🗓️ Terlama</option>
-                                    <option value="name_asc">🔤 Nama A-Z</option>
-                                    <option value="name_desc">🔤 Nama Z-A</option>
-                                    <option value="progress_desc">📊 Seleksi Terbanyak</option>
-                                    <option value="progress_asc">⏳ Menunggu Seleksi</option>
+                                    <option value="newest">Terbaru</option>
+                                    <option value="oldest">Terlama</option>
+                                    <option value="name_asc">Nama A-Z</option>
+                                    <option value="name_desc">Nama Z-A</option>
+                                    <option value="progress_desc">Seleksi Terbanyak</option>
+                                    <option value="progress_asc">Menunggu Seleksi</option>
                                 </select>
 
                                 {/* View Mode Toggle */}
@@ -1428,8 +1501,10 @@ export default function DashboardPage() {
                                         onClick={() => setViewMode('grid')}
                                         title="Grid View"
                                         style={{
-                                            padding: '4px 8px',
-                                            fontSize: '11px',
+                                            padding: '5px 8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
                                             background: viewMode === 'grid' ? 'rgba(255,255,255,0.1)' : 'transparent',
                                             color: viewMode === 'grid' ? '#ffffff' : '#a1a1aa',
                                             border: 'none',
@@ -1437,14 +1512,16 @@ export default function DashboardPage() {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        🔲
+                                        <GridIcon size={14} color={viewMode === 'grid' ? '#ffffff' : '#a1a1aa'} />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('list')}
                                         title="List View"
                                         style={{
-                                            padding: '4px 8px',
-                                            fontSize: '11px',
+                                            padding: '5px 8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
                                             background: viewMode === 'list' ? 'rgba(255,255,255,0.1)' : 'transparent',
                                             color: viewMode === 'list' ? '#ffffff' : '#a1a1aa',
                                             border: 'none',
@@ -1452,7 +1529,7 @@ export default function DashboardPage() {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        ☰
+                                        <ListIcon size={14} color={viewMode === 'list' ? '#ffffff' : '#a1a1aa'} />
                                     </button>
                                 </div>
 
@@ -1464,7 +1541,7 @@ export default function DashboardPage() {
                                             return;
                                         }
                                         if (isProjectLimitReached) {
-                                            addToast(`⚠️ Batas kuota (${projects.length}/${vendorDetails.maxProjects}) project tercapai. Hapus project selesai untuk membuat baru.`, 'warning', 6000);
+                                            addToast(`Batas kuota (${projects.length}/${vendorDetails.maxProjects}) project tercapai. Hapus project selesai untuk membuat baru.`, 'warning', 6000);
                                             return;
                                         }
                                         setShowCreateModal(true);
@@ -1484,7 +1561,17 @@ export default function DashboardPage() {
                                         gap: '6px'
                                     }}
                                 >
-                                    <span>{isProjectLimitReached ? '🔒 Kuota Penuh' : '➕ Buat Project'}</span>
+                                    {isProjectLimitReached ? (
+                                        <>
+                                            <LockIcon size={13} color="#f87171" />
+                                            <span>Kuota Penuh</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <PlusIcon size={13} />
+                                            <span>Buat Project</span>
+                                        </>
+                                    )}
                                 </button>
                             </div>
                         </div>
@@ -1572,25 +1659,28 @@ export default function DashboardPage() {
                                             ) : (
                                                 <>
                                                     <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '11px', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => handleOpenGallery(project)} title="Buka Galeri Klien">
-                                                        🖼️ Galeri
+                                                        <GalleryViewIcon size={12} />
+                                                        <span>Galeri</span>
                                                     </button>
                                                     <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => handleSendWhatsApp(project)} title="Kirim WA">
-                                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25d366' }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                                                        WA
+                                                        <WhatsAppIcon size={12} color="#25d366" />
+                                                        <span>WA</span>
                                                     </button>
-                                                    <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '11px' }} onClick={() => handleViewDetails(project)} title="Detail Seleksi">
-                                                        👁️ Detail
+                                                    <button className="btn-secondary" style={{ padding: '6px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => handleViewDetails(project)} title="Detail Seleksi">
+                                                        <GalleryViewIcon size={12} />
+                                                        <span>Detail</span>
                                                     </button>
                                                     {project.selectedPhotosCount > 0 && (
-                                                        <button className="btn-primary" style={{ padding: '6px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)' }} onClick={() => handleCopyFilenames(project.id, 'lightroom')} title="Salin Nama File">
-                                                            📋 Salin ({project.selectedPhotosCount})
+                                                        <button className="btn-primary" style={{ padding: '6px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => handleCopyFilenames(project.id, 'lightroom')} title="Salin Nama File">
+                                                            <CopyLinkIcon size={12} />
+                                                            <span>Salin ({project.selectedPhotosCount})</span>
                                                         </button>
                                                     )}
-                                                    <button onClick={() => handleOpenEditSettings(project)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#a1a1aa', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer' }} title="Pengaturan">
-                                                        ⚙️
+                                                    <button onClick={() => handleOpenEditSettings(project)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#a1a1aa', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Pengaturan">
+                                                        <SettingsManageIcon size={13} />
                                                     </button>
-                                                    <button onClick={() => setProjectToDelete(project)} style={{ background: 'none', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer' }} title="Hapus">
-                                                        🗑️
+                                                    <button onClick={() => setProjectToDelete(project)} style={{ background: 'none', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Hapus">
+                                                        <TrashIcon size={13} color="#f87171" />
                                                     </button>
                                                 </>
                                             )}
@@ -1630,19 +1720,19 @@ export default function DashboardPage() {
                                             <>
                                                 <button
                                                     className="btn-secondary"
-                                                    style={{ padding: '4px 8px', fontSize: '12px', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px' }}
+                                                    style={{ padding: '4px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px' }}
                                                     onClick={() => handleOpenEditProject(project)}
                                                     disabled={project.status === 'failed'}
                                                     title="Pengaturan Project"
                                                 >
-                                                    ⚙️
+                                                    <SettingsManageIcon size={13} />
                                                 </button>
                                                 <button
-                                                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: '6px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}
+                                                    style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                     onClick={() => handleDeleteProject(project.id, project.name)}
                                                     title="Hapus Project"
                                                 >
-                                                    🗑️
+                                                    <TrashIcon size={13} color="#f87171" />
                                                 </button>
                                             </>
                                         )}
@@ -1656,7 +1746,10 @@ export default function DashboardPage() {
                                 {project.status === 'importing' ? (
                                     <div style={{ background: 'rgba(99,102,241,0.06)', borderRadius: '12px', padding: '16px', marginBottom: '18px', border: '1px solid rgba(99,102,241,0.2)', textAlign: 'center' }}>
                                         <div className="dev-watermark-dot" style={{ margin: '0 auto 10px auto', width: '8px', height: '8px' }} />
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#a5b4fc', fontWeight: '600' }}>⚡ Sedang mengindeks foto & subfolder...</p>
+                                        <p style={{ margin: 0, fontSize: '13px', color: '#a5b4fc', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                            <SpeedBoltIcon size={14} color="#818cf8" />
+                                            <span>Sedang mengindeks foto &amp; subfolder...</span>
+                                        </p>
                                         <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#71717a' }}>Proses background berjalan. Kartu akan aktif otomatis.</p>
                                     </div>
                                 ) : (
@@ -1683,9 +1776,10 @@ export default function DashboardPage() {
                                         <button
                                             onClick={() => handleRetryImport(project.id)}
                                             className="btn-primary"
-                                            style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: '#000', fontWeight: '700', fontSize: '12px', borderRadius: '8px' }}
+                                            style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: '#000', fontWeight: '700', fontSize: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                         >
-                                            🔄 Coba Impor Lagi
+                                            <RefreshCwIcon size={13} color="#000" />
+                                            <span>Coba Impor Lagi</span>
                                         </button>
                                     )}
 
@@ -1693,9 +1787,10 @@ export default function DashboardPage() {
                                         <button
                                             onClick={() => handleReactivateProject(project.id)}
                                             className="btn-primary"
-                                            style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '12px', borderRadius: '8px' }}
+                                            style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                         >
-                                            ⚡ Aktifkan Kembali Galeri (30 Hari)
+                                            <SpeedBoltIcon size={13} color="#fff" />
+                                            <span>Aktifkan Kembali Galeri (30 Hari)</span>
                                         </button>
                                     )}
 
@@ -1719,45 +1814,48 @@ export default function DashboardPage() {
                                         onClick={() => handleOpenGallery(project)}
                                         title="Buka / Cek Tampilan Halaman Galeri Klien"
                                     >
-                                        <span>🖼️ Lihat Galeri Klien</span>
+                                        <GalleryViewIcon size={14} color="#a5b4fc" />
+                                        <span>Lihat Galeri Klien</span>
                                     </button>
 
                                     <div style={{ display: 'flex', gap: '8px' }}>
                                         <button
                                             className="btn-secondary"
-                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
                                             onClick={() => handleCopyGalleryLink(project)}
                                             title="Salin Link Halaman Galeri Klien"
                                         >
-                                            📋 Salin Link
+                                            <CopyLinkIcon size={13} />
+                                            <span>Salin Link</span>
                                         </button>
                                         <button
                                             className="btn-secondary"
-                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
                                             onClick={() => handleSendWhatsApp(project)}
                                             title={project.clientPhone ? `Kirim ke ${project.clientPhone}` : 'Kirim via WhatsApp'}
                                         >
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25d366', flexShrink: 0 }}><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                                            Kirim WA
+                                            <WhatsAppIcon size={14} color="#25d366" />
+                                            <span>Kirim WA</span>
                                         </button>
                                         <button
                                             className="btn-secondary"
-                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px' }}
+                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
                                             onClick={() => handleViewDetails(project)}
                                         >
-                                            👁️ Detail
+                                            <GalleryViewIcon size={13} />
+                                            <span>Detail</span>
                                         </button>
                                     </div>
-
 
                                     {/* Featured Action: Copy Lightroom Filenames (default) */}
                                     {project.selectedPhotosCount > 0 && (
                                         <button
                                             className="btn-primary"
-                                            style={{ width: '100%', padding: '9px 12px', fontSize: '12px', fontWeight: '700', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', boxShadow: '0 4px 12px rgba(99,102,241,0.25)', borderRadius: '8px' }}
+                                            style={{ width: '100%', padding: '9px 12px', fontSize: '12px', fontWeight: '700', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', boxShadow: '0 4px 12px rgba(99,102,241,0.25)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                             onClick={() => handleCopyFilenames(project.id, 'lightroom')}
                                         >
-                                            📋 Salin Nama File ({project.selectedPhotosCount} Foto)
+                                            <CopyLinkIcon size={13} />
+                                            <span>Salin Nama File ({project.selectedPhotosCount} Foto)</span>
                                         </button>
                                     )}
 
@@ -1789,16 +1887,18 @@ export default function DashboardPage() {
                                                 setSorterProject(project);
                                                 setShowSorter(true);
                                             }}
-                                            onMouseEnter={e => {
-                                                e.target.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.18))';
-                                                e.target.style.borderColor = 'rgba(139, 92, 246, 0.4)';
-                                            }}
-                                            onMouseLeave={e => {
-                                                e.target.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))';
-                                                e.target.style.borderColor = 'rgba(139, 92, 246, 0.25)';
-                                            }}
                                         >
-                                            {vendorDetails?.allowRawSelector === 0 || vendorDetails?.allowRawSelector === false ? '🔒 Sortir RAW (Upgrade Pro)' : '📁 Sortir RAW'}
+                                            {vendorDetails?.allowRawSelector === 0 || vendorDetails?.allowRawSelector === false ? (
+                                                <>
+                                                    <LockIcon size={13} color="#c4b5fd" />
+                                                    <span>Sortir RAW (Upgrade Pro)</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <FolderIcon size={13} color="#c4b5fd" />
+                                                    <span>Sortir RAW</span>
+                                                </>
+                                            )}
                                         </button>
                                     )}
 
@@ -1806,18 +1906,20 @@ export default function DashboardPage() {
                                     {project.status === 'completed' ? (
                                         <button
                                             className="btn-secondary"
-                                            style={{ width: '100%', padding: '7px 10px', fontSize: '11px', border: '1px dashed rgba(251,191,36,0.4)', color: '#fbbf24', borderRadius: '8px' }}
+                                            style={{ width: '100%', padding: '7px 10px', fontSize: '11px', border: '1px dashed rgba(251,191,36,0.4)', color: '#fbbf24', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                             onClick={() => handleUpdateProjectStatus(project.id, 'pending_selection', 'dibuka kuncinya')}
                                         >
-                                            🔓 Buka Kunci Seleksi
+                                            <LockIcon size={12} color="#fbbf24" />
+                                            <span>Buka Kunci Seleksi</span>
                                         </button>
                                     ) : (project.maxSelection > 0 && project.selectedPhotosCount >= project.maxSelection) ? (
                                         <button
                                             className="btn-secondary"
-                                            style={{ width: '100%', padding: '7px 10px', fontSize: '11px', border: '1px dashed rgba(129,140,248,0.4)', color: '#818cf8', borderRadius: '8px' }}
+                                            style={{ width: '100%', padding: '7px 10px', fontSize: '11px', border: '1px dashed rgba(129,140,248,0.4)', color: '#818cf8', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                             onClick={() => handleOpenAddLimit(project)}
                                         >
-                                            ➕ Tambah Limit Pilihan
+                                            <PlusIcon size={12} color="#818cf8" />
+                                            <span>Tambah Limit Pilihan</span>
                                         </button>
                                     ) : null}
                                 </div>
@@ -1852,75 +1954,186 @@ export default function DashboardPage() {
                                     Sumber Folder Foto Proyek
                                 </label>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    {/* 1. Tab Link GDrive Eksternal (Default) */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setProjectSourceType('external');
+                                            setNewProjectName('');
+                                            setNewFolderUrl('');
+                                        }}
+                                        style={{
+                                            padding: '9px 6px',
+                                            borderRadius: '8px',
+                                            border: 'none',
+                                            background: projectSourceType === 'external' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                            color: projectSourceType === 'external' ? '#ffffff' : '#a1a1aa',
+                                            fontSize: '11px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '5px',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <CopyLinkIcon size={13} color={projectSourceType === 'external' ? '#ffffff' : '#a1a1aa'} />
+                                        <span>Link GDrive</span>
+                                    </button>
+
+                                    {/* 2. Tab Google Drive Pribadi (BYOS) */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setProjectSourceType('byos');
+                                            setSelectedByosFolderId('');
+                                            setNewProjectName('');
+                                            setNewFolderUrl('');
+                                        }}
+                                        style={{
+                                            padding: '9px 6px',
+                                            borderRadius: '8px',
+                                            border: 'none',
+                                            background: projectSourceType === 'byos' ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent',
+                                            color: projectSourceType === 'byos' ? '#ffffff' : '#a1a1aa',
+                                            fontSize: '11px',
+                                            fontWeight: '700',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '5px',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <FolderIcon size={13} color={projectSourceType === 'byos' ? '#ffffff' : '#a1a1aa'} />
+                                        <span>Drive Pribadi</span>
+                                        {vendorDetails?.externalDriveConnected && (
+                                            <span style={{ fontSize: '8px', background: '#38bdf8', color: '#000', padding: '1px 4px', borderRadius: '6px', fontWeight: '800' }}>LINKED</span>
+                                        )}
+                                    </button>
+
+                                    {/* 3. Tab Dedicated Cloud Storage SaaS */}
                                     <button
                                         type="button"
                                         onClick={() => {
                                             setProjectSourceType('internal');
-                                            if (internalFoldersList.length > 0 && !selectedInternalFolderId) {
-                                                handleSelectInternalFolder(internalFoldersList[0].driveFolderId || internalFoldersList[0].id);
-                                            }
+                                            setSelectedInternalFolderId('');
+                                            setNewProjectName('');
+                                            setNewFolderUrl('');
                                         }}
                                         style={{
-                                            padding: '10px 12px',
-                                            borderRadius: '9px',
+                                            padding: '9px 6px',
+                                            borderRadius: '8px',
                                             border: 'none',
-                                            background: projectSourceType === 'internal' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                            background: projectSourceType === 'internal' ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'transparent',
                                             color: projectSourceType === 'internal' ? '#ffffff' : '#a1a1aa',
-                                            fontSize: '12px',
+                                            fontSize: '11px',
                                             fontWeight: '700',
                                             cursor: 'pointer',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            gap: '6px',
+                                            gap: '5px',
                                             transition: 'all 0.2s ease'
                                         }}
                                     >
-                                        <span>☁️ Dedicated Cloud</span>
+                                        <UploadCloudIcon size={13} color={projectSourceType === 'internal' ? '#ffffff' : '#a1a1aa'} />
+                                        <span>Dedicated SaaS</span>
                                         {vendorDetails?.hasStorageAddon && (
-                                            <span style={{ fontSize: '9px', background: '#34d399', color: '#000', padding: '1px 6px', borderRadius: '8px', fontWeight: '800' }}>AKTIF</span>
+                                            <span style={{ fontSize: '8px', background: '#34d399', color: '#000', padding: '1px 4px', borderRadius: '6px', fontWeight: '800' }}>AKTIF</span>
                                         )}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setProjectSourceType('external')}
-                                        style={{
-                                            padding: '10px 12px',
-                                            borderRadius: '9px',
-                                            border: 'none',
-                                            background: projectSourceType === 'external' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
-                                            color: projectSourceType === 'external' ? '#ffffff' : '#a1a1aa',
-                                            fontSize: '12px',
-                                            fontWeight: '700',
-                                            cursor: 'pointer',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '6px',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                    >
-                                        <span>🔗 GDrive Eksternal</span>
                                     </button>
                                 </div>
                             </div>
 
                             {/* CONDITIONAL INPUT FIELDS BASED ON SOURCE TYPE */}
-                            {projectSourceType === 'internal' ? (
+                            {projectSourceType === 'external' ? (
+                                <div className="form-group">
+                                    <label className="form-label">Link Folder Google Drive</label>
+                                    <input
+                                        type="url"
+                                        className="input-text"
+                                        required
+                                        placeholder="https://drive.google.com/drive/folders/..."
+                                        value={newFolderUrl}
+                                        onChange={(e) => setNewFolderUrl(e.target.value)}
+                                        disabled={importing}
+                                    />
+                                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '6px', fontSize: '11px', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <InfoLightIcon size={14} color="#818cf8" />
+                                        <span><strong>Petunjuk Google Drive:</strong> Pastikan izin akses folder telah diubah ke <em>"Siapa saja yang memiliki link (Anyone with the link)"</em> agar foto dapat di-stream di galeri.</span>
+                                    </div>
+                                </div>
+                            ) : projectSourceType === 'byos' ? (
+                                <div className="form-group" style={{ marginBottom: '20px' }}>
+                                    <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span>Pilih Folder dari Google Drive Pribadi (BYOS)</span>
+                                        {loadingByosFolders && <span style={{ fontSize: '11px', color: '#34d399' }}>Memuat folder...</span>}
+                                    </label>
+
+                                    {!vendorDetails?.externalDriveConnected ? (
+                                        <div style={{ background: 'rgba(56,189,248,0.08)', border: '1px solid rgba(56,189,248,0.25)', borderRadius: '10px', padding: '14px 16px', fontSize: '12px', color: '#38bdf8', lineHeight: '1.5' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <AlertCircleIcon size={14} color="#38bdf8" />
+                                                <strong>Google Drive Pribadi Belum Terhubung:</strong>
+                                            </div>
+                                            Hubungkan akun Google Drive studio Anda untuk memilih folder langsung tanpa copy-paste link.
+                                            <div style={{ marginTop: '8px' }}>
+                                                <Link href="/dashboard/storage" style={{ color: '#ffffff', fontWeight: '700', textDecoration: 'underline' }}>
+                                                    Hubungkan Google Drive Pribadi &rarr;
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ) : byosFoldersList.length === 0 ? (
+                                        <div style={{ background: 'rgba(16,185,129,0.06)', border: '1px dashed rgba(16,185,129,0.25)', borderRadius: '10px', padding: '16px', textAlign: 'center', fontSize: '12px', color: '#a1a1aa' }}>
+                                            Belum ada folder di Google Drive pribadi Anda.<br/>
+                                            <Link href="/dashboard/storage" style={{ marginTop: '8px', display: 'inline-block', color: '#34d399', fontWeight: '700', textDecoration: 'underline' }}>
+                                                Buat atau Unggah Folder di Storage Manager &rarr;
+                                            </Link>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <select
+                                                className="input-text"
+                                                required
+                                                value={selectedByosFolderId}
+                                                onChange={(e) => handleSelectByosFolder(e.target.value)}
+                                                disabled={importing}
+                                                style={{ color: '#ffffff', background: 'rgba(0,0,0,0.4)', padding: '12px 14px', fontSize: '13px', cursor: 'pointer' }}
+                                            >
+                                                <option value="">-- Pilih Folder Drive Pribadi Vendor --</option>
+                                                {byosFoldersList.map((folder) => (
+                                                    <option key={folder.id || folder.driveFolderId} value={folder.driveFolderId || folder.id}>
+                                                        {folder.name} ({folder.fileCount || 0} Berkas - {formatBytes(folder.totalSizeBytes || 0)})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <span style={{ fontSize: '11px', color: '#38bdf8', marginTop: '6px', display: 'block' }}>
+                                                ✓ Folder terhubung dari akun Google Drive Anda ({vendorDetails?.externalDriveEmail || 'Terkoneksi'}).
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                            ) : (
                                 <div className="form-group" style={{ marginBottom: '20px' }}>
                                     <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <span>Pilih Folder Studio dari Dedicated Cloud</span>
-                                        {loadingInternalFolders && <span style={{ fontSize: '11px', color: '#818cf8' }}>⚡ Memuat folder...</span>}
+                                        {loadingInternalFolders && <span style={{ fontSize: '11px', color: '#818cf8' }}>Memuat folder...</span>}
                                     </label>
 
                                     {!vendorDetails?.hasStorageAddon ? (
                                         <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '10px', padding: '14px 16px', fontSize: '12px', color: '#fbbf24', lineHeight: '1.5' }}>
-                                            🔒 <strong>Dedicated Storage Belum Aktif:</strong> Anda belum berlangganan Paket Add-On Cloud Storage.
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <LockIcon size={14} color="#fbbf24" />
+                                                <strong>Dedicated Storage Belum Aktif:</strong>
+                                            </div>
+                                            Anda belum berlangganan Paket Add-On Cloud Storage.
                                             <div style={{ marginTop: '8px' }}>
                                                 <Link href="/dashboard/storage" style={{ color: '#ffffff', fontWeight: '700', textDecoration: 'underline' }}>
-                                                    ⚡ Beli Paket Add-On Storage &rarr;
+                                                    Beli Paket Add-On Storage &rarr;
                                                 </Link>
                                             </div>
                                         </div>
@@ -1928,7 +2141,7 @@ export default function DashboardPage() {
                                         <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px dashed rgba(99,102,241,0.25)', borderRadius: '10px', padding: '16px', textAlign: 'center', fontSize: '12px', color: '#a1a1aa' }}>
                                             Belum ada folder proyek di Cloud Storage Anda.<br/>
                                             <Link href="/dashboard/storage" style={{ marginTop: '8px', display: 'inline-block', color: '#818cf8', fontWeight: '700', textDecoration: 'underline' }}>
-                                                📁 Buat atau Unggah Folder di Cloud Storage &rarr;
+                                                Buat atau Unggah Folder di Cloud Storage &rarr;
                                             </Link>
                                         </div>
                                     ) : (
@@ -1944,32 +2157,15 @@ export default function DashboardPage() {
                                                 <option value="">-- Pilih Folder Proyek Studio --</option>
                                                 {internalFoldersList.map((folder) => (
                                                     <option key={folder.id || folder.driveFolderId} value={folder.driveFolderId || folder.id}>
-                                                        📁 {folder.name} ({folder.fileCount || 0} Berkas - {formatBytes(folder.totalSizeBytes || 0)})
+                                                        {folder.name} ({folder.fileCount || 0} Berkas - {formatBytes(folder.totalSizeBytes || 0)})
                                                     </option>
                                                 ))}
                                             </select>
                                             <span style={{ fontSize: '11px', color: '#34d399', marginTop: '6px', display: 'block' }}>
-                                                ✓ Folder terpilih otomatis dihubungkan ke Dedicated Storage kecepatan tinggi.
+                                                ✓ Folder terpilih otomatis dihubungkan ke Dedicated Cloud Storage.
                                             </span>
                                         </>
                                     )}
-                                </div>
-                            ) : (
-                                <div className="form-group">
-                                    <label className="form-label">Link Folder Google Drive Eksternal</label>
-                                    <input
-                                        type="url"
-                                        className="input-text"
-                                        required
-                                        placeholder="https://drive.google.com/drive/folders/..."
-                                        value={newFolderUrl}
-                                        onChange={(e) => setNewFolderUrl(e.target.value)}
-                                        disabled={importing}
-                                    />
-                                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '8px 12px', marginTop: '6px', fontSize: '11px', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        <span>💡</span>
-                                        <span><strong>Petunjuk Google Drive:</strong> Pastikan izin akses folder telah diubah ke <em>"Siapa saja yang memiliki link (Anyone with the link)"</em> agar foto dapat di-stream di galeri.</span>
-                                    </div>
                                 </div>
                             )}
 
@@ -2035,7 +2231,7 @@ export default function DashboardPage() {
                                      }}
                                  >
                                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                         <span>🎨</span>
+                                         <PaletteThemeIcon size={15} color="#818cf8" />
                                          <span>Pilih Tema Galeri Klien <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal' }}>(Opsional)</span></span>
                                      </span>
                                      <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold' }}>
@@ -2046,12 +2242,12 @@ export default function DashboardPage() {
                                  {showCreateThemePicker && (
                                      <div className="fade-in-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '12px' }}>
                                          {[
-                                             { key: 'default', name: 'Tema Default (Dark)', desc: 'Gelap modern bawaan asli, aksen indigo & rapi', bg: '#09090b', accent: '#818cf8', tag: '🌙 Dark' },
-                                             { key: 'midnightSlate', name: 'Midnight Slate (Trial Dark)', desc: 'Gelap modern, aksen slate & neon indigo ala Galeri Trial', bg: '#0f172a', accent: '#6366f1', tag: '⚡ Trial Dark' },
-                                             { key: 'contactSheet', name: 'Kontak Studio (Retro)', desc: 'Gelap retro, ala lembar kontak cetak film', bg: '#121212', accent: '#eab308', tag: '🎞️ Retro Film' },
-                                             { key: 'galleryWall', name: 'Galeri Putih (Clean)', desc: 'Terang bersih, tenang, minimalis mewah', bg: '#ffffff', accent: '#2563eb', tag: '☀️ Clean Light' },
-                                             { key: 'editorsMark', name: 'Tanda Editor (Spidol)', desc: 'Spidol merah tegas ala ruang redaksi', bg: '#1c1917', accent: '#ef4444', tag: '✏️ Red Mark' },
-                                             { key: 'polaroid', name: 'Polaroid Kenangan', desc: 'Seni bingkai foto polaroid miring hangat', bg: '#262626', accent: '#f59e0b', tag: '📷 Vintage' }
+                                             { key: 'default', name: 'Tema Default (Dark)', desc: 'Gelap modern bawaan asli, aksen indigo & rapi', bg: '#09090b', accent: '#818cf8', tag: 'Dark' },
+                                             { key: 'midnightSlate', name: 'Midnight Slate (Trial Dark)', desc: 'Gelap modern, aksen slate & neon indigo ala Galeri Trial', bg: '#0f172a', accent: '#6366f1', tag: 'Trial Dark' },
+                                             { key: 'contactSheet', name: 'Kontak Studio (Retro)', desc: 'Gelap retro, ala lembar kontak cetak film', bg: '#121212', accent: '#eab308', tag: 'Retro Film' },
+                                             { key: 'galleryWall', name: 'Galeri Putih (Clean)', desc: 'Terang bersih, tenang, minimalis mewah', bg: '#ffffff', accent: '#2563eb', tag: 'Clean Light' },
+                                             { key: 'editorsMark', name: 'Tanda Editor (Spidol)', desc: 'Spidol merah tegas ala ruang redaksi', bg: '#1c1917', accent: '#ef4444', tag: 'Red Mark' },
+                                             { key: 'polaroid', name: 'Polaroid Kenangan', desc: 'Seni bingkai foto polaroid miring hangat', bg: '#262626', accent: '#f59e0b', tag: 'Vintage' }
                                          ].map(t => {
                                              const isSel = galleryTheme === t.key;
                                              return (
@@ -2081,7 +2277,7 @@ export default function DashboardPage() {
                                                      </div>
 
                                                      <div style={{ fontWeight: 'bold', fontSize: '12px', color: isSel ? '#818cf8' : '#e4e4e7', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                         {isSel && <span style={{ color: '#818cf8' }}>✓</span>} {t.name}
+                                                         {isSel && <CheckCircleIcon size={12} color="#818cf8" />} {t.name}
                                                      </div>
                                                      <div style={{ fontSize: '10px', color: '#71717a', marginTop: '4px', lineHeight: '1.3' }}>
                                                          {t.desc}
@@ -2097,14 +2293,17 @@ export default function DashboardPage() {
                                 <button type="button" className="btn-secondary" onClick={() => setShowCreateModal(false)} disabled={importing} style={{ transition: 'all 0.2s', opacity: importing ? 0.4 : 1 }}>
                                     Batal
                                 </button>
-                                <button type="submit" className="btn-primary" disabled={importing} style={{ minWidth: '160px', gap: '10px' }}>
+                                <button type="submit" className="btn-primary" disabled={importing} style={{ minWidth: '160px', gap: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     {importing ? (
                                         <>
                                             <span className="btn-spinner" />
-                                            Mengimpor...
+                                            <span>Mengimpor...</span>
                                         </>
                                     ) : (
-                                        <>⚡ Impor &amp; Buat</>
+                                        <>
+                                            <SpeedBoltIcon size={14} />
+                                            <span>Impor &amp; Buat</span>
+                                        </>
                                     )}
                                 </button>
                             </div>
@@ -2215,8 +2414,8 @@ export default function DashboardPage() {
                                 // Files deleted — show text-only selected filenames
                                 <div>
                                     <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', fontSize: '13px', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span>📁</span>
-                                        File foto fisik telah otomatis dihapus dari server. Hanya nama file hasil seleksi yang tersimpan.
+                                        <FolderIcon size={14} color="#818cf8" />
+                                        <span>File foto fisik telah otomatis dihapus dari server. Hanya nama file hasil seleksi yang tersimpan.</span>
                                     </div>
                                     {detailPhotos.filter(p => p.isSelected > 0).length === 0 ? (
                                         <p style={{ textAlign: 'center', color: '#71717a', margin: '20px 0', fontSize: '14px' }}>Klien belum memilih foto sebelum file dihapus.</p>
@@ -2269,7 +2468,7 @@ export default function DashboardPage() {
                             {detailPhotos.length > 0 && (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                                        <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold' }}>⚙️ Format Pemisah Instan:</span>
+                                        <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold' }}>Format Pemisah Instan:</span>
                                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                             <select
                                                 value={copyDelimiter}
@@ -2300,7 +2499,8 @@ export default function DashboardPage() {
                                             style={{ flex: 1, padding: '10px 14px', fontSize: '12px', fontWeight: '700', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                             onClick={() => handleCopyFilenames(selectedProjectDetails.id)}
                                         >
-                                            📋 Salin {detailPhotos.length} Nama File ke Clipboard
+                                            <CopyLinkIcon size={13} />
+                                            <span>Salin {detailPhotos.length} Nama File ke Clipboard</span>
                                         </button>
                                     </div>
                                 </div>
@@ -2368,7 +2568,7 @@ export default function DashboardPage() {
                                      }}
                                  >
                                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                         <span>🎨</span>
+                                         <PaletteThemeIcon size={15} color="#818cf8" />
                                          <span>Ubah Tema Galeri Klien <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal' }}>(Opsional)</span></span>
                                      </span>
                                      <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold' }}>
@@ -2379,12 +2579,12 @@ export default function DashboardPage() {
                                  {showEditThemePicker && (
                                      <div className="fade-in-up" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginTop: '12px' }}>
                                          {[
-                                             { key: 'default', name: 'Tema Default (Dark)', desc: 'Gelap modern bawaan asli, aksen indigo & rapi', bg: '#09090b', accent: '#818cf8', tag: '🌙 Dark' },
-                                             { key: 'midnightSlate', name: 'Midnight Slate (Trial Dark)', desc: 'Gelap modern, aksen slate & neon indigo ala Galeri Trial', bg: '#0f172a', accent: '#6366f1', tag: '⚡ Trial Dark' },
-                                             { key: 'contactSheet', name: 'Kontak Studio (Retro)', desc: 'Gelap retro, ala lembar kontak cetak film', bg: '#121212', accent: '#eab308', tag: '🎞️ Retro Film' },
-                                             { key: 'galleryWall', name: 'Galeri Putih (Clean)', desc: 'Terang bersih, tenang, minimalis mewah', bg: '#ffffff', accent: '#2563eb', tag: '☀️ Clean Light' },
-                                             { key: 'editorsMark', name: 'Tanda Editor (Spidol)', desc: 'Spidol merah tegas ala ruang redaksi', bg: '#1c1917', accent: '#ef4444', tag: '✏️ Red Mark' },
-                                             { key: 'polaroid', name: 'Polaroid Kenangan', desc: 'Seni bingkai foto polaroid miring hangat', bg: '#262626', accent: '#f59e0b', tag: '📷 Vintage' }
+                                             { key: 'default', name: 'Tema Default (Dark)', desc: 'Gelap modern bawaan asli, aksen indigo & rapi', bg: '#09090b', accent: '#818cf8', tag: 'Dark' },
+                                             { key: 'midnightSlate', name: 'Midnight Slate (Trial Dark)', desc: 'Gelap modern, aksen slate & neon indigo ala Galeri Trial', bg: '#0f172a', accent: '#6366f1', tag: 'Trial Dark' },
+                                             { key: 'contactSheet', name: 'Kontak Studio (Retro)', desc: 'Gelap retro, ala lembar kontak cetak film', bg: '#121212', accent: '#eab308', tag: 'Retro Film' },
+                                             { key: 'galleryWall', name: 'Galeri Putih (Clean)', desc: 'Terang bersih, tenang, minimalis mewah', bg: '#ffffff', accent: '#2563eb', tag: 'Clean Light' },
+                                             { key: 'editorsMark', name: 'Tanda Editor (Spidol)', desc: 'Spidol merah tegas ala ruang redaksi', bg: '#1c1917', accent: '#ef4444', tag: 'Red Mark' },
+                                             { key: 'polaroid', name: 'Polaroid Kenangan', desc: 'Seni bingkai foto polaroid miring hangat', bg: '#262626', accent: '#f59e0b', tag: 'Vintage' }
                                          ].map(t => {
                                              const isSel = editProjectGalleryTheme === t.key;
                                              return (
@@ -2414,7 +2614,7 @@ export default function DashboardPage() {
                                                      </div>
 
                                                      <div style={{ fontWeight: 'bold', fontSize: '12px', color: isSel ? '#818cf8' : '#e4e4e7', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                         {isSel && <span style={{ color: '#818cf8' }}>✓</span>} {t.name}
+                                                         {isSel && <CheckCircleIcon size={12} color="#818cf8" />} {t.name}
                                                      </div>
                                                      <div style={{ fontSize: '10px', color: '#71717a', marginTop: '4px', lineHeight: '1.3' }}>
                                                          {t.desc}
@@ -2445,7 +2645,10 @@ export default function DashboardPage() {
                     if (!savingBranding) setShowBrandingModal(false);
                 }}>
                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', padding: '24px', borderRadius: '16px' }}>
-                        <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 'bold' }}>⚙️ Pengaturan Brand & Profil</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                            <SettingsManageIcon size={18} color="#818cf8" />
+                            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold' }}>Pengaturan Brand &amp; Profil</h3>
+                        </div>
                         <p style={{ color: '#a1a1aa', margin: '0 0 16px 0', fontSize: '12px' }}>Atur informasi studio dan preferensi salin nama file</p>
 
                         <form onSubmit={handleSaveBranding}>
@@ -2476,6 +2679,23 @@ export default function DashboardPage() {
                                         style={{ padding: '8px 12px', fontSize: '13px' }}
                                     />
                                 </div>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: '14px' }}>
+                                <label className="form-label" style={{ fontSize: '12px' }}>Nomor WhatsApp Studio</label>
+                                <input
+                                    type="text"
+                                    className="input-text"
+                                    placeholder="Contoh: 081234567890 atau 6281234567890"
+                                    value={vendorWhatsapp}
+                                    onChange={(e) => setVendorWhatsapp(e.target.value)}
+                                    disabled={savingBranding}
+                                    style={{ padding: '8px 12px', fontSize: '13px' }}
+                                />
+                                <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    <span>🔒</span>
+                                    <span><em>Admin hanya membalas pesan WhatsApp dari nomor yang terdaftar di sistem.</em></span>
+                                </p>
                             </div>
 
                             <div className="form-group" style={{ marginBottom: '14px' }}>
@@ -2511,7 +2731,8 @@ export default function DashboardPage() {
                             {/* ── PREFERENSI SALIN NAMA FILE SECTION (MINIMALIST) ── */}
                             <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                                 <label className="form-label" style={{ fontSize: '12px', color: '#818cf8', fontWeight: 'bold', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    📋 Preferensi Salin Nama File
+                                    <CopyLinkIcon size={13} color="#818cf8" />
+                                    <span>Preferensi Salin Nama File</span>
                                 </label>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
@@ -2556,8 +2777,8 @@ export default function DashboardPage() {
                                         disabled={savingBranding}
                                         style={{ color: '#e4e4e7', cursor: 'pointer', padding: '7px 10px', fontSize: '12px' }}
                                     >
-                                        <option value="name_asc">🔤 Abjad Nama File (A - Z)</option>
-                                        <option value="selection_order">⏱️ Urutan Pilihan Klien (Kronologis)</option>
+                                        <option value="name_asc">Abjad Nama File (A - Z)</option>
+                                        <option value="selection_order">Urutan Pilihan Klien (Kronologis)</option>
                                     </select>
                                 </div>
 
@@ -2580,7 +2801,7 @@ export default function DashboardPage() {
                                     Batal
                                 </button>
                                 <button type="submit" className="btn-primary" disabled={savingBranding} style={{ padding: '8px 20px', fontSize: '13px' }}>
-                                    {savingBranding ? 'Menyimpan...' : '💾 Simpan Pengaturan'}
+                                    {savingBranding ? 'Menyimpan...' : 'Simpan Pengaturan'}
                                 </button>
                             </div>
                         </form>
@@ -2597,7 +2818,10 @@ export default function DashboardPage() {
                     setUpgradeError('');
                 }}>
                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: selectedUpgradePlan ? '560px' : '780px' }}>
-                        <h2 style={{ margin: '0 0 8px 0', fontSize: '22px' }}>🚀 Upgrade Plan</h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                            <SparklesUpgradeIcon size={20} color="#fbbf24" />
+                            <h2 style={{ margin: 0, fontSize: '22px' }}>Upgrade Plan</h2>
+                        </div>
 
                         {!selectedUpgradePlan ? (
                             <>
@@ -2649,7 +2873,7 @@ export default function DashboardPage() {
                                                     
                                                     {!isCurrentPlan && discount > 0 && (
                                                         <div style={{ background: 'rgba(52,211,153,0.08)', borderRadius: '10px', padding: '10px 12px', marginBottom: '16px', fontSize: '11px', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)' }}>
-                                                            🏷️ <strong>Tukar-Tambah Hemat:</strong><br/>
+                                                            <strong>Tukar-Tambah Hemat:</strong><br/>
                                                             <span style={{ textDecoration: 'line-through', opacity: 0.7 }}>Rp {plan.price.toLocaleString('id-ID')}</span>{' '}
                                                             <strong style={{ fontSize: '13px', color: '#34d399' }}>Rp {total.toLocaleString('id-ID')}</strong><br/>
                                                             <span style={{ fontSize: '10px', color: '#a1a1aa' }}>(Hemat Rp {discount.toLocaleString('id-ID')} dari sisa {getProrationDetails(plan).daysRemaining} hari)</span>
@@ -2657,27 +2881,27 @@ export default function DashboardPage() {
                                                     )}
 
                                                     <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '12px', color: '#a1a1aa', lineHeight: '2.2' }}>
-                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span>📁</span> Maksimal <strong style={{ color: '#f4f4f5' }}>{plan.maxProjects >= 99999 ? 'Unlimited' : plan.maxProjects} project</strong>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <FolderIcon size={13} color="#818cf8" /> Maksimal <strong style={{ color: '#f4f4f5' }}>{plan.maxProjects >= 99999 ? 'Unlimited' : plan.maxProjects} project</strong>
                                                         </li>
-                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span>📷</span> Foto <strong style={{ color: '#34d399' }}>Unlimited</strong> / project
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <PhotoIcon size={13} color="#34d399" /> Foto <strong style={{ color: '#34d399' }}>Unlimited</strong> / project
                                                         </li>
-                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span>⏳</span> Masa Aktif Akun: <strong style={{ color: '#f4f4f5' }}>{plan.activePeriodDays || 30} hari</strong>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <ClockIcon size={13} color="#fbbf24" /> Masa Aktif Akun: <strong style={{ color: '#f4f4f5' }}>{plan.activePeriodDays || 30} hari</strong>
                                                         </li>
-                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span>🎨</span> Logo Studio Sendiri: {plan.allowCustomLogo === 1 || plan.allowCustomLogo === true || plan.name.includes('Pro') || plan.name.includes('Business') ? (
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <PaletteThemeIcon size={13} color="#818cf8" /> Logo Studio Sendiri: {plan.allowCustomLogo === 1 || plan.allowCustomLogo === true || plan.name.includes('Pro') || plan.name.includes('Business') ? (
                                                                 <strong style={{ color: '#34d399' }}>Bisa Logo Sendiri</strong>
                                                             ) : (
                                                                 <strong style={{ color: '#71717a' }}>Logo Platform Standard</strong>
                                                             )}
                                                         </li>
-                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                             {plan.allowRawSelector === undefined || plan.allowRawSelector === 1 || plan.allowRawSelector === true ? (
-                                                                <><span>⚡</span> Fitur RAW Selector: <strong style={{ color: '#34d399' }}>Aktif</strong></>
+                                                                <><SpeedBoltIcon size={13} color="#34d399" /> Fitur RAW Selector: <strong style={{ color: '#34d399' }}>Aktif</strong></>
                                                             ) : (
-                                                                <><span>🔒</span> Fitur RAW Selector: <strong style={{ color: '#71717a' }}>Nonaktif (Upgrade Pro)</strong></>
+                                                                <><LockIcon size={13} color="#71717a" /> Fitur RAW Selector: <strong style={{ color: '#71717a' }}>Nonaktif (Upgrade Pro)</strong></>
                                                             )}
                                                         </li>
                                                     </ul>
@@ -2686,7 +2910,7 @@ export default function DashboardPage() {
                                                 {isCurrentPlan ? (
                                                     <button
                                                         onClick={() => {
-                                                            if (vendorDetails?.upgradeRequest) {
+                                                             if (vendorDetails?.upgradeRequest) {
                                                                 addToast('Permintaan perpanjangan sedang diproses.', 'warning');
                                                                 return;
                                                             }
@@ -2708,10 +2932,24 @@ export default function DashboardPage() {
                                                             fontSize: '12px',
                                                             cursor: daysRemaining > 10 ? 'not-allowed' : 'pointer',
                                                             boxShadow: daysRemaining > 10 ? 'none' : '0 4px 12px rgba(251,191,36,0.3)',
-                                                            border: 'none'
+                                                            border: 'none',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            gap: '6px'
                                                         }}
                                                     >
-                                                        {daysRemaining > 10 ? `🔒 Perpanjang (Sisa ${daysRemaining} Hari)` : '🔄 Perpanjang Paket Ini'}
+                                                        {daysRemaining > 10 ? (
+                                                            <>
+                                                                <LockIcon size={13} color="#71717a" />
+                                                                <span>Perpanjang (Sisa {daysRemaining} Hari)</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <RefreshCwIcon size={13} color="#000" />
+                                                                <span>Perpanjang Paket Ini</span>
+                                                            </>
+                                                        )}
                                                     </button>
                                                 ) : (
                                                     <button
@@ -2739,10 +2977,15 @@ export default function DashboardPage() {
                                                             fontSize: '12px',
                                                             cursor: 'pointer',
                                                             border: 'none',
-                                                            boxShadow: '0 4px 12px rgba(99,102,241,0.25)'
+                                                            boxShadow: '0 4px 12px rgba(99,102,241,0.25)',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            gap: '6px'
                                                         }}
                                                     >
-                                                        🚀 Pilih & Upgrade
+                                                        <SparklesUpgradeIcon size={13} />
+                                                        <span>Pilih &amp; Upgrade</span>
                                                     </button>
                                                 )}
                                             </div>
@@ -2771,12 +3014,14 @@ export default function DashboardPage() {
                                     </h4>
                                     
                                     {selectedUpgradePlan.id === vendorDetails?.planId ? (
-                                        <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#a5b4fc', lineHeight: '1.4' }}>
-                                            ℹ️ <strong>Informasi:</strong> Perpanjangan paket akan menambahkan masa aktif akun Anda selama <strong>{selectedUpgradePlan.activePeriodDays || 30} hari</strong> secara akumulatif.
+                                        <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#a5b4fc', lineHeight: '1.4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <InfoLightIcon size={14} color="#818cf8" />
+                                            <span><strong>Informasi:</strong> Perpanjangan paket akan menambahkan masa aktif akun Anda selama <strong>{selectedUpgradePlan.activePeriodDays || 30} hari</strong> secara akumulatif.</span>
                                         </div>
                                     ) : getProrationDetails(selectedUpgradePlan).isDowngrade && (
-                                        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#f87171', lineHeight: '1.4' }}>
-                                            ⚠️ <strong>Perhatian:</strong> Downgrade paket akan menghanguskan sisa hari aktif paket Anda saat ini dan langsung menerapkan limit baru secara penuh. Tidak ada potongan prorata.
+                                        <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#f87171', lineHeight: '1.4', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <AlertTriangleIcon size={14} color="#f87171" />
+                                            <span><strong>Perhatian:</strong> Downgrade paket akan menghanguskan sisa hari aktif paket Anda saat ini dan langsung menerapkan limit baru secara penuh. Tidak ada potongan prorata.</span>
                                         </div>
                                     )}
                                     
@@ -2802,10 +3047,11 @@ export default function DashboardPage() {
                                     {/* Add-On Storage Offer Card & Trigger for Dashboard Upgrade */}
                                     <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '10px', padding: '12px 14px', margin: '12px 0' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                            <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>💾 CLOUD STORAGE ADD-ON (OPSIONAL)</span>
+                                            <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>CLOUD STORAGE ADD-ON (OPSIONAL)</span>
                                             {selectedUpgradeAddon && (
-                                                <button type="button" onClick={() => setSelectedUpgradeAddon(null)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}>
-                                                    🗑️ Hapus Add-On
+                                                <button type="button" onClick={() => setSelectedUpgradeAddon(null)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <TrashIcon size={11} color="#f87171" />
+                                                    <span>Hapus Add-On</span>
                                                 </button>
                                             )}
                                         </div>
@@ -2825,9 +3071,10 @@ export default function DashboardPage() {
                                                 <button 
                                                     type="button" 
                                                     onClick={() => setIsUpgradeAddonModalOpen(true)} 
-                                                    style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                                    style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '6px 12px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                                                 >
-                                                    ⚡ + Tambahkan Cloud Storage
+                                                    <PlusIcon size={12} color="#fff" />
+                                                    <span>Tambahkan Cloud Storage</span>
                                                 </button>
                                             </div>
                                         )}
@@ -2845,7 +3092,7 @@ export default function DashboardPage() {
                                                         Tingkatkan Kapasitas Storage Studio
                                                     </h3>
                                                     <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
-                                                        Tambah kuota agar dapat mengunggah & mengirim lebih banyak foto ke klien.
+                                                        Tambah kuota agar dapat mengunggah &amp; mengirim lebih banyak foto ke klien.
                                                     </p>
                                                 </div>
 
@@ -2868,14 +3115,14 @@ export default function DashboardPage() {
                                                                 padding: '12px 14px',
                                                                 cursor: 'pointer',
                                                                 display: 'flex',
-                                                                justify: 'space-between',
+                                                                justifyContent: 'space-between',
                                                                 alignItems: 'center'
                                                             }}
                                                         >
                                                             <div>
                                                                 <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                    📁 {opt.name}
-                                                                    {opt.popular && <span style={{ fontSize: '9px', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '2px 6px', borderRadius: '4px' }}>⭐ TERFAVORIT</span>}
+                                                                    {opt.name}
+                                                                    {opt.popular && <span style={{ fontSize: '9px', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '2px 6px', borderRadius: '4px' }}>TERFAVORIT</span>}
                                                                 </div>
                                                                 <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{opt.desc}</div>
                                                             </div>
@@ -2917,7 +3164,7 @@ export default function DashboardPage() {
                                                 }}
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>⚡ Pembayaran Otomatis</span>
+                                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>Pembayaran Otomatis</span>
                                                     <span style={{ fontSize: '10px', background: '#10b981', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>INSTAN QRIS</span>
                                                 </div>
                                                 <div style={{ fontSize: '11px', color: '#a1a1aa', lineHeight: '1.4' }}>Bayar via QRIS instan tanpa upload foto bukti transfer.</div>
@@ -2935,10 +3182,10 @@ export default function DashboardPage() {
                                                 }}
                                             >
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>🏦 Bank Transfer</span>
+                                                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#ffffff' }}>Bank Transfer</span>
                                                     <span style={{ fontSize: '10px', background: '#6366f1', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>MANUAL</span>
                                                 </div>
-                                                <div style={{ fontSize: '11px', color: '#a1a1aa', lineHeight: '1.4' }}>Transfer bank manual & upload foto bukti transaksi.</div>
+                                                <div style={{ fontSize: '11px', color: '#a1a1aa', lineHeight: '1.4' }}>Transfer bank manual &amp; upload foto bukti transaksi.</div>
                                             </div>
                                         </div>
                                     </div>
@@ -2946,7 +3193,7 @@ export default function DashboardPage() {
 
                                 {upgradePaymentMethod === 'gateway' ? (
                                     <div style={{ background: 'rgba(16, 185, 129, 0.06)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px' }}>
-                                        <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#34d399', fontWeight: '600' }}>⚡ Pembayaran Otomatis & Instan</h4>
+                                        <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', color: '#34d399', fontWeight: '600' }}>Pembayaran Otomatis &amp; Instan</h4>
                                         <p style={{ margin: 0, fontSize: '12px', color: '#a1a1aa', lineHeight: '1.5' }}>
                                             Klik tombol di bawah untuk membuka QRIS. Anda dapat membayar menggunakan <strong>BCA Mobile, Livin, BRImo, GoPay, OVO, ShopeePay, atau DANA</strong>. Paket Anda otomatis ter-upgrade seketika tanpa upload foto bukti!
                                         </p>
@@ -2955,7 +3202,7 @@ export default function DashboardPage() {
                                     <>
                                         {bankSettings && (
                                             <div style={{ background: 'rgba(99,102,241,0.04)', border: '1px dashed rgba(99,102,241,0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '20px' }}>
-                                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#a5b4fc', fontWeight: '600' }}>🏦 Rekening Pembayaran</h4>
+                                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#a5b4fc', fontWeight: '600' }}>Rekening Pembayaran</h4>
                                                 <p style={{ margin: '0 0 6px 0', fontSize: '13px', color: '#a1a1aa' }}>Bank: <strong style={{ color: '#e4e4e7' }}>{bankSettings.bankName}</strong></p>
                                                 <p style={{ margin: '0 0 6px 0', fontSize: '13px', color: '#a1a1aa' }}>Nomor Rekening: <strong style={{ color: '#fbbf24', fontFamily: 'monospace', fontSize: '15px' }}>{bankSettings.bankAccountNumber}</strong></p>
                                                 <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa' }}>Atas Nama: <strong style={{ color: '#e4e4e7' }}>{bankSettings.bankAccountName}</strong></p>
@@ -2989,9 +3236,10 @@ export default function DashboardPage() {
                                             className="btn-primary" 
                                             onClick={handleGatewayUpgrade} 
                                             disabled={isSubmittingUpgrade}
-                                            style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}
+                                            style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                                         >
-                                            {isSubmittingUpgrade ? 'Memproses Gateway...' : '🚀 Bayar Upgrade via QRIS'}
+                                            <SparklesUpgradeIcon size={14} />
+                                            <span>{isSubmittingUpgrade ? 'Memproses Gateway...' : 'Bayar Upgrade via QRIS'}</span>
                                         </button>
                                     ) : (
                                         <button type="submit" className="btn-primary" disabled={isSubmittingUpgrade || !transferProofFile}>
@@ -3153,8 +3401,8 @@ export default function DashboardPage() {
                 <div className="modal-overlay" onClick={() => { if (!deletingProject) setProjectToDelete(null); }}>
                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', width: '90%' }}>
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(239,68,68,0.15)', color: '#f87171', fontSize: '28px', marginBottom: '16px' }}>
-                                ⚠️
+                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(239,68,68,0.15)', color: '#f87171', marginBottom: '16px' }}>
+                                <AlertTriangleIcon size={28} color="#f87171" />
                             </div>
                             <h3 className="title-gradient" style={{ fontSize: '22px', margin: '0 0 8px 0', fontWeight: 'bold' }}>Hapus Project</h3>
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
@@ -3162,8 +3410,9 @@ export default function DashboardPage() {
                             </p>
                         </div>
 
-                        <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', fontSize: '13px', color: '#f87171', lineHeight: '1.5' }}>
-                            ⚠️ <strong>Peringatan:</strong> Tindakan ini bersifat permanen dan akan menghapus seluruh file foto dari server. Data pilihan klien juga akan dihapus selamanya.
+                        <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', fontSize: '13px', color: '#f87171', lineHeight: '1.5', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <AlertTriangleIcon size={16} color="#f87171" style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <div><strong>Peringatan:</strong> Tindakan ini bersifat permanen dan akan menghapus seluruh file foto dari server. Data pilihan klien juga akan dihapus selamanya.</div>
                         </div>
 
                         <div style={{ display: 'flex', gap: '12px' }}>
@@ -3201,8 +3450,8 @@ export default function DashboardPage() {
                 <div className="modal-overlay" onClick={() => { if (!archivingProject) setProjectToArchive(null); }}>
                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', width: '90%' }}>
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(251,191,36,0.15)', color: '#fbbf24', fontSize: '28px', marginBottom: '16px' }}>
-                                ⚠️
+                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(251,191,36,0.15)', color: '#fbbf24', marginBottom: '16px' }}>
+                                <AlertTriangleIcon size={28} color="#fbbf24" />
                             </div>
                             <h3 className="title-gradient" style={{ fontSize: '22px', margin: '0 0 8px 0', fontWeight: 'bold' }}>Arsipkan Project</h3>
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px', lineHeight: '1.5' }}>
@@ -3210,8 +3459,9 @@ export default function DashboardPage() {
                             </p>
                         </div>
 
-                        <div style={{ background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', fontSize: '13px', color: '#fbbf24', lineHeight: '1.5' }}>
-                            ⚠️ <strong>Peringatan pembersihan data:</strong> Mengarsipkan project akan secara otomatis menghapus seluruh data berkas fisik foto (file asli & thumbnail) dari server secara permanen demi menghemat ruang penyimpanan. Tindakan ini tidak dapat dibatalkan!
+                        <div style={{ background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', fontSize: '13px', color: '#fbbf24', lineHeight: '1.5', display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <AlertTriangleIcon size={16} color="#fbbf24" style={{ flexShrink: 0, marginTop: '2px' }} />
+                            <div><strong>Peringatan pembersihan data:</strong> Mengarsipkan project akan secara otomatis menghapus seluruh data berkas fisik foto (file asli &amp; thumbnail) dari server secara permanen demi menghemat ruang penyimpanan. Tindakan ini tidak dapat dibatalkan!</div>
                         </div>
 
                         <div style={{ display: 'flex', gap: '12px' }}>
@@ -3249,8 +3499,8 @@ export default function DashboardPage() {
                 <div className="modal-overlay" onClick={() => { if (!savingAddLimit) setAddLimitProject(null); }}>
                     <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', width: '90%' }}>
                         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(129,140,248,0.15)', color: '#818cf8', fontSize: '24px', marginBottom: '12px' }}>
-                                ➕
+                            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(129,140,248,0.15)', color: '#818cf8', marginBottom: '12px' }}>
+                                <PlusIcon size={26} color="#818cf8" />
                             </div>
                             <h3 className="title-gradient" style={{ fontSize: '20px', margin: '0 0 4px 0', fontWeight: 'bold' }}>Tambah Limit Pilihan</h3>
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '13px' }}>Project: <strong>{addLimitProject.name}</strong></p>

@@ -30,8 +30,12 @@ export async function POST(request) {
         const findStmt = db.prepare('SELECT id, name, email FROM vendors WHERE (email = ? OR whatsapp = ?) AND role != ?');
         const vendor = findStmt.get(cleanIdentifier, cleanIdentifier, 'admin');
 
+        // [MED-05 FIX] Anti-email enumeration: selalu return 200 terlepas dari apakah email/WA terdaftar.
+        // Jangan beritahu attacker apakah email/nomor tersebut ada di sistem.
         if (!vendor) {
-            return NextResponse.json({ message: 'Email atau nomor WhatsApp tidak terdaftar di sistem.' }, { status: 404 });
+            return NextResponse.json({ 
+                message: 'Jika email atau nomor WhatsApp tersebut terdaftar, admin kami akan segera menghubungi Anda.'
+            }, { status: 200 });
         }
 
         // Set resetRequested = 1
@@ -39,7 +43,7 @@ export async function POST(request) {
         updateStmt.run(vendor.id);
 
         return NextResponse.json({ 
-            message: 'Permintaan reset password berhasil diajukan ke admin.'
+            message: 'Jika email atau nomor WhatsApp tersebut terdaftar, admin kami akan segera menghubungi Anda.'
         }, { status: 200 });
 
     } catch (error) {

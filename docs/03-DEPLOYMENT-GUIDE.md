@@ -181,3 +181,34 @@ cp data/database.db data/database_backup_$(date +%Y%m%d).db
 3. Simpan `Client ID` dan `Client Secret` di Admin Panel → Settings → Google OAuth (atau di `.env.local`).
 4. Di Admin Panel → klik **"Hubungkan Google Drive Master"** → login dengan akun Google Studio Master.
 5. Setelah otorisasi, `refresh_token` dan `access_token` otomatis tersimpan di basis data `saas_settings`.
+
+---
+
+## 🌐 9. Konfigurasi Cloudflare CDN & Cache Rules (Free Tier)
+
+Sistem **Pick Your Photo** menggunakan arsitektur *Zero-Storage Media Proxy* yang sangat optimal jika dipadukan dengan **Cloudflare CDN (Free Plan)**. Dengan mengaktifkan cache gambar thumbnail di Cloudflare Edge, server VPS akan bebas dari beban bandwidth dan RAM (~0 MB per request gambar).
+
+### 1. Buat Cache Rule untuk Thumbnail Foto (Wajib)
+Secara default, Cloudflare hanya otomatis men-cache berkas dengan ekstensi statis (`.jpg`, `.png`, dll). Karena streaming thumbnail kita melalui endpoint API dinamis `/api/proxy/thumb/[fileId]`, Anda wajib membuat **1 Cache Rule** di dashboard Cloudflare:
+
+1. Masuk ke **Dashboard Cloudflare** → Pilih domain Anda (`pickyourphoto.id`).
+2. Buka menu **Caching** → **Cache Rules** → Klik tombol **Create Rule**.
+3. Isi parameter aturan berikut:
+   * **Rule name:** `Cache Thumbnail Stream`
+   * **Field:** `URI Path`
+   * **Operator:** `starts with`
+   * **Value:** `/api/proxy/thumb/`
+4. Di bagian **Cache settings**:
+   * **Cache eligibility:** Pilih `Eligible for cache` (Cache Everything)
+   * **Edge TTL:** Pilih `Respect origin server` *(sistem otomatis mengirim header 30 hari)*
+   * **Browser TTL:** Pilih `Respect origin server` *(sistem otomatis mengirim header 7 hari)*
+5. Klik **Deploy**.
+
+### 2. Konfigurasi SSL/TLS
+* Masuk menu **SSL/TLS** → **Overview** → Pilih mode **Full** atau **Full (Strict)**.
+* *(Gunakan sertifikat Let's Encrypt atau Cloudflare Origin CA di Nginx VPS)*.
+
+### 3. Rekomendasi Optimasi Performa Tambahan (Gratis)
+* **Speed** → **Optimization** → Aktifkan **Brotli** dan **Early Hints**.
+* **Network** → Aktifkan **HTTP/3 (with QUIC)** dan **0-RTT Connection Resumption**.
+

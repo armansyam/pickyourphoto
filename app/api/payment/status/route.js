@@ -221,9 +221,10 @@ export async function GET(request) {
             }
           }
 
-          // Hanya lakukan UPDATE jika vendor belum active (aktivasi pertama) ATAU ada perubahan plan (upgrade)
-          if (!vendorAlreadyActive || isUpgrade) {
-            db.prepare(`
+          // [MED-03 FIX] Atomic UPDATE — hanya berhasil jika vendor belum active atau ada upgrade plan.
+          // Mencegah race condition double-activation antara webhook dan frontend polling.
+          // SQLite single-writer guarantee: hanya satu dari dua concurrent request yang lolos (changes > 0).
+          const updateResult = db.prepare(`
               UPDATE vendors 
               SET status = 'active', 
                   planId = ?, 
@@ -235,6 +236,7 @@ export async function GET(request) {
                   pendingAddonPlanId = NULL, 
                   pendingAddonQuotaBytes = 0
               WHERE id = ?
+                AND (status != 'active' OR planId != ?)
             `).run(
               plan ? plan.id : transaction.planId, 
               expiresAt, 
@@ -242,10 +244,12 @@ export async function GET(request) {
               newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, 
               newAddonPlanId, 
               newAddonStorageQuotaBytes, 
-              vendor.id
+              vendor.id,
+              plan ? plan.id : transaction.planId  // cek isUpgrade (planId berbeda)
             );
 
-            // Kirim email konfirmasi HANYA sekali saat pertama aktif
+          // Kirim email konfirmasi HANYA jika update berhasil (changes > 0 = first concurrent winner)
+          if (updateResult.changes > 0) {
             const updatedVendorObj = { ...vendor, status: 'active', expiresAt };
             if (isUpgrade) {
               sendVendorUpgradeConfirmationEmail(updatedVendorObj, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(err => {

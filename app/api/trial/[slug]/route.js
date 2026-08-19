@@ -18,11 +18,19 @@ export async function GET(request, { params }) {
 
     const now = new Date();
     const expiresAt = new Date(gallery.expiresAt);
-    const createdAt = new Date(gallery.createdAt);
+    const createdAtStr = String(gallery.createdAt || '');
+    const createdAtUTC = createdAtStr.includes('T') ? createdAtStr : (createdAtStr.replace(' ', 'T') + 'Z');
+    const createdAt = new Date(createdAtUTC);
     const isExpired = now > expiresAt;
 
     // Hitung durasi aktual dari selisih expiresAt - createdAt (menit)
-    const trialDurationMinutes = Math.round((expiresAt - createdAt) / (1000 * 60));
+    let calculatedMinutes = Math.round((expiresAt.getTime() - createdAt.getTime()) / (1000 * 60));
+    
+    // Ambil setting sistem saat ini sebagai fallback jika perhitungan selisih tanggal legacy tidak valid
+    const sysSettings = db.prepare('SELECT trial_expiration_minutes, trial_expiration_hours FROM system_settings WHERE id = 1').get() || {};
+    const fallbackMinutes = sysSettings.trial_expiration_minutes ? parseInt(sysSettings.trial_expiration_minutes) : (sysSettings.trial_expiration_hours ? sysSettings.trial_expiration_hours * 60 : 30);
+
+    const trialDurationMinutes = (calculatedMinutes > 0 && calculatedMinutes <= 1440) ? calculatedMinutes : fallbackMinutes;
 
     let stagingFiles = [];
     let selectedPhotos = [];

@@ -1,5 +1,7 @@
 'use client';
 
+import { AlertTriangleIcon } from '@/components/StorageIcons.jsx';
+
 export default function GlobalError({ error, reset }) {
   return (
     <html>
@@ -21,7 +23,9 @@ export default function GlobalError({ error, reset }) {
             maxWidth: '500px',
             width: '100%'
           }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+              <AlertTriangleIcon size={48} color="#ef4444" />
+            </div>
             <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>
               Global Application Error
             </h2>

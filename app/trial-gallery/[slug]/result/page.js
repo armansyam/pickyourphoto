@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import RawSorterDrawer from '@/components/RawSorterDrawer';
+import { CopyLinkIcon, FolderIcon, SparklesUpgradeIcon } from '@/components/StorageIcons.jsx';
 
 export default function TrialResultPage({ params }) {
   const [slug, setSlug] = useState(null);
@@ -94,7 +95,7 @@ export default function TrialResultPage({ params }) {
             <span style={{ fontSize: '12px', background: '#6366f1', padding: '4px 10px', borderRadius: '20px', fontWeight: 'bold' }}>HASIL SELEKSI FOTO (TRIAL {durationLabel.toUpperCase()})</span>
             <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '12px', color: '#f8fafc' }}>{data.title}</h1>
             <p style={{ color: '#94a3b8', fontSize: '14px', marginTop: '4px' }}>
-              Status: {isCompleted ? '✅ Klien Sudah Memilih' : '⏳ Menunggu Pilihan Klien'}
+              Status: {isCompleted ? 'Klien Sudah Memilih' : 'Menunggu Pilihan Klien'}
             </p>
           </div>
 
@@ -107,18 +108,22 @@ export default function TrialResultPage({ params }) {
               <button
                 onClick={handleCopyFilenames}
                 style={{
-                  background: copied ? '#10b981' : '#6366f1',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '10px 18px',
+                  padding: '8px 18px',
+                  background: copied ? 'rgba(52, 211, 153, 0.15)' : '#6366f1',
+                  color: copied ? '#34d399' : '#fff',
+                  border: copied ? '1px solid #34d399' : 'none',
                   borderRadius: '8px',
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   fontSize: '13px',
                   transition: 'background 0.2s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                {copied ? '✓ Berhasil Disalin!' : '📋 Salin Nama File'}
+                <CopyLinkIcon size={13} color={copied ? '#34d399' : '#fff'} />
+                <span>{copied ? 'Berhasil Disalin!' : 'Salin Nama File'}</span>
               </button>
             )}
           </div>
@@ -163,9 +168,10 @@ export default function TrialResultPage({ params }) {
                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 borderRadius: '14px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '26px',
                 boxShadow: '0 4px 16px rgba(99,102,241,0.35)',
-              }}>📁</div>
+              }}>
+                <FolderIcon size={24} color="#fff" />
+              </div>
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <div style={{ fontWeight: '800', color: '#e0d7ff', fontSize: '17px', marginBottom: '6px', lineHeight: '1.3' }}>
                   File RAW kamu sudah siap disortir otomatis!
@@ -194,7 +200,8 @@ export default function TrialResultPage({ params }) {
                     onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.5)'; }}
                     onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 18px rgba(99,102,241,0.4)'; }}
                   >
-                    <span>📁</span> Coba RAW Sorter Sekarang →
+                    <FolderIcon size={14} color="#fff" />
+                    <span>Coba RAW Sorter Sekarang →</span>
                   </button>
 
                   <button
@@ -216,7 +223,8 @@ export default function TrialResultPage({ params }) {
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.22)'; e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.5)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139, 92, 246, 0.12)'; e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.35)'; }}
                   >
-                    <span>✨</span> Magic-Sort (1-Klik)
+                    <SparklesUpgradeIcon size={13} color="#c4b5fd" />
+                    <span>Magic-Sort (1-Klik)</span>
                   </button>
                 </div>
               </div>
@@ -234,11 +242,11 @@ export default function TrialResultPage({ params }) {
               </p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
                 {[
-                  '♾️ Galeri tanpa batas waktu',
-                  '🎨 Branding logo studio',
-                  '📁 RAW Sorter tanpa limit',
-                  '🗂️ Kelola proyek tak terbatas',
-                  '🔗 Link eksklusif per klien',
+                  'Galeri tanpa batas waktu',
+                  'Branding logo studio',
+                  'RAW Sorter tanpa limit',
+                  'Kelola proyek tak terbatas',
+                  'Link eksklusif per klien',
                 ].map(f => (
                   <span key={f} style={{
                     background: 'rgba(255,255,255,0.06)',

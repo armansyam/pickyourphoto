@@ -38,6 +38,9 @@ export default function AdminSettings({
   customStoragePricePerGb = 1250, setCustomStoragePricePerGb,
   workerStorageWarningThresholdGb = 10, setWorkerStorageWarningThresholdGb,
   gracePeriodDays = 7, setGracePeriodDays,
+  sysEnableAutoPurge = true, setSysEnableAutoPurge,
+  lastHardPurgeFormatted = 'Belum pernah', setLastHardPurgeFormatted,
+  fetchSystemSettings,
   savingProfile,
   profileSuccessMsg,
   setProfileSuccessMsg,
@@ -49,7 +52,46 @@ export default function AdminSettings({
   const [isEditingPaymentGateway, setIsEditingPaymentGateway] = useState(false);
   const [isEditingSmtp, setIsEditingSmtp] = useState(false);
   const [isEditingBankDetails, setIsEditingBankDetails] = useState(false);
+  const [isEditingSystem, setIsEditingSystem] = useState(false);
   const [savingSection, setSavingSection] = useState(''); // 'google' | 'smtp' | 'bank' | 'gateway' | 'system' | 'password'
+
+  const [savedSystemState, setSavedSystemState] = useState({
+    sysEnableReg,
+    sysMaxQuota,
+    customStoragePricePerGb,
+    workerStorageWarningThresholdGb,
+    gracePeriodDays
+  });
+
+  const systemStateInitialized = React.useRef(false);
+  React.useEffect(() => {
+    if (!systemStateInitialized.current && (sysEnableReg !== undefined || sysMaxQuota !== undefined)) {
+      setSavedSystemState({
+        sysEnableReg,
+        sysMaxQuota,
+        customStoragePricePerGb,
+        workerStorageWarningThresholdGb,
+        gracePeriodDays
+      });
+      systemStateInitialized.current = true;
+    }
+  }, [sysEnableReg, sysMaxQuota, customStoragePricePerGb, workerStorageWarningThresholdGb, gracePeriodDays]);
+
+  const isSystemDirty = 
+    Boolean(sysEnableReg) !== Boolean(savedSystemState.sysEnableReg) ||
+    (sysMaxQuota ?? null) !== (savedSystemState.sysMaxQuota ?? null) ||
+    Number(customStoragePricePerGb || 1250) !== Number(savedSystemState.customStoragePricePerGb || 1250) ||
+    Number(workerStorageWarningThresholdGb || 10) !== Number(savedSystemState.workerStorageWarningThresholdGb || 10) ||
+    Number(gracePeriodDays || 7) !== Number(savedSystemState.gracePeriodDays || 7);
+
+  const handleCancelSystem = () => {
+    setSysEnableReg(savedSystemState.sysEnableReg);
+    setSysMaxQuota(savedSystemState.sysMaxQuota);
+    setCustomStoragePricePerGb(savedSystemState.customStoragePricePerGb);
+    setWorkerStorageWarningThresholdGb(savedSystemState.workerStorageWarningThresholdGb);
+    setGracePeriodDays(savedSystemState.gracePeriodDays);
+    setIsEditingSystem(false);
+  };
 
   const handleSaveGoogle = async () => {
     setSavingSection('google');
@@ -169,6 +211,7 @@ export default function AdminSettings({
   };
 
   const handleSaveSystem = async () => {
+    if (!isSystemDirty) return;
     setSavingSection('system');
     try {
       const res = await fetch('/api/admin/settings', {
@@ -187,6 +230,14 @@ export default function AdminSettings({
       const data = await res.json();
       if (res.ok) {
         if (addToast) addToast('Pengaturan Sistem & Pendaftaran berhasil disimpan!', 'success');
+        setSavedSystemState({
+          sysEnableReg,
+          sysMaxQuota,
+          customStoragePricePerGb,
+          workerStorageWarningThresholdGb,
+          gracePeriodDays
+        });
+        setIsEditingSystem(false);
       } else {
         if (addToast) addToast(data.message || 'Gagal menyimpan pengaturan sistem.', 'error');
       }
@@ -390,6 +441,56 @@ export default function AdminSettings({
       }
     } catch (err) {
       if (addToast) addToast(err.message || 'Terjadi kesalahan.', 'error');
+    }
+  };
+
+  // Hard Purge State & Handlers
+  const [purgingExpired, setPurgingExpired] = useState(false);
+  const [purgeConfirmModal, setPurgeConfirmModal] = useState(false);
+
+  const handleRunHardPurge = async () => {
+    setPurgingExpired(true);
+    try {
+      const res = await fetch('/api/cron/purge-expired', {
+        method: 'POST'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (addToast) addToast(data.message || 'Hard purge berhasil dijalankan.', 'success');
+        if (data.purgedVendorsCount > 0) {
+          if (addToast) addToast(`${data.purgedVendorsCount} vendor di-suspend & ${data.totalFilesDeletedFromDrive} berkas dihapus dari Google Drive.`, 'info');
+        }
+        if (setLastHardPurgeFormatted) {
+          const now = new Date();
+          const dateStr = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+          const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          setLastHardPurgeFormatted(`${dateStr}, ${timeStr} WIB`);
+        }
+        if (fetchSystemSettings) fetchSystemSettings();
+      } else {
+        if (addToast) addToast(data.error || data.message || 'Gagal mengeksekusi hard purge.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message || 'Terjadi kesalahan saat memproses hard purge.', 'error');
+    } finally {
+      setPurgingExpired(false);
+      setPurgeConfirmModal(false);
+    }
+  };
+
+  const handleToggleAutoPurge = async (nextVal) => {
+    setSysEnableAutoPurge(nextVal);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable_auto_purge: nextVal })
+      });
+      if (res.ok) {
+        if (addToast) addToast(nextVal ? 'Auto-Purge otomatis (tiap 24 jam) diaktifkan.' : 'Auto-Purge otomatis dinonaktifkan.', 'info');
+      }
+    } catch (err) {
+      console.error('Failed to update auto purge setting:', err);
     }
   };
 
@@ -1280,91 +1381,179 @@ export default function AdminSettings({
             </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                <input
-                  type="checkbox"
-                  id="enable_registration"
-                  checked={sysEnableReg}
-                  onChange={e => setSysEnableReg(e.target.checked)}
-                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                />
-                <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableReg ? '#34d399' : '#f87171' }}>
-                  Buka Pendaftaran Vendor Baru (Public Registration)
-                </label>
-              </div>
+              {!isEditingSystem ? (
+                /* ── TAMPILAN TERKUNCI / COLLAPSED KETIKA SUDAH TERSIMPAN ── */
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', fontSize: '12px', marginBottom: '18px' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Status Registrasi Publik:</span>
+                      <strong style={{ color: sysEnableReg ? '#34d399' : '#f87171', fontSize: '13px' }}>
+                        {sysEnableReg ? '🟢 Dibuka (Public Registration)' : '🔴 Ditutup Sementara'}
+                      </strong>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Batas Quota Vendor Aktif:</span>
+                      <strong style={{ color: '#f4f4f5', fontSize: '13px' }}>
+                        {sysMaxQuota ? `${sysMaxQuota} Vendor` : 'Unlimited (Tanpa Batas)'}
+                      </strong>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Tarif Custom Storage:</span>
+                      <strong style={{ color: '#818cf8', fontSize: '13px' }}>
+                        Rp {(customStoragePricePerGb || 1250).toLocaleString('id-ID')} / GB / bln
+                      </strong>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Warning Worker Storage:</span>
+                      <strong style={{ color: '#fbbf24', fontSize: '13px' }}>
+                        &le; {workerStorageWarningThresholdGb || 10} GB
+                      </strong>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Masa Tenggang (Grace Period):</span>
+                      <strong style={{ color: '#38bdf8', fontSize: '13px' }}>
+                        {gracePeriodDays || 7} Hari
+                      </strong>
+                    </div>
+                  </div>
 
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Batas Maksimal Vendor Aktif (Quota)</label>
-                <input
-                  type="number"
-                  className="input-text"
-                  placeholder="Kosongkan untuk tanpa batas quota"
-                  value={sysMaxQuota === null ? '' : sysMaxQuota}
-                  onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
-                />
-              </div>
-              <div className="form-group" style={{ margin: '16px 0 0 0' }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Tarif Custom Storage per GB / Bulan (Rp)</label>
-                <input
-                  type="number"
-                  className="input-text"
-                  placeholder="Default: 1250 (Rp 1.250 / GB)"
-                  value={customStoragePricePerGb}
-                  onChange={e => setCustomStoragePricePerGb(parseInt(e.target.value) || 1250)}
-                />
-                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                  Tarif grosir dinamis per GB / bulan yang digunakan pada kalkulator slider Custom Storage vendor.
-                </p>
-              </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingSystem(true)}
+                      style={{
+                        background: 'rgba(99, 102, 241, 0.15)',
+                        border: '1px solid rgba(99, 102, 241, 0.3)',
+                        color: '#a5b4fc',
+                        padding: '8px 18px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(99, 102, 241, 0.25)'; e.currentTarget.style.color = '#fff'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(99, 102, 241, 0.15)'; e.currentTarget.style.color = '#a5b4fc'; }}
+                    >
+                      <span>✏️</span>
+                      <span>Buka & Ubah Pengaturan</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* ── FORM PENGATURAN TERBUKA UNTUK DIUBAH ── */
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                    <input
+                      type="checkbox"
+                      id="enable_registration"
+                      checked={sysEnableReg}
+                      onChange={e => setSysEnableReg(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableReg ? '#34d399' : '#f87171' }}>
+                      Buka Pendaftaran Vendor Baru (Public Registration)
+                    </label>
+                  </div>
 
-              <div className="form-group" style={{ margin: '16px 0 0 0' }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Ambang Batas Peringatan Worker Storage (GB)</label>
-                <input
-                  type="number"
-                  className="input-text"
-                  placeholder="Default: 10 (Warn saat sisa <= 10 GB)"
-                  value={workerStorageWarningThresholdGb}
-                  onChange={e => setWorkerStorageWarningThresholdGb(parseInt(e.target.value) || 10)}
-                />
-                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                  Pemicu notifikasi peringatan dini di Admin Panel untuk segera menambah akun Master Drive Worker baru.
-                </p>
-              </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Batas Maksimal Vendor Aktif (Quota)</label>
+                    <input
+                      type="number"
+                      className="input-text"
+                      placeholder="Kosongkan untuk tanpa batas quota"
+                      value={sysMaxQuota === null ? '' : sysMaxQuota}
+                      onChange={e => setSysMaxQuota(e.target.value === '' ? null : parseInt(e.target.value))}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: '16px 0 0 0' }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Tarif Custom Storage per GB / Bulan (Rp)</label>
+                    <input
+                      type="number"
+                      className="input-text"
+                      placeholder="Default: 1250 (Rp 1.250 / GB)"
+                      value={customStoragePricePerGb}
+                      onChange={e => setCustomStoragePricePerGb(parseInt(e.target.value) || 1250)}
+                    />
+                    <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                      Tarif grosir dinamis per GB / bulan yang digunakan pada kalkulator slider Custom Storage vendor.
+                    </p>
+                  </div>
 
-              <div className="form-group" style={{ margin: '16px 0 0 0' }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Masa Tenggang Platform (Grace Period Days)</label>
-                <input
-                  type="number"
-                  className="input-text"
-                  placeholder="Default: 7 Hari"
-                  value={gracePeriodDays}
-                  onChange={e => setGracePeriodDays(parseInt(e.target.value) || 7)}
-                />
-                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                  Jumlah hari masa tenggang (grace period) sebelum berkas vendor kedaluwarsa dibersihkan total dari Google Drive Worker (Hard Purge).
-                </p>
-              </div>
+                  <div className="form-group" style={{ margin: '16px 0 0 0' }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Ambang Batas Peringatan Worker Storage (GB)</label>
+                    <input
+                      type="number"
+                      className="input-text"
+                      placeholder="Default: 10 (Warn saat sisa <= 10 GB)"
+                      value={workerStorageWarningThresholdGb}
+                      onChange={e => setWorkerStorageWarningThresholdGb(parseInt(e.target.value) || 10)}
+                    />
+                    <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                      Pemicu notifikasi peringatan dini di Admin Panel untuk segera menambah akun Master Drive Worker baru.
+                    </p>
+                  </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <button 
-                  type="button" 
-                  disabled={savingSection === 'system'} 
-                  onClick={handleSaveSystem}
-                  style={{ 
-                    background: 'linear-gradient(135deg, #10b981, #059669)', 
-                    color: '#ffffff', 
-                    border: 'none', 
-                    padding: '8px 20px', 
-                    borderRadius: '8px', 
-                    fontSize: '12px', 
-                    fontWeight: 'bold', 
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
-                  }}
-                >
-                  {savingSection === 'system' ? '⏳ Menyimpan...' : '💾 Simpan Pengaturan Sistem'}
-                </button>
-              </div>
+                  <div className="form-group" style={{ margin: '16px 0 0 0' }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Masa Tenggang Platform (Grace Period Days)</label>
+                    <input
+                      type="number"
+                      className="input-text"
+                      placeholder="Default: 7 Hari"
+                      value={gracePeriodDays}
+                      onChange={e => setGracePeriodDays(parseInt(e.target.value) || 7)}
+                    />
+                    <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                      Jumlah hari masa tenggang (grace period) sebelum berkas vendor kedaluwarsa dibersihkan total dari Google Drive Worker (Hard Purge).
+                    </p>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <button
+                      type="button"
+                      onClick={handleCancelSystem}
+                      disabled={savingSection === 'system'}
+                      style={{
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#94a3b8',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#94a3b8'; }}
+                    >
+                      Tutup / Batal
+                    </button>
+                    <button 
+                      type="button" 
+                      disabled={savingSection === 'system' || !isSystemDirty} 
+                      onClick={handleSaveSystem}
+                      style={{ 
+                        background: isSystemDirty ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.04)', 
+                        color: isSystemDirty ? '#ffffff' : '#64748b', 
+                        border: isSystemDirty ? 'none' : '1px solid rgba(255,255,255,0.06)', 
+                        padding: '8px 20px', 
+                        borderRadius: '8px', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold', 
+                        cursor: isSystemDirty ? 'pointer' : 'not-allowed',
+                        boxShadow: isSystemDirty ? '0 2px 10px rgba(16, 185, 129, 0.3)' : 'none',
+                        transition: 'all 0.2s ease',
+                      }}
+                    >
+                      {savingSection === 'system' ? '⏳ Menyimpan...' : '💾 Simpan Pengaturan Sistem'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* SUPERADMIN PASSWORD CHANGE */}
@@ -1732,6 +1921,170 @@ export default function AdminSettings({
                 <style>{`
                   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
                 `}</style>
+              </div>
+            )}
+
+            {/* ── 3.5 PEMBERSIHAN & HARD PURGE BERKAS KEDALUWARSA ── */}
+            <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', color: '#f43f5e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                Pembersihan & Hard Purge Berkas Kedaluwarsa
+              </h4>
+              <span style={{ fontSize: '11px', background: sysEnableAutoPurge ? 'rgba(244,63,94,0.15)' : 'rgba(148,163,184,0.1)', color: sysEnableAutoPurge ? '#fb7185' : '#94a3b8', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                {sysEnableAutoPurge ? '🟢 AUTO-PURGE AKTIF (24 JAM)' : '⚪ AUTO-PURGE NONAKTIF'}
+              </span>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+              {/* 1. Toggle Auto-Purge Periodik */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <input
+                    type="checkbox"
+                    id="enable_auto_purge"
+                    checked={!!sysEnableAutoPurge}
+                    onChange={e => handleToggleAutoPurge(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  />
+                  <div>
+                    <label htmlFor="enable_auto_purge" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableAutoPurge ? '#fb7185' : '#94a3b8' }}>
+                      Aktifkan Hard Purge Otomatis (Setiap 24 Jam)
+                    </label>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>
+                      Server otomatis memindai vendor yang telah melewati masa tenggang ({gracePeriodDays || 7} hari) dan membersihkan data serta berkas fisiknya.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Info Status & Tombol Eksekusi Manual */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '16px' }}>
+                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Masa Tenggang (Grace Period):</span>
+                  <strong style={{ color: '#38bdf8', fontSize: '13px' }}>
+                    {gracePeriodDays || 7} Hari
+                  </strong>
+                </div>
+
+                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Jadwal Siklus Pembersihan:</span>
+                  <strong style={{ color: sysEnableAutoPurge ? '#34d399' : '#94a3b8', fontSize: '13px' }}>
+                    {sysEnableAutoPurge ? 'Tiap 24 Jam (Otomatis)' : 'Manual Only'}
+                  </strong>
+                </div>
+
+                <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Terakhir Dijalankan:</span>
+                  <strong style={{ color: '#fbbf24', fontSize: '13px' }}>
+                    {lastHardPurgeFormatted || 'Belum pernah'}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Action Bar */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', maxWidth: '500px', lineHeight: '1.5' }}>
+                  ℹ️ Eksekusi manual akan langsung memindai vendor kedaluwarsa &gt; {gracePeriodDays || 7} hari dan menghapus berkas foto fisik dari Google Drive Worker tanpa menunggu jadwal harian.
+                </p>
+
+                <button
+                  type="button"
+                  disabled={purgingExpired}
+                  onClick={() => setPurgeConfirmModal(true)}
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(244,63,94,0.2), rgba(225,29,72,0.3))',
+                    border: '1px solid rgba(244,63,94,0.4)',
+                    color: '#fb7185',
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    cursor: purgingExpired ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 12px rgba(244,63,94,0.15)',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={e => { if (!purgingExpired) e.currentTarget.style.background = 'linear-gradient(135deg, rgba(244,63,94,0.35), rgba(225,29,72,0.5))'; }}
+                  onMouseLeave={e => { if (!purgingExpired) e.currentTarget.style.background = 'linear-gradient(135deg, rgba(244,63,94,0.2), rgba(225,29,72,0.3))'; }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                  {purgingExpired ? '⏳ Memproses Pembersihan...' : '🚀 Jalankan Hard Purge Sekarang'}
+                </button>
+              </div>
+            </div>
+
+            {/* ── MODAL KONFIRMASI HARD PURGE MANUAL ── */}
+            {purgeConfirmModal && (
+              <div className="modal-overlay" onClick={() => { if (!purgingExpired) setPurgeConfirmModal(false); }}>
+                <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', width: '90%', borderRadius: '16px' }}>
+                  <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(244,63,94,0.15)', color: '#fb7185', marginBottom: '14px' }}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                    </div>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 8px' }}>
+                      Konfirmasi Eksekusi Hard Purge
+                    </h3>
+                    <p style={{ color: '#a1a1aa', fontSize: '13px', lineHeight: '1.5', margin: 0 }}>
+                      Sistem akan memindai vendor yang telah melewati masa tenggang (<strong>{gracePeriodDays || 7} hari</strong>) setelah expired, lalu menghapus foto fisiknya dari Google Drive Worker SaaS dan membersihkan data database terkait.
+                    </p>
+                  </div>
+
+                  <div style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: '10px', padding: '12px 14px', fontSize: '12px', color: '#fda4af', lineHeight: '1.5', marginBottom: '18px' }}>
+                    ⚠️ Tindakan ini permanen untuk vendor yang masa tenggangnya telah lewat. Vendor aktif atau vendor yang masih dalam masa tenggang tidak akan terdampak.
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button
+                      type="button"
+                      disabled={purgingExpired}
+                      onClick={() => setPurgeConfirmModal(false)}
+                      style={{
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        color: '#e4e4e7',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      disabled={purgingExpired}
+                      onClick={handleRunHardPurge}
+                      style={{
+                        background: 'linear-gradient(135deg, #f43f5e, #e11d48)',
+                        border: 'none',
+                        color: '#ffffff',
+                        padding: '8px 20px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: purgingExpired ? 'not-allowed' : 'pointer',
+                        boxShadow: '0 4px 14px rgba(244,63,94,0.4)'
+                      }}
+                    >
+                      {purgingExpired ? '⏳ Memproses...' : '✓ Ya, Eksekusi Hard Purge'}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 

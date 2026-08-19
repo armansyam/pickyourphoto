@@ -109,6 +109,8 @@ export default function AdminDashboard({ adminUser }) {
     const [lastBackupTime, setLastBackupTime] = useState('Belum pernah');
     const [lastBackupFileName, setLastBackupFileName] = useState(null);
     const [lastBackupSizeFormatted, setLastBackupSizeFormatted] = useState(null);
+    const [sysEnableAutoPurge, setSysEnableAutoPurge] = useState(true);
+    const [lastHardPurgeFormatted, setLastHardPurgeFormatted] = useState('Belum pernah');
 
     // Modal Vendor States
     const [editingVendor, setEditingVendor] = useState(null);
@@ -213,9 +215,11 @@ export default function AdminDashboard({ adminUser }) {
                 setSysEnableTrial(data.enable_free_trial === 1);
                 setSysEnableBackup(data.enable_auto_backup === 1);
                 setSysBackupInterval(data.backup_interval_hours);
+                if (data.enable_auto_purge !== undefined) setSysEnableAutoPurge(data.enable_auto_purge === 1);
                 if (data.lastBackupTime) setLastBackupTime(data.lastBackupTime);
                 if (data.lastBackupFileName) setLastBackupFileName(data.lastBackupFileName);
                 if (data.lastBackupSizeFormatted) setLastBackupSizeFormatted(data.lastBackupSizeFormatted);
+                if (data.lastHardPurgeFormatted) setLastHardPurgeFormatted(data.lastHardPurgeFormatted);
 
                 if (data.saasSettings) {
                     if (data.saasSettings.bank_name) setBankName(data.saasSettings.bank_name);
@@ -365,6 +369,7 @@ export default function AdminDashboard({ adminUser }) {
                     trial_expiration_minutes: sysTrialExpirationMinutes,
                     enable_auto_backup: sysEnableBackup,
                     backup_interval_hours: sysBackupInterval,
+                    enable_auto_purge: sysEnableAutoPurge,
                     saasSettings: {
                         bank_name: bankName,
                         bank_account_number: bankAccountNumber,
@@ -708,6 +713,9 @@ export default function AdminDashboard({ adminUser }) {
                             customStoragePricePerGb={customStoragePricePerGb} setCustomStoragePricePerGb={setCustomStoragePricePerGb}
                             workerStorageWarningThresholdGb={workerStorageWarningThresholdGb} setWorkerStorageWarningThresholdGb={setWorkerStorageWarningThresholdGb}
                             gracePeriodDays={gracePeriodDays} setGracePeriodDays={setGracePeriodDays}
+                            sysEnableAutoPurge={sysEnableAutoPurge} setSysEnableAutoPurge={setSysEnableAutoPurge}
+                            lastHardPurgeFormatted={lastHardPurgeFormatted} setLastHardPurgeFormatted={setLastHardPurgeFormatted}
+                            fetchSystemSettings={fetchSystemSettings}
                             savingProfile={savingProfile}
                             profileSuccessMsg={profileSuccessMsg}
                             setProfileSuccessMsg={setProfileSuccessMsg}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { FolderIcon, PhotoIcon, CopyLinkIcon, AlertTriangleIcon } from '@/components/StorageIcons.jsx';
 
 export default function StorageGalleryStandalonePage() {
   const params = useParams();
@@ -117,7 +118,9 @@ export default function StorageGalleryStandalonePage() {
     return (
       <div style={{ minHeight: '100vh', background: '#09090b', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'Inter, system-ui, sans-serif' }}>
         <div style={{ background: '#121215', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '20px', padding: '36px', maxWidth: '440px', textAlign: 'center' }}>
-          <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>⚠️</span>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+            <AlertTriangleIcon size={48} color="#f87171" />
+          </div>
           <h3 style={{ margin: '0 0 8px 0', fontSize: '20px', fontWeight: '800', color: '#ffffff' }}>Galeri Tidak Ditemukan</h3>
           <p style={{ margin: '0 0 20px 0', fontSize: '13px', color: '#a1a1aa', lineHeight: '1.5' }}>{error || 'Folder storage ini tidak dapat diakses atau telah dihapus.'}</p>
           <button onClick={() => router.push('/dashboard/storage')} style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.08)', color: '#ffffff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}>
@@ -156,7 +159,8 @@ export default function StorageGalleryStandalonePage() {
                 {vendor?.name || 'Studio Photography'}
               </div>
               <h1 style={{ margin: '2px 0 0 0', fontSize: '20px', fontWeight: '800', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📁 {folder.name}
+                <FolderIcon size={20} color="#34d399" />
+                <span>{folder.name}</span>
               </h1>
             </div>
           </div>
@@ -180,7 +184,8 @@ export default function StorageGalleryStandalonePage() {
                 transition: 'all 0.2s ease'
               }}
             >
-              <span>{copied ? '✓ Link Tersalin' : '📋 Salin Link'}</span>
+              <CopyLinkIcon size={13} color={copied ? '#34d399' : '#e4e4e7'} />
+              <span>{copied ? 'Link Tersalin' : 'Salin Link'}</span>
             </button>
 
             <button
@@ -210,7 +215,7 @@ export default function StorageGalleryStandalonePage() {
         {hasSubFolders && (
           <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '24px', scrollbarWidth: 'none' }}>
             
-            {/* TAB 1: ROOT FOLDER UTAMA (Hanya tampil jika ada foto langsung di folder utama) */}
+            {/* TAB 1: ROOT FOLDER UTAMA */}
             {rootFilesCount > 0 && (
               <button
                 onClick={() => setActiveCategory('ROOT')}
@@ -225,10 +230,14 @@ export default function StorageGalleryStandalonePage() {
                   color: activeCategory === 'ROOT' ? '#ffffff' : '#a1a1aa',
                   border: activeCategory === 'ROOT' ? 'none' : '1px solid rgba(255,255,255,0.1)',
                   boxShadow: activeCategory === 'ROOT' ? '0 4px 14px rgba(16,185,129,0.3)' : 'none',
-                  transition: 'all 0.2s ease'
+                  transition: 'all 0.2s ease',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                📁 {folder.name} ({rootFilesCount})
+                <FolderIcon size={14} color={activeCategory === 'ROOT' ? '#fff' : '#a1a1aa'} />
+                <span>{folder.name} ({rootFilesCount})</span>
               </button>
             )}
 
@@ -251,15 +260,19 @@ export default function StorageGalleryStandalonePage() {
                     color: isActive ? '#ffffff' : '#a1a1aa',
                     border: isActive ? 'none' : '1px solid rgba(255,255,255,0.1)',
                     boxShadow: isActive ? '0 4px 14px rgba(16,185,129,0.3)' : 'none',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
                   }}
                 >
-                  📁 {sub.name} ({count})
+                  <FolderIcon size={14} color={isActive ? '#fff' : '#a1a1aa'} />
+                  <span>{sub.name} ({count})</span>
                 </button>
               );
             })}
 
-            {/* TAB 3: SEMUA FOTO (DIPOSISIKAN DI PALING AKHIR / PALING KANAN) */}
+            {/* TAB 3: SEMUA FOTO */}
             <button
               onClick={() => setActiveCategory('ALL')}
               style={{
@@ -276,7 +289,7 @@ export default function StorageGalleryStandalonePage() {
                 transition: 'all 0.2s ease'
               }}
             >
-              🌟 Semua Foto ({files.length})
+              Semua Foto ({files.length})
             </button>
           </div>
         )}
@@ -293,7 +306,9 @@ export default function StorageGalleryStandalonePage() {
 
         {displayFiles.length === 0 ? (
           <div style={{ background: '#121215', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '80px 20px', textAlign: 'center' }}>
-            <span style={{ fontSize: '48px', display: 'block', marginBottom: '12px' }}>📷</span>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+              <PhotoIcon size={48} color="#71717a" />
+            </div>
             <h3 style={{ margin: '0 0 6px 0', fontSize: '18px', fontWeight: '800', color: '#ffffff' }}>Belum Ada Foto</h3>
             <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa' }}>Tidak ada berkas foto pada kategori/subfolder ini.</p>
           </div>

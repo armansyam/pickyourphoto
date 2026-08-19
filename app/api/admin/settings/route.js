@@ -79,12 +79,33 @@ export async function GET() {
             console.error('Failed to get last backup info:', backupErr);
         }
 
+        // Compute last hard purge timestamp info
+        let lastHardPurgeFormatted = 'Belum pernah';
+        if (settings.last_hard_purge_at) {
+            try {
+                const purgeDate = new Date(settings.last_hard_purge_at);
+                if (!isNaN(purgeDate.getTime())) {
+                    const dateStr = purgeDate.toLocaleDateString('id-ID', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                    });
+                    const timeStr = purgeDate.toLocaleTimeString('id-ID', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    lastHardPurgeFormatted = `${dateStr}, ${timeStr} WIB`;
+                }
+            } catch (_) {}
+        }
+
         return NextResponse.json({
             ...settings,
             saasSettings,
             lastBackupTime,
             lastBackupFileName,
-            lastBackupSizeFormatted
+            lastBackupSizeFormatted,
+            lastHardPurgeFormatted
         });
     } catch (error) {
         console.error('Failed to get system settings:', error);
@@ -109,6 +130,7 @@ export async function PATCH(request) {
             trial_expiration_hours,
             enable_auto_backup,
             backup_interval_hours,
+            enable_auto_purge,
             saasSettings
         } = body;
  
@@ -136,6 +158,7 @@ export async function PATCH(request) {
         const new_max_vendor_quota = max_vendor_quota !== undefined ? (max_vendor_quota === null || max_vendor_quota === '' ? null : parseInt(max_vendor_quota)) : current.max_vendor_quota;
         const new_enable_auto_backup = enable_auto_backup !== undefined ? (enable_auto_backup ? 1 : 0) : current.enable_auto_backup;
         const new_backup_interval = backup_interval_hours !== undefined ? parseInt(backup_interval_hours) : current.backup_interval_hours;
+        const new_enable_auto_purge = enable_auto_purge !== undefined ? (enable_auto_purge ? 1 : 0) : (current.enable_auto_purge !== undefined ? current.enable_auto_purge : 1);
  
         // Perform system_settings update
         db.prepare(`
@@ -148,6 +171,7 @@ export async function PATCH(request) {
                 trial_expiration_hours = ?,
                 enable_auto_backup = ?,
                 backup_interval_hours = ?,
+                enable_auto_purge = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = 1
         `).run(
@@ -157,7 +181,8 @@ export async function PATCH(request) {
             new_trial_expiration_minutes,
             new_trial_expiration_hours,
             new_enable_auto_backup,
-            new_backup_interval
+            new_backup_interval,
+            new_enable_auto_purge
         );
 
         // Update saas_settings if provided

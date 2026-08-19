@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { LockIcon, WhatsAppIcon, AlertTriangleIcon } from '@/components/StorageIcons.jsx';
 
 /**
  * 4 gallery themes a vendor can pick for their client gallery.
@@ -227,7 +228,7 @@ export default function ClientGalleryPage({ params }) {
         
         // Prevent duplicate toasts by checking limit before state update
         if (!selectedIds.has(photoId) && maxSelection > 0 && selectedIds.size >= maxSelection) {
-            addToast(`⚠️ Batas maksimal pilihan foto adalah ${maxSelection}. Silakan hapus pilihan lainnya terlebih dahulu.`, 'warning', 3500);
+            addToast(`Batas maksimal pilihan foto adalah ${maxSelection}. Silakan hapus pilihan lainnya terlebih dahulu.`, 'warning', 3500);
             return;
         }
 
@@ -245,8 +246,8 @@ export default function ClientGalleryPage({ params }) {
     const isAtLimit = maxSelection > 0 && selectedIds.size >= maxSelection;
 
     const handleSubmitSelection = () => {
-        if (project?.isProjectExpired) { addToast('🔒 Project ini telah kedaluwarsa dan terkunci.', 'error', 3500); return; }
-        if (selectedIds.size === 0) { addToast('📸 Silakan pilih minimal satu foto sebelum mengirim.', 'warning', 3500); return; }
+        if (project?.isProjectExpired) { addToast('Project ini telah kedaluwarsa dan terkunci.', 'error', 3500); return; }
+        if (selectedIds.size === 0) { addToast('Silakan pilih minimal satu foto sebelum mengirim.', 'warning', 3500); return; }
         setShowConfirmModal(true);
     };
 
@@ -346,7 +347,9 @@ export default function ClientGalleryPage({ params }) {
                         textAlign: 'center',
                         boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)'
                     }}>
-                        <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔒</div>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                            <LockIcon size={48} color="#fbbf24" />
+                        </div>
                         <span style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', background: 'rgba(251, 191, 36, 0.15)', color: '#fbbf24', padding: '4px 12px', borderRadius: '12px', border: '1px solid rgba(251, 191, 36, 0.3)' }}>
                             AKSES GALERI DITANGGUHKAN
                         </span>
@@ -358,7 +361,7 @@ export default function ClientGalleryPage({ params }) {
                         </p>
                         {branding && (branding.brandName || branding.whatsapp) && (
                             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '14px', fontSize: '12px', color: '#a1a1aa', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <div>📸 Studio Fotografi: <strong style={{ color: '#ffffff' }}>{branding.brandName || 'Studio Vendor'}</strong></div>
+                                <div>Studio Fotografi: <strong style={{ color: '#ffffff' }}>{branding.brandName || 'Studio Vendor'}</strong></div>
                                 {branding.whatsapp && (
                                     <a
                                         href={`https://wa.me/${branding.whatsapp.replace(/[^0-9]/g, '')}?text=Halo%20${encodeURIComponent(branding.brandName || '')},%20akses%20galeri%20proyek%20${encodeURIComponent(project.name)}%20saat%20ini%20terkunci.%20Mohon%20bantuannya.`}
@@ -366,7 +369,8 @@ export default function ClientGalleryPage({ params }) {
                                         rel="noopener noreferrer"
                                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginTop: '10px', padding: '8px 16px', background: '#22c55e', color: '#ffffff', textDecoration: 'none', borderRadius: '10px', fontWeight: '700', fontSize: '12px' }}
                                     >
-                                        💬 Hubungi Studio Via WhatsApp
+                                        <WhatsAppIcon size={14} />
+                                        <span>Hubungi Studio Via WhatsApp</span>
                                     </a>
                                 )}
                             </div>
@@ -563,7 +567,9 @@ export default function ClientGalleryPage({ params }) {
                                     {submitted ? (
                                         <div className="tray-status tray-status-done">✓ Final</div>
                                     ) : project.isProjectExpired ? (
-                                        <div className="tray-status tray-status-locked">🔒</div>
+                                        <div className="tray-status tray-status-locked" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <LockIcon size={12} color="#f87171" />
+                                        </div>
                                     ) : (
                                         <button className="tray-btn tray-btn-submit" onClick={handleSubmitSelection} disabled={submitting || selectedIds.size === 0}>
                                             {submitting ? (

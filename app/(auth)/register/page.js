@@ -5,6 +5,10 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import NativeQrisDisplay from '@/components/NativeQrisDisplay';
+import { 
+    LockIcon, SpeedBoltIcon, SparklesUpgradeIcon, RefreshCwIcon, TrashIcon, 
+    PlusIcon, ClockIcon, CheckCircleIcon, WhatsAppIcon, CopyLinkIcon, FolderIcon 
+} from '@/components/StorageIcons.jsx';
 
 export default function RegisterPage() {
     const [name, setName] = useState('');
@@ -244,7 +248,7 @@ export default function RegisterPage() {
     const getFeatures = (p) => {
         return [
             `Maksimal ${p.maxProjects} Project Aktif`,
-            'Bebas Jumlah Foto per Proyek',
+            'Unlimited Foto per Galeri',
             'Galeri Online & Seleksi Foto Klien',
             p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business')
                 ? 'Bisa Menggunakan Logo Studio Sendiri'
@@ -393,7 +397,9 @@ export default function RegisterPage() {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', background: '#09090b', color: '#ffffff' }}>
                 <div className="glass-card" style={{ maxWidth: '480px', width: '100%', padding: '40px 32px', textAlign: 'center', borderRadius: '20px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                    <div style={{ fontSize: '64px', marginBottom: '20px' }}>🔒</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+                        <LockIcon size={64} color="#ef4444" />
+                    </div>
                     <h2 style={{ fontSize: '24px', fontWeight: '800', marginBottom: '16px', color: '#ef4444' }}>Pendaftaran Ditutup</h2>
                     <p style={{ color: '#a1a1aa', fontSize: '15px', lineHeight: '1.6', marginBottom: '24px' }}>
                         {regStatus.reason_closed || 'Pendaftaran vendor baru saat ini sedang ditutup.'}
@@ -444,10 +450,12 @@ export default function RegisterPage() {
                 }
             `}</style>
             {flashPromoInfo && flashPromoInfo.active && (
-                <div style={{ width: '100%', maxWidth: step === 1 ? '400px' : '940px', marginBottom: '16px', background: 'linear-gradient(90deg, #ef4444, #dc2626)', color: '#ffffff', padding: '12px 18px', borderRadius: '14px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', boxShadow: '0 4px 16px rgba(239,68,68,0.35)', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)', boxSizing: 'border-box' }}>
-                    ⚡ {flashPromoInfo.title || 'FLASH SALE PROMO'} ({flashPromoInfo.discountPercent}% OFF) — {flashPromoInfo.bannerText || 'Diskon Spesial!'}
-                    <span style={{ background: 'rgba(0,0,0,0.3)', padding: '4px 12px', borderRadius: '20px', marginLeft: '10px', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', fontFamily: 'monospace', display: 'inline-block', marginTop: '4px' }}>
-                        ⏳ {countdownText}
+                <div style={{ width: '100%', maxWidth: step === 1 ? '400px' : '940px', marginBottom: '16px', background: 'linear-gradient(90deg, #ef4444, #dc2626)', color: '#ffffff', padding: '12px 18px', borderRadius: '14px', fontSize: '13px', fontWeight: 'bold', textAlign: 'center', boxShadow: '0 4px 16px rgba(239,68,68,0.35)', transition: 'max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1)', boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <SpeedBoltIcon size={16} color="#fff" />
+                    <span>{flashPromoInfo.title || 'FLASH SALE PROMO'} ({flashPromoInfo.discountPercent}% OFF) — {flashPromoInfo.bannerText || 'Diskon Spesial!'}</span>
+                    <span style={{ background: 'rgba(0,0,0,0.3)', padding: '4px 12px', borderRadius: '20px', marginLeft: '6px', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.4)', fontFamily: 'monospace', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <ClockIcon size={12} color="#fbbf24" />
+                        <span>{countdownText}</span>
                     </span>
                 </div>
             )}
@@ -605,7 +613,7 @@ export default function RegisterPage() {
                                             <path fill="#ffffff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                                             <path fill="#ffffff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                                         </svg>
-                                        🚀 Daftar Cepat dengan Google
+                                        <span>Daftar Cepat dengan Google</span>
                                     </a>
 
                                     <p style={{ fontSize: '12px', color: '#71717a', margin: 0 }}>
@@ -629,7 +637,9 @@ export default function RegisterPage() {
                                             </div>
                                             {/* Body */}
                                             <div style={{ padding: '28px 24px', textAlign: 'center' }}>
-                                                <div style={{ fontSize: '48px', marginBottom: '12px' }}>⏰</div>
+                                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                                                    <ClockIcon size={44} color="#f87171" />
+                                                </div>
                                                 <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '800', color: '#fca5a5' }}>
                                                     QRIS untuk {expiredOrder.planName} Telah Kedaluwarsa
                                                 </h3>
@@ -677,10 +687,17 @@ export default function RegisterPage() {
                                                                 setLoading(false);
                                                             }
                                                         }}
-                                                        style={{ padding: '13px', borderRadius: '12px', border: 'none', background: loading ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(99,102,241,0.3)' }}
+                                                        style={{ padding: '13px', borderRadius: '12px', border: 'none', background: loading ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                                         disabled={loading}
                                                     >
-                                                        {loading ? '⏳ Memproses...' : '🔄 Bayar Ulang via QRIS'}
+                                                        {loading ? (
+                                                            <span>Memproses...</span>
+                                                        ) : (
+                                                            <>
+                                                                <RefreshCwIcon size={14} color="#fff" />
+                                                                <span>Bayar Ulang via QRIS</span>
+                                                            </>
+                                                        )}
                                                     </button>
                                                     <button
                                                         type="button"
@@ -691,7 +708,7 @@ export default function RegisterPage() {
                                                         }}
                                                         style={{ padding: '13px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.08)', color: '#a5b4fc', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}
                                                     >
-                                                        🏦 Transfer Manual / Upload Bukti Bayar
+                                                        Transfer Manual / Upload Bukti Bayar
                                                     </button>
                                                     <button
                                                         type="button"
@@ -702,7 +719,7 @@ export default function RegisterPage() {
                                                         }}
                                                         style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#64748b', fontWeight: '500', fontSize: '13px', cursor: 'pointer' }}
                                                     >
-                                                        📦 Ganti Paket
+                                                        Ganti Paket
                                                     </button>
                                                 </div>
                                                 {error && <p style={{ marginTop: '12px', color: '#ef4444', fontSize: '12px' }}>{error}</p>}
@@ -743,11 +760,10 @@ export default function RegisterPage() {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
                                                 {/* 1. Account Info Summary */}
                                                 <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px' }}>
-                                                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', marginBottom: '6px' }}>👤 DETAIL AKUN VENDOR</div>
+                                                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', marginBottom: '6px' }}>DETAIL AKUN VENDOR</div>
                                                     <div style={{ color: '#ffffff', fontWeight: '600' }}>{name}</div>
-                                                    <div style={{ color: '#cbd5e1', fontSize: '12px' }}>✉️ {email}</div>
-                                                    {whatsapp && <div style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>📱 +{whatsapp}</div>}
-
+                                                    <div style={{ color: '#cbd5e1', fontSize: '12px' }}>{email}</div>
+                                                    {whatsapp && <div style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>+{whatsapp}</div>}
                                                 </div>
 
                                                 {/* 2. Selected Plan Summary */}
@@ -755,7 +771,7 @@ export default function RegisterPage() {
                                                     const selPlan = plans.find(p => p.id === parseInt(plan));
                                                     return selPlan ? (
                                                         <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', borderRadius: '12px', padding: '16px' }}>
-                                                            <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', marginBottom: '8px' }}>📦 PAKET SAAS YANG DIPILIH</div>
+                                                            <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', marginBottom: '8px' }}>PAKET SAAS YANG DIPILIH</div>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                                                 <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>{selPlan.name}</span>
                                                                 {selPlan.discountedPrice && selPlan.discountedPrice < selPlan.originalPrice ? (
@@ -780,7 +796,7 @@ export default function RegisterPage() {
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#d4d4d8' }}>
                                                                 <div>✓ Maksimal <strong>{selPlan.maxProjects} Project Aktif</strong></div>
                                                                 <div>✓ Foto <strong>Unlimited</strong> / project</div>
-                                                                <div>✓ <strong>Galeri Online & Seleksi Foto Klien</strong></div>
+                                                                <div>✓ <strong>Galeri Online &amp; Seleksi Foto Klien</strong></div>
                                                                 {selPlan.allowCustomLogo === 1 || selPlan.allowCustomLogo === true || selPlan.name.includes('Pro') || selPlan.name.includes('Business') ? (
                                                                     <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Bisa Menggunakan Logo Studio Sendiri</div>
                                                                 ) : (
@@ -796,13 +812,14 @@ export default function RegisterPage() {
                                                     ) : null;
                                                 })()}
 
-                                                {/* 2.5 Add-On Storage Offer Card & Trigger */}
+                                                {/* Add-On Storage Section */}
                                                 <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '12px', padding: '16px' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                                        <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>💾 CLOUD STORAGE ADD-ON (OPSIONAL)</span>
+                                                        <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>CLOUD STORAGE ADD-ON (OPSIONAL)</span>
                                                         {selectedAddon && (
-                                                            <button type="button" onClick={() => setSelectedAddon(null)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}>
-                                                                🗑️ Hapus Add-On
+                                                            <button type="button" onClick={() => setSelectedAddon(null)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <TrashIcon size={11} color="#f87171" />
+                                                                <span>Hapus Add-On</span>
                                                             </button>
                                                         )}
                                                     </div>
@@ -822,9 +839,10 @@ export default function RegisterPage() {
                                                             <button 
                                                                 type="button" 
                                                                 onClick={() => setIsAddonModalOpen(true)} 
-                                                                style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                                                                style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                                                             >
-                                                                ⚡ + Tambahkan Cloud Storage
+                                                                <PlusIcon size={12} color="#fff" />
+                                                                <span>Tambahkan Cloud Storage</span>
                                                             </button>
                                                         </div>
                                                     )}
@@ -842,7 +860,7 @@ export default function RegisterPage() {
                                                                     Tingkatkan Kapasitas Storage Studio Anda
                                                                 </h3>
                                                                 <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
-                                                                    Tambah kuota agar dapat mengunggah & mengirim lebih banyak foto ke klien.
+                                                                    Tambah kuota agar dapat mengunggah &amp; mengirim lebih banyak foto ke klien.
                                                                 </p>
                                                             </div>
 
@@ -865,14 +883,14 @@ export default function RegisterPage() {
                                                                             padding: '14px 16px',
                                                                             cursor: 'pointer',
                                                                             display: 'flex',
-                                                                            justify: 'space-between',
+                                                                            justifyContent: 'space-between',
                                                                             alignItems: 'center'
                                                                         }}
                                                                     >
                                                                         <div>
                                                                             <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                📁 {opt.name}
-                                                                                {opt.popular && <span style={{ fontSize: '10px', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '2px 6px', borderRadius: '4px' }}>⭐ TERFAVORIT</span>}
+                                                                                {opt.name}
+                                                                                {opt.popular && <span style={{ fontSize: '10px', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '2px 6px', borderRadius: '4px' }}>TERFAVORIT</span>}
                                                                             </div>
                                                                             <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{opt.desc}</div>
                                                                         </div>
@@ -893,18 +911,18 @@ export default function RegisterPage() {
                                                 )}
 
 
-                                                {/* 3. METODE PEMBAYARAN — ditentukan otomatis oleh sistem, vendor tidak perlu memilih */}
+                                                {/* 3. METODE PEMBAYARAN */}
                                                 <div>
                                                     <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#e4e4e7', marginBottom: '12px' }}>
-                                                        💳 Metode Pembayaran
+                                                        Metode Pembayaran
                                                     </label>
 
                                                     {paymentMethod === 'gateway' ? (
                                                         // QRIS Aktif
                                                         <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '16px', borderRadius: '12px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                                <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#34d399' }}>⚡ Pembayaran QRIS Otomatis</span>
-                                                                <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>AKTIF & INSTAN</span>
+                                                                <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#34d399' }}>Pembayaran QRIS Otomatis</span>
+                                                                <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>AKTIF &amp; INSTAN</span>
                                                             </div>
                                                             <span style={{ fontSize: '12px', color: '#a1a1aa', lineHeight: '1.5' }}>
                                                                 Bayar via QRIS, Virtual Account Bank, GoPay, atau ShopeePay. Akun <strong>otomatis aktif seketika</strong> tanpa perlu upload bukti atau menunggu approval.
@@ -915,7 +933,7 @@ export default function RegisterPage() {
                                                         <>
                                                             <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
                                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#818cf8' }}>🏦 Transfer Bank Manual</span>
+                                                                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#818cf8' }}>Transfer Bank Manual</span>
                                                                     <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.08)', color: '#a1a1aa', padding: '2px 8px', borderRadius: '6px' }}>PERLU KONFIRMASI ADMIN</span>
                                                                 </div>
                                                                 <div style={{ fontSize: '13px', color: '#f4f4f5', lineHeight: '1.7' }}>
@@ -964,7 +982,7 @@ export default function RegisterPage() {
                                                         flex: 1
                                                     }}
                                                 >
-                                                    ✏️ Ubah Data
+                                                    Ubah Data
                                                 </button>
                                                 <button 
                                                     type="submit" 
@@ -974,15 +992,24 @@ export default function RegisterPage() {
                                                         padding: '14px 20px', 
                                                         fontSize: '14px',
                                                         opacity: (loading || !paymentMethod) ? 0.5 : 1,
-                                                        cursor: (loading || !paymentMethod) ? 'not-allowed' : 'pointer'
+                                                        cursor: (loading || !paymentMethod) ? 'not-allowed' : 'pointer',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        gap: '6px'
                                                     }} 
                                                     disabled={loading || !paymentMethod}
                                                 >
-                                                    {loading 
-                                                        ? 'Memproses Transaksi...' 
-                                                        : !paymentMethod 
-                                                            ? '⚠️ Pilih Metode Pembayaran' 
-                                                            : '🚀 Confirm & Bayar Sekarang'}
+                                                    {loading ? (
+                                                        <span>Memproses Transaksi...</span>
+                                                    ) : !paymentMethod ? (
+                                                        <span>Pilih Metode Pembayaran</span>
+                                                    ) : (
+                                                        <>
+                                                            <SparklesUpgradeIcon size={14} />
+                                                            <span>Confirm &amp; Bayar Sekarang</span>
+                                                        </>
+                                                    )}
                                                 </button>
                                             </div>
                                         </div>
@@ -1115,7 +1142,7 @@ export default function RegisterPage() {
                                                                              }} />
 
                                                                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#d4d4d8' }}>
-                                                                                 <div>✓ <strong>Bebas Jumlah Foto per Proyek</strong></div>
+                                                                                 <div>✓ <strong>Unlimited Foto per Galeri</strong></div>
                                                                                  <div>✓ <strong>Galeri Online & Seleksi Foto Klien</strong></div>
                                                                                  <div>✓ Maksimal <strong>{p.maxProjects} Project Aktif</strong></div>
                                                                                  {p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business') ? (

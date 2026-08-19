@@ -2,17 +2,23 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import useRawSorter from '@/hooks/useRawSorter';
+import { 
+    FolderIcon, LockIcon, CopyLinkIcon, SpeedBoltIcon, 
+    SettingsManageIcon, RefreshCwIcon, SparklesUpgradeIcon,
+    FileDocumentIcon, TerminalIcon, AppleIcon, WindowsIcon, InfoLightIcon,
+    AlertTriangleIcon, CheckIcon, CloseIcon, ClockIcon
+} from '@/components/StorageIcons.jsx';
 
 /**
- * RawSorterDrawer — Full-featured slide-in drawer for sorting RAW files
+ * RawSorterDrawer — Full-featured centered modal for sorting RAW files
  * 
  * Props:
- *   isOpen              - boolean, controls drawer visibility
- *   onClose             - function, called when drawer should close
+ *   isOpen              - boolean, controls modal visibility
+ *   onClose             - function, called when modal should close
  *   project             - { id, name, status, selectedPhotosCount } from dashboard
  *   vendorPlan          - string, e.g. "free_trial", "limit_based", "storage_based"
  *   preloadedFileNames  - string[] (optional) — jika disediakan, skip API fetch
- *   preloadedTitle      - string (optional) — nama project untuk drawer header
+ *   preloadedTitle      - string (optional) — nama project untuk modal header
  */
 export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, preloadedFileNames, preloadedTitle }) {
     const [fileNames, setFileNames] = useState([]);
@@ -24,13 +30,26 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
     const [showExportLog, setShowExportLog] = useState(false);
 
     const terminalRef = useRef(null);
-    const drawerRef = useRef(null);
+    const modalRef = useRef(null);
 
     const isTrial = vendorPlan === 'free_trial';
     const [TRIAL_LIMIT, setTrialLimit] = useState(5); // default, akan di-fetch dari admin settings
 
     const [showMagicGuide, setShowMagicGuide] = useState(false);
     const [copyFeedback, setCopyFeedback] = useState('');
+
+    const sanitizeList = (arr) => {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(f => {
+            const noQuery = String(f || '').split('?')[0];
+            const rawName = noQuery.split('/').pop() || '';
+            try {
+                return decodeURIComponent(rawName).trim();
+            } catch (_) {
+                return rawName.trim();
+            }
+        }).filter(n => n.length > 0);
+    };
 
     const {
         sourceName, destName,
@@ -51,7 +70,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
         }).join(', ');
 
         navigator.clipboard.writeText(query).then(() => {
-            setCopyFeedback('✓ Query Lightroom Disalin!');
+            setCopyFeedback('Query Lightroom Disalin!');
             setTimeout(() => setCopyFeedback(''), 2500);
         }).catch(() => {});
     }, [fileNames]);
@@ -71,8 +90,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
         URL.revokeObjectURL(url);
     }, [fileNames, projectName]);
 
-    // Fetch selected file names when drawer opens
-    // Jika preloadedFileNames disediakan (e.g. dari trial), skip API call
+    // Fetch selected file names when modal opens
     useEffect(() => {
         if (!isOpen) return;
 
@@ -89,9 +107,10 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
 
         if (preloadedFileNames) {
             // Mode preloaded — data sudah tersedia
-            setFileNames(preloadedFileNames);
+            const cleanPreloaded = sanitizeList(preloadedFileNames);
+            setFileNames(cleanPreloaded);
             setProjectName(preloadedTitle || project?.name || '');
-            setTotalSelected(preloadedFileNames.length);
+            setTotalSelected(cleanPreloaded.length);
             setLoadingFiles(false);
             return;
         }
@@ -105,9 +124,10 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                     return res.json();
                 })
                 .then(data => {
-                    setFileNames(data.fileNames || []);
+                    const cleanList = sanitizeList(data.fileNames || []);
+                    setFileNames(cleanList);
                     setProjectName(data.projectName || project.name || '');
-                    setTotalSelected(data.totalSelected || 0);
+                    setTotalSelected(cleanList.length);
                 })
                 .catch(err => {
                     setFetchError(err.message);
@@ -149,7 +169,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
     const handleStart = useCallback(() => {
         const maxFiles = isTrial ? TRIAL_LIMIT : Infinity;
         runSorter(fileNames, mode, maxFiles);
-    }, [fileNames, mode, isTrial, runSorter]);
+    }, [fileNames, mode, isTrial, runSorter, TRIAL_LIMIT]);
 
     // Export log as .txt
     const handleExportLog = useCallback(() => {
@@ -183,45 +203,42 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
     if (!isOpen) return null;
 
     return (
-        <>
-            {/* Backdrop */}
+        <div
+            onClick={() => !isRunning && handleClose()}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.78)',
+                backdropFilter: 'blur(8px)',
+                zIndex: 9998,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '20px',
+                animation: 'rawSorterFadeIn 0.2s ease',
+            }}
+        >
+            {/* Centered Modal Container */}
             <div
-                onClick={() => !isRunning && handleClose()}
+                ref={modalRef}
+                onClick={e => e.stopPropagation()}
                 style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0, 0, 0, 0.6)',
-                    backdropFilter: 'blur(4px)',
-                    zIndex: 9998,
-                    transition: 'opacity 0.3s ease',
-                    opacity: isOpen ? 1 : 0,
-                }}
-            />
-
-            {/* Drawer */}
-            <div
-                ref={drawerRef}
-                style={{
-                    position: 'fixed',
-                    top: 0,
-                    right: 0,
-                    bottom: 0,
                     width: '100%',
-                    maxWidth: '860px',
-                    background: 'linear-gradient(180deg, #0c0c14 0%, #111118 100%)',
-                    zIndex: 9999,
+                    maxWidth: '880px',
+                    maxHeight: '90vh',
+                    background: 'linear-gradient(180deg, #0e111a 0%, #121422 100%)',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(99, 102, 241, 0.25)',
+                    boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(99, 102, 241, 0.12)',
                     display: 'flex',
                     flexDirection: 'column',
-                    boxShadow: '-8px 0 40px rgba(0,0,0,0.5)',
-                    transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
-                    transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
-                    borderLeft: '1px solid rgba(99, 102, 241, 0.15)',
                     overflow: 'hidden',
+                    animation: 'rawSorterPopIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
             >
                 {/* ── HEADER ── */}
                 <div style={{
-                    padding: '20px 24px',
+                    padding: '18px 24px',
                     borderBottom: '1px solid rgba(255,255,255,0.06)',
                     display: 'flex',
                     alignItems: 'center',
@@ -230,20 +247,19 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                     background: 'rgba(99, 102, 241, 0.03)',
                     flexShrink: 0,
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                         <div style={{
-                            width: '42px',
-                            height: '42px',
-                            borderRadius: '12px',
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '10px',
                             background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '20px',
                             flexShrink: 0,
-                            boxShadow: '0 4px 16px rgba(99, 102, 241, 0.3)',
+                            boxShadow: '0 4px 16px rgba(99, 102, 241, 0.35)',
                         }}>
-                            📁
+                            <FolderIcon size={20} color="#fff" />
                         </div>
                         <div style={{ minWidth: 0 }}>
                             <h2 style={{
@@ -251,7 +267,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                 fontSize: '17px',
                                 fontWeight: '700',
                                 color: '#f4f4f5',
-                                letterSpacing: '-0.02em',
+                                letterSpacing: '-0.01em',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -261,7 +277,8 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                             <p style={{
                                 margin: '2px 0 0',
                                 fontSize: '12px',
-                                color: '#71717a',
+                                color: '#818cf8',
+                                fontWeight: '500',
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
@@ -280,12 +297,13 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                 borderRadius: '20px',
                                 fontSize: '12px',
                                 fontWeight: '600',
-                                border: '1px solid rgba(99, 102, 241, 0.2)',
+                                border: '1px solid rgba(99, 102, 241, 0.25)',
                             }}>
                                 {totalSelected} foto dipilih
                             </span>
                         )}
                         <button
+                            type="button"
                             onClick={handleClose}
                             disabled={isRunning}
                             style={{
@@ -294,19 +312,18 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                 borderRadius: '10px',
                                 border: '1px solid rgba(255,255,255,0.08)',
                                 background: 'rgba(255,255,255,0.04)',
-                                color: '#71717a',
+                                color: '#94a3b8',
                                 cursor: isRunning ? 'not-allowed' : 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: '18px',
                                 transition: 'all 0.2s',
                                 opacity: isRunning ? 0.4 : 1,
                             }}
-                            onMouseEnter={e => { if (!isRunning) { e.target.style.background = 'rgba(255,255,255,0.08)'; e.target.style.color = '#f4f4f5'; }}}
-                            onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.04)'; e.target.style.color = '#71717a'; }}
+                            onMouseEnter={e => { if (!isRunning) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#f4f4f5'; }}}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#94a3b8'; }}
                         >
-                            ✕
+                            <CloseIcon size={16} />
                         </button>
                     </div>
                 </div>
@@ -320,23 +337,22 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                     flexDirection: 'column',
                 }}>
 
-
                     {/* Trial warning banner */}
                     {isTrial && (
                         <div style={{
-                            margin: '16px 20px 0',
-                            padding: '12px 16px',
+                            margin: '14px 20px 0',
+                            padding: '10px 14px',
                             background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(139, 92, 246, 0.12))',
                             border: '1px solid rgba(168, 85, 247, 0.2)',
-                            borderRadius: '12px',
+                            borderRadius: '10px',
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '12px',
+                            gap: '10px',
                             fontSize: '12px',
                             color: '#c4b5fd',
                             lineHeight: '1.5',
                         }}>
-                            <span style={{ fontSize: '20px', flexShrink: 0 }}>🔒</span>
+                            <LockIcon size={16} color="#c084fc" />
                             <div>
                                 <strong style={{ color: '#ddd6fe' }}>Free Trial</strong> — Hanya <strong>{TRIAL_LIMIT} file pertama</strong> yang akan disortir.
                                 Upgrade untuk sortir semua file tanpa batas.
@@ -346,7 +362,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
 
                     {/* ── TWO-COLUMN SETUP AREA ── */}
                     {!isRunning && !isDone && (
-                        <div className="raw-sorter-drawer-columns" style={{
+                        <div className="raw-sorter-modal-columns" style={{
                             display: 'grid',
                             gridTemplateColumns: '1fr 1fr',
                             gap: '0',
@@ -355,30 +371,31 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                         }}>
                             {/* LEFT COLUMN: File List */}
                             <div style={{
-                                padding: '20px',
-                                borderRight: '1px solid rgba(255,255,255,0.04)',
+                                padding: '18px 20px',
+                                borderRight: '1px solid rgba(255,255,255,0.05)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 minHeight: 0,
                             }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                     <h3 style={{
                                         margin: 0,
-                                        fontSize: '13px',
-                                        fontWeight: '600',
+                                        fontSize: '12px',
+                                        fontWeight: '700',
                                         color: '#a1a1aa',
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.06em',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '8px',
+                                        gap: '6px',
                                     }}>
-                                        <span style={{ fontSize: '14px' }}>📄</span>
-                                        Daftar File Terpilih
+                                        <FileDocumentIcon size={13} color="#818cf8" />
+                                        <span>Daftar File Terpilih</span>
                                     </h3>
                                     {copyFeedback && (
-                                        <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '600', animation: 'fadeIn 0.2s ease' }}>
-                                            {copyFeedback}
+                                        <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '600', animation: 'fadeIn 0.2s ease', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <CheckIcon size={12} color="#34d399" />
+                                            <span>{copyFeedback}</span>
                                         </span>
                                     )}
                                 </div>
@@ -391,6 +408,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                         justifyContent: 'center',
                                         color: '#52525b',
                                         fontSize: '13px',
+                                        minHeight: '220px',
                                     }}>
                                         <div style={{
                                             width: '20px', height: '20px',
@@ -400,7 +418,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                             animation: 'rawSorterSpin 0.8s linear infinite',
                                             marginRight: '10px',
                                         }} />
-                                        Memuat...
+                                        Memuat daftar file...
                                     </div>
                                 ) : fetchError ? (
                                     <div style={{
@@ -411,7 +429,8 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                         fontSize: '13px',
                                         textAlign: 'center',
                                     }}>
-                                        ✕ {fetchError}
+                                        <CloseIcon size={14} color="#f87171" style={{ display: 'inline', marginRight: '6px' }} />
+                                        {fetchError}
                                     </div>
                                 ) : (
                                     <>
@@ -419,57 +438,63 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                             flex: 1,
                                             overflow: 'auto',
                                             borderRadius: '10px',
-                                            background: 'rgba(0, 0, 0, 0.2)',
-                                            border: '1px solid rgba(255,255,255,0.04)',
-                                            padding: '4px',
+                                            background: 'rgba(0, 0, 0, 0.25)',
+                                            border: '1px solid rgba(255,255,255,0.05)',
+                                            padding: '6px',
                                             marginBottom: '12px',
+                                            minHeight: '220px',
+                                            maxHeight: '340px',
                                         }}>
                                             {fileNames.length === 0 ? (
                                                 <div style={{
                                                     padding: '32px 16px',
                                                     textAlign: 'center',
                                                     color: '#52525b',
-                                                    fontSize: '13px',
+                                                    fontSize: '12px',
                                                 }}>
-                                                    Tidak ada foto yang dipilih klien
+                                                    Belum ada foto yang dipilih klien
                                                 </div>
                                             ) : (
                                                 fileNames.map((name, i) => {
-                                                    const isOverLimit = isTrial && i >= TRIAL_LIMIT;
+                                                    const isLockedTrial = isTrial && i >= TRIAL_LIMIT;
                                                     return (
                                                         <div
                                                             key={i}
                                                             style={{
-                                                                padding: '7px 12px',
-                                                                fontSize: '12px',
-                                                                fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace",
-                                                                color: isOverLimit ? '#3f3f46' : '#d4d4d8',
-                                                                borderBottom: '1px solid rgba(255,255,255,0.02)',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
-                                                                gap: '8px',
-                                                                opacity: isOverLimit ? 0.5 : 1,
-                                                                transition: 'background 0.15s',
+                                                                justifyContent: 'space-between',
+                                                                padding: '6px 10px',
                                                                 borderRadius: '6px',
+                                                                fontSize: '11.5px',
+                                                                fontFamily: 'monospace',
+                                                                color: isLockedTrial ? '#52525b' : '#cbd5e1',
+                                                                background: i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
+                                                                opacity: isLockedTrial ? 0.5 : 1,
                                                             }}
-                                                            onMouseEnter={e => e.target.style.background = 'rgba(255,255,255,0.03)'}
-                                                            onMouseLeave={e => e.target.style.background = 'transparent'}
                                                         >
-                                                            <span style={{
-                                                                fontSize: '10px',
-                                                                color: isOverLimit ? '#27272a' : '#52525b',
-                                                                fontFamily: 'inherit',
-                                                                minWidth: '22px',
-                                                                textAlign: 'right',
-                                                            }}>
-                                                                {i + 1}
-                                                            </span>
-                                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                {name}
-                                                            </span>
-                                                            {isOverLimit && i === TRIAL_LIMIT && (
-                                                                <span style={{ fontSize: '10px', color: '#a855f7', marginLeft: 'auto', flexShrink: 0 }}>
-                                                                    🔒 trial limit
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                                                <span style={{ color: '#52525b', fontSize: '10px', width: '22px', textAlign: 'right', flexShrink: 0 }}>
+                                                                    {i + 1}
+                                                                </span>
+                                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                    {name}
+                                                                </span>
+                                                            </div>
+                                                            {isLockedTrial && (
+                                                                <span style={{
+                                                                    fontSize: '9.5px',
+                                                                    color: '#a855f7',
+                                                                    background: 'rgba(168,85,247,0.1)',
+                                                                    padding: '2px 6px',
+                                                                    borderRadius: '4px',
+                                                                    flexShrink: 0,
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '3px'
+                                                                }}>
+                                                                    <LockIcon size={9} color="#a855f7" />
+                                                                    <span>trial limit</span>
                                                                 </span>
                                                             )}
                                                         </div>
@@ -503,7 +528,8 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
                                             >
-                                                📋 Salin Query Lightroom
+                                                <CopyLinkIcon size={12} color="#a5b4fc" />
+                                                <span>Salin Query Lightroom</span>
                                             </button>
                                             <button
                                                 type="button"
@@ -520,13 +546,14 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                     cursor: fileNames.length === 0 ? 'not-allowed' : 'pointer',
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: '4px',
+                                                    gap: '5px',
                                                     transition: 'all 0.2s',
                                                 }}
                                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; }}
                                             >
-                                                📄 Export .TXT
+                                                <FileDocumentIcon size={12} color="#94a3b8" />
+                                                <span>Export .TXT</span>
                                             </button>
                                         </div>
                                     </>
@@ -535,10 +562,10 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
 
                             {/* RIGHT COLUMN: Folder Picker & Magic-Sort Controls */}
                             <div style={{
-                                padding: '20px',
+                                padding: '18px 20px',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '14px',
+                                gap: '12px',
                                 overflowY: 'auto',
                             }}>
                                 {/* ── JIKA BROWSER TIDAK MENDUKUNG: MAGIC-SORT NAIK JADI HIGHLIGHT UTAMA DI ATAS ── */}
@@ -557,7 +584,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                             {/* Magic Sort Header */}
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <span style={{ fontSize: '15px' }}>✨</span>
+                                                    <SparklesUpgradeIcon size={15} color="#c084fc" />
                                                     <span style={{ fontSize: '13px', fontWeight: '700', color: '#f5f3ff' }}>
                                                         Magic-Sort (1-Klik)
                                                     </span>
@@ -569,8 +596,12 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                     color: '#c4b5fd',
                                                     padding: '2px 8px',
                                                     borderRadius: '6px',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px'
                                                 }}>
-                                                    ⚡ Opsi Rekomendasi
+                                                    <SpeedBoltIcon size={10} color="#fbbf24" />
+                                                    <span>Opsi Rekomendasi</span>
                                                 </span>
                                             </div>
 
@@ -609,7 +640,8 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
                                                 >
-                                                    <span>🍏</span> Mac (.command)
+                                                    <AppleIcon size={13} color="#fff" />
+                                                    <span>Mac (.command)</span>
                                                 </button>
 
                                                 <button
@@ -635,7 +667,8 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.22)'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.12)'; }}
                                                 >
-                                                    <span>🪟</span> Windows (.bat)
+                                                    <WindowsIcon size={12} color="#93c5fd" />
+                                                    <span>Windows (.bat)</span>
                                                 </button>
                                             </div>
 
@@ -666,7 +699,10 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.color = '#cbd5e1'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8'; }}
                                                 >
-                                                    <span>📖 Panduan Singkat (3 Langkah)</span>
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                                                        <InfoLightIcon size={12} color="#818cf8" />
+                                                        <span>Panduan Singkat (3 Langkah)</span>
+                                                    </span>
                                                     <span style={{ fontSize: '9px', color: '#818cf8' }}>{showMagicGuide ? '▲ Tutup' : '▼ Lihat'}</span>
                                                 </button>
 
@@ -701,7 +737,7 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                             gap: '10px',
                                             opacity: 0.65,
                                         }}>
-                                            <span style={{ fontSize: '15px' }}>🔒</span>
+                                            <LockIcon size={16} color="#fbbf24" />
                                             <div>
                                                 <div style={{ fontSize: '11px', fontWeight: '600', color: '#a1a1aa' }}>
                                                     Sortir Langsung di Browser Terkunci
@@ -716,46 +752,47 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                     /* ── JIKA BROWSER MENDUKUNG (CHROME / EDGE): TAMPILKAN NATIVE SORTER + MAGIC SORT DI BAWAH ── */
                                     <>
                                         <h3 style={{
-                                            margin: '0 0 0',
-                                            fontSize: '13px',
-                                            fontWeight: '600',
+                                            margin: 0,
+                                            fontSize: '12px',
+                                            fontWeight: '700',
                                             color: '#a1a1aa',
                                             textTransform: 'uppercase',
                                             letterSpacing: '0.06em',
                                             display: 'flex',
                                             alignItems: 'center',
-                                            gap: '8px',
+                                            gap: '6px',
                                         }}>
-                                            <span style={{ fontSize: '14px' }}>⚙️</span>
-                                            Pengaturan Sortir
+                                            <SettingsManageIcon size={13} color="#818cf8" />
+                                            <span>Pengaturan Sortir</span>
                                         </h3>
 
                                         {/* Source Folder Picker */}
                                         <div>
-                                            <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '8px' }}>
+                                            <label style={{ fontSize: '11.5px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '6px' }}>
                                                 Folder Sumber (RAW Files)
                                             </label>
                                             <button
+                                                type="button"
                                                 onClick={pickSourceFolder}
                                                 style={{
                                                     width: '100%',
-                                                    padding: '12px 16px',
-                                                    borderRadius: '12px',
+                                                    padding: '10px 14px',
+                                                    borderRadius: '10px',
                                                     border: `1px solid ${sourceName ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255,255,255,0.08)'}`,
                                                     background: sourceName ? 'rgba(52, 211, 153, 0.06)' : 'rgba(255,255,255,0.03)',
                                                     color: sourceName ? '#6ee7b7' : '#71717a',
-                                                    fontSize: '13px',
+                                                    fontSize: '12px',
                                                     cursor: 'pointer',
                                                     textAlign: 'left',
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: '10px',
+                                                    gap: '8px',
                                                     transition: 'all 0.2s',
                                                 }}
                                                 onMouseEnter={e => { if (!sourceName) e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)'; }}
                                                 onMouseLeave={e => { if (!sourceName) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                             >
-                                                <span style={{ fontSize: '18px' }}>{sourceName ? '✅' : '📂'}</span>
+                                                {sourceName ? <CheckIcon size={14} color="#34d399" /> : <FolderIcon size={14} color="#818cf8" />}
                                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {sourceName || 'Pilih folder sumber...'}
                                                 </span>
@@ -764,30 +801,31 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
 
                                         {/* Destination Folder Picker */}
                                         <div>
-                                            <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '8px' }}>
+                                            <label style={{ fontSize: '11.5px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '6px' }}>
                                                 Folder Tujuan
                                             </label>
                                             <button
+                                                type="button"
                                                 onClick={pickDestFolder}
                                                 style={{
                                                     width: '100%',
-                                                    padding: '12px 16px',
-                                                    borderRadius: '12px',
+                                                    padding: '10px 14px',
+                                                    borderRadius: '10px',
                                                     border: `1px solid ${destName ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255,255,255,0.08)'}`,
                                                     background: destName ? 'rgba(52, 211, 153, 0.06)' : 'rgba(255,255,255,0.03)',
                                                     color: destName ? '#6ee7b7' : '#71717a',
-                                                    fontSize: '13px',
+                                                    fontSize: '12px',
                                                     cursor: 'pointer',
                                                     textAlign: 'left',
                                                     display: 'flex',
                                                     alignItems: 'center',
-                                                    gap: '10px',
+                                                    gap: '8px',
                                                     transition: 'all 0.2s',
                                                 }}
                                                 onMouseEnter={e => { if (!destName) e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)'; }}
                                                 onMouseLeave={e => { if (!destName) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
                                             >
-                                                <span style={{ fontSize: '18px' }}>{destName ? '✅' : '📂'}</span>
+                                                {destName ? <CheckIcon size={14} color="#34d399" /> : <FolderIcon size={14} color="#818cf8" />}
                                                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {destName || 'Pilih folder tujuan...'}
                                                 </span>
@@ -796,21 +834,22 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
 
                                         {/* Mode Toggle */}
                                         <div>
-                                            <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '10px' }}>
+                                            <label style={{ fontSize: '11.5px', color: '#a1a1aa', fontWeight: '500', display: 'block', marginBottom: '6px' }}>
                                                 Metode
                                             </label>
                                             <div style={{ display: 'flex', gap: '8px' }}>
                                                 {[
-                                                    { value: 'copy', icon: '📋', label: 'Salin (Copy)', desc: 'File asli tetap di sumber' },
-                                                    { value: 'move', icon: '✂️', label: 'Pindah (Move)', desc: 'File dipindah ke tujuan' },
+                                                    { value: 'copy', label: 'Salin (Copy)', desc: 'File asli tetap di sumber' },
+                                                    { value: 'move', label: 'Pindah (Move)', desc: 'File dipindah ke tujuan' },
                                                 ].map(opt => (
                                                     <button
                                                         key={opt.value}
+                                                        type="button"
                                                         onClick={() => setMode(opt.value)}
                                                         style={{
                                                             flex: 1,
-                                                            padding: '10px 8px',
-                                                            borderRadius: '12px',
+                                                            padding: '8px',
+                                                            borderRadius: '10px',
                                                             border: `1.5px solid ${mode === opt.value ? 'rgba(99, 102, 241, 0.4)' : 'rgba(255,255,255,0.06)'}`,
                                                             background: mode === opt.value
                                                                 ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(139, 92, 246, 0.08))'
@@ -820,16 +859,15 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                             transition: 'all 0.2s',
                                                         }}
                                                     >
-                                                        <div style={{ fontSize: '18px', marginBottom: '2px' }}>{opt.icon}</div>
                                                         <div style={{
-                                                            fontSize: '11px',
-                                                            fontWeight: '600',
+                                                            fontSize: '11.5px',
+                                                            fontWeight: '700',
                                                             color: mode === opt.value ? '#c7d2fe' : '#a1a1aa',
                                                         }}>{opt.label}</div>
                                                         <div style={{
-                                                            fontSize: '9px',
-                                                            color: '#52525b',
-                                                            marginTop: '1px',
+                                                            fontSize: '9.5px',
+                                                            color: '#71717a',
+                                                            marginTop: '2px',
                                                         }}>{opt.desc}</div>
                                                     </button>
                                                 ))}
@@ -838,18 +876,19 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
 
                                         {/* Start Button */}
                                         <button
+                                            type="button"
                                             onClick={handleStart}
                                             disabled={!canStart}
                                             style={{
                                                 width: '100%',
-                                                padding: '12px 18px',
-                                                borderRadius: '12px',
+                                                padding: '11px 16px',
+                                                borderRadius: '10px',
                                                 border: 'none',
                                                 background: canStart
                                                     ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
                                                     : 'rgba(255,255,255,0.04)',
                                                 color: canStart ? '#fff' : '#52525b',
-                                                fontSize: '13px',
+                                                fontSize: '12.5px',
                                                 fontWeight: '700',
                                                 cursor: canStart ? 'pointer' : 'not-allowed',
                                                 boxShadow: canStart ? '0 4px 20px rgba(99, 102, 241, 0.3)' : 'none',
@@ -857,18 +896,18 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                gap: '8px',
+                                                gap: '6px',
                                             }}
                                         >
-                                            <span style={{ fontSize: '15px' }}>▶</span>
-                                            Mulai Sortir di Browser{isTrial ? ` (Maks ${TRIAL_LIMIT})` : ''}
+                                            <SpeedBoltIcon size={13} color="#fff" />
+                                            <span>Mulai Sortir di Browser{isTrial ? ` (Maks ${TRIAL_LIMIT})` : ''}</span>
                                         </button>
 
                                         {/* ── MAGIC-SORT CARD (DI BAWAH UNTUK CHROME) ── */}
                                         <div style={{
                                             marginTop: '2px',
                                             padding: '12px 14px',
-                                            borderRadius: '12px',
+                                            borderRadius: '10px',
                                             background: 'rgba(255, 255, 255, 0.02)',
                                             border: '1px solid rgba(255, 255, 255, 0.08)',
                                             display: 'flex',
@@ -877,31 +916,21 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                         }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <span style={{ fontSize: '14px' }}>✨</span>
+                                                    <SparklesUpgradeIcon size={14} color="#a5b4fc" />
                                                     <span style={{ fontSize: '12px', fontWeight: '700', color: '#f4f4f5' }}>
                                                         Magic-Sort
                                                     </span>
                                                 </div>
                                                 <span style={{
-                                                    fontSize: '10px',
-                                                    fontWeight: '600',
-                                                    background: 'rgba(99, 102, 241, 0.15)',
-                                                    color: '#a5b4fc',
-                                                    padding: '1px 6px',
-                                                    borderRadius: '6px',
+                                                    fontSize: '9.5px',
+                                                    color: '#818cf8',
+                                                    background: 'rgba(99, 102, 241, 0.1)',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px',
                                                 }}>
-                                                    ⚡ 1-Klik Instan
+                                                    Opsi Skrip Otomatis
                                                 </span>
                                             </div>
-
-                                            <p style={{
-                                                margin: 0,
-                                                fontSize: '11px',
-                                                color: '#94a3b8',
-                                                lineHeight: '1.45',
-                                            }}>
-                                                Sortir otomatis tanpa browser. Unduh skrip, letakkan di folder RAW, lalu klik ganda (*double click*).
-                                            </p>
 
                                             <div style={{ display: 'flex', gap: '6px' }}>
                                                 <button
@@ -927,7 +956,8 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
                                                 >
-                                                    <span>🍏</span> Mac (.command)
+                                                    <AppleIcon size={12} color="#fff" />
+                                                    <span>Mac (.command)</span>
                                                 </button>
 
                                                 <button
@@ -953,57 +983,9 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                                                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.18)'; }}
                                                     onMouseLeave={e => { e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)'; }}
                                                 >
-                                                    <span>🪟</span> Windows (.bat)
+                                                    <WindowsIcon size={11} color="#93c5fd" />
+                                                    <span>Windows (.bat)</span>
                                                 </button>
-                                            </div>
-
-                                            <div style={{
-                                                borderRadius: '6px',
-                                                background: 'rgba(0, 0, 0, 0.2)',
-                                                border: '1px solid rgba(255, 255, 255, 0.04)',
-                                                overflow: 'hidden',
-                                            }}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowMagicGuide(!showMagicGuide)}
-                                                    style={{
-                                                        width: '100%',
-                                                        padding: '6px 10px',
-                                                        background: 'transparent',
-                                                        border: 'none',
-                                                        color: '#71717a',
-                                                        fontSize: '10px',
-                                                        fontWeight: '500',
-                                                        cursor: 'pointer',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'space-between',
-                                                        transition: 'background 0.15s',
-                                                    }}
-                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.color = '#a1a1aa'; }}
-                                                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#71717a'; }}
-                                                >
-                                                    <span>📖 Panduan Singkat</span>
-                                                    <span style={{ fontSize: '9px' }}>{showMagicGuide ? '▲ Tutup' : '▼ Lihat'}</span>
-                                                </button>
-
-                                                {showMagicGuide && (
-                                                    <div style={{
-                                                        padding: '8px 10px',
-                                                        borderTop: '1px solid rgba(255, 255, 255, 0.04)',
-                                                        fontSize: '10.5px',
-                                                        color: '#a1a1aa',
-                                                        lineHeight: '1.5',
-                                                        display: 'flex',
-                                                        flexDirection: 'column',
-                                                        gap: '4px',
-                                                        animation: 'fadeIn 0.15s ease',
-                                                    }}>
-                                                        <div>1. <strong>Unduh:</strong> Pilih skrip Mac atau Windows di atas.</div>
-                                                        <div>2. <strong>Pindahkan:</strong> Taruh file skrip ke folder foto RAW Anda.</div>
-                                                        <div>3. <strong>Jalankan:</strong> Klik ganda skrip untuk sortir instan.</div>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </>
@@ -1012,306 +994,217 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                         </div>
                     )}
 
-                    {/* ── RUNNING / DONE — Terminal + Progress ── */}
+                    {/* ── RUNNING & COMPLETED VIEW ── */}
                     {(isRunning || isDone) && (
                         <div style={{
-                            flex: 1,
+                            padding: '20px 24px',
                             display: 'flex',
                             flexDirection: 'column',
-                            padding: '0',
+                            gap: '16px',
+                            flex: 1,
                             minHeight: 0,
                         }}>
-                            {/* Progress Bar */}
+                            {/* Progress Header */}
                             <div style={{
                                 padding: '16px 20px',
-                                borderBottom: '1px solid rgba(255,255,255,0.04)',
-                                flexShrink: 0,
+                                borderRadius: '12px',
+                                background: isDone ? 'rgba(52, 211, 153, 0.06)' : 'rgba(99, 102, 241, 0.06)',
+                                border: `1px solid ${isDone ? 'rgba(52, 211, 153, 0.2)' : 'rgba(99, 102, 241, 0.2)'}`,
                             }}>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    marginBottom: '8px',
-                                }}>
-                                    <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: '500' }}>
-                                        {isRunning ? '⏳ Sedang memproses...' : '✅ Selesai'}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '600', color: isDone ? '#6ee7b7' : '#c7d2fe', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        {isRunning ? (
+                                            <>
+                                                <RefreshCwIcon size={14} color="#a5b4fc" style={{ animation: 'rawSorterSpin 1s linear infinite' }} />
+                                                <span>Sedang memproses...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <CheckIcon size={15} color="#34d399" />
+                                                <span>Proses Sortir Selesai</span>
+                                            </>
+                                        )}
                                     </span>
-                                    <span style={{
-                                        fontSize: '13px',
-                                        color: '#c7d2fe',
-                                        fontWeight: '700',
-                                        fontVariantNumeric: 'tabular-nums',
-                                    }}>
-                                        {progress.current}/{progress.total} ({progressPercent}%)
+                                    <span style={{ fontSize: '13px', fontFamily: 'monospace', fontWeight: '700', color: '#f4f4f5' }}>
+                                        {progress.current} / {progress.total} ({progressPercent}%)
                                     </span>
                                 </div>
+
+                                {/* Progress Bar */}
                                 <div style={{
-                                    width: '100%',
                                     height: '6px',
                                     borderRadius: '3px',
                                     background: 'rgba(255,255,255,0.06)',
                                     overflow: 'hidden',
                                 }}>
                                     <div style={{
-                                        width: `${progressPercent}%`,
                                         height: '100%',
-                                        borderRadius: '3px',
+                                        width: `${progressPercent}%`,
                                         background: isDone
-                                            ? 'linear-gradient(90deg, #34d399, #6ee7b7)'
+                                            ? 'linear-gradient(90deg, #10b981, #34d399)'
                                             : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
-                                        transition: 'width 0.3s ease, background 0.5s ease',
-                                        boxShadow: isRunning ? '0 0 10px rgba(99,102,241,0.4)' : 'none',
+                                        borderRadius: '3px',
+                                        transition: 'width 0.2s ease',
                                     }} />
                                 </div>
                             </div>
 
-                            {/* Terminal Log */}
+                            {/* Live Terminal Log */}
                             <div
                                 ref={terminalRef}
                                 style={{
                                     flex: 1,
+                                    minHeight: '160px',
+                                    maxHeight: '260px',
                                     overflow: 'auto',
-                                    background: '#09090b',
-                                    fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace",
-                                    fontSize: '12px',
+                                    borderRadius: '10px',
+                                    background: '#07070b',
+                                    border: '1px solid rgba(255,255,255,0.06)',
+                                    padding: '12px 14px',
+                                    fontFamily: 'monospace',
+                                    fontSize: '11px',
                                     lineHeight: '1.7',
-                                    padding: '14px 18px',
-                                    minHeight: '200px',
                                 }}
                             >
                                 {logs.map((log, i) => {
                                     const style = getLogStyle(log.type);
                                     return (
-                                        <div key={i} style={{ display: 'flex', gap: '8px', color: style.color }}>
-                                            <span style={{ color: '#3f3f46', flexShrink: 0 }}>[{log.time}]</span>
-                                            <span>{log.message}</span>
+                                        <div key={i} style={{ color: style.color, display: 'flex', gap: '8px' }}>
+                                            <span style={{ color: '#52525b', flexShrink: 0 }}>[{log.time}]</span>
+                                            <span style={{ flexShrink: 0, fontWeight: '700' }}>{style.icon}</span>
+                                            <span style={{ wordBreak: 'break-all' }}>{log.message}</span>
                                         </div>
                                     );
                                 })}
                                 {isRunning && (
-                                    <div style={{ display: 'flex', gap: '8px', color: '#6366f1', animation: 'rawSorterBlink 1s infinite' }}>
-                                        <span style={{ color: '#3f3f46' }}>▎</span>
+                                    <div style={{ color: '#6366f1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ animation: 'rawSorterBlink 1s infinite' }}>▋</span>
+                                        <span>Memproses...</span>
                                     </div>
                                 )}
                             </div>
 
-                            {/* Summary Panel (after done) */}
+                            {/* Summary Card (when done) */}
                             {isDone && summary && (
                                 <div style={{
-                                    padding: '20px',
-                                    borderTop: '1px solid rgba(255,255,255,0.06)',
-                                    background: 'rgba(0,0,0,0.2)',
-                                    flexShrink: 0,
+                                    padding: '16px 20px',
+                                    borderRadius: '12px',
+                                    background: 'rgba(255, 255, 255, 0.02)',
+                                    border: '1px solid rgba(255, 255, 255, 0.06)',
                                 }}>
-                                    {/* Stats */}
                                     <div style={{
                                         display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                                        gap: '10px',
-                                        marginBottom: '16px',
+                                        gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                                        gap: '12px',
+                                        marginBottom: '14px',
                                     }}>
-                                        <div style={{
-                                            padding: '12px',
-                                            borderRadius: '10px',
-                                            background: 'rgba(52, 211, 153, 0.06)',
-                                            border: '1px solid rgba(52, 211, 153, 0.12)',
-                                            textAlign: 'center',
-                                        }}>
-                                            <div style={{ fontSize: '22px', fontWeight: '700', color: '#6ee7b7' }}>
-                                                {summary.success}
-                                            </div>
-                                            <div style={{ fontSize: '11px', color: '#52525b', marginTop: '2px' }}>
-                                                ✅ Berhasil
+                                        <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(52, 211, 153, 0.06)', borderRadius: '8px' }}>
+                                            <div style={{ fontSize: '18px', fontWeight: '800', color: '#34d399' }}>{summary.found}</div>
+                                            <div style={{ fontSize: '10.5px', color: '#a1a1aa', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                <CheckIcon size={10} color="#34d399" />
+                                                <span>Berhasil</span>
                                             </div>
                                         </div>
+
                                         {summary.notFound > 0 && (
-                                            <div style={{
-                                                padding: '12px',
-                                                borderRadius: '10px',
-                                                background: 'rgba(251, 191, 36, 0.06)',
-                                                border: '1px solid rgba(251, 191, 36, 0.12)',
-                                                textAlign: 'center',
-                                            }}>
-                                                <div style={{ fontSize: '22px', fontWeight: '700', color: '#fbbf24' }}>
-                                                    {summary.notFound}
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: '#52525b', marginTop: '2px' }}>
-                                                    ⚠️ Tidak Ditemukan
+                                            <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(251, 191, 36, 0.06)', borderRadius: '8px' }}>
+                                                <div style={{ fontSize: '18px', fontWeight: '800', color: '#fbbf24' }}>{summary.notFound}</div>
+                                                <div style={{ fontSize: '10.5px', color: '#a1a1aa', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                    <AlertTriangleIcon size={10} color="#fbbf24" />
+                                                    <span>Tidak Ditemukan</span>
                                                 </div>
                                             </div>
                                         )}
+
                                         {summary.errors > 0 && (
-                                            <div style={{
-                                                padding: '12px',
-                                                borderRadius: '10px',
-                                                background: 'rgba(239, 68, 68, 0.06)',
-                                                border: '1px solid rgba(239, 68, 68, 0.12)',
-                                                textAlign: 'center',
-                                            }}>
-                                                <div style={{ fontSize: '22px', fontWeight: '700', color: '#f87171' }}>
-                                                    {summary.errors}
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: '#52525b', marginTop: '2px' }}>
-                                                    ✕ Error
+                                            <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(239, 68, 68, 0.06)', borderRadius: '8px' }}>
+                                                <div style={{ fontSize: '18px', fontWeight: '800', color: '#f87171' }}>{summary.errors}</div>
+                                                <div style={{ fontSize: '10.5px', color: '#a1a1aa', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                    <CloseIcon size={10} color="#f87171" />
+                                                    <span>Error</span>
                                                 </div>
                                             </div>
                                         )}
-                                        {summary.trialLimited && summary.skippedByTrial > 0 && (
-                                            <div style={{
-                                                padding: '12px',
-                                                borderRadius: '10px',
-                                                background: 'rgba(168, 85, 247, 0.06)',
-                                                border: '1px solid rgba(168, 85, 247, 0.12)',
-                                                textAlign: 'center',
-                                            }}>
-                                                <div style={{ fontSize: '22px', fontWeight: '700', color: '#c084fc' }}>
-                                                    {summary.skippedByTrial}
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: '#52525b', marginTop: '2px' }}>
-                                                    🔒 Dilewati (Trial)
+
+                                        {summary.skippedTrial > 0 && (
+                                            <div style={{ textAlign: 'center', padding: '8px', background: 'rgba(192, 132, 252, 0.06)', borderRadius: '8px' }}>
+                                                <div style={{ fontSize: '18px', fontWeight: '800', color: '#c084fc' }}>{summary.skippedTrial}</div>
+                                                <div style={{ fontSize: '10.5px', color: '#a1a1aa', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                                                    <LockIcon size={10} color="#c084fc" />
+                                                    <span>Trial Limit</span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Trial upgrade CTA */}
-                                    {summary.trialLimited && (
-                                        <div style={{
-                                            padding: '14px 18px',
-                                            borderRadius: '12px',
-                                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.1))',
-                                            border: '1px solid rgba(139, 92, 246, 0.2)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            gap: '12px',
-                                            marginBottom: '16px',
-                                        }}>
-                                            <div style={{ fontSize: '13px', color: '#c4b5fd', lineHeight: '1.5' }}>
-                                                🔓 Upgrade ke <strong>Basic</strong> untuk sortir semua <strong>{summary.total}</strong> file tanpa batas
-                                            </div>
-                                            <button
-                                                onClick={() => {
-                                                    handleClose();
-                                                    // The upgrade modal is in the dashboard — we'll let the dashboard handle it
-                                                    window.dispatchEvent(new CustomEvent('openUpgradeModal'));
-                                                }}
-                                                style={{
-                                                    padding: '8px 18px',
-                                                    borderRadius: '8px',
-                                                    border: 'none',
-                                                    background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                                                    color: '#fff',
-                                                    fontSize: '12px',
-                                                    fontWeight: '600',
-                                                    cursor: 'pointer',
-                                                    whiteSpace: 'nowrap',
-                                                    flexShrink: 0,
-                                                    transition: 'all 0.2s',
-                                                    boxShadow: '0 2px 10px rgba(99,102,241,0.3)',
-                                                }}
-                                            >
-                                                Upgrade →
-                                            </button>
-                                        </div>
-                                    )}
-
                                     {/* Action Buttons */}
-                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                                         <button
-                                            onClick={() => {
-                                                reset();
-                                            }}
-                                            style={{
-                                                flex: 1,
-                                                padding: '11px 16px',
-                                                borderRadius: '10px',
-                                                border: '1px solid rgba(255,255,255,0.08)',
-                                                background: 'rgba(255,255,255,0.04)',
-                                                color: '#d4d4d8',
-                                                fontSize: '13px',
-                                                fontWeight: '600',
-                                                cursor: 'pointer',
-                                                transition: 'all 0.2s',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '6px',
-                                            }}
-                                            onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.08)'; }}
-                                            onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.04)'; }}
-                                        >
-                                            🔄 Sortir Ulang
-                                        </button>
-                                        <button
+                                            type="button"
                                             onClick={handleExportLog}
                                             style={{
-                                                padding: '11px 16px',
-                                                borderRadius: '10px',
+                                                padding: '8px 14px',
+                                                borderRadius: '8px',
                                                 border: '1px solid rgba(255,255,255,0.08)',
                                                 background: 'rgba(255,255,255,0.04)',
-                                                color: '#a1a1aa',
-                                                fontSize: '13px',
+                                                color: '#cbd5e1',
+                                                fontSize: '12px',
                                                 fontWeight: '500',
                                                 cursor: 'pointer',
-                                                transition: 'all 0.2s',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
                                             }}
-                                            onMouseEnter={e => { e.target.style.background = 'rgba(255,255,255,0.08)'; }}
-                                            onMouseLeave={e => { e.target.style.background = 'rgba(255,255,255,0.04)'; }}
                                         >
-                                            📥 Export Log
+                                            <FileDocumentIcon size={13} color="#cbd5e1" />
+                                            <span>Export Log (.txt)</span>
                                         </button>
                                         <button
-                                            onClick={handleClose}
+                                            type="button"
+                                            onClick={fullReset}
                                             style={{
-                                                flex: 1,
-                                                padding: '11px 16px',
-                                                borderRadius: '10px',
+                                                padding: '8px 16px',
+                                                borderRadius: '8px',
                                                 border: 'none',
                                                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                                                 color: '#fff',
-                                                fontSize: '13px',
+                                                fontSize: '12px',
                                                 fontWeight: '600',
                                                 cursor: 'pointer',
-                                                boxShadow: '0 2px 12px rgba(99,102,241,0.25)',
-                                                transition: 'all 0.2s',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
                                             }}
                                         >
-                                            Tutup
+                                            <RefreshCwIcon size={12} color="#fff" />
+                                            <span>Sortir Lagi</span>
                                         </button>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Abort button (while running) */}
+                            {/* Cancel Button while running */}
                             {isRunning && (
-                                <div style={{
-                                    padding: '14px 20px',
-                                    borderTop: '1px solid rgba(255,255,255,0.04)',
-                                    flexShrink: 0,
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                }}>
+                                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '6px' }}>
                                     <button
+                                        type="button"
                                         onClick={abort}
                                         style={{
-                                            padding: '10px 28px',
-                                            borderRadius: '10px',
+                                            padding: '8px 20px',
+                                            borderRadius: '8px',
                                             border: '1px solid rgba(239, 68, 68, 0.3)',
                                             background: 'rgba(239, 68, 68, 0.08)',
                                             color: '#f87171',
-                                            fontSize: '13px',
+                                            fontSize: '12px',
                                             fontWeight: '600',
                                             cursor: 'pointer',
-                                            transition: 'all 0.2s',
                                             display: 'flex',
                                             alignItems: 'center',
                                             gap: '6px',
                                         }}
-                                        onMouseEnter={e => { e.target.style.background = 'rgba(239, 68, 68, 0.15)'; }}
-                                        onMouseLeave={e => { e.target.style.background = 'rgba(239, 68, 68, 0.08)'; }}
                                     >
-                                        ⏹ Batalkan Proses
+                                        <CloseIcon size={13} color="#f87171" />
+                                        <span>Batalkan Proses</span>
                                     </button>
                                 </div>
                             )}
@@ -1322,6 +1215,14 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
 
             {/* CSS Animations */}
             <style jsx global>{`
+                @keyframes rawSorterFadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes rawSorterPopIn {
+                    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+                    to { opacity: 1; transform: scale(1) translateY(0); }
+                }
                 @keyframes rawSorterSpin {
                     from { transform: rotate(0deg); }
                     to { transform: rotate(360deg); }
@@ -1331,13 +1232,12 @@ export default function RawSorterDrawer({ isOpen, onClose, project, vendorPlan, 
                     50% { opacity: 0; }
                 }
                 
-                /* Responsive: stack columns on smaller screens */
-                @media (max-width: 680px) {
-                    .raw-sorter-drawer-columns {
+                @media (max-width: 720px) {
+                    .raw-sorter-modal-columns {
                         grid-template-columns: 1fr !important;
                     }
                 }
             `}</style>
-        </>
+        </div>
     );
 }

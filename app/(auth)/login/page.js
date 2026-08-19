@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { AlertTriangleIcon } from '@/components/StorageIcons.jsx';
 
 function LoginForm() {
     const searchParams = useSearchParams();
@@ -76,14 +77,17 @@ function LoginForm() {
 
                 {error && (
                     <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '14px 16px', borderRadius: '10px', marginBottom: '20px', fontSize: '14px', lineHeight: '1.5' }}>
-                        <div>⚠️ {error}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <AlertTriangleIcon size={16} color="#f87171" />
+                            <span>{error}</span>
+                        </div>
                         {error.includes('belum terdaftar') && (
                             <div style={{ marginTop: '10px' }}>
                                 <Link
                                     href="/register"
                                     style={{ display: 'inline-block', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#ffffff', padding: '8px 16px', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '13px', boxShadow: '0 2px 8px rgba(99,102,241,0.4)' }}
                                 >
-                                    👉 Klik Di Sini Untuk Daftar Sekarang
+                                    Daftar Akun Baru Sekarang &rarr;
                                 </Link>
                             </div>
                         )}

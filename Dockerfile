@@ -21,6 +21,16 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /app/data ./data
+COPY --from=builder /app/scripts ./scripts
+
+# [MED-06 FIX] Deklarasi volume untuk persistent storage.
+# SQLite database, bukti transfer, dan logo vendor harus bertahan saat container restart/rebuild.
+# Pastikan docker-compose.yml juga mendefinisikan volume mount yang sesuai:
+#   volumes:
+#     - ./data:/app/data
+#     - ./public/vendor_logos:/app/public/vendor_logos
+VOLUME ["/app/data", "/app/public/vendor_logos"]
 
 EXPOSE 3000
 CMD ["npm", "start"]

@@ -44,15 +44,23 @@ export async function POST(req) {
       }, { status: 400 });
     }
 
-    const vendor = db.prepare('SELECT id, name, email, driveRootFolderId, hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes, externalDriveConnected, externalDriveEmail, externalDriveRefreshToken, externalDriveFolderId FROM vendors WHERE id = ?').get(session.id);
+    const vendor = db.prepare('SELECT id, name, email, driveRootFolderId, hasStorageAddon, addonStorageQuotaBytes, usedStorageBytes, externalDriveConnected, externalDriveEmail, externalDriveRefreshToken, externalDriveFolderId, activeStorageMode FROM vendors WHERE id = ?').get(session.id);
     if (!vendor) {
       return NextResponse.json({ success: false, error: 'Vendor tidak ditemukan.' }, { status: 404 });
     }
 
     const sizeBytes = parseInt(fileSizeBytes, 10) || 0;
+    const targetMode = body.storageMode || (body.isExternalDrive ? 'byos' : (vendor.activeStorageMode || (vendor.externalDriveConnected ? 'byos' : 'system')));
 
     // 2. STORAGE ROUTER: BYOS (Google Drive Vendor Sendiri) vs SaaS Dedicated Internal Storage
-    if (vendor.externalDriveConnected && vendor.externalDriveRefreshToken) {
+    if (targetMode === 'byos') {
+      if (!vendor.externalDriveConnected || !vendor.externalDriveRefreshToken) {
+        return NextResponse.json({
+          success: false,
+          error: 'Akun Google Drive pribadi Anda belum terhubung. Silakan hubungkan Google Drive terlebih dahulu.'
+        }, { status: 400 });
+      }
+
       // Buka jalur upload direct ke Google Drive milik Vendor
       const { createVendorExternalResumableUploadTicket } = await import('@/lib/google-master-drive');
       const ticket = await createVendorExternalResumableUploadTicket(vendor.id, parentFolderId, fileName, mimeType || 'image/jpeg', sizeBytes);
@@ -66,8 +74,17 @@ export async function POST(req) {
       });
     }
 
-    // 3. JIKA TIDAK MENGGUNAKAN BYOS DRIVE VENDOR, PERIKSA ADDDON STORAGE SAAS ADMIN
-    if (!vendor.hasStorageAddon) {
+    // 3. JIKA TARGET SISTEM SAAS DEDICATED STORAGE, PERIKSA ADDON STORAGE
+    const hasAddon = Boolean(vendor.hasStorageAddon || (vendor.addonStorageQuotaBytes && vendor.addonStorageQuotaBytes > 0));
+
+    if (vendor.addonStorageQuotaBytes > 0 && !vendor.hasStorageAddon) {
+      try {
+        db.prepare('UPDATE vendors SET hasStorageAddon = 1 WHERE id = ?').run(vendor.id);
+        vendor.hasStorageAddon = 1;
+      } catch (_) {}
+    }
+
+    if (!hasAddon) {
       return NextResponse.json({
         success: false,
         error: 'Anda belum memiliki Paket Add-On Storage aktif atau belum menghubungkan Google Drive pribadi. Harap hubungkan GDrive Anda atau aktifkan paket storage.'

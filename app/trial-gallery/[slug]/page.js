@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { 
+  LockIcon, SparklesUpgradeIcon, ClockIcon, PhotoIcon, 
+  FolderIcon, WhatsAppIcon, CopyLinkIcon, AlertTriangleIcon 
+} from '@/components/StorageIcons.jsx';
 
 export default function TrialGalleryPage({ params }) {
   const [slug, setSlug] = useState(null);
@@ -209,7 +213,9 @@ export default function TrialGalleryPage({ params }) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', color: '#fff', padding: '20px' }}>
         <div style={{ background: '#1e293b', padding: '32px', borderRadius: '16px', maxWidth: '480px', width: '100%', textAlign: 'center' }}>
-          <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>⚠️</span>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <AlertTriangleIcon size={48} color="#f87171" />
+          </div>
           <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }}>Akses Galeri Gagal</h2>
           <p style={{ color: '#94a3b8', marginBottom: '24px' }}>{error}</p>
           <Link href="/" style={{ display: 'inline-block', background: '#6366f1', color: '#fff', padding: '12px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
@@ -224,7 +230,9 @@ export default function TrialGalleryPage({ params }) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', color: '#fff', padding: '20px' }}>
         <div style={{ background: '#1e293b', padding: '32px', borderRadius: '16px', maxWidth: '480px', width: '100%', textAlign: 'center' }}>
-          <span style={{ fontSize: '48px', display: 'block', marginBottom: '16px' }}>⚠️</span>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+            <AlertTriangleIcon size={48} color="#f87171" />
+          </div>
           <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }}>Galeri Tidak Ditemukan</h2>
           <p style={{ color: '#94a3b8', marginBottom: '24px' }}>Galeri trial yang Anda cari tidak dapat dimuat atau telah expired.</p>
           <Link href="/" style={{ display: 'inline-block', background: '#6366f1', color: '#fff', padding: '12px 24px', borderRadius: '8px', textDecoration: 'none', fontWeight: '600' }}>
@@ -250,10 +258,10 @@ export default function TrialGalleryPage({ params }) {
       }}
     >
       
-      {/* ⏰ TOP TIMER & CTA BARNER */}
+      {/* TOP TIMER & CTA BARNER */}
       <div style={{ background: isExpired ? '#ef4444' : 'linear-gradient(90deg, #4f46e5, #9333ea)', padding: '12px 20px', position: 'sticky', top: 0, zIndex: 40, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '14px' }}>
-          <span>⏰</span>
+          <ClockIcon size={16} color="#fff" />
           {isExpired ? (
             <span>WAKTU TRIAL HABIS — Galeri Telah Kedaluwarsa</span>
           ) : (
@@ -262,10 +270,11 @@ export default function TrialGalleryPage({ params }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {!data?.logoUrl && (
-            <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>⚡ Powered by Pick-Your-Photo (Trial Co-Branded)</span>
+            <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>Powered by Pick-Your-Photo (Trial Co-Branded)</span>
           )}
-          <Link href="/register" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#1e1b4b', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 2px 8px rgba(245,158,11,0.4)' }}>
-            🚀 Hapus Badge SaaS (Upgrade Pro)
+          <Link href="/register" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#1e1b4b', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 2px 8px rgba(245,158,11,0.4)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <SparklesUpgradeIcon size={13} color="#1e1b4b" />
+            <span>Hapus Badge SaaS (Upgrade Pro)</span>
           </Link>
         </div>
       </div>
@@ -439,10 +448,14 @@ export default function TrialGalleryPage({ params }) {
                           background: isTabActive ? 'linear-gradient(135deg, #6366f1, #818cf8)' : 'rgba(255,255,255,0.06)',
                           border: 'none',
                           color: '#ffffff',
-                          boxShadow: isTabActive ? '0 4px 12px rgba(99,102,241,0.3)' : 'none'
+                          boxShadow: isTabActive ? '0 4px 12px rgba(99,102,241,0.3)' : 'none',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px'
                         }}
                       >
-                        📁 {cat} ({photoCount})
+                        <FolderIcon size={13} color="#fff" />
+                        <span>{cat} ({photoCount})</span>
                       </button>
                     );
                   }
@@ -457,9 +470,14 @@ export default function TrialGalleryPage({ params }) {
                         border: '1px solid rgba(245,158,11,0.4)',
                         background: activeLockedCategory === cat ? 'rgba(245,158,11,0.25)' : 'rgba(245,158,11,0.1)',
                         color: '#fbbf24',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
                       }}
                     >
-                      🔒 {cat} ({photoCount}) <span style={{ fontSize: '9px', background: 'rgba(245,158,11,0.3)', padding: '1px 4px', borderRadius: '8px', color: '#fef3c7' }}>PRO</span>
+                      <LockIcon size={12} color="#fbbf24" />
+                      <span>{cat} ({photoCount})</span>
+                      <span style={{ fontSize: '9px', background: 'rgba(245,158,11,0.3)', padding: '1px 4px', borderRadius: '8px', color: '#fef3c7' }}>PRO</span>
                     </button>
                   );
                 })}
@@ -471,17 +489,20 @@ export default function TrialGalleryPage({ params }) {
         {/* Locked Category SaaS Upsell Card Banner */}
         {activeLockedCategory && (
           <div style={{ maxWidth: '640px', margin: '0 auto 32px auto', padding: '28px 24px', background: 'linear-gradient(135deg, rgba(30,27,75,0.9) 0%, rgba(15,23,42,0.95) 100%)', borderRadius: '20px', border: '1.5px solid rgba(99,102,241,0.4)', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.6)' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(245,158,11,0.15)', color: '#fbbf24', fontSize: '24px', marginBottom: '12px' }}>🔒</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '52px', height: '52px', borderRadius: '50%', background: 'rgba(245,158,11,0.15)', color: '#fbbf24', marginBottom: '12px' }}>
+              <LockIcon size={26} color="#fbbf24" />
+            </div>
             <h3 style={{ fontSize: '19px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 8px 0' }}>Fitur Sub-Folder "{activeLockedCategory}" Khusus Paket Berlangganan</h3>
             <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.6', margin: '0 0 20px 0' }}>
               Sistem kami berhasil mendeteksi sub-folder <strong>"{activeLockedCategory}"</strong> dari Google Drive Anda. Akses ke sub-folder ini khusus untuk pengguna berlangganan. Berlangganan <strong>Starter atau Pro Studio Plan</strong> untuk membuka seluruh kategorisasi otomatis sub-folder galeri bagi klien Anda!
             </p>
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={() => setActiveLockedCategory(null)} style={{ padding: '10px 18px', borderRadius: '20px', background: 'rgba(255,255,255,0.08)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.15)', fontSize: '13px', cursor: 'pointer', fontWeight: '600' }}>
-                Tutup & Kembali
+                Tutup &amp; Kembali
               </button>
-              <a href="/#pricing" style={{ padding: '10px 22px', borderRadius: '20px', background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#ffffff', fontWeight: 'bold', fontSize: '13px', textDecoration: 'none', boxShadow: '0 4px 16px rgba(99,102,241,0.4)' }}>
-                🚀 Upgrade Paket Berlangganan
+              <a href="/#pricing" style={{ padding: '10px 22px', borderRadius: '20px', background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#ffffff', fontWeight: 'bold', fontSize: '13px', textDecoration: 'none', boxShadow: '0 4px 16px rgba(99,102,241,0.4)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <SparklesUpgradeIcon size={14} color="#fff" />
+                <span>Upgrade Paket Berlangganan</span>
               </a>
             </div>
           </div>
@@ -490,7 +511,7 @@ export default function TrialGalleryPage({ params }) {
         {filterMode === 'selected' && (
           <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', padding: '12px 20px', borderRadius: '12px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '13px', color: '#a5b4fc', fontWeight: '500' }}>
-              👁️ Menampilkan <strong>{selectedPhotos.length} foto terpilih</strong> dari total {data.photos?.length || 0} foto.
+              Menampilkan <strong>{selectedPhotos.length} foto terpilih</strong> dari total {data.photos?.length || 0} foto.
             </span>
             <button
               onClick={() => setFilterMode('all')}
@@ -503,14 +524,16 @@ export default function TrialGalleryPage({ params }) {
 
         {filterMode === 'selected' && selectedPhotos.length === 0 ? (
           <div style={{ textAlignment: 'center', textAlign: 'center', padding: '60px 20px', background: '#0f172a', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>📷</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+              <PhotoIcon size={48} color="#71717a" />
+            </div>
             <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f8fafc', marginBottom: '8px' }}>Belum Ada Foto Terpilih</h3>
             <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px' }}>Tandai centang (✓) pada foto yang ingin Anda pilih terlebih dahulu.</p>
             <button
               onClick={() => setFilterMode('all')}
               style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '20px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
             >
-              🖼️ Tampilkan Semua Foto
+              Tampilkan Semua Foto
             </button>
           </div>
         ) : (
@@ -684,7 +707,9 @@ export default function TrialGalleryPage({ params }) {
                       <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '240px', height: '240px', background: 'radial-gradient(circle, rgba(99,102,241,0.2) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
                       {/* Lock icon */}
-                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', fontSize: '26px', marginBottom: '16px' }}>🔒</div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)', marginBottom: '16px' }}>
+                        <LockIcon size={26} color="#818cf8" />
+                      </div>
 
                       <h3 style={{ fontSize: '21px', fontWeight: '800', color: '#ffffff', margin: '0 0 10px 0', letterSpacing: '-0.4px' }}>
                         {lockedPhotos.length} Foto Lainnya Terkunci
@@ -711,11 +736,13 @@ export default function TrialGalleryPage({ params }) {
                       {/* CTA Buttons */}
                       <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <a href="/#pricing" style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '12px 26px', borderRadius: '50px', background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#fff', fontWeight: '700', fontSize: '14px', textDecoration: 'none', boxShadow: '0 6px 22px rgba(99,102,241,0.45)' }}>
-                          🚀 Lihat Paket
+                          <SparklesUpgradeIcon size={14} color="#fff" />
+                          <span>Lihat Paket</span>
                         </a>
                         {data.contactWhatsapp && (
                           <a href={`https://wa.me/${data.contactWhatsapp.replace(/\D/g, '')}`} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '12px 22px', borderRadius: '50px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', color: '#94a3b8', fontWeight: '600', fontSize: '13px', textDecoration: 'none' }}>
-                            💬 Hubungi Studio
+                            <WhatsAppIcon size={14} />
+                            <span>Hubungi Studio</span>
                           </a>
                         )}
                       </div>
@@ -964,7 +991,10 @@ export default function TrialGalleryPage({ params }) {
                 onDragStart={(e) => e.preventDefault()}
               />
               <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)', pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px', padding: '20px 16px 16px 16px', color: '#a5b4fc', fontSize: '13px', fontWeight: '800', letterSpacing: '1px', textTransform: 'uppercase', userSelect: 'none', borderBottomLeftRadius: '16px', borderBottomRightRadius: '16px' }}>
-                <span style={{ fontSize: '14px', color: '#ffffff', textShadow: '0 2px 8px rgba(0,0,0,0.9)' }}>⚡ TRIAL PREVIEW</span>
+                <span style={{ fontSize: '14px', color: '#ffffff', textShadow: '0 2px 8px rgba(0,0,0,0.9)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <SpeedBoltIcon size={14} color="#facc15" />
+                  <span>TRIAL PREVIEW</span>
+                </span>
                 <span style={{ fontSize: '11px', color: '#a5b4fc', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>PICK YOUR PHOTO</span>
               </div>
             </div>
@@ -984,9 +1014,22 @@ export default function TrialGalleryPage({ params }) {
                   fontSize: '14px',
                   cursor: 'pointer',
                   boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                {selectedPhotos.includes(activePhoto.fileName) ? '❌ Batal Pilih' : '✓ Pilih Foto Ini'}
+                {selectedPhotos.includes(activePhoto.fileName) ? (
+                  <>
+                    <CloseIcon size={14} color="#fff" />
+                    <span>Batal Pilih</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckIcon size={14} color="#fff" />
+                    <span>Pilih Foto Ini</span>
+                  </>
+                )}
               </button>
 
               <button
@@ -1004,18 +1047,25 @@ export default function TrialGalleryPage({ params }) {
       {showSuccessModal && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(9, 9, 24, 0.92)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', border: '1px solid #6366f1', borderRadius: '20px', padding: '32px', maxWidth: '540px', width: '100%', textDecoration: 'none', boxShadow: '0 20px 50px rgba(99,102,241,0.3)', textAlign: 'center' }}>
-            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎉</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '14px' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.2)', border: '1px solid rgba(99, 102, 241, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <SparklesUpgradeIcon size={28} color="#818cf8" />
+              </div>
+            </div>
             <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 8px 0' }}>
               Galeri Trial Instan Berhasil Dibuat!
             </h2>
             <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 24px 0', lineHeight: '1.5' }}>
-              Folder Drive publik Anda telah berhasil terhubung (0 Bytes disk server terpakai). Silakan salin link di bawah ini untuk dibagikan atau dites.
+              Folder Drive publik Anda telah berhasil terhubung. Silakan salin link di bawah ini untuk dibagikan atau dites.
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', textOverflow: 'ellipsis', textAlign: 'left', marginBottom: '24px' }}>
               {/* Box 1: Link Galeri Klien */}
               <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.3)', padding: '12px 14px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>📱 Link Galeri Klien (Halaman Seleksi Foto):</span>
+                <span style={{ fontSize: '11px', color: '#818cf8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
+                  <ExternalLinkIcon size={12} color="#818cf8" />
+                  <span>Link Galeri Klien (Halaman Seleksi Foto):</span>
+                </span>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                   <code style={{ fontSize: '12px', color: '#e2e8f0', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {typeof window !== 'undefined' ? `${window.location.origin}/trial-gallery/${data.slug}` : `/trial-gallery/${data.slug}`}
@@ -1027,16 +1077,17 @@ export default function TrialGalleryPage({ params }) {
                       navigator.clipboard.writeText(url);
                       alert('✓ Link Galeri Klien berhasil disalin!');
                     }}
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                    style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                   >
-                    📋 Salin
+                    <CopyLinkIcon size={12} />
+                    <span>Salin</span>
                   </button>
                 </div>
               </div>
 
               {/* Box 2: Link Hasil Seleksi */}
               <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(16,185,129,0.3)', padding: '12px 14px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>📋 Link Hasil Seleksi (Halaman Lightroom Ready):</span>
+                <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Link Hasil Seleksi (Halaman Lightroom Ready):</span>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                   <code style={{ fontSize: '12px', color: '#e2e8f0', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {typeof window !== 'undefined' ? `${window.location.origin}/trial-gallery/${data.slug}/result` : `/trial-gallery/${data.slug}/result`}
@@ -1048,9 +1099,10 @@ export default function TrialGalleryPage({ params }) {
                       navigator.clipboard.writeText(url);
                       alert('✓ Link Hasil Seleksi berhasil disalin!');
                     }}
-                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                    style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                   >
-                    📋 Salin
+                    <CopyLinkIcon size={12} />
+                    <span>Salin</span>
                   </button>
                 </div>
               </div>
@@ -1060,7 +1112,7 @@ export default function TrialGalleryPage({ params }) {
               onClick={() => setShowSuccessModal(false)}
               style={{ width: '100%', background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#fff', border: 'none', padding: '14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
             >
-              📱 Buka &amp; Tes Galeri Seleksi Sekarang
+              Buka &amp; Tes Galeri Seleksi Sekarang
             </button>
           </div>
         </div>
@@ -1069,7 +1121,7 @@ export default function TrialGalleryPage({ params }) {
       {/* STICKY BOTTOM BANNER UPGRADE */}
       <footer style={{ background: '#1e293b', borderTop: '1px solid #334155', padding: '20px', textAlign: 'center' }}>
         <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>
-          💡 Suka dengan kecepatan galeri ini? Nikmati galeri tanpa batas waktu, logo kustom, & kuota lebih besar dengan berlangganan{' '}
+          Suka dengan kinerja galeri ini? Nikmati galeri tanpa batas waktu, logo kustom, &amp; kuota lebih besar dengan berlangganan{' '}
           <Link href="/register" style={{ color: '#6366f1', fontWeight: 'bold', textDecoration: 'underline' }}>Akun Pro Pick-Your-Photo</Link>.
         </p>
       </footer>

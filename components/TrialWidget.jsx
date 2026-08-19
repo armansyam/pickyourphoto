@@ -2,6 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { 
+  SpeedBoltIcon, SparklesUpgradeIcon, AlertTriangleIcon, 
+  CopyLinkIcon, RefreshCwIcon, FolderIcon 
+} from '@/components/StorageIcons.jsx';
 
 export default function TrialWidget() {
   const router = useRouter();
@@ -185,14 +189,15 @@ export default function TrialWidget() {
   return (
     <div style={{ background: 'linear-gradient(145deg, #1e293b, #0f172a)', border: '1px solid #334155', borderRadius: '20px', padding: '32px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)', maxWidth: '640px', width: '100%', margin: '0 auto' }}>
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', color: '#818cf8', fontWeight: 'bold', marginBottom: '16px' }}>
-        ⚡ FREE INSTANT TRIAL ({durationStr.toUpperCase()}) — TANPA DAFTAR
+        <SpeedBoltIcon size={14} color="#818cf8" />
+        <span>FREE INSTANT TRIAL ({durationStr.toUpperCase()}) — TANPA DAFTAR</span>
       </div>
       
       <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f8fafc', margin: '0 0 8px' }}>
-        Uji Coba Kecepatan Galeri Seleksi
+        Uji Coba Galeri Seleksi Klien
       </h2>
       <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 24px', lineHeight: '1.5' }}>
-        {trialSettings.trial_cta_subtext || 'Tempelkan link folder Google Drive publik Anda. Galeri seleksi akan dibuat dalam 1-2 detik tanpa mendownload foto ke server!'}
+        {trialSettings.trial_cta_subtext || 'Tempelkan link folder Google Drive publik Anda. Galeri seleksi akan dibuat secara instan tanpa mendownload foto ke server!'}
       </p>
 
       {/* CTA BUTTON — Visible when form is hidden and no result */}
@@ -218,7 +223,8 @@ export default function TrialWidget() {
             gap: '10px',
           }}
         >
-          🚀 Mulai Uji Coba Gratis
+          <SparklesUpgradeIcon size={16} color="#fff" />
+          <span>Mulai Uji Coba Gratis</span>
           <span style={{ fontSize: '18px', transition: 'transform 0.3s ease' }}>→</span>
         </button>
       )}
@@ -234,8 +240,9 @@ export default function TrialWidget() {
       >
         <div ref={formRef}>
           {error && (
-            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px' }}>
-              ⚠️ {error}
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangleIcon size={16} color="#fca5a5" />
+              <span>{error}</span>
             </div>
           )}
 
@@ -252,9 +259,8 @@ export default function TrialWidget() {
                 required
                 style={{ width: '100%', padding: '12px 16px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#fff', fontSize: '14px', outline: 'none' }}
               />
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '11px', color: '#64748b' }}>
+              <div style={{ marginTop: '6px', fontSize: '11px', color: '#64748b' }}>
                 <span>* Pastikan folder diset: &quot;Siapa saja yang memiliki link dapat melihat&quot;.</span>
-                <span style={{ color: '#818cf8', fontWeight: 'bold' }}>⚡ Maksimal {trialSettings.trial_max_photos} Foto per Folder Trial</span>
               </div>
             </div>
 
@@ -288,7 +294,7 @@ export default function TrialWidget() {
 
             <div>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#cbd5e1', marginBottom: '6px' }}>
-                🖼️ Upload Logo Studio Anda (Opsional - Simulasi White-Label)
+                Upload Logo Studio Anda (Opsional - Simulasi White-Label)
               </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <input
@@ -311,7 +317,7 @@ export default function TrialWidget() {
                 )}
               </div>
               <div style={{ fontSize: '11px', color: '#71717a', marginTop: '6px' }}>
-                * Maks 5MB • Format: PNG/JPG/WebP • Otomatis dikompresi ke WebP untuk loading cepat
+                * Maks 5MB • Format: PNG/JPG/WebP • Otomatis dikompresi ke WebP untuk loading optimal
               </div>
             </div>
 
@@ -331,9 +337,20 @@ export default function TrialWidget() {
                   cursor: loading ? 'not-allowed' : 'pointer',
                   boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)',
                   transition: 'transform 0.2s',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
                 }}
               >
-                {loading ? '⚡ Memindai Folder Drive...' : (trialSettings.trial_cta_text || `🚀 Buat Galeri Trial (Aktif ${durationStr})`)}
+                {loading ? (
+                  <span>Memindai Folder Drive...</span>
+                ) : (
+                  <>
+                    <SparklesUpgradeIcon size={14} color="#fff" />
+                    <span>{trialSettings.trial_cta_text || `Buat Galeri Trial (Aktif ${durationStr})`}</span>
+                  </>
+                )}
               </button>
               <button
                 type="button"
@@ -381,9 +398,10 @@ export default function TrialWidget() {
                     navigator.clipboard.writeText(url);
                     alert('✓ Link Galeri Klien berhasil disalin!');
                   }}
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0 }}
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #4f46e5)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                 >
-                  📋 Salin
+                  <CopyLinkIcon size={12} />
+                  <span>Salin</span>
                 </button>
               </div>
             </div>
@@ -391,7 +409,7 @@ export default function TrialWidget() {
             {/* Box 2: Link Hasil Seleksi & Live Button */}
             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(16,185,129,0.3)', padding: '14px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>📋 Link Hasil Seleksi (Halaman Lightroom Ready):</span>
+                <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>Link Hasil Seleksi (Halaman Lightroom Ready):</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -399,9 +417,10 @@ export default function TrialWidget() {
                     navigator.clipboard.writeText(url);
                     alert('✓ Link Hasil Seleksi berhasil disalin!');
                   }}
-                  style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)', color: '#34d399', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                  style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)', color: '#34d399', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                 >
-                  📋 Salin Link
+                  <CopyLinkIcon size={12} />
+                  <span>Salin Link</span>
                 </button>
               </div>
               <code style={{ fontSize: '12px', color: '#94a3b8', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -430,7 +449,7 @@ export default function TrialWidget() {
                   boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
                 }}
               >
-                ⚡ Cek Hasil Seleksi Live (In-App) &rarr;
+                <span>Cek Hasil Seleksi Live (In-App) &rarr;</span>
               </button>
             </div>
           </div>
@@ -470,14 +489,21 @@ export default function TrialWidget() {
               disabled={syncingLive}
               style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: '#38bdf8', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              {syncingLive ? '⏳ Syncing...' : '🔄 Sync Live'}
+              {syncingLive ? (
+                <span>Syncing...</span>
+              ) : (
+                <>
+                  <RefreshCwIcon size={12} color="#38bdf8" />
+                  <span>Sync Live</span>
+                </>
+              )}
             </button>
           </div>
 
           <div style={{ background: 'rgba(11,9,24,0.8)', border: '1px solid rgba(129,140,248,0.2)', padding: '12px 14px', borderRadius: '10px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
             <div style={{ fontSize: '13px', color: '#cbd5e1' }}>
               Status: <strong style={{ color: (liveData?.selectedPhotos?.length || 0) > 0 ? '#34d399' : '#fbbf24' }}>
-                {(liveData?.selectedPhotos?.length || 0) > 0 ? '✅ Klien Sudah Memilih' : '⏳ Menunggu Pilihan Klien...'}
+                {(liveData?.selectedPhotos?.length || 0) > 0 ? 'Klien Sudah Memilih' : 'Menunggu Pilihan Klien...'}
               </strong>
             </div>
             <div style={{ fontSize: '13px', color: '#34d399', fontWeight: 'bold' }}>
@@ -488,7 +514,7 @@ export default function TrialWidget() {
           {/* LIGHTROOM FILENAMES BOX */}
           <div style={{ marginBottom: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>📋 List Nama File (Format Lightroom Filter):</span>
+              <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>List Nama File (Format Lightroom Filter):</span>
               <button
                 type="button"
                 onClick={() => {
@@ -502,9 +528,10 @@ export default function TrialWidget() {
                     alert('Klien belum memilih foto.');
                   }
                 }}
-                style={{ background: copiedLive ? '#10b981' : 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                style={{ background: copiedLive ? '#10b981' : 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
               >
-                {copiedLive ? '✓ Berhasil Disalin!' : '📋 Salin Nama File'}
+                <CopyLinkIcon size={12} />
+                <span>{copiedLive ? 'Berhasil Disalin!' : 'Salin Nama File'}</span>
               </button>
             </div>
             <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(16,185,129,0.3)', padding: '14px', borderRadius: '10px', fontFamily: 'monospace', fontSize: '13px', color: (liveData?.selectedPhotos?.length || 0) > 0 ? '#38bdf8' : '#94a3b8', minHeight: '56px', maxHeight: '120px', overflowY: 'auto', wordBreak: 'break-all', lineHeight: '1.6' }}>
@@ -528,9 +555,10 @@ export default function TrialWidget() {
               href={result.resultUrl}
               target="_blank"
               rel="noreferrer"
-              style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#fff', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#fff', padding: '12px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              📁 Halaman RAW Sorter →
+              <FolderIcon size={14} color="#fff" />
+              <span>Halaman RAW Sorter →</span>
             </a>
             <button
               onClick={() => { setResult(null); setFolderUrl(''); setShowForm(false); setViewMode('links'); }}

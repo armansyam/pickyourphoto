@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import { 
+  SparklesUpgradeIcon, SpeedBoltIcon, GalleryViewIcon, CheckCircleIcon 
+} from '@/components/StorageIcons.jsx';
 
 function ProofCell({ transferProof, setActiveProofUrl, vendor }) {
   if (!transferProof || transferProof === 'Manual Bank Transfer') {
@@ -8,7 +11,12 @@ function ProofCell({ transferProof, setActiveProofUrl, vendor }) {
   }
   const isGateway = transferProof === 'via_payment_gateway' || transferProof.toLowerCase().includes('automatic payment');
   if (isGateway) {
-    return <span style={{ color: '#38bdf8', fontSize: '11px', fontWeight: '600' }}>⚡ {transferProof}</span>;
+    return (
+      <span style={{ color: '#38bdf8', fontSize: '11px', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+        <SpeedBoltIcon size={12} color="#38bdf8" />
+        <span>{transferProof}</span>
+      </span>
+    );
   }
   return (
     <button
@@ -20,10 +28,11 @@ function ProofCell({ transferProof, setActiveProofUrl, vendor }) {
       })}
       style={{
         padding: '3px 10px', fontSize: '11px', borderRadius: '6px', border: '1px solid rgba(129,140,248,0.4)',
-        background: 'rgba(129,140,248,0.1)', color: '#818cf8', cursor: 'pointer', fontWeight: '600'
+        background: 'rgba(129,140,248,0.1)', color: '#818cf8', cursor: 'pointer', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px'
       }}
     >
-      👁 Lihat Bukti
+      <GalleryViewIcon size={12} color="#818cf8" />
+      <span>Lihat Bukti</span>
     </button>
   );
 }
@@ -81,9 +90,12 @@ export default function AdminUpgradeRequests({
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
           <div>
-            <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#818cf8' }}>
-              ⬆️ Upgrade & Add-On Requests
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <SparklesUpgradeIcon size={18} color="#818cf8" />
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#818cf8' }}>
+                Upgrade &amp; Add-On Requests
+              </h3>
+            </div>
             <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#71717a' }}>
               Permohonan upgrade paket / tambah storage dari vendor aktif — memerlukan konfirmasi bukti transfer
             </p>
@@ -103,24 +115,24 @@ export default function AdminUpgradeRequests({
       {/* Filter Chips */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '16px' }}>
         <button onClick={() => setFilterStatus('pending')} style={chipStyle(filterStatus === 'pending', '#fbbf24')}>
-          ⏳ Menunggu {countPending > 0 && `(${countPending})`}
+          Menunggu {countPending > 0 && `(${countPending})`}
         </button>
         <button onClick={() => setFilterStatus('approved')} style={chipStyle(filterStatus === 'approved', '#10b981')}>
-          ✅ Disetujui {countApproved > 0 && `(${countApproved})`}
+          Disetujui {countApproved > 0 && `(${countApproved})`}
         </button>
         <button onClick={() => setFilterStatus('rejected')} style={chipStyle(filterStatus === 'rejected', '#ef4444')}>
-          ❌ Ditolak {countRejected > 0 && `(${countRejected})`}
+          Ditolak {countRejected > 0 && `(${countRejected})`}
         </button>
         <button onClick={() => setFilterStatus('all')} style={chipStyle(filterStatus === 'all', '#6366f1')}>
-          📋 Semua ({upgrades.length})
+          Semua ({upgrades.length})
         </button>
       </div>
 
       {/* Empty state */}
       {filtered.length === 0 && (
         <div style={{ textAlign: 'center', padding: '48px 0', color: '#52525b' }}>
-          <div style={{ fontSize: '32px', marginBottom: '10px' }}>
-            {filterStatus === 'pending' ? '🎉' : '📭'}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+            <CheckCircleIcon size={32} color="#34d399" />
           </div>
           <p style={{ margin: 0, fontSize: '14px' }}>
             {filterStatus === 'pending'

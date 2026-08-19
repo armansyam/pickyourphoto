@@ -105,6 +105,28 @@ ensure_env_file() {
     else
         echo "   ✅ JWT_SECRET di $target_file sudah terkonfigurasi dengan aman."
     fi
+
+    # D. Otomasi CRON_SECRET acak jika masih default atau kosong
+    if grep -q "CRON_SECRET=GANTI_DENGAN_TOKEN_RAHASIA_CRON_YANG_KUAT" "$target_file" || \
+       grep -q "^[[:space:]]*CRON_SECRET=[[:space:]]*$" "$target_file" || \
+       ! grep -q "^[[:space:]]*CRON_SECRET=" "$target_file"; then
+
+        NEW_CRON_SECRET=$(openssl rand -hex 32 2>/dev/null || LC_ALL=C tr -dc 'a-f0-9' < /dev/urandom | head -c 64)
+
+        if grep -q "^[[:space:]]*CRON_SECRET=" "$target_file"; then
+            if [[ "$OSTYPE" == "darwin"* ]]; then
+                sed -i '' "s/^[[:space:]]*CRON_SECRET=.*/CRON_SECRET=$NEW_CRON_SECRET/" "$target_file"
+            else
+                sed -i "s/^[[:space:]]*CRON_SECRET=.*/CRON_SECRET=$NEW_CRON_SECRET/" "$target_file"
+            fi
+        else
+            echo "" >> "$target_file"
+            echo "CRON_SECRET=$NEW_CRON_SECRET" >> "$target_file"
+        fi
+        echo "   ✅ CRON_SECRET acak (64 hex chars) berhasil di-generate otomatis di $target_file!"
+    else
+        echo "   ✅ CRON_SECRET di $target_file sudah terkonfigurasi dengan aman."
+    fi
 }
 
 echo "🔑    Memvalidasi .env.local & .env..."

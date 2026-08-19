@@ -48,7 +48,7 @@ export async function GET() {
                 promoType,
                 discountPercent,
                 endsAt: settings.flash_promo_ends_at,
-                title: settings.flash_promo_title || (promoType === 'bundle' ? '⚡ FLASHSALE BUNDLE KILAT' : '⚡ FLASH SALE PROMO'),
+                title: (settings.flash_promo_title || (promoType === 'bundle' ? 'FLASHSALE BUNDLE KILAT' : 'FLASH SALE PROMO')).replace(/^[⚡\s]+/, ''),
                 bannerText: settings.flash_promo_banner_text || (promoType === 'bundle' ? 'Dapatkan Paket Berlangganan + Bonus Add-on Gratis!' : 'Diskon Spesial Paket Berlangganan!'),
                 bundlePlanId: settings.flash_bundle_plan_id,
                 bundleAddonName: settings.flash_bundle_addon_name || 'Gratis +2 Extra Sub-Event Link',
