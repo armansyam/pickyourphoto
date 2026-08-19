@@ -48,6 +48,185 @@ export default function AdminSettings({
   const [isEditingGoogleCredentials, setIsEditingGoogleCredentials] = useState(false);
   const [isEditingPaymentGateway, setIsEditingPaymentGateway] = useState(false);
   const [isEditingSmtp, setIsEditingSmtp] = useState(false);
+  const [isEditingBankDetails, setIsEditingBankDetails] = useState(false);
+  const [savingSection, setSavingSection] = useState(''); // 'google' | 'smtp' | 'bank' | 'gateway' | 'system' | 'password'
+
+  const handleSaveGoogle = async () => {
+    setSavingSection('google');
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          saasSettings: {
+            google_client_id: googleClientId,
+            google_client_secret: googleClientSecret,
+            max_upload_concurrency_threads: String(maxUploadConcurrencyThreads || 4)
+          }
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (addToast) addToast('Kredensial Google OAuth 2.0 berhasil disimpan!', 'success');
+        setIsEditingGoogleCredentials(false);
+      } else {
+        if (addToast) addToast(data.message || 'Gagal menyimpan kredensial Google.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    } finally {
+      setSavingSection('');
+    }
+  };
+
+  const handleSaveSmtp = async () => {
+    setSavingSection('smtp');
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          saasSettings: {
+            smtp_enable: smtpEnable ? '1' : '0',
+            smtp_host: smtpHost,
+            smtp_port: smtpPort ? String(smtpPort) : '465',
+            smtp_email: smtpEmail,
+            smtp_password: smtpPassword,
+            smtp_from_name: smtpFromName
+          }
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (addToast) addToast('Kredensial Server Email SMTP berhasil disimpan!', 'success');
+        setIsEditingSmtp(false);
+      } else {
+        if (addToast) addToast(data.message || 'Gagal menyimpan pengaturan SMTP.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    } finally {
+      setSavingSection('');
+    }
+  };
+
+  const handleSaveBank = async () => {
+    setSavingSection('bank');
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          saasSettings: {
+            bank_name: bankName,
+            bank_account_number: bankAccountNumber,
+            bank_account_name: bankAccountName
+          }
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (addToast) addToast('Tujuan Rekening Bank Manual berhasil disimpan!', 'success');
+        setIsEditingBankDetails(false);
+      } else {
+        if (addToast) addToast(data.message || 'Gagal menyimpan rekening bank.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    } finally {
+      setSavingSection('');
+    }
+  };
+
+  const handleSaveGateway = async () => {
+    setSavingSection('gateway');
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          saasSettings: {
+            enable_payment_gateway: enablePaymentGateway ? '1' : '0',
+            payment_gateway_provider: paymentGatewayProvider,
+            payment_gateway_client_key: paymentGatewayClientKey,
+            payment_gateway_server_key: paymentGatewayServerKey,
+            qris_expiration_minutes: String(qrisExpirationMinutes || 15)
+          }
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (addToast) addToast('Konfigurasi Payment Gateway & QRIS berhasil disimpan!', 'success');
+        setIsEditingPaymentGateway(false);
+      } else {
+        if (addToast) addToast(data.message || 'Gagal menyimpan konfigurasi payment gateway.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    } finally {
+      setSavingSection('');
+    }
+  };
+
+  const handleSaveSystem = async () => {
+    setSavingSection('system');
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enable_registration: sysEnableReg,
+          max_vendor_quota: sysMaxQuota,
+          saasSettings: {
+            custom_storage_price_per_gb: String(customStoragePricePerGb || 1250),
+            worker_storage_warning_threshold_gb: String(workerStorageWarningThresholdGb || 10),
+            grace_period_days: String(gracePeriodDays || 7)
+          }
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (addToast) addToast('Pengaturan Sistem & Pendaftaran berhasil disimpan!', 'success');
+      } else {
+        if (addToast) addToast(data.message || 'Gagal menyimpan pengaturan sistem.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    } finally {
+      setSavingSection('');
+    }
+  };
+
+  const handleSavePasswordOnly = async (e) => {
+    if (e) e.preventDefault();
+    if (!newPassword || newPassword.trim() === '') {
+      if (addToast) addToast('Harap masukkan password baru!', 'error');
+      return;
+    }
+    if (newPassword.length < 6) {
+      if (addToast) addToast('Password baru minimal 6 karakter!', 'error');
+      return;
+    }
+    setSavingSection('password');
+    try {
+      const res = await fetch('/api/admin/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (addToast) addToast('Password Master Superadmin BERHASIL diperbarui!', 'success');
+        setNewPassword('');
+      } else {
+        if (addToast) addToast(data.message || 'Gagal mengubah password superadmin.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    } finally {
+      setSavingSection('');
+    }
+  };
 
   const [paymentTestStatus, setPaymentTestStatus] = useState({ loading: false, success: '', error: '' });
   const [testEmailStatus, setTestEmailStatus] = useState({ loading: false, success: '', error: '' });
@@ -408,8 +587,7 @@ export default function AdminSettings({
         </button>
       </div>
 
-      <form onSubmit={handleSaveProfile}>
-
+      <div>
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* SUB-TAB 1: INTEGRASI GOOGLE & EMAIL SMTP                          */}
         {/* ════════════════════════════════════════════════════════════════ */}
@@ -442,6 +620,17 @@ export default function AdminSettings({
                     <div>
                       <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Client Secret:</span>
                       <strong style={{ color: '#34d399', letterSpacing: '2px' }}>••••••••••••••••</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Max Parallel Worker Threads:</span>
+                      <strong style={{ color: '#818cf8' }}>{maxUploadConcurrencyThreads || 4} Thread Simultan</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Status Sinkronisasi:</span>
+                      <strong style={{ color: '#34d399' }}>Terkoneksi Google Cloud API</strong>
                     </div>
                   </div>
 
@@ -482,7 +671,7 @@ export default function AdminSettings({
                       className="btn-secondary" 
                       style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
                     >
-                      ✏️ Edit Kredensial
+                      ✏️ Edit Kredensial Google
                     </button>
                   </div>
                 </div>
@@ -508,34 +697,56 @@ export default function AdminSettings({
                       onChange={e => setGoogleClientSecret(e.target.value)}
                     />
                   </div>
-                  {isEditingGoogleCredentials && (
-                    <button type="button" onClick={() => setIsEditingGoogleCredentials(false)} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '12px', alignSelf: 'flex-end' }}>
-                      Selesai Edit
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Maksimal Thread Worker Upload Serentak (Parallel Concurrency):</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
+                      <input
+                        type="number"
+                        min="1"
+                        max="10"
+                        className="input-text"
+                        style={{ width: '120px', fontWeight: 'bold', color: '#818cf8' }}
+                        value={maxUploadConcurrencyThreads || 4}
+                        onChange={e => setMaxUploadConcurrencyThreads && setMaxUploadConcurrencyThreads(parseInt(e.target.value) || 1)}
+                      />
+                      <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                        Thread paralel simultan (Default: <strong>4</strong>). Maksimal dibatasi hingga jumlah Akun Worker aktif.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    {googleClientId && googleClientSecret && (
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingGoogleCredentials(false)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px' }}
+                      >
+                        Batal
+                      </button>
+                    )}
+                    <button 
+                      type="button" 
+                      disabled={savingSection === 'google'} 
+                      onClick={handleSaveGoogle}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #10b981, #059669)', 
+                        color: '#ffffff', 
+                        border: 'none', 
+                        padding: '8px 20px', 
+                        borderRadius: '8px', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                      }}
+                    >
+                      {savingSection === 'google' ? '⏳ Menyimpan...' : '💾 Simpan Kredensial Google'}
                     </button>
-                  )}
+                  </div>
                 </div>
               )}
-
-              {/* MAX UPLOAD CONCURRENCY THREADS CONFIGURATION */}
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                <label className="form-label" style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>
-                  ⚙️ Maksimal Thread Worker Upload Serentak (Parallel Concurrency):
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    className="input-text"
-                    style={{ width: '120px', fontWeight: 'bold', color: '#818cf8' }}
-                    value={maxUploadConcurrencyThreads || 4}
-                    onChange={e => setMaxUploadConcurrencyThreads && setMaxUploadConcurrencyThreads(parseInt(e.target.value) || 1)}
-                  />
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                    Thread paralel simultan (Default: <strong>4</strong>). Maksimal dibatasi hingga jumlah Akun Worker aktif yang tersedia.
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* EMAIL SMTP SECTION */}
@@ -548,75 +759,172 @@ export default function AdminSettings({
               </span>
             </div>
 
-            {(!smtpEnable || !smtpEmail || !smtpPassword) && (
+            {(!smtpEnable || !smtpEmail || !smtpPassword) && !isEditingSmtp && (
               <div style={{ background: 'rgba(251, 191, 36, 0.12)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', fontSize: '13px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '18px' }}>⚠️</span>
                 <div>
-                  <strong>Server SMTP Email Belum Aktif / Dikonfigurasi!</strong>
+                  <strong>Server SMTP Email Belum Dikonfigurasi!</strong>
                   <div style={{ fontSize: '11px', color: '#d4d4d8', marginTop: '2px' }}>
-                    Email notifikasi persetujuan vendor, perpanjangan paket, dan peringatan tenggang storage (H-15 & H-3) akan ditangguhkan sampai kredensial Email & App Password Gmail diisi dan disimpan.
+                    Email notifikasi persetujuan vendor dan peringatan tenggang storage akan ditangguhkan sampai SMTP dikonfigurasi.
                   </div>
                 </div>
               </div>
             )}
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>SMTP Host</label>
-                  <input type="text" className="input-text" value={smtpHost} onChange={e => setSmtpHost(e.target.value)} />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>SMTP Port</label>
-                  <input type="number" className="input-text" value={smtpPort} onChange={e => setSmtpPort(parseInt(e.target.value) || 465)} />
-                </div>
-              </div>
+              {!isEditingSmtp && smtpEmail && smtpPassword ? (
+                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Email Pengirim (Sender):</span>
+                      <strong style={{ color: '#38bdf8', fontFamily: 'monospace' }}>{smtpEmail}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Server Host & Port:</span>
+                      <strong style={{ color: '#ffffff' }}>{smtpHost}:{smtpPort} (SSL)</strong>
+                    </div>
+                  </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>Email Pengirim (Sender Email)</label>
-                  <input type="email" className="input-text" value={smtpEmail} onChange={e => setSmtpEmail(e.target.value)} />
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>Password / App Password</label>
-                  <input type="password" className="input-text" value={smtpPassword} onChange={e => setSmtpPassword(e.target.value)} />
-                </div>
-              </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nama Pengirim (From Name):</span>
+                      <strong style={{ color: '#ffffff' }}>{smtpFromName || 'Pick Your Photo'}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>App Password Gmail:</span>
+                      <strong style={{ color: '#34d399', letterSpacing: '2px' }}>••••••••••••••••</strong>
+                    </div>
+                  </div>
 
-              <div className="form-group" style={{ margin: '0 0 16px 0' }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Nama Pengirim Email (Sender Name)</label>
-                <input type="text" className="input-text" value={smtpFromName} onChange={e => setSmtpFromName(e.target.value)} />
-              </div>
+                  <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      disabled={testEmailStatus.loading || !smtpEmail || !smtpPassword}
+                      onClick={async () => {
+                        setTestEmailStatus({ loading: true, success: '', error: '' });
+                        try {
+                          const res = await fetch('/api/admin/smtp/test', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ targetEmail: smtpEmail, smtpEmail, smtpPassword, smtpHost, smtpPort, smtpFromName })
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            if (addToast) addToast(data.message || 'Email uji coba BERHASIL dikirim!', 'success');
+                          } else {
+                            if (addToast) addToast(data.message || 'Gagal mengirim email uji coba.', 'error');
+                          }
+                        } catch (err) {
+                          if (addToast) addToast(err.message, 'error');
+                        } finally {
+                          setTestEmailStatus({ loading: false, success: '', error: '' });
+                        }
+                      }}
+                      style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      {testEmailStatus.loading ? '⏳ Menguji...' : '📧 Tes Kirim Email'}
+                    </button>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button
-                  type="button"
-                  disabled={testEmailStatus.loading || !smtpEmail || !smtpPassword}
-                  onClick={async (e) => {
-                    setTestEmailStatus({ loading: true, success: '', error: '' });
-                    try {
-                      const res = await fetch('/api/admin/smtp/test', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ targetEmail: smtpEmail, smtpEmail, smtpPassword, smtpHost, smtpPort, smtpFromName })
-                      });
-                      const data = await res.json();
-                      if (res.ok && data.success) {
-                        if (addToast) addToast(data.message || 'Email uji coba BERHASIL dikirim!', 'success');
-                      } else {
-                        if (addToast) addToast(data.message || 'Gagal mengirim email uji coba.', 'error');
-                      }
-                    } catch (err) {
-                      if (addToast) addToast(err.message, 'error');
-                    } finally {
-                      setTestEmailStatus({ loading: false, success: '', error: '' });
-                    }
-                  }}
-                  style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                >
-                  {testEmailStatus.loading ? '⏳ Menguji...' : '📧 Tes Kirim Email'}
-                </button>
-              </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setIsEditingSmtp(true)} 
+                      className="btn-secondary" 
+                      style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
+                    >
+                      ✏️ Edit Kredensial SMTP
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>SMTP Host</label>
+                      <input type="text" className="input-text" value={smtpHost} onChange={e => setSmtpHost(e.target.value)} />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>SMTP Port</label>
+                      <input type="number" className="input-text" value={smtpPort} onChange={e => setSmtpPort(parseInt(e.target.value) || 465)} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Email Pengirim (Sender Email)</label>
+                      <input type="email" className="input-text" value={smtpEmail} onChange={e => setSmtpEmail(e.target.value)} />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Password / App Password</label>
+                      <input type="password" className="input-text" value={smtpPassword} onChange={e => setSmtpPassword(e.target.value)} />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Nama Pengirim Email (Sender Name)</label>
+                    <input type="text" className="input-text" value={smtpFromName} onChange={e => setSmtpFromName(e.target.value)} />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', marginTop: '10px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <button
+                      type="button"
+                      disabled={testEmailStatus.loading || !smtpEmail || !smtpPassword}
+                      onClick={async () => {
+                        setTestEmailStatus({ loading: true, success: '', error: '' });
+                        try {
+                          const res = await fetch('/api/admin/smtp/test', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ targetEmail: smtpEmail, smtpEmail, smtpPassword, smtpHost, smtpPort, smtpFromName })
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            if (addToast) addToast(data.message || 'Email uji coba BERHASIL dikirim!', 'success');
+                          } else {
+                            if (addToast) addToast(data.message || 'Gagal mengirim email uji coba.', 'error');
+                          }
+                        } catch (err) {
+                          if (addToast) addToast(err.message, 'error');
+                        } finally {
+                          setTestEmailStatus({ loading: false, success: '', error: '' });
+                        }
+                      }}
+                      style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      {testEmailStatus.loading ? '⏳ Menguji...' : '📧 Tes Kirim Email'}
+                    </button>
+
+                    {smtpEmail && smtpPassword && (
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingSmtp(false)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px' }}
+                      >
+                        Batal
+                      </button>
+                    )}
+
+                    <button 
+                      type="button" 
+                      disabled={savingSection === 'smtp'} 
+                      onClick={handleSaveSmtp}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #10b981, #059669)', 
+                        color: '#ffffff', 
+                        border: 'none', 
+                        padding: '8px 20px', 
+                        borderRadius: '8px', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                      }}
+                    >
+                      {savingSection === 'smtp' ? '⏳ Menyimpan...' : '💾 Simpan Pengaturan SMTP'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
@@ -629,154 +937,327 @@ export default function AdminSettings({
           <div className="fade-in-up">
             
             {/* REKENING MANUAL */}
-            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
-              🏦 Tujuan Rekening Transfer Manual Vendor
-            </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+                🏦 Tujuan Rekening Transfer Manual Vendor
+              </h4>
+              <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '12px', background: (bankName && bankAccountNumber) ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)', color: (bankName && bankAccountNumber) ? '#34d399' : '#fbbf24', border: (bankName && bankAccountNumber) ? '1px solid rgba(52,211,153,0.3)' : '1px solid rgba(251,191,36,0.3)' }}>
+                {(bankName && bankAccountNumber) ? '🟢 REKENING AKTIF' : '⚠️ BELUM DIISI'}
+              </span>
+            </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>Nama Bank</label>
-                  <input type="text" className="input-text" value={bankName} onChange={e => setBankName(e.target.value)} />
+              {!isEditingBankDetails && bankName && bankAccountNumber ? (
+                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '14px' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nama Bank:</span>
+                      <strong style={{ color: '#ffffff' }}>{bankName}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nomor Rekening:</span>
+                      <strong style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px' }}>{bankAccountNumber}</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', fontSize: '11px', display: 'block' }}>Atas Nama Rekening:</span>
+                      <strong style={{ color: '#ffffff', fontSize: '13px' }}>{bankAccountName || 'PT Pick Your Photo'}</strong>
+                    </div>
+
+                    <button 
+                      type="button" 
+                      onClick={() => setIsEditingBankDetails(true)} 
+                      className="btn-secondary" 
+                      style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
+                    >
+                      ✏️ Ubah Rekening Bank
+                    </button>
+                  </div>
                 </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>Nomor Rekening</label>
-                  <input type="text" className="input-text" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Nama Bank</label>
+                      <input type="text" className="input-text" placeholder="Contoh: BCA (Bank Central Asia)" value={bankName} onChange={e => setBankName(e.target.value)} />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>Nomor Rekening</label>
+                      <input type="text" className="input-text" placeholder="Contoh: 1234567890" value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Atas Nama Rekening</label>
+                    <input type="text" className="input-text" placeholder="Contoh: PT Pick Your Photo" value={bankAccountName} onChange={e => setBankAccountName(e.target.value)} />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    {bankName && bankAccountNumber && (
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingBankDetails(false)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px' }}
+                      >
+                        Batal
+                      </button>
+                    )}
+                    <button 
+                      type="button" 
+                      disabled={savingSection === 'bank'} 
+                      onClick={handleSaveBank}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #10b981, #059669)', 
+                        color: '#ffffff', 
+                        border: 'none', 
+                        padding: '8px 20px', 
+                        borderRadius: '8px', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                      }}
+                    >
+                      {savingSection === 'bank' ? '⏳ Menyimpan...' : '💾 Simpan Rekening Bank'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Atas Nama Rekening</label>
-                <input type="text" className="input-text" value={bankAccountName} onChange={e => setBankAccountName(e.target.value)} />
-              </div>
+              )}
             </div>
 
             {/* AUTOMATIC PAYMENT GATEWAY MODULE */}
-            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
-              💳 Automatic Payment Gateway (Midtrans, Xendit, Tripay, Duitku)
-            </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+                💳 Automatic Payment Gateway (Midtrans, Xendit, Tripay, Duitku, IPaymu)
+              </h4>
+              <span style={{ fontSize: '11px', background: enablePaymentGateway ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: enablePaymentGateway ? '#34d399' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                {enablePaymentGateway ? '🟢 GATEWAY AKTIF' : '🔴 NONAKTIF'}
+              </span>
+            </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input
-                    type="checkbox"
-                    id="enablePaymentGateway"
-                    checked={enablePaymentGateway}
-                    onChange={e => setEnablePaymentGateway(e.target.checked)}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  <label htmlFor="enablePaymentGateway" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: enablePaymentGateway ? '#34d399' : '#f87171' }}>
-                    Aktifkan Pembayaran Otomatis Payment Gateway
-                  </label>
+              {!isEditingPaymentGateway && enablePaymentGateway && paymentGatewayClientKey && paymentGatewayServerKey ? (
+                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Provider Aktif:</span>
+                      <strong style={{ color: '#38bdf8', textTransform: 'uppercase' }}>{paymentGatewayProvider}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Batas Expired QRIS:</span>
+                      <strong style={{ color: '#fbbf24' }}>{qrisExpirationMinutes || 15} Menit</strong>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Client / Public Key:</span>
+                      <strong style={{ color: '#ffffff', fontFamily: 'monospace' }}>{paymentGatewayClientKey.substring(0, 16)}...</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Server / Secret Key:</span>
+                      <strong style={{ color: '#34d399', letterSpacing: '2px' }}>••••••••••••••••</strong>
+                    </div>
+                  </div>
+
+                  {/* WEBHOOK URL INFO */}
+                  <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '10px 14px', borderRadius: '8px', fontSize: '11px', marginBottom: '16px' }}>
+                    <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback:</div>
+                    <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
+                      {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'}
+                    </code>
+                  </div>
+
+                  <div style={{ paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      disabled={paymentTestStatus.loading || !paymentGatewayServerKey}
+                      onClick={async () => {
+                        setPaymentTestStatus({ loading: true, success: '', error: '' });
+                        try {
+                          const res = await fetch('/api/admin/payment/test', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: false })
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            if (addToast) addToast(data.message || 'Koneksi Payment Gateway BERHASIL!', 'success');
+                          } else {
+                            if (addToast) addToast(data.message || 'Tes koneksi gagal.', 'error');
+                          }
+                        } catch (err) {
+                          if (addToast) addToast(err.message, 'error');
+                        } finally {
+                          setPaymentTestStatus({ loading: false, success: '', error: '' });
+                        }
+                      }}
+                      style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes Payment Gateway'}
+                    </button>
+
+                    <button 
+                      type="button" 
+                      onClick={() => setIsEditingPaymentGateway(true)} 
+                      className="btn-secondary" 
+                      style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
+                    >
+                      ✏️ Edit Kredensial Gateway
+                    </button>
+                  </div>
                 </div>
-                <span style={{ fontSize: '11px', background: enablePaymentGateway ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: enablePaymentGateway ? '#34d399' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
-                  {enablePaymentGateway ? '🟢 GATEWAY AKTIF' : '🔴 NONAKTIF'}
-                </span>
-              </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <input
+                      type="checkbox"
+                      id="enablePaymentGateway"
+                      checked={enablePaymentGateway}
+                      onChange={e => setEnablePaymentGateway(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="enablePaymentGateway" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: enablePaymentGateway ? '#34d399' : '#f87171' }}>
+                      Aktifkan Pembayaran Otomatis Payment Gateway
+                    </label>
+                  </div>
 
-              <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontSize: '12px' }}>Pilih Provider Payment Gateway</label>
-                <select
-                  className="input-text"
-                  value={paymentGatewayProvider}
-                  onChange={e => setPaymentGatewayProvider(e.target.value)}
-                  style={{ background: 'rgba(0,0,0,0.3)' }}
-                >
-                  <option value="ipaymu">⭐ IPaymu Direct QRIS API (Rekomendasi Bebas Iframe)</option>
-                  <option value="midtrans">QRIS Gateway Otomatis (Midtrans Snap)</option>
-                  <option value="xendit">Xendit Invoice API (QRIS, E-Wallet, VA)</option>
-                  <option value="tripay">Tripay Payment API (QRIS, VA, Alfamart)</option>
-                  <option value="duitku">Duitku Pop-Up API (QRIS, VA, E-Wallet)</option>
-                </select>
-              </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px' }}>Pilih Provider Payment Gateway</label>
+                    <select
+                      className="input-text"
+                      value={paymentGatewayProvider}
+                      onChange={e => setPaymentGatewayProvider(e.target.value)}
+                      style={{ background: 'rgba(0,0,0,0.3)' }}
+                    >
+                      <option value="ipaymu">⭐ IPaymu Direct QRIS API (Rekomendasi Bebas Iframe)</option>
+                      <option value="midtrans">QRIS Gateway Otomatis (Midtrans Snap)</option>
+                      <option value="xendit">Xendit Invoice API (QRIS, E-Wallet, VA)</option>
+                      <option value="tripay">Tripay Payment API (QRIS, VA, Alfamart)</option>
+                      <option value="duitku">Duitku Pop-Up API (QRIS, VA, E-Wallet)</option>
+                    </select>
+                  </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>
-                    {paymentGatewayProvider === 'ipaymu' ? 'Nomor Virtual Account (VA) Merchant' : 'Client Key / Public Key'}
-                  </label>
-                  <input 
-                    type="text" 
-                    className="input-text" 
-                    placeholder={paymentGatewayProvider === 'ipaymu' ? 'Contoh: 0000001234567890' : 'Client Key'}
-                    value={paymentGatewayClientKey} 
-                    onChange={e => setPaymentGatewayClientKey(e.target.value)} 
-                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>
+                        {paymentGatewayProvider === 'ipaymu' ? 'Nomor Virtual Account (VA) Merchant' : 'Client Key / Public Key'}
+                      </label>
+                      <input 
+                        type="text" 
+                        className="input-text" 
+                        placeholder={paymentGatewayProvider === 'ipaymu' ? 'Contoh: 0000001234567890' : 'Client Key'}
+                        value={paymentGatewayClientKey} 
+                        onChange={e => setPaymentGatewayClientKey(e.target.value)} 
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>
+                        {paymentGatewayProvider === 'ipaymu' ? 'API Key IPaymu' : 'Server Key / Secret Key'}
+                      </label>
+                      <input 
+                        type="password" 
+                        className="input-text" 
+                        placeholder={paymentGatewayProvider === 'ipaymu' ? 'API Key dari dashboard IPaymu' : 'Server Key'}
+                        value={paymentGatewayServerKey} 
+                        onChange={e => setPaymentGatewayServerKey(e.target.value)} 
+                      />
+                    </div>
+                  </div>
+
+                  {/* QRIS EXPIRATION MINUTES SETTING */}
+                  <div className="form-group" style={{ background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)', padding: '14px', borderRadius: '10px', margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px', color: '#fbbf24', fontWeight: 'bold' }}>
+                      ⏱️ Batas Waktu Expired QRIS Pembayaran (Menit)
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
+                      <input
+                        type="number"
+                        min="1"
+                        max="1440"
+                        className="input-text"
+                        placeholder="15"
+                        value={qrisExpirationMinutes}
+                        onChange={e => setQrisExpirationMinutes && setQrisExpirationMinutes(parseInt(e.target.value) || 15)}
+                        style={{ background: 'rgba(0,0,0,0.4)', width: '110px', color: '#fbbf24', fontWeight: 'bold' }}
+                      />
+                      <span style={{ fontSize: '12px', color: '#e2e8f0', lineHeight: '1.4' }}>
+                        Menit (Default: <strong>15 Menit</strong>). Mengatur batas hitung mundur expired QRIS Gateway.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* WEBHOOK URL INFO */}
+                  <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '12px 14px', borderRadius: '8px', fontSize: '12px' }}>
+                    <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback:</div>
+                    <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
+                      {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'}
+                    </code>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px', marginTop: '10px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <button
+                      type="button"
+                      disabled={paymentTestStatus.loading || !paymentGatewayServerKey}
+                      onClick={async () => {
+                        setPaymentTestStatus({ loading: true, success: '', error: '' });
+                        try {
+                          const res = await fetch('/api/admin/payment/test', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: false })
+                          });
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            if (addToast) addToast(data.message || 'Koneksi Payment Gateway BERHASIL!', 'success');
+                          } else {
+                            if (addToast) addToast(data.message || 'Tes koneksi gagal.', 'error');
+                          }
+                        } catch (err) {
+                          if (addToast) addToast(err.message, 'error');
+                        } finally {
+                          setPaymentTestStatus({ loading: false, success: '', error: '' });
+                        }
+                      }}
+                      style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes Gateway'}
+                    </button>
+
+                    {enablePaymentGateway && paymentGatewayClientKey && paymentGatewayServerKey && (
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingPaymentGateway(false)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px' }}
+                      >
+                        Batal
+                      </button>
+                    )}
+
+                    <button 
+                      type="button" 
+                      disabled={savingSection === 'gateway'} 
+                      onClick={handleSaveGateway}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #10b981, #059669)', 
+                        color: '#ffffff', 
+                        border: 'none', 
+                        padding: '8px 20px', 
+                        borderRadius: '8px', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold', 
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                      }}
+                    >
+                      {savingSection === 'gateway' ? '⏳ Menyimpan...' : '💾 Simpan Konfigurasi Gateway'}
+                    </button>
+                  </div>
                 </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>
-                    {paymentGatewayProvider === 'ipaymu' ? 'API Key IPaymu' : 'Server Key / Secret Key'}
-                  </label>
-                  <input 
-                    type="password" 
-                    className="input-text" 
-                    placeholder={paymentGatewayProvider === 'ipaymu' ? 'API Key dari dashboard IPaymu' : 'Server Key'}
-                    value={paymentGatewayServerKey} 
-                    onChange={e => setPaymentGatewayServerKey(e.target.value)} 
-                  />
-                </div>
-              </div>
-
-              {/* QRIS EXPIRATION MINUTES SETTING */}
-              <div className="form-group" style={{ background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.2)', padding: '14px', borderRadius: '10px', marginBottom: '16px' }}>
-                <label className="form-label" style={{ fontSize: '12px', color: '#fbbf24', fontWeight: 'bold' }}>
-                  ⏱️ Batas Waktu Expired QRIS Pembayaran (Menit)
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
-                  <input
-                    type="number"
-                    min="1"
-                    max="1440"
-                    className="input-text"
-                    placeholder="15"
-                    value={qrisExpirationMinutes}
-                    onChange={e => setQrisExpirationMinutes && setQrisExpirationMinutes(parseInt(e.target.value) || 15)}
-                    style={{ background: 'rgba(0,0,0,0.4)', width: '110px', color: '#fbbf24', fontWeight: 'bold' }}
-                  />
-                  <span style={{ fontSize: '12px', color: '#e2e8f0', lineHeight: '1.4' }}>
-                    Menit (Default: <strong>15 Menit</strong>). Mengatur batas hitung mundur expired QRIS Gateway & Database secara presisi.
-                  </span>
-                </div>
-              </div>
-
-              {/* WEBHOOK URL INFO */}
-              <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '12px 14px', borderRadius: '8px', fontSize: '12px', marginBottom: '16px' }}>
-                <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback:</div>
-                <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
-                  {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'}
-                </code>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-                <button
-                  type="button"
-                  disabled={paymentTestStatus.loading || !paymentGatewayServerKey}
-                  onClick={async () => {
-                    setPaymentTestStatus({ loading: true, success: '', error: '' });
-                    try {
-                      const res = await fetch('/api/admin/payment/test', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: false })
-                      });
-                      const data = await res.json();
-                      if (res.ok && data.success) {
-                        if (addToast) addToast(data.message || 'Koneksi Payment Gateway BERHASIL!', 'success');
-                      } else {
-                        if (addToast) addToast(data.message || 'Tes koneksi gagal.', 'error');
-                      }
-                    } catch (err) {
-                      if (addToast) addToast(err.message, 'error');
-                    } finally {
-                      setPaymentTestStatus({ loading: false, success: '', error: '' });
-                    }
-                  }}
-                  style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                >
-                  {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes Payment Gateway'}
-                </button>
-              </div>
-
+              )}
             </div>
 
           </div>
@@ -789,27 +1270,27 @@ export default function AdminSettings({
           <div className="fade-in-up">
             
             {/* OPERATIONAL REGISTRATION CONTROL */}
-            <h4 style={{ margin: '0 0 16px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
-              ⚙️ Kontrol Akses & Registration System
-            </h4>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
+                ⚙️ Kontrol Akses & Registration System
+              </h4>
+              <span style={{ fontSize: '11px', background: sysEnableReg ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: sysEnableReg ? '#34d399' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                {sysEnableReg ? '🟢 REGISTRASI DIBUKA' : '🔴 REGISTRASI DITUTUP'}
+              </span>
+            </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <input
-                    type="checkbox"
-                    id="enable_registration"
-                    checked={sysEnableReg}
-                    onChange={e => setSysEnableReg(e.target.checked)}
-                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                  />
-                  <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableReg ? '#34d399' : '#f87171' }}>
-                    Buka Pendaftaran Vendor Baru (Public Registration)
-                  </label>
-                </div>
-                <span style={{ fontSize: '11px', background: sysEnableReg ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: sysEnableReg ? '#34d399' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
-                  {sysEnableReg ? '🟢 REGISTRASI DIBUKA' : '🔴 REGISTRASI DITUTUP'}
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <input
+                  type="checkbox"
+                  id="enable_registration"
+                  checked={sysEnableReg}
+                  onChange={e => setSysEnableReg(e.target.checked)}
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                />
+                <label htmlFor="enable_registration" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: sysEnableReg ? '#34d399' : '#f87171' }}>
+                  Buka Pendaftaran Vendor Baru (Public Registration)
+                </label>
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
@@ -863,6 +1344,27 @@ export default function AdminSettings({
                   Jumlah hari masa tenggang (grace period) sebelum berkas vendor kedaluwarsa dibersihkan total dari Google Drive Worker (Hard Purge).
                 </p>
               </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <button 
+                  type="button" 
+                  disabled={savingSection === 'system'} 
+                  onClick={handleSaveSystem}
+                  style={{ 
+                    background: 'linear-gradient(135deg, #10b981, #059669)', 
+                    color: '#ffffff', 
+                    border: 'none', 
+                    padding: '8px 20px', 
+                    borderRadius: '8px', 
+                    fontSize: '12px', 
+                    fontWeight: 'bold', 
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                  }}
+                >
+                  {savingSection === 'system' ? '⏳ Menyimpan...' : '💾 Simpan Pengaturan Sistem'}
+                </button>
+              </div>
             </div>
 
             {/* SUPERADMIN PASSWORD CHANGE */}
@@ -876,13 +1378,35 @@ export default function AdminSettings({
                 <input
                   type="password"
                   className="input-text"
-                  placeholder="Masukkan password baru (Kosongkan jika tidak ingin mengganti)"
+                  placeholder="Masukkan password baru (Minimal 6 karakter)"
                   value={newPassword}
                   onChange={e => setNewPassword(e.target.value)}
-                  disabled={savingProfile}
+                  disabled={savingSection === 'password'}
                 />
               </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                <button 
+                  type="button" 
+                  disabled={savingSection === 'password' || !newPassword} 
+                  onClick={handleSavePasswordOnly}
+                  style={{ 
+                    background: newPassword ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'rgba(255,255,255,0.05)', 
+                    color: newPassword ? '#ffffff' : '#71717a', 
+                    border: 'none', 
+                    padding: '8px 20px', 
+                    borderRadius: '8px', 
+                    fontSize: '12px', 
+                    fontWeight: 'bold', 
+                    cursor: newPassword ? 'pointer' : 'not-allowed',
+                    boxShadow: newPassword ? '0 2px 10px rgba(99, 102, 241, 0.3)' : 'none'
+                  }}
+                >
+                  {savingSection === 'password' ? '⏳ Menyimpan...' : '🔒 Update Password Superadmin'}
+                </button>
+              </div>
             </div>
+
             {/* DATABASE BACKUP, SNAPSHOT & RECOVERY SUITE */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', marginBottom: '16px' }}>
               <h4 style={{ margin: 0, fontSize: '15px', color: '#818cf8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1034,12 +1558,10 @@ export default function AdminSettings({
                     <tbody>
                       {backupsList.map((item, idx) => (
                         <tr key={item.fileName} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent' }}>
-                          {/* Nama Berkas */}
                           <td style={{ padding: '10px 12px', fontFamily: 'monospace', color: '#e4e4e7', fontWeight: 'bold' }}>
                             {item.fileName}
                           </td>
 
-                          {/* Tipe Badge */}
                           <td style={{ padding: '10px 12px' }}>
                             {item.isPreRestore ? (
                               <span style={{ fontSize: '10px', background: 'rgba(168,85,247,0.15)', color: '#c084fc', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
@@ -1056,12 +1578,10 @@ export default function AdminSettings({
                             )}
                           </td>
 
-                          {/* Tanggal */}
                           <td style={{ padding: '10px 12px', color: '#a1a1aa' }}>
                             {item.dateFormatted}, {item.timeFormatted}
                           </td>
 
-                          {/* Ukuran */}
                           <td style={{ padding: '10px 12px', color: '#fbbf24', fontWeight: 'bold' }}>
                             {item.sizeFormatted}
                           </td>
@@ -1069,34 +1589,6 @@ export default function AdminSettings({
                           {/* Tombol Aksi */}
                           <td style={{ padding: '10px 12px', textAlign: 'right' }}>
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                              {/* Unduh */}
-                              <a
-                                href={`/api/admin/backups/${encodeURIComponent(item.fileName)}`}
-                                download
-                                style={{
-                                  background: 'rgba(255,255,255,0.05)',
-                                  border: '1px solid rgba(255,255,255,0.1)',
-                                  color: '#e4e4e7',
-                                  padding: '4px 8px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  textDecoration: 'none',
-                                  cursor: 'pointer'
-                                }}
-                                title="Unduh file .db ke komputer"
-                              >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                  <polyline points="7 10 12 15 17 10"></polyline>
-                                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                                </svg>
-                                Unduh
-                              </a>
-
-                              {/* Restore */}
                               <button
                                 type="button"
                                 onClick={() => setRestoreModal({
@@ -1106,46 +1598,53 @@ export default function AdminSettings({
                                   size: item.sizeFormatted
                                 })}
                                 style={{
-                                  background: 'rgba(251, 191, 36, 0.15)',
-                                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                                  background: 'rgba(251,191,36,0.15)',
+                                  border: '1px solid rgba(251,191,36,0.3)',
                                   color: '#fbbf24',
                                   padding: '4px 10px',
                                   borderRadius: '6px',
                                   fontSize: '11px',
                                   fontWeight: 'bold',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
                                   cursor: 'pointer'
                                 }}
-                                title="Pulihkan database dari file ini"
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                                  <path d="M3 3v5h5"></path>
-                                </svg>
-                                Restore
+                                🔄 Pulihkan
                               </button>
-
-                              {/* Hapus */}
+                              <a
+                                href={`/api/admin/backups/${encodeURIComponent(item.fileName)}`}
+                                download
+                                style={{
+                                  background: 'rgba(99,102,241,0.15)',
+                                  border: '1px solid rgba(99,102,241,0.3)',
+                                  color: '#818cf8',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  textDecoration: 'none',
+                                  display: 'inline-flex',
+                                  alignItems: 'center'
+                                }}
+                                title="Unduh file cadangan"
+                              >
+                                ⬇️
+                              </a>
                               <button
                                 type="button"
                                 onClick={() => handleDeleteBackup(item.fileName)}
                                 style={{
-                                  background: 'rgba(239, 68, 68, 0.1)',
-                                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                                  background: 'rgba(248,113,113,0.15)',
+                                  border: '1px solid rgba(248,113,113,0.3)',
                                   color: '#f87171',
                                   padding: '4px 8px',
                                   borderRadius: '6px',
                                   fontSize: '11px',
+                                  fontWeight: 'bold',
                                   cursor: 'pointer'
                                 }}
                                 title="Hapus file cadangan ini"
                               >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="3 6 5 6 21 6"></polyline>
-                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
+                                🗑️
                               </button>
                             </div>
                           </td>
@@ -1177,7 +1676,6 @@ export default function AdminSettings({
                     </p>
                   </div>
 
-                  {/* Detail Box */}
                   <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '14px', fontSize: '12px', lineHeight: '1.6', marginBottom: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span style={{ color: '#71717a' }}>Berkas:</span>
@@ -1193,7 +1691,6 @@ export default function AdminSettings({
                     </div>
                   </div>
 
-                  {/* Security Notice */}
                   <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '10px', padding: '12px', fontSize: '11px', color: '#34d399', lineHeight: '1.4', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                       <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
@@ -1331,29 +1828,7 @@ export default function AdminSettings({
         </div>
       )}
 
-        {/* ── STICKY/GLOBAL SAVE ALL SETTINGS BUTTON AT BOTTOM ── */}
-        <div style={{ marginTop: '32px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="submit"
-            disabled={savingProfile}
-            className="btn-primary"
-            style={{
-              padding: '12px 36px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '10px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 18px rgba(16, 185, 129, 0.3)'
-            }}
-          >
-            💾 {savingProfile ? 'Memproses Simpan...' : 'Simpan Seluruh Pengaturan Database'}
-          </button>
-        </div>
-
-      </form>
+      </div>
 
     </div>
   );

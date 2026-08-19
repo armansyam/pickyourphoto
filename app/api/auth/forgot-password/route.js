@@ -39,8 +39,7 @@ export async function POST(request) {
         updateStmt.run(vendor.id);
 
         return NextResponse.json({ 
-            message: 'Permintaan reset password berhasil diajukan ke admin.',
-            vendorName: vendor.name
+            message: 'Permintaan reset password berhasil diajukan ke admin.'
         }, { status: 200 });
 
     } catch (error) {

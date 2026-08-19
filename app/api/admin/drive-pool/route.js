@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '../../../../lib/db.js';
 import { getAuthVendor } from '../../../../lib/auth.js';
+import { syncWorkerStorageQuotas } from '../../../../lib/google-master-drive.js';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -10,6 +11,14 @@ export async function GET(request) {
         const currentUser = getAuthVendor();
         if (!currentUser || currentUser.role !== 'admin') {
             return NextResponse.json({ success: false, error: 'Tidak memiliki akses admin' }, { status: 403 });
+        }
+
+        const url = new URL(request.url);
+        const shouldSync = url.searchParams.get('sync') === 'true' || url.searchParams.get('sync') === '1';
+
+        let syncSummary = null;
+        if (shouldSync) {
+            syncSummary = await syncWorkerStorageQuotas();
         }
 
         const rows = db.prepare(`
@@ -49,7 +58,8 @@ export async function GET(request) {
             },
             totalWorkers: workers.length,
             totalPoolCapacityBytes: workers.reduce((acc, curr) => acc + (curr.totalLimitBytes || 0), 0),
-            totalPoolUsedBytes: workers.reduce((acc, curr) => acc + (curr.usedStorageBytes || 0), 0)
+            totalPoolUsedBytes: workers.reduce((acc, curr) => acc + (curr.usedStorageBytes || 0), 0),
+            syncSummary
         });
     } catch (error) {
         console.error('Error fetching drive pool:', error);

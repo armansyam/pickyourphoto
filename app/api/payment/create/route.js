@@ -44,9 +44,9 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
     }
 
-    // Calculate base plan amount considering active Flash Sale Promo
-    const allowCustom = authUser && (authUser.role === 'admin' || authUser.id === vendorId);
-    let planAmount = (customAmount && customAmount > 0 && allowCustom) ? customAmount : plan.price;
+    // Security: Only super-admin can provide manual customAmount override. Vendors are strictly billed based on server-side pricing & active promos.
+    const allowCustom = Boolean(authUser && authUser.role === 'admin');
+    let planAmount = (customAmount && customAmount > 0 && allowCustom) ? Number(customAmount) : plan.price;
 
     if (plan.price > 0 && (!customAmount || !allowCustom)) {
       const settings = db.prepare("SELECT enable_flash_promo, flash_promo_discount_percent, flash_promo_ends_at FROM system_settings WHERE id = 1").get() || {};

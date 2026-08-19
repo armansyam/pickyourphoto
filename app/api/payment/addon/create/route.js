@@ -206,31 +206,19 @@ export async function POST(req) {
       });
     }
 
-    // 2. FALLBACK / DEV MODE (Bila Payment Gateway dinonaktifkan): Langsung aktifkan kuota
-    db.prepare(`
-      INSERT INTO storage_addon_subscriptions (vendorId, addonPlanId, price, proratedPrice, status)
-      VALUES (?, ?, ?, ?, 'active')
-    `).run(vendor.id, addonPlan.id, addonPlan.price, proratedPrice);
-
-    db.prepare(`
-      UPDATE vendors 
-      SET hasStorageAddon = 1, addonStorageQuotaBytes = ?, addonPlanId = ? 
-      WHERE id = ?
-    `).run(addonPlan.quotaBytes, addonPlan.id, vendor.id);
-
+    // 2. Bila Payment Gateway dinonaktifkan: Wajib menggunakan transfer manual (keamanan finansial: tidak ada kuota gratis)
     return NextResponse.json({
-      success: true,
-      isPaymentRequired: false,
-      message: `Berhasil mendaftar ${addonPlan.name}. Kuota storage sebesar ${formatBytes(addonPlan.quotaBytes)} telah diaktifkan.`,
-      summary: {
-        addonName: addonPlan.name,
-        monthlyPrice: addonPlan.price,
-        proratedPrice,
-        remainingDays,
-        quotaBytes: addonPlan.quotaBytes,
-        expiresAt: vendor.expiresAt
+      success: false,
+      isPaymentRequired: true,
+      error: 'Payment Gateway online sedang dinonaktifkan oleh administrator. Silakan lakukan pembayaran via Transfer Bank Manual dan ajukan permohonan melalui form upgrade/addon di dashboard.',
+      proratedPrice,
+      addonPlan: {
+        id: addonPlan.id,
+        name: addonPlan.name,
+        price: addonPlan.price,
+        quotaBytes: addonPlan.quotaBytes
       }
-    });
+    }, { status: 400 });
   } catch (error) {
     console.error('[Addon Payment Create Error]:', error.message);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

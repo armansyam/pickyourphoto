@@ -24,11 +24,14 @@ export default function AdminStoragePool({ googleClientId, googleClientSecret, g
     const [editingParentFolderId, setEditingParentFolderId] = useState('root');
     const [savingMasterConfig, setSavingMasterConfig] = useState(false);
     const [isEditingMasterConfig, setIsEditingMasterConfig] = useState(false);
+    const [syncing, setSyncing] = useState(false);
 
-    const fetchDrivePool = async () => {
-        setLoading(true);
+    const fetchDrivePool = async (shouldSync = false) => {
+        if (shouldSync) setSyncing(true);
+        else setLoading(true);
+
         try {
-            const res = await fetch('/api/admin/drive-pool');
+            const res = await fetch(`/api/admin/drive-pool${shouldSync ? '?sync=true' : ''}`);
             const data = await res.json();
             if (data.success) {
                 setMasterIndex(data.masterIndex);
@@ -45,16 +48,28 @@ export default function AdminStoragePool({ googleClientId, googleClientSecret, g
                     totalCapacityBytes: data.totalPoolCapacityBytes || 0,
                     totalUsedBytes: data.totalPoolUsedBytes || 0
                 });
+
+                if (shouldSync) {
+                    const syncedCount = data.syncSummary?.syncedCount ?? (data.workers?.length || 0);
+                    setMessage({
+                        type: 'success',
+                        text: `⚡ Berhasil menyinkronkan kuota live ${syncedCount} Akun Worker langsung dari Google Cloud API!`
+                    });
+                }
+            } else {
+                if (shouldSync) setMessage({ type: 'error', text: data.error || 'Gagal sinkronisasi kuota Google' });
             }
         } catch (err) {
             console.error('Error loading drive pool:', err);
+            if (shouldSync) setMessage({ type: 'error', text: err.message });
         } finally {
             setLoading(false);
+            setSyncing(false);
         }
     };
 
     useEffect(() => {
-        fetchDrivePool();
+        fetchDrivePool(false);
     }, []);
 
     useEffect(() => {
@@ -184,11 +199,23 @@ export default function AdminStoragePool({ googleClientId, googleClientSecret, g
                 </div>
                 <button
                     type="button"
-                    onClick={fetchDrivePool}
+                    disabled={syncing || loading}
+                    onClick={() => fetchDrivePool(true)}
                     className="btn-secondary"
-                    style={{ fontSize: '12px', padding: '8px 14px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    style={{
+                        fontSize: '12px',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        background: syncing ? 'rgba(56, 189, 248, 0.15)' : undefined,
+                        borderColor: syncing ? '#38bdf8' : undefined,
+                        color: syncing ? '#38bdf8' : undefined,
+                        cursor: syncing ? 'wait' : 'pointer'
+                    }}
                 >
-                    🔄 Refresh Status
+                    {syncing ? '🔄 Menyinkronkan Kuota Google API...' : '⚡ Sinkronkan Kuota Google Live'}
                 </button>
             </div>
             {/* Early Warning Capacity Alert */}
@@ -674,22 +701,51 @@ export default function AdminStoragePool({ googleClientId, googleClientSecret, g
                             <tbody>
                                 {workers.map((w, index) => {
                                     const percent = w.totalLimitBytes ? Math.min(100, Math.round((w.usedStorageBytes / w.totalLimitBytes) * 100)) : 0;
+                                    const isOverQuota = w.totalLimitBytes > 0 && w.usedStorageBytes >= w.totalLimitBytes;
                                     return (
                                         <tr key={w.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', height: '48px' }}>
                                             <td style={{ padding: '10px', color: '#64748b', fontWeight: 'bold' }}>{index + 1}</td>
                                             <td style={{ padding: '10px', fontWeight: 'bold', color: '#ffffff' }}>
-                                                {w.email}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                    <span>{w.email}</span>
+                                                    {isOverQuota && (
+                                                        <span style={{
+                                                            background: 'rgba(239, 68, 68, 0.2)',
+                                                            color: '#f87171',
+                                                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                                                            borderRadius: '6px',
+                                                            padding: '2px 8px',
+                                                            fontSize: '10px',
+                                                            fontWeight: '800'
+                                                        }}>
+                                                            ⚠️ OVER-QUOTA
+                                                        </span>
+                                                    )}
+                                                    {w.status === 'full' && !isOverQuota && (
+                                                        <span style={{
+                                                            background: 'rgba(245, 158, 11, 0.2)',
+                                                            color: '#fbbf24',
+                                                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                                                            borderRadius: '6px',
+                                                            padding: '2px 8px',
+                                                            fontSize: '10px',
+                                                            fontWeight: '800'
+                                                        }}>
+                                                            KAPASITAS PENUH
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td style={{ padding: '10px' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <span style={{ fontSize: '11px', color: '#cbd5e1', width: '110px' }}>
+                                                    <span style={{ fontSize: '11px', color: isOverQuota ? '#f87171' : '#cbd5e1', width: '115px', fontWeight: isOverQuota ? 'bold' : 'normal' }}>
                                                         {formatGB(w.usedStorageBytes)} / {formatGB(w.totalLimitBytes)} GB
                                                     </span>
                                                     <div style={{ flex: 1, background: 'rgba(255,255,255,0.1)', height: '6px', borderRadius: '3px', overflow: 'hidden', minWidth: '80px' }}>
                                                         <div style={{
                                                             width: `${percent}%`,
                                                             height: '100%',
-                                                            background: percent > 90 ? '#ef4444' : (percent > 70 ? '#f59e0b' : '#10b981')
+                                                            background: isOverQuota || percent > 90 ? '#ef4444' : (percent > 70 ? '#f59e0b' : '#10b981')
                                                         }} />
                                                     </div>
                                                 </div>

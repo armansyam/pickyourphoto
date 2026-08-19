@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
                         </div>
                         <h2 className="title-gradient" style={{ fontSize: '24px', margin: '0 0 14px 0' }}>Permintaan Terkirim!</h2>
                         <p style={{ color: '#a1a1aa', fontSize: '14px', lineHeight: '1.6', margin: '0 0 32px 0' }}>
-                            Halo <strong>{registeredName}</strong>, permintaan reset password Anda telah diajukan ke admin. Silakan konfirmasi ke admin via WhatsApp untuk mendapatkan password baru Anda.
+                            Permintaan reset password akun Anda telah berhasil diajukan ke administrator. Silakan konfirmasi ke admin via WhatsApp untuk mendapatkan bantuan verifikasi dan password baru.
                         </p>
                         
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>

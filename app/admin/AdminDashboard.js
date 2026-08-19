@@ -722,100 +722,212 @@ export default function AdminDashboard({ adminUser }) {
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>Kelola vendor, paket berlangganan & monitoring bisnis SaaS</p>
                         </div>
 
-                        {/* Tab Navigation */}
-                        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '12px', flexWrap: 'wrap' }}>
+                        {/* Tab Navigation (Full-Width Segmented Enclosure) */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            marginBottom: '24px',
+                            background: 'rgba(255, 255, 255, 0.025)',
+                            border: '1px solid rgba(255, 255, 255, 0.07)',
+                            borderRadius: '12px',
+                            padding: '5px',
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            overflowX: 'auto',
+                            scrollbarWidth: 'none',
+                            WebkitOverflowScrolling: 'touch'
+                        }}>
+                            {/* MONITOR BISNIS & ANALISIS */}
                             <button
                                 onClick={() => handleTabChange('analytics')}
                                 style={{
-                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
-                                    background: activeTab === 'analytics' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
-                                    color: activeTab === 'analytics' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
+                                    flex: '1 1 0',
+                                    minWidth: '130px',
+                                    justifyContent: 'center',
+                                    padding: '9px 12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: activeTab === 'analytics' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                    color: activeTab === 'analytics' ? '#fff' : '#a1a1aa',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'analytics' ? '0 2px 8px rgba(99,102,241,0.3)' : 'none',
+                                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                📊 Monitor Bisnis & Analisis
+                                📊 Monitor & Analisis
                             </button>
 
-                            {/* INQUIRY — calon vendor, pisah dari Kelola Vendor */}
+                            {/* INQUIRY — calon vendor */}
                             <button
                                 onClick={() => handleTabChange('inquiry')}
                                 style={{
-                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    flex: '1 1 0',
+                                    minWidth: '110px',
+                                    justifyContent: 'center',
+                                    padding: '9px 12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
                                     background: activeTab === 'inquiry' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent',
-                                    color: activeTab === 'inquiry' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
-                                    position: 'relative',
-                                    display: 'flex', alignItems: 'center', gap: '6px'
+                                    color: activeTab === 'inquiry' ? '#fff' : '#a1a1aa',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'inquiry' ? '0 2px 8px rgba(245,158,11,0.3)' : 'none',
+                                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
                                 📋 Inquiry
                                 {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length > 0 && (
-                                    <span style={{ background: '#ef4444', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>
+                                    <span style={{ background: '#ef4444', color: '#fff', borderRadius: '8px', padding: '1px 6px', fontSize: '10px', fontWeight: 'bold' }}>
                                         {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length}
                                     </span>
                                 )}
                             </button>
 
-                            {/* UPGRADE REQUESTS — permohonan upgrade/addon dari vendor aktif */}
+                            {/* UPGRADE REQUESTS */}
                             <button
                                 onClick={() => handleTabChange('upgrades')}
                                 style={{
-                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
-                                    background: activeTab === 'upgrades' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
-                                    color: activeTab === 'upgrades' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
-                                    position: 'relative', display: 'flex', alignItems: 'center', gap: '6px'
+                                    flex: '1 1 0',
+                                    minWidth: '135px',
+                                    justifyContent: 'center',
+                                    padding: '9px 12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: activeTab === 'upgrades' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                    color: activeTab === 'upgrades' ? '#fff' : '#a1a1aa',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'upgrades' ? '0 2px 8px rgba(99,102,241,0.3)' : 'none',
+                                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
                                 ⬆️ Upgrade & Add-On
                                 {pendingUpgradeSummary.pendingCount > 0 && (
-                                    <span style={{ background: '#f59e0b', color: '#000', borderRadius: '10px', padding: '1px 7px', fontSize: '10px', fontWeight: 'bold' }}>
+                                    <span style={{ background: '#f59e0b', color: '#000', borderRadius: '8px', padding: '1px 6px', fontSize: '10px', fontWeight: 'bold' }}>
                                         {pendingUpgradeSummary.pendingCount}
                                     </span>
                                 )}
                             </button>
 
-                            {/* KELOLA VENDOR — hanya vendor aktif berlangganan */}
+                            {/* KELOLA VENDOR */}
                             <button
                                 onClick={() => handleTabChange('vendors')}
                                 style={{
-                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
-                                    background: activeTab === 'vendors' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
-                                    color: activeTab === 'vendors' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
+                                    flex: '1 1 0',
+                                    minWidth: '130px',
+                                    justifyContent: 'center',
+                                    padding: '9px 12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: activeTab === 'vendors' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                    color: activeTab === 'vendors' ? '#fff' : '#a1a1aa',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'vendors' ? '0 2px 8px rgba(99,102,241,0.3)' : 'none',
+                                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
                                 👥 Kelola Vendor ({vendors.filter(v => v.status === 'active').length})
                             </button>
 
+                            {/* KELOLA PAKET */}
                             <button
                                 onClick={() => handleTabChange('plans')}
                                 style={{
-                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
-                                    background: activeTab === 'plans' ? 'linear-gradient(135deg, #818cf8, #6366f1)' : 'transparent',
-                                    color: activeTab === 'plans' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer'
+                                    flex: '1 1 0',
+                                    minWidth: '120px',
+                                    justifyContent: 'center',
+                                    padding: '9px 12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: activeTab === 'plans' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
+                                    color: activeTab === 'plans' ? '#fff' : '#a1a1aa',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'plans' ? '0 2px 8px rgba(99,102,241,0.3)' : 'none',
+                                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
                                 📦 Kelola Paket ({plans.length})
                             </button>
+
+                            {/* TRIAL CONTROL */}
                             <button
                                 onClick={() => handleTabChange('trial')}
                                 style={{
-                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    flex: '1 1 0',
+                                    minWidth: '115px',
+                                    justifyContent: 'center',
+                                    padding: '9px 12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
                                     background: activeTab === 'trial' ? 'linear-gradient(135deg, #a855f7, #7c3aed)' : 'transparent',
-                                    color: activeTab === 'trial' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
+                                    color: activeTab === 'trial' ? '#fff' : '#a1a1aa',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'trial' ? '0 2px 8px rgba(168,85,247,0.3)' : 'none',
+                                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
                                 🎯 Trial Control
                             </button>
 
+                            {/* STORAGE POOL */}
                             <button
                                 onClick={() => handleTabChange('storage-pool')}
                                 style={{
-                                    padding: '10px 20px', borderRadius: '10px', border: 'none',
+                                    flex: '1 1 0',
+                                    minWidth: '115px',
+                                    justifyContent: 'center',
+                                    padding: '9px 12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
                                     background: activeTab === 'storage-pool' ? 'linear-gradient(135deg, #059669, #047857)' : 'transparent',
-                                    color: activeTab === 'storage-pool' ? '#fff' : '#a1a1aa', fontWeight: '600', cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                    boxShadow: activeTab === 'storage-pool' ? '0 4px 12px rgba(16,185,129,0.3)' : 'none'
+                                    color: activeTab === 'storage-pool' ? '#fff' : '#a1a1aa',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    boxShadow: activeTab === 'storage-pool' ? '0 2px 8px rgba(16,185,129,0.3)' : 'none',
+                                    transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                💾 Operasional Storage Pool
+                                💾 Storage Pool
                             </button>
                         </div>
 

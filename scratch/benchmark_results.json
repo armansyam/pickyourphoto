@@ -2,32 +2,32 @@
   "dbReads": {
     "total": 1000,
     "successes": 1000,
-    "durationMs": "1.85",
-    "qps": 541406,
+    "durationMs": "1.81",
+    "qps": 553250,
     "avgLatencyMs": "0.0018",
-    "memoryDeltaKb": -681
+    "memoryDeltaKb": -707
   },
   "dbWrites": {
     "total": 100,
     "successes": 100,
-    "durationMs": "1.35",
-    "qps": 74244,
-    "avgLatencyMs": "0.0135"
+    "durationMs": "1.21",
+    "qps": 82508,
+    "avgLatencyMs": "0.0121"
   },
   "jwtSpeed": {
     "total": 10000,
     "validCount": 10000,
-    "durationMs": "389.37",
-    "opsPerSec": 25682,
-    "avgLatencyUs": "38.94"
+    "durationMs": "388.05",
+    "opsPerSec": 25770,
+    "avgLatencyUs": "38.80"
   },
   "rateLimitStress": {
     "total": 100000,
     "allowedCount": 5000,
     "blockedCount": 95000,
-    "durationMs": "18.93",
-    "checksPerSec": 5283748,
-    "heapDeltaKb": -201
+    "durationMs": "18.85",
+    "checksPerSec": 5303926,
+    "heapDeltaKb": -181
   },
   "webhookVerifications": [
     {
@@ -53,12 +53,12 @@
     {
       "provider": "Duitku",
       "test": "Valid MD5 Checksum",
-      "passed": false
+      "passed": true
     },
     {
       "provider": "iPaymu",
       "test": "Valid HMAC-SHA256 Signature",
-      "passed": false
+      "passed": true
     }
   ],
   "missingDataEdgeCases": [
@@ -85,9 +85,9 @@
   ],
   "securityTamperTests": [],
   "memoryProfile": {
-    "rssMb": "68.09",
-    "heapTotalMb": "11.98",
-    "heapUsedMb": "8.90",
+    "rssMb": "68.14",
+    "heapTotalMb": "11.73",
+    "heapUsedMb": "8.85",
     "externalMb": "2.09",
     "nodeVersion": "v24.16.0",
     "platform": "darwin",
