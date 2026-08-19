@@ -474,6 +474,50 @@ export default function AdminSettings({
   const [purgingExpired, setPurgingExpired] = useState(false);
   const [purgeConfirmModal, setPurgeConfirmModal] = useState(false);
 
+  // Reset Data Uji Coba State & Handlers
+  const [cleanDataModal, setCleanDataModal] = useState(null); // { type: 'financial' | 'vendors', title: string, desc: string }
+  const [cleanDataPassword, setCleanDataPassword] = useState('');
+  const [cleanDataConfirmText, setCleanDataConfirmText] = useState('');
+  const [isCleaningData, setIsCleaningData] = useState(false);
+
+  const handleExecuteCleanData = async () => {
+    if (cleanDataConfirmText.trim().toUpperCase() !== 'BERSIHKAN') {
+      if (addToast) addToast('Ketik kata BERSIHKAN dengan tepat untuk melanjutkan.', 'warning');
+      return;
+    }
+    if (!cleanDataPassword) {
+      if (addToast) addToast('Password Superadmin wajib diisi untuk konfirmasi keamanan.', 'warning');
+      return;
+    }
+
+    setIsCleaningData(true);
+    try {
+      const res = await fetch('/api/admin/reset-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: cleanDataModal.type,
+          adminPassword: cleanDataPassword
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Gagal membersihkan data.');
+
+      if (addToast) addToast(`✅ ${data.message}`, 'success', 6000);
+      setCleanDataModal(null);
+      setCleanDataPassword('');
+      setCleanDataConfirmText('');
+
+      // Auto reload system settings/backups
+      if (fetchSystemSettings) fetchSystemSettings();
+      fetchBackups();
+    } catch (err) {
+      if (addToast) addToast(`❌ ${err.message}`, 'error', 5000);
+    } finally {
+      setIsCleaningData(false);
+    }
+  };
+
   const handleRunHardPurge = async () => {
     setPurgingExpired(true);
     try {
@@ -2114,6 +2158,105 @@ export default function AdminSettings({
               </div>
             )}
 
+            {/* ── 3.6 PEMBERSIHAN & RESET DATA UJI COBA (PRODUCTION CLEAN START) ── */}
+            <div style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '10px', marginBottom: '16px' }}>
+              <h4 style={{ margin: 0, fontSize: '15px', color: '#f59e0b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                Pembersihan Data Uji Coba (Production Clean Start)
+              </h4>
+              <span style={{ fontSize: '11px', background: 'rgba(245,158,11,0.15)', color: '#fbbf24', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                🛡️ PENGATURAN & KREDENSIAL TETAP AMAN
+              </span>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+              <p style={{ margin: '0 0 16px 0', fontSize: '12.5px', color: '#a1a1aa', lineHeight: '1.5' }}>
+                Gunakan opsi di bawah ini saat sistem selesai diuji coba dan siap diluncurkan untuk fotografer asli. <strong>Seluruh pengaturan akun Superadmin, Kredensial Google Drive, Konfigurasi Bank/Payment Gateway, dan Paket Berlangganan dijamin 100% tetap utuh.</strong>
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                {/* Option 1: Reset Keuangan */}
+                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>💳</span>
+                      <h5 style={{ margin: 0, fontSize: '14px', color: '#fbbf24', fontWeight: 'bold' }}>Reset Data Keuangan Saja</h5>
+                    </div>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '11.5px', color: '#94a3b8', lineHeight: '1.5' }}>
+                      Menghapus seluruh riwayat transfer, invoice langganan, dan sesi transaksi uji coba. Grafik omset & pendapatan Superadmin akan kembali bersih ke <strong>Rp 0</strong>.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCleanDataModal({
+                      type: 'financial',
+                      title: 'Reset Data Keuangan & Transaksi',
+                      desc: 'Menghapus riwayat transaksi, invoice, dan bukti transfer uji coba. Grafik omset akan kembali ke Rp 0. Akun vendor dan project tetap ada.'
+                    })}
+                    style={{
+                      background: 'rgba(251,191,36,0.15)',
+                      border: '1px solid rgba(251,191,36,0.35)',
+                      color: '#fbbf24',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    🧹 Bersihkan Data Keuangan
+                  </button>
+                </div>
+
+                {/* Option 2: Fresh Start Total */}
+                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '12px', padding: '18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>💥</span>
+                      <h5 style={{ margin: 0, fontSize: '14px', color: '#fb7185', fontWeight: 'bold' }}>Fresh Start (Reset Vendor & Galeri)</h5>
+                    </div>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '11.5px', color: '#94a3b8', lineHeight: '1.5' }}>
+                      Mengosongkan seluruh akun vendor uji coba, klien, proyek galeri, foto, dan transaksi. Database kembali bersih seperti baru rilis tanpa menghapus kredensial/setting.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCleanDataModal({
+                      type: 'vendors',
+                      title: 'Fresh Start Database (Reset Vendor & Galeri)',
+                      desc: 'Mengosongkan seluruh akun vendor, proyek galeri, foto, dan transaksi uji coba. Pengaturan Superadmin, Google Drive, Payment Gateway, dan Paket SaaS TETAP AMAN.'
+                    })}
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(244,63,94,0.2), rgba(225,29,72,0.3))',
+                      border: '1px solid rgba(244,63,94,0.4)',
+                      color: '#fb7185',
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    🚀 Fresh Start Database
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* ── 4. TIM ADMINISTRATOR & SUB-ADMIN MANAGEMENT ── */}
             <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
@@ -2203,6 +2346,96 @@ export default function AdminSettings({
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL KONFIRMASI RESET DATA UJI COBA ── */}
+      {cleanDataModal && (
+        <div className="modal-overlay" onClick={() => { if (!isCleaningData) setCleanDataModal(null); }}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', width: '90%', borderRadius: '16px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '50%', background: cleanDataModal.type === 'financial' ? 'rgba(251,191,36,0.15)' : 'rgba(244,63,94,0.15)', color: cleanDataModal.type === 'financial' ? '#fbbf24' : '#fb7185', marginBottom: '14px', fontSize: '24px' }}>
+                {cleanDataModal.type === 'financial' ? '💳' : '⚠️'}
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 8px' }}>
+                {cleanDataModal.title}
+              </h3>
+              <p style={{ color: '#a1a1aa', fontSize: '13px', lineHeight: '1.5', margin: 0 }}>
+                {cleanDataModal.desc}
+              </p>
+            </div>
+
+            <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '10px', padding: '12px 14px', fontSize: '11.5px', color: '#34d399', lineHeight: '1.5', marginBottom: '16px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+              <span style={{ fontSize: '14px' }}>🛡️</span>
+              <div>
+                <strong>Garansi Perlindungan:</strong> Snapshot darurat database akan otomatis dibuat sebelum pembersihan dijalankan. Seluruh Kredensial Google Drive, Akun Superadmin, dan Setting SaaS tetap aman.
+              </div>
+            </div>
+
+            <form onSubmit={(e) => { e.preventDefault(); handleExecuteCleanData(); }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>
+                  Ketik kata <strong style={{ color: '#f43f5e' }}>BERSIHKAN</strong> untuk konfirmasi:
+                </label>
+                <input
+                  type="text"
+                  className="input-text"
+                  placeholder="BERSIHKAN"
+                  value={cleanDataConfirmText}
+                  onChange={e => setCleanDataConfirmText(e.target.value)}
+                  required
+                  disabled={isCleaningData}
+                  style={{ textAlign: 'center', fontWeight: 'bold', letterSpacing: '1px' }}
+                />
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontSize: '12px' }}>Password Superadmin:</label>
+                <input
+                  type="password"
+                  className="input-text"
+                  placeholder="Masukkan password Superadmin Anda"
+                  value={cleanDataPassword}
+                  onChange={e => setCleanDataPassword(e.target.value)}
+                  required
+                  disabled={isCleaningData}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  disabled={isCleaningData}
+                  onClick={() => {
+                    setCleanDataModal(null);
+                    setCleanDataPassword('');
+                    setCleanDataConfirmText('');
+                  }}
+                  style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e4e4e7', padding: '10px 16px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCleaningData || cleanDataConfirmText.trim().toUpperCase() !== 'BERSIHKAN' || !cleanDataPassword}
+                  style={{
+                    background: cleanDataModal.type === 'financial' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #f43f5e, #e11d48)',
+                    border: 'none',
+                    color: cleanDataModal.type === 'financial' ? '#000000' : '#ffffff',
+                    padding: '10px 20px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    cursor: (isCleaningData || cleanDataConfirmText.trim().toUpperCase() !== 'BERSIHKAN' || !cleanDataPassword) ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
+                    opacity: (cleanDataConfirmText.trim().toUpperCase() !== 'BERSIHKAN' || !cleanDataPassword) ? 0.6 : 1
+                  }}
+                >
+                  {isCleaningData ? '⏳ Membersihkan Data...' : '✓ Konfirmasi & Bersihkan'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
