@@ -10,6 +10,10 @@ export default function AdminSettings({
   googleMasterAccountEmail,
   maxUploadConcurrencyThreads = 4, setMaxUploadConcurrencyThreads,
 
+  saasName = 'Pick Your Photo', setSaasName,
+  companyAddress = '', setCompanyAddress,
+  operationalHours = 'Senin – Sabtu: 08:00 – 17:00 WIB', setOperationalHours,
+
   newPassword, setNewPassword,
   bankName, setBankName,
   bankAccountNumber, setBankAccountNumber,
@@ -47,13 +51,14 @@ export default function AdminSettings({
   profileErrorMsg,
   handleSaveProfile
 }) {
-  const [activeSubTab, setActiveSubTab] = useState('integrations'); // 'integrations' | 'payments' | 'system'
+  const [activeSubTab, setActiveSubTab] = useState('identity'); // 'identity' | 'integrations' | 'payments' | 'system'
+  const [isEditingIdentity, setIsEditingIdentity] = useState(false);
   const [isEditingGoogleCredentials, setIsEditingGoogleCredentials] = useState(false);
   const [isEditingPaymentGateway, setIsEditingPaymentGateway] = useState(false);
   const [isEditingSmtp, setIsEditingSmtp] = useState(false);
   const [isEditingBankDetails, setIsEditingBankDetails] = useState(false);
   const [isEditingSystem, setIsEditingSystem] = useState(false);
-  const [savingSection, setSavingSection] = useState(''); // 'google' | 'smtp' | 'bank' | 'gateway' | 'system' | 'password'
+  const [savingSection, setSavingSection] = useState(''); // 'identity' | 'google' | 'smtp' | 'bank' | 'gateway' | 'system' | 'password'
 
   const [savedSystemState, setSavedSystemState] = useState({
     sysEnableReg,
@@ -91,6 +96,38 @@ export default function AdminSettings({
     setWorkerStorageWarningThresholdGb(savedSystemState.workerStorageWarningThresholdGb);
     setGracePeriodDays(savedSystemState.gracePeriodDays);
     setIsEditingSystem(false);
+  };
+
+  const handleSaveIdentity = async () => {
+    setSavingSection('identity');
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          saasSettings: {
+            saas_name: saasName || 'Pick Your Photo',
+            contact_email: contactEmail,
+            saas_support_email: contactEmail,
+            contact_whatsapp: contactWhatsapp,
+            company_address: companyAddress,
+            operational_hours: operationalHours
+          }
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (addToast) addToast('Identitas platform & kontak resmi berhasil disimpan!', 'success');
+        setIsEditingIdentity(false);
+        if (fetchSystemSettings) fetchSystemSettings();
+      } else {
+        if (addToast) addToast(data.message || 'Gagal menyimpan identitas platform.', 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast(err.message, 'error');
+    } finally {
+      setSavingSection('');
+    }
   };
 
   const handleSaveGoogle = async () => {
@@ -693,6 +730,28 @@ export default function AdminSettings({
       <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '28px', justifyContent: 'center', flexWrap: 'wrap' }}>
         <button
           type="button"
+          onClick={() => setActiveSubTab('identity')}
+          style={{
+            padding: '10px 20px',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontWeight: '700',
+            border: '1px solid',
+            borderColor: activeSubTab === 'identity' ? '#38bdf8' : 'rgba(255,255,255,0.08)',
+            background: activeSubTab === 'identity' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255,255,255,0.03)',
+            color: activeSubTab === 'identity' ? '#ffffff' : '#94a3b8',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          🏢 Identitas & Kontak Resmi
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveSubTab('integrations')}
           style={{
             padding: '10px 20px',
@@ -759,6 +818,140 @@ export default function AdminSettings({
       </div>
 
       <div>
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {/* SUB-TAB 0: IDENTITAS PLATFORM & KONTAK RESMI SAAS                */}
+        {/* ════════════════════════════════════════════════════════════════ */}
+        {activeSubTab === 'identity' && (
+          <div className="fade-in">
+            {/* Header Box */}
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '24px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '16px', color: '#38bdf8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🏢 Identitas Brand & Saluran Kontak Resmi Platform
+                  </h4>
+                  <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
+                    Informasi ini ditampilkan secara dinamis di halaman publik <strong>/contact</strong>, <strong>/about</strong>, footer sistem, dan syarat & ketentuan SaaS.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <a
+                    href="/contact"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      background: 'rgba(56,189,248,0.12)',
+                      border: '1px solid rgba(56,189,248,0.3)',
+                      color: '#38bdf8',
+                      padding: '7px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      textDecoration: 'none',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    🔗 Preview /contact
+                  </a>
+                  {!isEditingIdentity ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingIdentity(true)}
+                      style={{ background: 'linear-gradient(135deg, #38bdf8, #0284c7)', color: '#000000', border: 'none', padding: '7px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      ✏️ Edit Identitas
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingIdentity(false)}
+                        disabled={savingSection === 'identity'}
+                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e4e4e7', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}
+                      >
+                        Batal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveIdentity}
+                        disabled={savingSection === 'identity'}
+                        style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', padding: '7px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {savingSection === 'identity' ? 'Menyimpan...' : '✓ Simpan Perubahan'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Form Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>🏷️ Nama Layanan / Brand SaaS</label>
+                  <input
+                    type="text"
+                    className="input-text"
+                    placeholder="Contoh: Pick Your Photo / Photota"
+                    value={saasName}
+                    onChange={e => setSaasName(e.target.value)}
+                    disabled={!isEditingIdentity || savingSection === 'identity'}
+                  />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>✉️ Email Resmi Dukungan Pelanggan (CS)</label>
+                  <input
+                    type="email"
+                    className="input-text"
+                    placeholder="Contoh: support@photota.my.id"
+                    value={contactEmail}
+                    onChange={e => setContactEmail(e.target.value)}
+                    disabled={!isEditingIdentity || savingSection === 'identity'}
+                  />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>📱 Nomor WhatsApp Resmi Helpdesk / CS</label>
+                  <input
+                    type="text"
+                    className="input-text"
+                    placeholder="Contoh: 081234567890 (Mendukung link WA otomatis)"
+                    value={contactWhatsapp}
+                    onChange={e => setContactWhatsapp(e.target.value)}
+                    disabled={!isEditingIdentity || savingSection === 'identity'}
+                  />
+                </div>
+
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>⏰ Jam Operasional Layanan Respon</label>
+                  <input
+                    type="text"
+                    className="input-text"
+                    placeholder="Contoh: Senin – Sabtu: 08:00 – 17:00 WIB"
+                    value={operationalHours}
+                    onChange={e => setOperationalHours(e.target.value)}
+                    disabled={!isEditingIdentity || savingSection === 'identity'}
+                  />
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>📍 Alamat Kantor / Domisili Legal Perusahaan</label>
+                  <input
+                    type="text"
+                    className="input-text"
+                    placeholder="Contoh: Jakarta, Indonesia / Makassar, Sulawesi Selatan"
+                    value={companyAddress}
+                    onChange={e => setCompanyAddress(e.target.value)}
+                    disabled={!isEditingIdentity || savingSection === 'identity'}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ════════════════════════════════════════════════════════════════ */}
         {/* SUB-TAB 1: INTEGRASI GOOGLE & EMAIL SMTP                          */}
         {/* ════════════════════════════════════════════════════════════════ */}

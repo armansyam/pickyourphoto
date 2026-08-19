@@ -63,8 +63,11 @@ export default function AdminDashboard({ adminUser }) {
     const [bankName, setBankName] = useState('');
     const [bankAccountNumber, setBankAccountNumber] = useState('');
     const [bankAccountName, setBankAccountName] = useState('');
+    const [saasName, setSaasName] = useState('Pick Your Photo');
     const [contactEmail, setContactEmail] = useState('');
     const [contactWhatsapp, setContactWhatsapp] = useState('');
+    const [companyAddress, setCompanyAddress] = useState('');
+    const [operationalHours, setOperationalHours] = useState('Senin – Sabtu: 08:00 – 17:00 WIB');
 
     // Google Master Studio OAuth States
     const [googleClientId, setGoogleClientId] = useState('');
@@ -222,11 +225,14 @@ export default function AdminDashboard({ adminUser }) {
                 if (data.lastHardPurgeFormatted) setLastHardPurgeFormatted(data.lastHardPurgeFormatted);
 
                 if (data.saasSettings) {
+                    if (data.saasSettings.saas_name) setSaasName(data.saasSettings.saas_name);
                     if (data.saasSettings.bank_name) setBankName(data.saasSettings.bank_name);
                     if (data.saasSettings.bank_account_number) setBankAccountNumber(data.saasSettings.bank_account_number);
                     if (data.saasSettings.bank_account_name) setBankAccountName(data.saasSettings.bank_account_name);
                     if (data.saasSettings.contact_email) setContactEmail(data.saasSettings.contact_email);
                     if (data.saasSettings.contact_whatsapp) setContactWhatsapp(data.saasSettings.contact_whatsapp);
+                    if (data.saasSettings.company_address) setCompanyAddress(data.saasSettings.company_address);
+                    if (data.saasSettings.operational_hours) setOperationalHours(data.saasSettings.operational_hours);
                     if (data.saasSettings.google_client_id) setGoogleClientId(data.saasSettings.google_client_id);
                     if (data.saasSettings.google_client_secret) setGoogleClientSecret(data.saasSettings.google_client_secret);
                     if (data.saasSettings.google_master_folder_id) setGoogleMasterFolderId(data.saasSettings.google_master_folder_id);
@@ -686,11 +692,14 @@ export default function AdminDashboard({ adminUser }) {
                             maxUploadConcurrencyThreads={maxUploadConcurrencyThreads} setMaxUploadConcurrencyThreads={setMaxUploadConcurrencyThreads}
 
                             newPassword={newPassword} setNewPassword={setNewPassword}
+                            saasName={saasName} setSaasName={setSaasName}
                             bankName={bankName} setBankName={setBankName}
                             bankAccountNumber={bankAccountNumber} setBankAccountNumber={setBankAccountNumber}
                             bankAccountName={bankAccountName} setBankAccountName={setBankAccountName}
                             contactEmail={contactEmail} setContactEmail={setContactEmail}
                             contactWhatsapp={contactWhatsapp} setContactWhatsapp={setContactWhatsapp}
+                            companyAddress={companyAddress} setCompanyAddress={setCompanyAddress}
+                            operationalHours={operationalHours} setOperationalHours={setOperationalHours}
                             enablePaymentGateway={enablePaymentGateway} setEnablePaymentGateway={setEnablePaymentGateway}
                             paymentGatewayProvider={paymentGatewayProvider} setPaymentGatewayProvider={setPaymentGatewayProvider}
                             paymentGatewayClientKey={paymentGatewayClientKey} setPaymentGatewayClientKey={setPaymentGatewayClientKey}
