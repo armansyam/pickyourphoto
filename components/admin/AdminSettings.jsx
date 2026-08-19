@@ -603,7 +603,7 @@ export default function AdminSettings({
 
       // Auto reload system settings/backups
       if (fetchSystemSettings) fetchSystemSettings();
-      fetchBackups();
+      fetchBackupsList();
     } catch (err) {
       if (addToast) addToast(`❌ ${err.message}`, 'error', 5000);
     } finally {
