@@ -2276,7 +2276,24 @@
     setTimeout(function(){ miniToast.classList.remove('show'); }, 1800);
   }
 
-  function moveMiniCursor(x, y, tag) {
+  function moveMiniCursorToEl(el, tag, anchorX, anchorY) {
+    if (!miniCursor) return;
+    var screenEl = document.getElementById('miniMockupScreen');
+    if (!screenEl) return;
+    var screenRect = screenEl.getBoundingClientRect();
+    
+    if (el) {
+      var elRect = el.getBoundingClientRect();
+      var ax = anchorX !== undefined ? anchorX : 0.5;
+      var ay = anchorY !== undefined ? anchorY : 0.5;
+      var relX = (elRect.left - screenRect.left) + (elRect.width * ax);
+      var relY = (elRect.top - screenRect.top) + (elRect.height * ay);
+      if (tag) miniCursorTag.innerText = tag;
+      miniCursor.style.transform = 'translate3d(' + Math.round(relX) + 'px, ' + Math.round(relY) + 'px, 0)';
+    }
+  }
+
+  function moveMiniCursorPos(x, y, tag) {
     if (!miniCursor) return;
     if (tag) miniCursorTag.innerText = tag;
     miniCursor.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
@@ -2324,10 +2341,10 @@
     resetMiniSceneElements();
 
     if (sceneNum === 1) {
-      moveMiniCursor(30, 20, 'Fotografer Studio');
+      moveMiniCursorPos(20, 15, 'Fotografer Studio');
       miniStepTimeouts.push(setTimeout(function(){
-        moveMiniCursor(120, 75, 'Fotografer Studio');
         var driveBox = document.getElementById('miniDriveBox');
+        moveMiniCursorToEl(driveBox, 'Fotografer Studio', 0.45, 0.5);
         if (driveBox) driveBox.style.borderColor = '#C5A059';
       }, 600));
 
@@ -2340,7 +2357,8 @@
       }, 1300));
 
       miniStepTimeouts.push(setTimeout(function(){
-        moveMiniCursor(160, 115, 'Fotografer Studio');
+        var btn = document.getElementById('miniConnectBtn');
+        moveMiniCursorToEl(btn, 'Fotografer Studio', 0.5, 0.5);
       }, 2000));
 
       miniStepTimeouts.push(setTimeout(function(){
@@ -2357,9 +2375,10 @@
       }, 3400));
 
     } else if (sceneNum === 2) {
-      moveMiniCursor(40, 20, 'Klien (Hana)');
+      moveMiniCursorPos(20, 15, 'Klien (Hana)');
       miniStepTimeouts.push(setTimeout(function(){
-        moveMiniCursor(95, 65, 'Klien (Hana)');
+        var p2 = document.getElementById('miniPhoto2');
+        moveMiniCursorToEl(p2, 'Klien (Hana)', 0.82, 0.22);
       }, 700));
 
       miniStepTimeouts.push(setTimeout(function(){
@@ -2370,7 +2389,8 @@
       }, 1400));
 
       miniStepTimeouts.push(setTimeout(function(){
-        moveMiniCursor(215, 65, 'Klien (Hana)');
+        var p4 = document.getElementById('miniPhoto4');
+        moveMiniCursorToEl(p4, 'Klien (Hana)', 0.82, 0.22);
       }, 2100));
 
       miniStepTimeouts.push(setTimeout(function(){
@@ -2381,7 +2401,8 @@
       }, 2800));
 
       miniStepTimeouts.push(setTimeout(function(){
-        moveMiniCursor(190, 145, 'Klien (Hana)');
+        var btn = document.getElementById('miniClientSubmitBtn');
+        moveMiniCursorToEl(btn, 'Klien (Hana)', 0.5, 0.5);
       }, 3500));
 
       miniStepTimeouts.push(setTimeout(function(){
@@ -2391,9 +2412,10 @@
       }, 4100));
 
     } else if (sceneNum === 3) {
-      moveMiniCursor(30, 20, 'Editor Lightroom');
+      moveMiniCursorPos(20, 15, 'Editor Lightroom');
       miniStepTimeouts.push(setTimeout(function(){
-        moveMiniCursor(200, 32, 'Editor Lightroom');
+        var btn = document.getElementById('miniCopyLrBtn');
+        moveMiniCursorToEl(btn, 'Editor Lightroom', 0.5, 0.5);
       }, 700));
 
       miniStepTimeouts.push(setTimeout(function(){
@@ -2405,7 +2427,8 @@
       }, 1500));
 
       miniStepTimeouts.push(setTimeout(function(){
-        moveMiniCursor(130, 110, 'Editor Lightroom');
+        var lrSearch = document.getElementById('miniLrSearchText');
+        moveMiniCursorToEl(lrSearch, 'Editor Lightroom', 0.35, 0.5);
       }, 2300));
 
       miniStepTimeouts.push(setTimeout(function(){
@@ -2417,9 +2440,10 @@
       }, 3100));
 
     } else if (sceneNum === 4) {
-      moveMiniCursor(30, 20, 'Fotografer Studio');
+      moveMiniCursorPos(20, 15, 'Fotografer Studio');
       miniStepTimeouts.push(setTimeout(function(){
-        moveMiniCursor(140, 118, 'Fotografer Studio');
+        var btn = document.getElementById('miniStartSortBtn');
+        moveMiniCursorToEl(btn, 'Fotografer Studio', 0.5, 0.5);
       }, 800));
 
       miniStepTimeouts.push(setTimeout(function(){
