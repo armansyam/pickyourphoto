@@ -1921,18 +1921,18 @@
     <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8C6D23; font-weight: 700; font-family: var(--sans);">Developer Credit</span>
     <div class="dev-watermark-status">
       <span class="dev-watermark-dot"></span>
-      <span>Active Release</span>
+      <span id="devVersionStatus">Active Release</span>
     </div>
   </div>
   <div>
     <img src="/ams-logo.png" alt="AMS Logo" style="height: 36px; object-fit: contain; margin-bottom: 8px; display: block;" />
-    <p style="margin: 0; font-size: 12px; color: #57534E; line-height: 1.4; font-family: var(--sans);">
-      Designed, built, and optimized with Next.js, Prisma, and custom styling.
+    <p id="devVersionStack" style="margin: 0; font-size: 12px; color: #57534E; line-height: 1.4; font-family: var(--sans);">
+      Designed, built, and optimized with Next.js, SQLite, and custom styling.
     </p>
   </div>
   <div style="border-top: 1px solid var(--line); padding-top: 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-family: var(--sans);">
     <span style="color: #78716C;">System Version</span>
-    <strong style="color: #8C6D23;">v1.0.0</strong>
+    <strong id="devVersionRelease" style="color: #8C6D23; font-family: monospace; font-size: 11.5px; background: rgba(197, 160, 89, 0.12); padding: 2px 6px; border-radius: 4px;">v0.1.0</strong>
   </div>
   <div style="display: flex; gap: 8px; margin-top: 4px;">
     <a 
@@ -2867,11 +2867,30 @@
   setStorageScene(1);
   startStorageLoop();
 
-  // Developer Watermark Toggle
+  // Developer Watermark Toggle & Dynamic Sync
   var devBtn = document.getElementById('devWatermarkBtn');
   var devPopup = document.getElementById('devWatermarkPopup');
   var devClose = document.getElementById('devWatermarkClose');
+  var devRelease = document.getElementById('devVersionRelease');
+  var devStatus = document.getElementById('devVersionStatus');
+  var devStack = document.getElementById('devVersionStack');
+
   if (devBtn && devPopup) {
+    // Sync with API
+    fetch('/api/public/version')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        if (data && data.enabled === false) {
+          devBtn.style.display = 'none';
+          devPopup.style.display = 'none';
+        } else if (data) {
+          if (data.release && devRelease) devRelease.textContent = data.release;
+          if (data.status && devStatus) devStatus.textContent = data.status;
+          if (data.stack && devStack) devStack.textContent = data.stack;
+        }
+      })
+      .catch(function() {});
+
     devBtn.addEventListener('click', function(e) {
       e.stopPropagation();
       var isHidden = devPopup.style.display === 'none';
