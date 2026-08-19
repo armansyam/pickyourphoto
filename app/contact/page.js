@@ -27,20 +27,20 @@ export default function ContactPage() {
     return (
         <div style={{
             minHeight: '100vh',
-            background: 'radial-gradient(90% 50% at 50% 0%, rgba(99,102,241,0.12), transparent 60%), #0B0918',
-            color: '#EAE8F7',
-            fontFamily: '"Inter", -apple-system, sans-serif',
+            background: '#FBF9F4',
+            color: '#292524',
+            fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
             padding: '48px 20px 80px',
             lineHeight: '1.75'
         }}>
             <div style={{
                 maxWidth: '860px',
                 margin: '0 auto',
-                background: 'linear-gradient(165deg, rgba(19,16,36,0.95), rgba(11,9,24,0.98))',
-                border: '1px solid rgba(129,140,248,0.18)',
-                borderRadius: '16px',
+                background: '#FFFFFF',
+                border: '1.5px solid rgba(197, 160, 89, 0.35)',
+                borderRadius: '20px',
                 padding: '48px 40px',
-                boxShadow: '0 24px 64px rgba(0,0,0,0.5)'
+                boxShadow: '0 14px 40px rgba(197, 160, 89, 0.08)'
             }}>
                 {/* Top Nav */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
@@ -48,14 +48,14 @@ export default function ContactPage() {
                         display: 'inline-flex',
                         alignItems: 'center',
                         gap: '8px',
-                        color: '#818CF8',
+                        color: '#8C6D23',
                         textDecoration: 'none',
                         fontSize: '14px',
                         fontWeight: '600',
-                        padding: '6px 12px',
+                        padding: '6px 14px',
                         borderRadius: '8px',
-                        background: 'rgba(99,102,241,0.08)',
-                        border: '1px solid rgba(99,102,241,0.2)',
+                        background: 'rgba(197, 160, 89, 0.1)',
+                        border: '1px solid rgba(197, 160, 89, 0.3)',
                         transition: 'all 0.2s ease'
                     }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -66,12 +66,14 @@ export default function ContactPage() {
                     </Link>
 
                     <span style={{
-                        fontSize: '12px',
-                        fontFamily: 'monospace',
-                        color: '#818CF8',
-                        background: 'rgba(129,140,248,0.12)',
-                        padding: '4px 10px',
-                        borderRadius: '6px'
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        fontFamily: '"JetBrains Mono", monospace',
+                        color: '#8C6D23',
+                        background: 'rgba(197, 160, 89, 0.15)',
+                        border: '1px solid rgba(197, 160, 89, 0.4)',
+                        padding: '4px 12px',
+                        borderRadius: '12px'
                     }}>
                         PUSAT BANTUAN
                     </span>
@@ -83,38 +85,40 @@ export default function ContactPage() {
                         fontSize: '34px',
                         fontFamily: '"Fraunces", Georgia, serif',
                         fontWeight: '700',
-                        color: '#FFFFFF',
+                        color: '#1C1917',
                         letterSpacing: '-0.02em',
                         lineHeight: '1.2',
                         marginBottom: '12px'
                     }}>
                         Hubungi Kami
                     </h1>
-                    <p style={{ fontSize: '16px', color: '#9791B8', maxWidth: '680px' }}>
+                    <p style={{ fontSize: '15px', color: '#78716C', maxWidth: '680px' }}>
                         Tim dukungan {settings.saasName} siap membantu menjawab pertanyaan seputar paket berlangganan, kendala teknis, dan verifikasi pembayaran.
                     </p>
                 </div>
 
-                <div style={{ height: '1px', background: 'rgba(129,140,248,0.16)', margin: '28px 0 36px' }}></div>
+                <div style={{ height: '1px', background: 'rgba(197, 160, 89, 0.2)', margin: '28px 0 36px' }}></div>
 
                 {/* Main Contact Card */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '36px' }}>
                     
                     {/* Card 1: Email Resmi */}
                     <div style={{
-                        background: 'rgba(99,102,241,0.06)',
-                        border: '1.5px solid rgba(99,102,241,0.25)',
-                        borderRadius: '14px',
+                        background: '#FFFDF9',
+                        border: '1.5px solid rgba(197, 160, 89, 0.35)',
+                        borderRadius: '16px',
                         padding: '28px',
                         display: 'flex',
                         alignItems: 'flex-start',
-                        gap: '18px'
+                        gap: '18px',
+                        boxShadow: '0 6px 20px rgba(197, 160, 89, 0.06)'
                     }}>
                         <div style={{
                             padding: '12px',
                             borderRadius: '12px',
-                            background: 'rgba(99,102,241,0.15)',
-                            color: '#818CF8',
+                            background: 'rgba(197, 160, 89, 0.18)',
+                            border: '1px solid rgba(197, 160, 89, 0.4)',
+                            color: '#8C6D23',
                             flexShrink: 0
                         }}>
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -123,13 +127,13 @@ export default function ContactPage() {
                             </svg>
                         </div>
                         <div style={{ flex: 1 }}>
-                            <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: '#A5B4FC' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.8px', color: '#8C6D23', fontFamily: '"JetBrains Mono", monospace' }}>
                                 SALURAN RESMI DUKUNGAN PENGGUNA
                             </span>
-                            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#FFFFFF', margin: '4px 0 8px 0' }}>
+                            <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1C1917', margin: '4px 0 8px 0', fontFamily: '"Fraunces", Georgia, serif' }}>
                                 Email Dukungan &amp; Layanan Pelanggan
                             </h2>
-                            <p style={{ color: '#D8D5EE', fontSize: '14.5px', margin: '0 0 14px 0' }}>
+                            <p style={{ color: '#44403C', fontSize: '14.5px', margin: '0 0 14px 0' }}>
                                 Seluruh korespondensi, permohonan refund, pelaporan bug teknis, atau permintaan faktur resmi dilayani melalui alamat email resmi kami di bawah ini:
                             </p>
                             <a
@@ -138,14 +142,14 @@ export default function ContactPage() {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: '8px',
-                                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                    background: 'linear-gradient(135deg, #C5A059, #996515)',
                                     color: '#FFFFFF',
                                     textDecoration: 'none',
                                     padding: '10px 20px',
                                     borderRadius: '8px',
                                     fontWeight: '700',
                                     fontSize: '15px',
-                                    boxShadow: '0 4px 14px rgba(99,102,241,0.3)',
+                                    boxShadow: '0 4px 14px rgba(197, 160, 89, 0.25)',
                                     transition: 'transform 0.15s ease'
                                 }}
                             >
@@ -165,48 +169,48 @@ export default function ContactPage() {
                     
                     {/* Jam Operasional */}
                     <div style={{
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(129,140,248,0.12)',
+                        background: '#FAF8F5',
+                        border: '1px solid rgba(197, 160, 89, 0.25)',
                         borderRadius: '12px',
                         padding: '22px'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                            <div style={{ color: '#34D399' }}>
+                            <div style={{ color: '#15803D' }}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10"></circle>
                                     <polyline points="12 6 12 12 16 14"></polyline>
                                 </svg>
                             </div>
-                            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#FFFFFF', margin: 0 }}>
+                            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1C1917', margin: 0 }}>
                                 Jam Operasional Respon
                             </h3>
                         </div>
-                        <p style={{ color: '#D8D5EE', fontSize: '13.5px', margin: '0 0 6px 0' }}>
+                        <p style={{ color: '#292524', fontSize: '13.5px', margin: '0 0 6px 0' }}>
                             <strong>Senin – Sabtu:</strong> 08:00 – 17:00 WIB
                         </p>
-                        <p style={{ color: '#9791B8', fontSize: '12.5px', margin: 0 }}>
+                        <p style={{ color: '#78716C', fontSize: '12.5px', margin: 0 }}>
                             Tiket email masuk di luar jam kerja akan direspon pada hari kerja berikutnya maksimal dalam 1x24 jam.
                         </p>
                     </div>
 
                     {/* Keamanan & Penipuan */}
                     <div style={{
-                        background: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(129,140,248,0.12)',
+                        background: '#FAF8F5',
+                        border: '1px solid rgba(197, 160, 89, 0.25)',
                         borderRadius: '12px',
                         padding: '22px'
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                            <div style={{ color: '#FBBF24' }}>
+                            <div style={{ color: '#8C6D23' }}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                                 </svg>
                             </div>
-                            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#FFFFFF', margin: 0 }}>
+                            <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1C1917', margin: 0 }}>
                                 Keamanan &amp; Verifikasi
                             </h3>
                         </div>
-                        <p style={{ color: '#D8D5EE', fontSize: '13.5px', margin: 0 }}>
+                        <p style={{ color: '#44403C', fontSize: '13.5px', margin: 0 }}>
                             {settings.saasName} tidak pernah meminta password akun Google Anda. Seluruh transaksi pembayaran hanya diproses melalui sistem resmi yang terhubung ke Payment Gateway berizin Bank Indonesia.
                         </p>
                     </div>
@@ -214,14 +218,14 @@ export default function ContactPage() {
                 </div>
 
                 {/* Footer Navigation */}
-                <div style={{ borderTop: '1px solid rgba(129,140,248,0.16)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                <div style={{ borderTop: '1px solid rgba(197, 160, 89, 0.2)', paddingTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', gap: '18px', fontSize: '13px' }}>
-                        <Link href="/about" style={{ color: '#818CF8', textDecoration: 'none' }}>Tentang Kami</Link>
-                        <Link href="/privacy" style={{ color: '#818CF8', textDecoration: 'none' }}>Kebijakan Privasi</Link>
-                        <Link href="/terms" style={{ color: '#818CF8', textDecoration: 'none' }}>Syarat & Ketentuan</Link>
-                        <Link href="/refund" style={{ color: '#818CF8', textDecoration: 'none' }}>Kebijakan Refund</Link>
+                        <Link href="/about" style={{ color: '#8C6D23', textDecoration: 'none', fontWeight: '600' }}>Tentang Kami</Link>
+                        <Link href="/privacy" style={{ color: '#8C6D23', textDecoration: 'none', fontWeight: '600' }}>Kebijakan Privasi</Link>
+                        <Link href="/terms" style={{ color: '#8C6D23', textDecoration: 'none', fontWeight: '600' }}>Syarat & Ketentuan</Link>
+                        <Link href="/refund" style={{ color: '#8C6D23', textDecoration: 'none', fontWeight: '600' }}>Kebijakan Refund</Link>
                     </div>
-                    <div style={{ color: '#9791B8', fontSize: '12px' }}>
+                    <div style={{ color: '#78716C', fontSize: '12px' }}>
                         &copy; 2026 {settings.saasName}. All rights reserved.
                     </div>
                 </div>
