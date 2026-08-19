@@ -290,7 +290,38 @@
     background: linear-gradient(135deg, #C5A059, #996515);
     color: #FFFFFF;
     font-weight: 700;
-    box-shadow: 0 2px 8px rgba(197, 160, 89, 0.3);
+  /* STORAGE 2-COLUMN RAILWAY STYLE */
+  .storage-section-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 40px;
+    align-items: center;
+    margin-bottom: 36px;
+  }
+  @media(max-width: 960px) {
+    .storage-section-grid {
+      grid-template-columns: 1fr;
+      gap: 32px;
+      margin-bottom: 28px;
+    }
+  }
+  .storage-worker-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 4px;
+  }
+  .storage-worker-bar-bg {
+    height: 4px;
+    background: #27272A;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .storage-worker-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #38BDF8, #34D399);
+    transition: width 0.4s ease;
   }
 
   /* COMPARE */
@@ -1469,10 +1500,141 @@
 
   <!-- INTEGRASI GOOGLE DRIVE BYOS SHOWCASE -->
   <section id="gdrive-integration" style="padding: 60px 0;">
-    <div class="section-head reveal">
-      <div class="eyebrow" style="color: #8C6D23; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); padding: 4px 14px; border-radius: 20px; display: inline-block;" data-i18n="byos.eyebrow">INTEGRASI CLOUD STORAGE</div>
-      <h2 data-i18n="byos.h2">Penyimpanan Berkas Foto di Google Drive Pribadi atau Dedicated Cloud Storage</h2>
-      <p data-i18n="byos.p">Platform memberikan fleksibilitas penuh untuk menyimpan berkas foto menggunakan akun Google Drive pribadi Anda, atau menyewa Dedicated Cloud Storage berkecepatan tinggi dari platform.</p>
+    <div class="storage-section-grid reveal">
+      <!-- Kolom Kiri: Teks Informasi -->
+      <div class="storage-text-col">
+        <div class="eyebrow" style="color: #8C6D23; background: rgba(197, 160, 89, 0.15); border: 1px solid rgba(197, 160, 89, 0.4); padding: 4px 14px; border-radius: 20px; display: inline-block; margin-bottom: 12px;" data-i18n="byos.eyebrow">INTEGRASI CLOUD STORAGE</div>
+        <h2 data-i18n="byos.h2">Penyimpanan Berkas Foto di Google Drive Pribadi atau Dedicated Cloud Storage</h2>
+        <p data-i18n="byos.p">Platform memberikan fleksibilitas penuh untuk menyimpan berkas foto menggunakan akun Google Drive pribadi Anda, atau menyewa Dedicated Cloud Storage berkecepatan tinggi dari platform.</p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px;">
+          <span style="font-family: var(--mono); font-size: 11px; color: var(--brass-dark); background: rgba(197,160,89,0.15); border: 1px solid rgba(197,160,89,0.35); padding: 4px 10px; border-radius: 20px; font-weight: 600;">📁 BYOS (Drive Sendiri)</span>
+          <span style="font-family: var(--mono); font-size: 11px; color: var(--brass-dark); background: rgba(197,160,89,0.15); border: 1px solid rgba(197,160,89,0.35); padding: 4px 10px; border-radius: 20px; font-weight: 600;">⚡ 8x Multi-Worker Turbo</span>
+          <span style="font-family: var(--mono); font-size: 11px; color: var(--brass-dark); background: rgba(197,160,89,0.15); border: 1px solid rgba(197,160,89,0.35); padding: 4px 10px; border-radius: 20px; font-weight: 600;">🔒 100% Hak Milik Berkas</span>
+        </div>
+      </div>
+
+      <!-- Kolom Kanan: Mini Simulator Storage (Railway Style) -->
+      <div class="storage-preview-col">
+        <div class="mini-railway-mockup-wrapper">
+          <!-- Mockup Window -->
+          <div class="mini-railway-mockup">
+            <div class="mini-mockup-topbar">
+              <div class="mac-dots">
+                <div class="mac-dot dot-r"></div>
+                <div class="mac-dot dot-y"></div>
+                <div class="mac-dot dot-g"></div>
+              </div>
+              <span class="mini-mockup-title">
+                <span>vendor_storage_ecosystem.hub</span>
+              </span>
+              <span class="mini-live-badge"><span class="pulse-dot"></span> STORAGE HUB</span>
+            </div>
+
+            <div class="mini-mockup-screen" id="storageMockupScreen">
+              <!-- Live Fake Cursor -->
+              <div class="mini-fake-cursor" id="storageCursor">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 2L20 10L12 13L9 21L4 2Z" fill="#1C1917" stroke="#FFFFFF" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+                <span class="mini-cursor-tag" id="storageCursorTag">Fotografer Studio</span>
+              </div>
+
+              <!-- Live Toast Notification -->
+              <div class="mini-sim-toast" id="storageToast">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span id="storageToastMsg">Sinkronisasi Drive Siap!</span>
+              </div>
+
+              <!-- Scene 1: Google Drive BYOS -->
+              <div class="mini-scene active" id="storageScene1">
+                <div style="background: #FFFDF9; border: 1.5px solid var(--line); border-radius: 9px; padding: 11px 13px; box-shadow: 0 4px 14px rgba(197,160,89,0.06);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; padding-bottom: 5px; border-bottom: 1px solid var(--line);">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                      <strong style="font-size: 11px; color: #15803D;">OPSI 1: DRIVE SENDIRI (BYOS)</strong>
+                    </div>
+                    <span style="font-size: 8.5px; font-weight: 700; background: #DCFCE7; color: #15803D; padding: 1px 6px; border-radius: 6px;">TERHUBUNG</span>
+                  </div>
+
+                  <div style="margin-bottom: 8px;">
+                    <div style="font-size: 11.5px; font-weight: 700; color: #1C1917;">Akun Google Fotografer</div>
+                    <div style="font-size: 10px; color: #57534E; font-family: var(--mono);">lumina.studio@gmail.com</div>
+                  </div>
+
+                  <div style="background: #FFFFFF; border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 6px 9px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 9.5px; margin-bottom: 3px;">
+                      <span style="color: #78716C;">Kapasitas Drive Studio:</span>
+                      <strong style="color: #15803D; font-family: var(--mono);">8.2 GB / 15 GB</strong>
+                    </div>
+                    <div style="height: 4px; background: #E2E8F0; border-radius: 2px; overflow: hidden;">
+                      <div id="storageDriveFill" style="height: 100%; width: 54%; background: #15803D; transition: width 0.6s ease;"></div>
+                    </div>
+                    <div style="margin-top: 4px; font-size: 8.5px; color: #78716C;">
+                      Sisa 6.8 GB Kosong • Berkas 100% di Drive Anda (0 Bytes Server)
+                    </div>
+                  </div>
+
+                  <button type="button" class="btn-badge-action" id="storageBtnSync" style="background: #15803D; width: 100%; justify-content: center; padding: 6px 10px; font-size: 10.5px;">
+                    <span id="storageBtnSyncText">✓ Sinkronisasi Selesai (240 Foto)</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Scene 2: Dedicated Cloud Turbo Add-On -->
+              <div class="mini-scene" id="storageScene2">
+                <div style="background: #111114; border: 1.5px solid #27272A; border-radius: 9px; padding: 11px 13px; box-shadow: 0 6px 18px rgba(0,0,0,0.4);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; padding-bottom: 5px; border-bottom: 1px solid #27272A;">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                      <span style="color: #FBBF24; font-size: 12px;">⚡</span>
+                      <strong style="font-size: 11px; color: #FBBF24;">OPSI 2: ADD-ON TURBO CLOUD</strong>
+                    </div>
+                    <span style="font-size: 8.5px; font-weight: 800; background: linear-gradient(135deg, #C5A059, #996515); color: #FFFFFF; padding: 1px 6px; border-radius: 6px;">85 MB/s TURBO</span>
+                  </div>
+
+                  <div style="background: #18181B; border: 1px dashed rgba(197,160,89,0.5); border-radius: 6px; padding: 6px 9px; margin-bottom: 7px; text-align: center;">
+                    <div style="font-size: 10.5px; font-weight: 700; color: #F4F4F5;" id="storageDropTitle">📁 HANA_WEDDING_JPG (240 files • 1.4 GB)</div>
+                    <div style="font-size: 8.5px; color: #A1A1AA;">Batch recursive upload 8 worker nodes simultan</div>
+                  </div>
+
+                  <!-- 8 Worker Nodes Concurrent Bars -->
+                  <div style="background: #09090B; border: 1px solid #27272A; border-radius: 5px; padding: 5px 8px; margin-bottom: 7px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: #38BDF8; font-weight: 700; margin-bottom: 3px;">
+                      <span>8 WORKER THREADS PARALEL</span>
+                      <span id="storageWorkerSpeed" style="color: #34D399;">85 MB/s</span>
+                    </div>
+                    <div class="storage-worker-grid">
+                      <div class="storage-worker-bar-bg"><div class="storage-worker-bar-fill" id="stFill1"></div></div>
+                      <div class="storage-worker-bar-bg"><div class="storage-worker-bar-fill" id="stFill2"></div></div>
+                      <div class="storage-worker-bar-bg"><div class="storage-worker-bar-fill" id="stFill3"></div></div>
+                      <div class="storage-worker-bar-bg"><div class="storage-worker-bar-fill" id="stFill4"></div></div>
+                      <div class="storage-worker-bar-bg"><div class="storage-worker-bar-fill" id="stFill5"></div></div>
+                      <div class="storage-worker-bar-bg"><div class="storage-worker-bar-fill" id="stFill6"></div></div>
+                      <div class="storage-worker-bar-bg"><div class="storage-worker-bar-fill" id="stFill7"></div></div>
+                      <div class="storage-worker-bar-bg"><div class="storage-worker-bar-fill" id="stFill8"></div></div>
+                    </div>
+                  </div>
+
+                  <button type="button" class="btn-gold-main" id="storageStartTurboBtn" style="padding: 6px 10px; font-size: 10.5px; font-weight: 700; width: 100%;">
+                    <span>⚡ 240 Foto Selesai Diunggah (2.8 Detik)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overlapping Docked Tabs (Railway Style outside overflow:hidden window) -->
+          <div class="mini-mockup-tabs-dock">
+            <div class="mini-pill-bar" id="storageTabBar">
+              <button type="button" class="mini-pill-btn active" data-storagescene="1">
+                <span>📁 01. Google Drive (BYOS)</span>
+              </button>
+              <button type="button" class="mini-pill-btn" data-storagescene="2">
+                <span>⚡ 02. Turbo Cloud Add-On</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; margin-top: 36px;" class="reveal">
@@ -2512,6 +2674,165 @@
   // Start initial animation
   setMiniScene(1);
   startMiniLoop();
+
+  // Storage Integration Live Simulation Engine (Landing Page)
+  var storageTabBtns = document.querySelectorAll('[data-storagescene]');
+  var storageScenes = [document.getElementById('storageScene1'), document.getElementById('storageScene2')];
+  var storageCursor = document.getElementById('storageCursor');
+  var storageCursorTag = document.getElementById('storageCursorTag');
+  var storageToast = document.getElementById('storageToast');
+  var storageToastMsg = document.getElementById('storageToastMsg');
+  
+  var currentStorageScene = 1;
+  var storageLoopTimer = null;
+  var storageStepTimeouts = [];
+  var isStorageHovered = false;
+
+  function showStorageToast(msg) {
+    if (!storageToast) return;
+    storageToastMsg.innerText = msg;
+    storageToast.classList.add('show');
+    setTimeout(function(){ storageToast.classList.remove('show'); }, 1800);
+  }
+
+  function moveStorageCursorToEl(el, tag, anchorX, anchorY) {
+    if (!storageCursor) return;
+    var screenEl = document.getElementById('storageMockupScreen');
+    if (!screenEl) return;
+    var screenRect = screenEl.getBoundingClientRect();
+    
+    if (el) {
+      var elRect = el.getBoundingClientRect();
+      var ax = anchorX !== undefined ? anchorX : 0.5;
+      var ay = anchorY !== undefined ? anchorY : 0.5;
+      var relX = (elRect.left - screenRect.left) + (elRect.width * ax);
+      var relY = (elRect.top - screenRect.top) + (elRect.height * ay);
+      if (tag) storageCursorTag.innerText = tag;
+      storageCursor.style.transform = 'translate3d(' + Math.round(relX) + 'px, ' + Math.round(relY) + 'px, 0)';
+    }
+  }
+
+  function moveStorageCursorPos(x, y, tag) {
+    if (!storageCursor) return;
+    if (tag) storageCursorTag.innerText = tag;
+    storageCursor.style.transform = 'translate3d(' + x + 'px, ' + y + 'px, 0)';
+  }
+
+  function clearStorageStepTimeouts() {
+    storageStepTimeouts.forEach(function(t){ clearTimeout(t); });
+    storageStepTimeouts = [];
+  }
+
+  function resetStorageSceneElements() {
+    // Scene 1
+    var driveFill = document.getElementById('storageDriveFill');
+    if (driveFill) driveFill.style.width = '54%';
+
+    // Scene 2
+    for (var i = 1; i <= 8; i++) {
+      var bar = document.getElementById('stFill' + i);
+      if (bar) bar.style.width = '0%';
+    }
+    var speedText = document.getElementById('storageWorkerSpeed');
+    if (speedText) speedText.innerText = '85 MB/s';
+  }
+
+  function runStorageSceneAnimation(sceneNum) {
+    clearStorageStepTimeouts();
+    resetStorageSceneElements();
+
+    if (sceneNum === 1) {
+      moveStorageCursorPos(20, 15, 'Fotografer Studio');
+      storageStepTimeouts.push(setTimeout(function(){
+        var btn = document.getElementById('storageBtnSync');
+        moveStorageCursorToEl(btn, 'Fotografer Studio', 0.5, 0.5);
+      }, 700));
+
+      storageStepTimeouts.push(setTimeout(function(){
+        var btn = document.getElementById('storageBtnSync');
+        if (btn) { btn.style.transform = 'scale(0.97)'; setTimeout(function(){ btn.style.transform = 'none'; }, 200); }
+        var fill = document.getElementById('storageDriveFill');
+        if (fill) { fill.style.width = '62%'; }
+        showStorageToast('✓ 240 Berkas Terhubung di Google Drive!');
+      }, 1500));
+
+    } else if (sceneNum === 2) {
+      moveStorageCursorPos(20, 15, 'Fotografer Studio');
+      storageStepTimeouts.push(setTimeout(function(){
+        var drop = document.getElementById('storageDropTitle');
+        moveStorageCursorToEl(drop, 'Fotografer Studio', 0.5, 0.5);
+      }, 600));
+
+      storageStepTimeouts.push(setTimeout(function(){
+        for (var i = 1; i <= 8; i++) {
+          (function(idx){
+            setTimeout(function(){
+              var bar = document.getElementById('stFill' + idx);
+              if (bar) bar.style.width = (70 + Math.random() * 30) + '%';
+            }, idx * 80);
+          })(i);
+        }
+      }, 1200));
+
+      storageStepTimeouts.push(setTimeout(function(){
+        for (var i = 1; i <= 8; i++) {
+          var bar = document.getElementById('stFill' + i);
+          if (bar) bar.style.width = '100%';
+        }
+        var btn = document.getElementById('storageStartTurboBtn');
+        moveStorageCursorToEl(btn, 'Fotografer Studio', 0.5, 0.5);
+        showStorageToast('⚡ 240 Foto Selesai Diunggah (2.8s)!');
+      }, 2400));
+    }
+  }
+
+  function setStorageScene(sceneNum) {
+    currentStorageScene = sceneNum;
+    storageTabBtns.forEach(function(btn) {
+      if (parseInt(btn.getAttribute('data-storagescene'), 10) === sceneNum) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+    storageScenes.forEach(function(sc, idx) {
+      if (sc) {
+        if (idx + 1 === sceneNum) {
+          sc.classList.add('active');
+        } else {
+          sc.classList.remove('active');
+        }
+      }
+    });
+    runStorageSceneAnimation(sceneNum);
+  }
+
+  storageTabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var sc = parseInt(this.getAttribute('data-storagescene'), 10);
+      setStorageScene(sc);
+    });
+  });
+
+  var storageWrapper = document.querySelector('#gdrive-integration .mini-railway-mockup-wrapper');
+  if (storageWrapper) {
+    storageWrapper.addEventListener('mouseenter', function() { isStorageHovered = true; });
+    storageWrapper.addEventListener('mouseleave', function() { isStorageHovered = false; });
+  }
+
+  function startStorageLoop() {
+    if (storageLoopTimer) clearInterval(storageLoopTimer);
+    storageLoopTimer = setInterval(function() {
+      if (!isStorageHovered) {
+        currentStorageScene = (currentStorageScene % 2) + 1;
+        setStorageScene(currentStorageScene);
+      }
+    }, 5500);
+  }
+
+  // Start initial storage animation
+  setStorageScene(1);
+  startStorageLoop();
 
   // Developer Watermark Toggle
   var devBtn = document.getElementById('devWatermarkBtn');
