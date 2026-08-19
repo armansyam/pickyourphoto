@@ -38,7 +38,7 @@ export default function ContactPage() {
     if (cleanWaPhone.startsWith('0')) {
         cleanWaPhone = '62' + cleanWaPhone.slice(1);
     }
-    const waText = encodeURIComponent(`Halo Tim Support ${settings.saasName}, saya butuh bantuan terkait layanan SaaS.`);
+    const waText = encodeURIComponent(`Halo Tim Support ${settings.saasName}, saya ingin berkonsultasi dan butuh bantuan terkait aplikasi foto.`);
     const waUrl = cleanWaPhone ? `https://api.whatsapp.com/send?phone=${cleanWaPhone}&text=${waText}` : null;
 
     return (

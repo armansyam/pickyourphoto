@@ -831,7 +831,7 @@ export default function AdminSettings({
                     🏢 Identitas Brand & Saluran Kontak Resmi Platform
                   </h4>
                   <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
-                    Informasi ini ditampilkan secara dinamis di halaman publik <strong>/contact</strong>, <strong>/about</strong>, footer sistem, dan syarat & ketentuan SaaS.
+                    Informasi ini ditampilkan secara dinamis di halaman publik <strong>/contact</strong>, <strong>/about</strong>, footer sistem, dan syarat & ketentuan aplikasi.
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -889,7 +889,7 @@ export default function AdminSettings({
               {/* Form Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>🏷️ Nama Layanan / Brand SaaS</label>
+                  <label className="form-label" style={{ fontSize: '12px' }}>🏷️ Nama Layanan / Brand Aplikasi</label>
                   <input
                     type="text"
                     className="input-text"
