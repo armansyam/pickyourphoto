@@ -326,7 +326,14 @@ export default function AdminSettings({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'create' })
       });
-      const data = await res.json();
+      let data = {};
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        throw new Error(`Server mengembalikan respon (${res.status}): Harap periksa sesi login admin.`);
+      }
+
       if (res.ok && data.success) {
         if (addToast) addToast(data.message || 'Snapshot database berhasil dibuat!', 'success');
         fetchBackupsList();
@@ -367,7 +374,20 @@ export default function AdminSettings({
         method: 'POST',
         body: formData
       });
-      const data = await res.json();
+
+      let data = {};
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        if (res.status === 413) {
+          throw new Error('Ukuran file .db terlalu besar untuk Nginx (413 Payload Too Large). Tambahkan "client_max_body_size 100M;" di Nginx VPS.');
+        }
+        if (res.status === 401 || res.status === 403) {
+          throw new Error('Sesi login admin telah berakhir. Silakan refresh halaman dan login kembali.');
+        }
+        throw new Error(`Server mengembalikan respon (${res.status}): Harap periksa koneksi atau izin file di server.`);
+      }
 
       if (res.ok && data.success) {
         if (addToast) addToast(data.message || 'Database berhasil dipulihkan dari file unggahan!', 'success');
@@ -400,7 +420,13 @@ export default function AdminSettings({
       const res = await fetch(`/api/admin/backups/${encodeURIComponent(restoreModal.fileName)}`, {
         method: 'POST'
       });
-      const data = await res.json();
+      let data = {};
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        throw new Error(`Server mengembalikan respon (${res.status}): Harap periksa sesi login admin.`);
+      }
 
       if (res.ok && data.success) {
         if (addToast) addToast(data.message || 'Database berhasil dipulihkan!', 'success');
