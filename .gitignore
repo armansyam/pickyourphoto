@@ -65,7 +65,7 @@ logs/
 SECURITY_STRATEGY.md
 
 # Backups directory
-backups/
+/backups/
 
 # Offline markdown preview
 .offline-markdown-preview/
