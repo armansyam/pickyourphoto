@@ -126,14 +126,15 @@ npm prune --production
 
 # 6. Reload/Start aplikasi di PM2
 echo "🔄 [6/6] Melakukan reload service di PM2..."
+mkdir -p logs
 if pm2 describe "pick-your-photo" > /dev/null 2>&1; then
-    echo "   ⚡ Service ditemukan → zero-downtime reload..."
-    pm2 reload "pick-your-photo"
+    echo "   ⚡ Service ditemukan → zero-downtime reload via ecosystem.config.js..."
+    pm2 reload ecosystem.config.js --update-env
 else
-    echo "   🆕 Service belum terdaftar → mendaftarkan dan menjalankan baru..."
-    pm2 start npm --name "pick-your-photo" -- start
+    echo "   🆕 Service belum terdaftar → mendaftarkan dan menjalankan via ecosystem.config.js..."
+    pm2 start ecosystem.config.js
     echo ""
-    echo "   ⚠️  CATATAN: Jalankan perintah berikut agar PM2 auto-start saat reboot:"
+    echo "   ⚠️  CATATAN: Jalankan perintah berikut agar PM2 auto-start saat reboot server:"
     echo "   pm2 save && pm2 startup"
 fi
 
