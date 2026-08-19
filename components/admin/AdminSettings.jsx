@@ -727,93 +727,104 @@ export default function AdminSettings({
       )}
 
       {/* ── CATEGORIZED SUB-TABS NAVIGATION ── */}
-      <div style={{ display: 'flex', gap: '10px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '28px', justifyContent: 'center', flexWrap: 'wrap' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '8px',
+        borderBottom: '1px solid rgba(255,255,255,0.08)',
+        paddingBottom: '14px',
+        marginBottom: '28px'
+      }}>
         <button
           type="button"
           onClick={() => setActiveSubTab('identity')}
           style={{
-            padding: '10px 20px',
+            padding: '10px 14px',
             borderRadius: '10px',
-            fontSize: '13px',
+            fontSize: '12.5px',
             fontWeight: '700',
             border: '1px solid',
             borderColor: activeSubTab === 'identity' ? '#38bdf8' : 'rgba(255,255,255,0.08)',
-            background: activeSubTab === 'identity' ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255,255,255,0.03)',
+            background: activeSubTab === 'identity' ? 'rgba(56, 189, 248, 0.22)' : 'rgba(255,255,255,0.03)',
             color: activeSubTab === 'identity' ? '#ffffff' : '#94a3b8',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            justifyContent: 'center',
+            gap: '6px'
           }}
         >
-          🏢 Identitas & Kontak Resmi
+          🏢 Identitas & Kontak
         </button>
 
         <button
           type="button"
           onClick={() => setActiveSubTab('integrations')}
           style={{
-            padding: '10px 20px',
+            padding: '10px 14px',
             borderRadius: '10px',
-            fontSize: '13px',
+            fontSize: '12.5px',
             fontWeight: '700',
             border: '1px solid',
             borderColor: activeSubTab === 'integrations' ? '#818cf8' : 'rgba(255,255,255,0.08)',
-            background: activeSubTab === 'integrations' ? 'rgba(99, 102, 241, 0.25)' : 'rgba(255,255,255,0.03)',
+            background: activeSubTab === 'integrations' ? 'rgba(99, 102, 241, 0.22)' : 'rgba(255,255,255,0.03)',
             color: activeSubTab === 'integrations' ? '#ffffff' : '#94a3b8',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            justifyContent: 'center',
+            gap: '6px'
           }}
         >
-          🌐 Integrasi Google & Email
+          🌐 Google & Mailer
         </button>
 
         <button
           type="button"
           onClick={() => setActiveSubTab('payments')}
           style={{
-            padding: '10px 20px',
+            padding: '10px 14px',
             borderRadius: '10px',
-            fontSize: '13px',
+            fontSize: '12.5px',
             fontWeight: '700',
             border: '1px solid',
             borderColor: activeSubTab === 'payments' ? '#10b981' : 'rgba(255,255,255,0.08)',
-            background: activeSubTab === 'payments' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255,255,255,0.03)',
+            background: activeSubTab === 'payments' ? 'rgba(16, 185, 129, 0.22)' : 'rgba(255,255,255,0.03)',
             color: activeSubTab === 'payments' ? '#ffffff' : '#94a3b8',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            justifyContent: 'center',
+            gap: '6px'
           }}
         >
-          💳 Payment Gateway & QRIS
+          💳 Payment Gateway
         </button>
 
         <button
           type="button"
           onClick={() => setActiveSubTab('system')}
           style={{
-            padding: '10px 20px',
+            padding: '10px 14px',
             borderRadius: '10px',
-            fontSize: '13px',
+            fontSize: '12.5px',
             fontWeight: '700',
             border: '1px solid',
             borderColor: activeSubTab === 'system' ? '#f59e0b' : 'rgba(255,255,255,0.08)',
-            background: activeSubTab === 'system' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(255,255,255,0.03)',
+            background: activeSubTab === 'system' ? 'rgba(245, 158, 11, 0.22)' : 'rgba(255,255,255,0.03)',
             color: activeSubTab === 'system' ? '#ffffff' : '#94a3b8',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            justifyContent: 'center',
+            gap: '6px'
           }}
         >
-          ⚙️ Sistem & Keamanan Superadmin
+          ⚙️ Sistem & Keamanan
         </button>
       </div>
 
@@ -834,27 +845,7 @@ export default function AdminSettings({
                     Informasi ini ditampilkan secara dinamis di halaman publik <strong>/contact</strong>, <strong>/about</strong>, footer sistem, dan syarat & ketentuan aplikasi.
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <a
-                    href="/contact"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      background: 'rgba(56,189,248,0.12)',
-                      border: '1px solid rgba(56,189,248,0.3)',
-                      color: '#38bdf8',
-                      padding: '7px 14px',
-                      borderRadius: '8px',
-                      fontSize: '12px',
-                      fontWeight: 'bold',
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px'
-                    }}
-                  >
-                    🔗 Preview /contact
-                  </a>
+                <div>
                   {!isEditingIdentity ? (
                     <button
                       type="button"
