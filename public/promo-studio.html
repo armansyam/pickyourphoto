@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pick Your Photo — Promo Video Studio</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,700&family=Montserrat:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #FAF8F5; --card: #FFF; --surface: #FBF9F5;
+  --paper: #1C1917; --muted: #57534E; --muted2: #8C827A;
+  --brass: #C5A059; --brass-b: #D4AF37; --brass-d: #8C6D23;
+  --line: rgba(197,160,89,.28);
+  --shadow: 0 20px 50px rgba(197,160,89,.14), 0 4px 14px rgba(0,0,0,.04);
+  --serif: "Fraunces", Georgia, serif;
+  --sans: "Montserrat", -apple-system, sans-serif;
+  --mono: "IBM Plex Mono", monospace;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+body {
+  background: radial-gradient(90% 50% at 50% 0%, rgba(197,160,89,.12), transparent 60%),
+              radial-gradient(60% 40% at 85% 15%, rgba(212,175,55,.06), transparent 60%), var(--bg);
+  color: var(--paper); font-family: var(--sans);
+  min-height: 100vh; display: flex; flex-direction: column;
+}
+
+/* ── HEADER ── */
+.hdr {
+  background: rgba(255,255,255,.92); backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+  padding: 11px 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 200;
+}
+.hdr-brand { display: flex; align-items: center; gap: 12px; }
+.hdr-icon {
+  width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--brass-b), var(--brass-d));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(197,160,89,.35);
+}
+.hdr-title { font-family: var(--serif); font-size: 15px; font-weight: 700; }
+.hdr-title em { font-style: italic; color: var(--brass-d); }
+.hdr-sub { font-size: 11px; color: var(--muted); }
+.hdr-badge {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 700;
+  background: rgba(197,160,89,.14); border: 1px solid var(--line);
+  color: var(--brass-d); padding: 2px 10px; border-radius: 20px; text-transform: uppercase;
+}
+.hdr-link {
+  color: var(--brass-d); text-decoration: none; font-size: 12px; font-weight: 600;
+  padding: 6px 14px; background: #fff; border: 1px solid var(--line); border-radius: 8px;
+  transition: .2s; display: flex; align-items: center; gap: 5px;
+}
+.hdr-link:hover { background: rgba(197,160,89,.1); }
+
+/* ── LAYOUT ── */
+.studio { flex: 1; display: grid; grid-template-columns: 330px 1fr; gap: 22px; padding: 22px; max-width: 1500px; margin: 0 auto; width: 100%; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--card); border: 1.5px solid var(--line);
+  border-radius: 18px; padding: 20px;
+  display: flex; flex-direction: column; gap: 18px;
+  box-shadow: var(--shadow); height: fit-content;
+}
+.sid-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--brass-d); font-family: var(--mono); font-weight: 700; margin-bottom: 7px; }
+.theme-list { display: flex; flex-direction: column; gap: 7px; }
+.theme-btn {
+  background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+  padding: 11px 13px; border-radius: 11px; text-align: left; cursor: pointer;
+  font-family: var(--sans); font-size: 12px; font-weight: 600;
+  transition: all .2s; display: flex; align-items: center; gap: 9px;
+}
+.theme-btn:hover { background: #fff; border-color: var(--brass); color: var(--paper); transform: translateY(-1px); }
+.theme-btn.active {
+  background: linear-gradient(135deg, rgba(197,160,89,.15), rgba(212,175,55,.05));
+  border-color: var(--brass-d); color: var(--brass-d);
+  box-shadow: 0 4px 14px rgba(197,160,89,.2); font-weight: 700;
+}
+.ratio-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.ratio-btn {
+  background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+  padding: 9px 7px; border-radius: 9px; font-family: var(--sans);
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 5px; transition: all .2s;
+}
+.ratio-btn:hover { border-color: var(--brass); color: var(--paper); }
+.ratio-btn.active {
+  background: linear-gradient(135deg, var(--brass), var(--brass-d));
+  color: #fff; border-color: var(--brass-d); font-weight: 700;
+  box-shadow: 0 4px 12px rgba(197,160,89,.3);
+}
+.pb-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 13px; padding: 13px; display: flex; flex-direction: column; gap: 10px;
+}
+.pb-row { display: flex; justify-content: space-between; align-items: center; }
+.pb-lbl { font-size: 10px; font-weight: 700; color: var(--brass-d); text-transform: uppercase; }
+.pb-time { font-family: var(--mono); font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.timeline {
+  width: 100%; height: 8px; background: rgba(197,160,89,.18);
+  border-radius: 6px; cursor: pointer; position: relative;
+}
+.tl-fill {
+  height: 100%; width: 0%; border-radius: 6px;
+  background: linear-gradient(90deg, var(--brass), var(--brass-d));
+  box-shadow: 0 0 8px rgba(197,160,89,.5);
+  transition: width .05s linear; position: relative;
+}
+.tl-fill::after {
+  content:''; position: absolute; right: -5px; top: 50%; transform: translateY(-50%);
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--brass-d); box-shadow: 0 0 6px rgba(197,160,89,.7);
+}
+.pb-btns { display: flex; align-items: center; justify-content: space-between; }
+.pb-btn {
+  background: #fff; border: 1px solid var(--line); color: var(--paper);
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all .2s; font-family: var(--mono); font-size: 11px; font-weight: 700;
+}
+.pb-btn:hover { background: var(--brass); color: #fff; border-color: var(--brass-d); }
+.pb-btn.play {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, var(--brass), var(--brass-d));
+  color: #fff; border-color: var(--brass-d);
+  box-shadow: 0 4px 12px rgba(197,160,89,.35);
+}
+.pb-btn.play:hover { transform: scale(1.06); box-shadow: 0 6px 18px rgba(197,160,89,.5); }
+
+.btn-rec {
+  background: linear-gradient(135deg, var(--brass), var(--brass-d));
+  border: none; color: #fff; font-family: var(--sans); font-weight: 700;
+  font-size: 13px; padding: 13px 18px; border-radius: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 4px 16px rgba(197,160,89,.35); transition: all .2s;
+}
+.btn-rec:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(197,160,89,.5); }
+.btn-rec:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.prog-wrap { width: 100%; height: 7px; background: rgba(197,160,89,.18); border-radius: 6px; overflow: hidden; display: none; }
+.prog-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #10B981, #059669); border-radius: 6px; transition: width .1s; }
+.rec-hint { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.45; }
+
+/* ── PREVIEW STAGE ── */
+.stage {
+  background: var(--surface); border: 1.5px solid var(--line); border-radius: 22px;
+  padding: 28px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; overflow: hidden; min-height: 680px; box-shadow: var(--shadow);
+}
+.stage-badge {
+  position: absolute; top: 16px; left: 20px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--brass-d);
+  background: #fff; border: 1px solid var(--line); padding: 4px 13px; border-radius: 20px;
+  display: flex; align-items: center; gap: 7px; z-index: 20; font-weight: 700;
+}
+.stage-dot { width: 7px; height: 7px; border-radius: 50%; background: #15803D; box-shadow: 0 0 7px rgba(21,128,61,.6); }
+
+/* ── VIDEO VIEWPORT ── */
+.viewport {
+  background: #fff;
+  box-shadow: 0 22px 54px rgba(197,160,89,.2), 0 4px 14px rgba(0,0,0,.04);
+  border: 2px solid var(--line); border-radius: 18px;
+  overflow: hidden; position: relative;
+  transition: width .35s cubic-bezier(.16,1,.3,1), height .35s cubic-bezier(.16,1,.3,1);
+}
+
+/* ── SCENES ── */
+.scene {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  padding: calc(var(--vmin, 360px) * 0.058);
+  gap: calc(var(--vmin, 360px) * 0.028);
+  opacity: 0; pointer-events: none;
+  transition: opacity .35s cubic-bezier(.16,1,.3,1);
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(197,160,89,.15), transparent 70%), #FAF8F5;
+}
+.scene.active { opacity: 1; pointer-events: auto; }
+
+/* In landscape: 2-column — text left, mockup right */
+.viewport.lscape .scene {
+  flex-direction: row;
+  align-items: stretch;
+  padding: calc(var(--vmin, 360px) * 0.058);
+  gap: calc(var(--vmin, 360px) * 0.045);
+}
+
+/* TEXT BLOCK */
+.sc-text {
+  display: flex; flex-direction: column;
+  gap: calc(var(--vmin, 360px) * 0.022);
+  flex-shrink: 0;
+}
+.viewport.lscape .sc-text {
+  flex: 0 0 40%;
+  justify-content: center;
+}
+
+/* Badge */
+.sc-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--mono); font-size: calc(var(--vmin, 360px) * 0.027);
+  font-weight: 700; color: var(--brass-d);
+  background: rgba(197,160,89,.14); border: 1px solid var(--line);
+  padding: calc(var(--vmin, 360px) * 0.012) calc(var(--vmin, 360px) * 0.032);
+  border-radius: 20px; width: fit-content; text-transform: uppercase; letter-spacing: .5px;
+}
+/* Headline */
+.sc-h1 {
+  font-family: var(--serif);
+  font-size: calc(var(--vmin, 360px) * 0.065);
+  line-height: 1.2; font-weight: 700; color: var(--paper);
+}
+.sc-h1 em { font-style: italic; color: var(--brass-d); }
+.sc-sub {
+  font-size: calc(var(--vmin, 360px) * 0.034);
+  color: var(--muted); line-height: 1.5;
+}
+
+/* MOCKUP */
+.mockup {
+  flex: 1; background: #fff; border: 1.5px solid var(--line);
+  border-radius: calc(var(--vmin, 360px) * 0.038);
+  padding: calc(var(--vmin, 360px) * 0.036);
+  display: flex; flex-direction: column;
+  gap: calc(var(--vmin, 360px) * 0.028);
+  box-shadow: 0 8px 24px rgba(197,160,89,.1);
+  overflow: hidden;
+  min-width: 0; min-height: 0;
+}
+
+/* Photo grid */
+.photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--vmin, 360px) * 0.018); }
+.photo-cell {
+  aspect-ratio: 1/1; background: #F5EFEB;
+  border-radius: calc(var(--vmin, 360px) * 0.02);
+  border: 1.5px solid rgba(197,160,89,.25);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  transition: all .25s ease;
+}
+.photo-cell svg { width: calc(var(--vmin, 360px) * 0.058); height: calc(var(--vmin, 360px) * 0.058); }
+.photo-cell.sel {
+  border-color: var(--brass-d); background: rgba(197,160,89,.2);
+  box-shadow: 0 4px 14px rgba(197,160,89,.35); transform: scale(.94);
+}
+.photo-cell.sel::after {
+  content: 'TERPILIH'; position: absolute; bottom: 2px;
+  background: var(--brass-d); color: #fff;
+  font-size: calc(var(--vmin, 360px) * 0.018); font-weight: 800;
+  padding: 1px 4px; border-radius: 3px; font-family: var(--mono);
+}
+
+/* Mockup header row */
+.mockup-row { display: flex; justify-content: space-between; align-items: center; font-size: calc(var(--vmin, 360px) * 0.028); font-weight: 700; }
+.tag-sel { color: #15803D; background: rgba(21,128,61,.12); padding: 2px 8px; border-radius: 10px; }
+
+/* Code block */
+.code-block {
+  background: #FEF2F2; border: 1px dashed #FECACA; border-radius: calc(var(--vmin, 360px) * 0.022);
+  padding: calc(var(--vmin, 360px) * 0.028);
+  font-size: calc(var(--vmin, 360px) * 0.028); color: #B91C1C;
+  font-family: var(--mono); line-height: 1.65; flex: 1;
+}
+
+/* Notification pills */
+.notif-ok, .notif-err {
+  display: flex; align-items: center; gap: 7px;
+  font-size: calc(var(--vmin, 360px) * 0.028); font-weight: 700;
+  padding: calc(var(--vmin, 360px) * 0.022) calc(var(--vmin, 360px) * 0.03);
+  border-radius: calc(var(--vmin, 360px) * 0.025);
+  margin-top: auto;
+}
+.notif-ok { background: rgba(21,128,61,.1); border: 1px solid rgba(21,128,61,.3); color: #15803D; }
+.notif-err { background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; }
+.notif-ok svg, .notif-err svg { flex-shrink: 0; width: calc(var(--vmin, 360px) * 0.036); height: calc(var(--vmin, 360px) * 0.036); }
+
+/* Upload drop zone */
+.drop-zone {
+  border: 2px dashed var(--line); border-radius: calc(var(--vmin, 360px) * 0.03);
+  padding: calc(var(--vmin, 360px) * 0.055); text-align: center;
+  background: rgba(197,160,89,.06); display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1;
+  transition: all .3s;
+}
+.drop-zone.active-drop { background: rgba(197,160,89,.18); border-color: var(--brass-d); transform: scale(.98); }
+.drop-zone svg { width: calc(var(--vmin, 360px) * 0.08); height: calc(var(--vmin, 360px) * 0.08); }
+.drop-zone-t { font-size: calc(var(--vmin, 360px) * 0.034); font-weight: 700; color: var(--brass-d); }
+.drop-zone-s { font-size: calc(var(--vmin, 360px) * 0.026); color: var(--muted); }
+
+/* URL pill */
+.url-pill { background: var(--surface); border: 1px solid var(--line); border-radius: calc(var(--vmin, 360px) * 0.025); padding: calc(var(--vmin, 360px) * 0.028); }
+.url-lbl { font-size: calc(var(--vmin, 360px) * 0.022); text-transform: uppercase; font-weight: 700; color: var(--muted); font-family: var(--mono); }
+.url-val { font-family: var(--mono); font-size: calc(var(--vmin, 360px) * 0.028); font-weight: 700; color: var(--brass-d); margin-top: 2px; }
+
+/* WA button */
+.wa-btn {
+  background: rgba(37,211,102,.12); border: 1px solid rgba(37,211,102,.4); color: #15803D;
+  padding: calc(var(--vmin, 360px) * 0.022) calc(var(--vmin, 360px) * 0.03);
+  border-radius: calc(var(--vmin, 360px) * 0.025);
+  font-size: calc(var(--vmin, 360px) * 0.028); font-weight: 600;
+  display: flex; align-items: center; gap: 6px; transition: all .2s;
+}
+.wa-btn.active-click { background: rgba(37,211,102,.3); transform: scale(.97); }
+.wa-btn svg { flex-shrink: 0; width: calc(var(--vmin, 360px) * 0.036); height: calc(var(--vmin, 360px) * 0.036); }
+
+/* Project list */
+.proj-row {
+  background: var(--surface); border: 1px solid var(--line);
+  padding: calc(var(--vmin, 360px) * 0.025) calc(var(--vmin, 360px) * 0.03);
+  border-radius: calc(var(--vmin, 360px) * 0.022);
+  display: flex; justify-content: space-between; align-items: center;
+  transition: all .2s;
+}
+.proj-row.hovered { border-color: var(--brass-d); background: #fff; box-shadow: 0 2px 8px rgba(197,160,89,.2); }
+.proj-name { font-size: calc(var(--vmin, 360px) * 0.029); font-weight: 700; color: var(--paper); }
+.proj-sub { font-size: calc(var(--vmin, 360px) * 0.024); color: var(--muted); margin-top: 1px; }
+.badge-gold { background: var(--brass); color: #fff; font-size: calc(var(--vmin, 360px) * 0.022); font-weight: 800; padding: 2px 6px; border-radius: 4px; font-family: var(--mono); flex-shrink: 0; }
+.badge-green { background: #15803D; color: #fff; font-size: calc(var(--vmin, 360px) * 0.022); font-weight: 800; padding: 2px 6px; border-radius: 4px; font-family: var(--mono); flex-shrink: 0; }
+.badge-draft { background: #F5EFEB; color: var(--brass-d); font-size: calc(var(--vmin, 360px) * 0.022); font-weight: 800; padding: 2px 6px; border-radius: 4px; font-family: var(--mono); flex-shrink: 0; }
+
+/* CTA scene */
+.cta-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: calc(var(--vmin, 360px) * 0.028); }
+.cta-icon {
+  width: calc(var(--vmin, 360px) * 0.155); height: calc(var(--vmin, 360px) * 0.155);
+  border-radius: calc(var(--vmin, 360px) * 0.038);
+  background: linear-gradient(135deg, var(--brass), var(--brass-d));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 18px rgba(197,160,89,.4);
+}
+.cta-icon svg { width: calc(var(--vmin, 360px) * 0.08); height: calc(var(--vmin, 360px) * 0.08); }
+.cta-title { font-family: var(--serif); font-size: calc(var(--vmin, 360px) * 0.052); font-weight: 700; color: var(--paper); }
+.cta-sub { font-size: calc(var(--vmin, 360px) * 0.03); color: var(--muted); max-width: 200px; }
+.cta-btn {
+  background: linear-gradient(135deg, var(--brass), var(--brass-d)); color: #fff;
+  font-weight: 700; font-size: calc(var(--vmin, 360px) * 0.031);
+  padding: calc(var(--vmin, 360px) * 0.028) calc(var(--vmin, 360px) * 0.055);
+  border-radius: calc(var(--vmin, 360px) * 0.025);
+  box-shadow: 0 4px 14px rgba(197,160,89,.35); transition: all .2s;
+}
+.cta-btn.active-click { transform: scale(.95); box-shadow: 0 2px 6px rgba(197,160,89,.5); }
+
+/* ── SMOOTH ANIMATED CURSOR ── */
+#simCursor {
+  position: absolute; width: 22px; height: 22px;
+  left: 0; top: 0; z-index: 150; pointer-events: none;
+  opacity: 1; transition: opacity .25s;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,.35));
+}
+#cursorRipple {
+  position: absolute; width: 32px; height: 32px;
+  left: 0; top: 0; z-index: 140; pointer-events: none; opacity: 0;
+  border-radius: 50%; border: 2.5px solid var(--brass);
+  transform: translate(-50%, -50%);
+}
+@keyframes rippleAnim {
+  0%   { transform: translate(-50%,-50%) scale(.2); opacity: .9; }
+  100% { transform: translate(-50%,-50%) scale(1.7); opacity: 0; }
+}
+
+#renderCanvas { display: none; }
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-brand">
+    <div class="hdr-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="hdr-title">Pick Your Photo <em>Promo Studio</em></div>
+      <div class="hdr-sub">Motion Graphic Video Studio — Instagram 60 FPS</div>
+    </div>
+    <span class="hdr-badge" id="codecBadge">60 FPS Ready</span>
+  </div>
+  <a class="hdr-link" href="/simulation.html" target="_blank">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    Lihat Simulasi
+  </a>
+</header>
+
+<main class="studio">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div>
+      <div class="sid-lbl">1. Pilih Video Promosi</div>
+      <div class="theme-list">
+        <button class="theme-btn active" id="tb1" onclick="selectTheme(1)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <div>
+            <div>Video 1: Perkenalan Platform</div>
+            <small style="font-weight:500;opacity:.7;font-size:10.5px;">Masalah Drive vs Solusi 0 Byte</small>
+          </div>
+        </button>
+        <button class="theme-btn" id="tb2" onclick="selectTheme(2)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div>Video 2: Demo Trial Instan</div>
+            <small style="font-weight:500;opacity:.7;font-size:10.5px;">Coba 1 menit tanpa daftar</small>
+          </div>
+        </button>
+        <button class="theme-btn" id="tb3" onclick="selectTheme(3)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <div>
+            <div>Video 3: Simulasi Lengkap</div>
+            <small style="font-weight:500;opacity:.7;font-size:10.5px;">Alur fotografer &amp; Magic Sort</small>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="sid-lbl">2. Format Rasio Instagram</div>
+      <div class="ratio-row">
+        <button class="ratio-btn active" id="ratV" onclick="selectRatio('vertical')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="3"/></svg>
+          Story / Reels<br><small>9:16</small>
+        </button>
+        <button class="ratio-btn" id="ratL" onclick="selectRatio('landscape')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="3"/></svg>
+          Feeds / Web<br><small>16:9</small>
+        </button>
+      </div>
+    </div>
+
+    <div class="pb-card">
+      <div class="pb-row">
+        <span class="pb-lbl">Kontrol Animasi</span>
+        <span class="pb-time" id="pbTime">00:00 / 00:12</span>
+      </div>
+      <div class="timeline" id="timeline" onclick="seekTo(event)">
+        <div class="tl-fill" id="tlFill"></div>
+      </div>
+      <div class="pb-btns">
+        <button class="pb-btn" onclick="restartAnim()" title="Mulai Ulang">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+        </button>
+        <button class="pb-btn play" id="playBtn" onclick="togglePlay()">
+          <svg id="playIcon" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+        <button class="pb-btn" id="spdBtn" onclick="cycleSpeed()">1x</button>
+      </div>
+    </div>
+
+    <button class="btn-rec" id="recBtn" onclick="startDownloadVideo()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
+      <span id="recLabel">Download Video 60 FPS</span>
+    </button>
+    <div class="prog-wrap" id="progWrap"><div class="prog-fill" id="progFill"></div></div>
+    <div class="rec-hint" id="recHint">Video animasi jernih tanpa pecah siap post ke Instagram Story, Reels, &amp; Feeds.</div>
+  </aside>
+
+  <!-- STAGE -->
+  <section class="stage">
+    <div class="stage-badge">
+      <span class="stage-dot"></span>
+      <span id="stageLabel">Scene 1 — Intro</span>
+    </div>
+
+    <div class="viewport" id="viewport">
+
+      <!-- CURSOR -->
+      <svg id="simCursor" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2.5 2.5L9.5 18L12 11L18.5 8.5L2.5 2.5Z" fill="#C5A059" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/>
+      </svg>
+      <div id="cursorRipple"></div>
+
+      <!-- ═══════════════ VIDEO 1 ═══════════════ -->
+      <!-- 1.1: Problem -->
+      <div class="scene active" id="s1_1">
+        <div class="sc-text">
+          <div class="sc-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:1em;height:1em"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            Stop Kirim Drive Manual
+          </div>
+          <h2 class="sc-h1">Klien <em>Pusing</em><br>Pilih Ribuan Foto?</h2>
+          <p class="sc-sub">Link Google Drive biasa bikin klien bingung mencatat nomor foto satu per satu.</p>
+        </div>
+        <div class="mockup">
+          <div style="display:flex;align-items:center;gap:6px;font-size:calc(var(--vmin,360px)*.029);font-weight:700;color:#DC2626;">
+            <svg style="width:calc(var(--vmin,360px)*.034);height:calc(var(--vmin,360px)*.034);flex-shrink:0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Cara Lama: 2.000 Foto Berantakan
+          </div>
+          <div class="code-block" id="v1_code">IMG_0492.JPG<br>IMG_0493.JPG<br>IMG_0494.JPG<br><em style="color:#991B1B;">"Yang mana ya tadi?"</em></div>
+          <div class="notif-err" id="v1_err">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Butuh 3–5 hari hanya untuk sortir foto
+          </div>
+        </div>
+      </div>
+
+      <!-- 1.2: Solusi -->
+      <div class="scene" id="s1_2">
+        <div class="sc-text">
+          <div class="sc-badge">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:1em;height:1em"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6L12 2z"/></svg>
+            Solusi Modern Fotografer
+          </div>
+          <h2 class="sc-h1">Galeri Mewah <em>1-Click</em><br>Auto Sortir</h2>
+          <p class="sc-sub">Klien buka galeri eksklusif di HP, klik bintang favorit, nomor file langsung terekam rapi.</p>
+        </div>
+        <div class="mockup">
+          <div class="mockup-row">
+            <span style="color:var(--brass-d);">Wedding Rama &amp; Shinta</span>
+            <span class="tag-sel" id="v1_counter">14/20 Dipilih</span>
+          </div>
+          <div class="photo-grid">
+            <div class="photo-cell sel" id="v1_p1"><svg viewBox="0 0 24 24" fill="var(--brass-d)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="photo-cell sel" id="v1_p2"><svg viewBox="0 0 24 24" fill="var(--brass-d)" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="photo-cell" id="v1_p3"><svg viewBox="0 0 24 24" fill="none" stroke="var(--brass)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          </div>
+          <div class="notif-ok" id="v1_ok">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            0 Byte VPS Storage — Langsung Sync Google Drive
+          </div>
+        </div>
+      </div>
+
+      <!-- 1.3: CTA -->
+      <div class="scene" id="s1_3">
+        <div class="sc-text">
+          <div class="sc-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:1em;height:1em"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            Coba Sekarang Gratis
+          </div>
+          <h2 class="sc-h1">Tingkatkan <em>Standar</em><br>Studio Anda</h2>
+          <p class="sc-sub">Hemat biaya server hingga 90%. Klien senang, proses revisi jadi instan.</p>
+        </div>
+        <div class="mockup">
+          <div class="cta-wrap">
+            <div class="cta-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <div class="cta-title">Pick Your Photo</div>
+            <div class="cta-sub">SaaS Platform Khusus Fotografer Indonesia</div>
+            <div class="cta-btn" id="ctaBtn">Coba Demo — pickyourphoto.com</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ VIDEO 2 ═══════════════ -->
+      <!-- 2.1: Upload Trial -->
+      <div class="scene" id="s2_1">
+        <div class="sc-text">
+          <div class="sc-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:1em;height:1em"><polyline points="13 2 13 9 20 9"/><path d="M20 14v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7"/></svg>
+            Instant Trial (Tanpa Daftar)
+          </div>
+          <h2 class="sc-h1">Coba Langsung <em>1 Menit</em><br>Langsung Jadi</h2>
+          <p class="sc-sub">Upload foto sampel, sistem otomatis buatkan galeri interaktif siap kirim ke klien.</p>
+        </div>
+        <div class="mockup">
+          <div class="drop-zone" id="v2_drop">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--brass-d)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div class="drop-zone-t" id="v2_drop_text">Drag &amp; Drop Foto Sampel</div>
+            <div class="drop-zone-s">Maks. 6 foto · Semua format didukung</div>
+          </div>
+          <div class="notif-ok" id="v2_notif">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            100% Gratis — Tanpa Kartu Kredit / Akun
+          </div>
+        </div>
+      </div>
+
+      <!-- 2.2: Link siap kirim -->
+      <div class="scene" id="s2_2">
+        <div class="sc-text">
+          <div class="sc-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:1em;height:1em"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Share ke Klien via WhatsApp
+          </div>
+          <h2 class="sc-h1">Link Galeri <em>Siap Kirim</em><br>Otomatis</h2>
+          <p class="sc-sub">Klien buka galeri dari browser smartphone — tanpa install aplikasi apapun.</p>
+        </div>
+        <div class="mockup">
+          <div class="url-pill" id="v2_url_box">
+            <div class="url-lbl">Link Galeri Klien:</div>
+            <div class="url-val">pickyourphoto.com/g/xyz-77</div>
+          </div>
+          <div class="wa-btn" id="v2_wa_btn">
+            <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M20.52 3.449C18.24 1.245 15.24 0 12.02 0 5.463 0 .104 5.334.101 11.893c0 2.096.548 4.14 1.587 5.946L0 24l6.335-1.652A11.9 11.9 0 0 0 12.016 23.8c6.554 0 11.9-5.335 11.903-11.893a11.82 11.82 0 0 0-3.41-8.45z"/></svg>
+            <span id="v2_wa_text">Salin Pesan WhatsApp Otomatis</span>
+          </div>
+          <div class="notif-ok">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Link aktif 7 hari · Data terlindungi
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══════════════ VIDEO 3 ═══════════════ -->
+      <!-- 3.1: Dashboard -->
+      <div class="scene" id="s3_1">
+        <div class="sc-text">
+          <div class="sc-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:1em;height:1em"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Dashboard Fotografer
+          </div>
+          <h2 class="sc-h1">Kelola Puluhan <em>Project</em><br>Dalam Satu Layar</h2>
+          <p class="sc-sub">Pantau status seleksi setiap klien secara real-time dari dasbor terpusat.</p>
+        </div>
+        <div class="mockup">
+          <div style="display:flex;flex-direction:column;gap:calc(var(--vmin,360px)*.016)">
+            <div class="proj-row" id="p_row1"><div><div class="proj-name">Prewedding Arya &amp; Bella</div><div class="proj-sub">Drive Sync · 450 Foto</div></div><span class="badge-gold">SELESAI</span></div>
+            <div class="proj-row" id="p_row2"><div><div class="proj-name">Wisuda UNHAS 2026</div><div class="proj-sub">18 Klien Aktif</div></div><span class="badge-green">PROSES</span></div>
+            <div class="proj-row" id="p_row3"><div><div class="proj-name">Graduation SMA PGRI</div><div class="proj-sub">Menunggu Upload</div></div><span class="badge-draft">DRAFT</span></div>
+          </div>
+          <div class="notif-ok">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Statistik Kuota &amp; Google Drive Terhubung
+          </div>
+        </div>
+      </div>
+
+      <!-- 3.2: Magic Sort -->
+      <div class="scene" id="s3_2">
+        <div class="sc-text">
+          <div class="sc-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:1em;height:1em"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            Klien Pilih Foto
+          </div>
+          <h2 class="sc-h1"><em>Magic Sort</em><br>Otomatis Rapi</h2>
+          <p class="sc-sub">Klien klik bintang dari HP. Sistem langsung rekap nomor file dan kirim notifikasi ke fotografer.</p>
+        </div>
+        <div class="mockup">
+          <div class="mockup-row">
+            <span style="color:var(--brass-d);">Prewedding Arya &amp; Bella</span>
+            <span class="tag-sel" id="s32counter">0/450 Dipilih</span>
+          </div>
+          <div class="photo-grid">
+            <div class="photo-cell" id="mc1"><svg viewBox="0 0 24 24" fill="none" stroke="var(--brass)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="photo-cell" id="mc2"><svg viewBox="0 0 24 24" fill="none" stroke="var(--brass)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            <div class="photo-cell" id="mc3"><svg viewBox="0 0 24 24" fill="none" stroke="var(--brass)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+          </div>
+          <div class="notif-ok" id="magicSortNotif" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Notifikasi WA terkirim ke fotografer!
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /viewport -->
+  </section>
+</main>
+
+<canvas id="renderCanvas"></canvas>
+
+<script>
+/* ═══════════════════════════════════════
+   CONSTANTS & CONFIG
+═══════════════════════════════════════ */
+const RATIOS = {
+  vertical:  { w: 360, h: 640 },
+  landscape: { w: 660, h: 371 },
+};
+const THEMES = {
+  1: ['s1_1','s1_2','s1_3'],
+  2: ['s2_1','s2_2','s1_3'],
+  3: ['s3_1','s3_2','s1_3'],
+};
+const SCENE_LABELS = {
+  s1_1:'Scene 1 — Masalah Drive Manual',
+  s1_2:'Scene 2 — Galeri Auto Sortir',
+  s1_3:'Scene 3 — Solusi & Coba Sekarang',
+  s2_1:'Scene 1 — Upload Trial 1 Menit',
+  s2_2:'Scene 2 — Share Link WA Klien',
+  s3_1:'Scene 1 — Dashboard Manajemen',
+  s3_2:'Scene 2 — Magic Sort Klien',
+};
+
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
+let theme      = 1, ratio = 'vertical';
+let isPlaying  = true, speed = 1;
+let totalSec   = 12, currentSec = 0;
+let rafId      = null, lastTs = null;
+let activeSceneIdx = -1;
+
+/* ═══════════════════════════════════════
+   VIEWPORT SIZE
+═══════════════════════════════════════ */
+function applyViewportSize() {
+  const vp = document.getElementById('viewport');
+  const r  = RATIOS[ratio];
+  vp.style.width  = r.w + 'px';
+  vp.style.height = r.h + 'px';
+  const vmin = Math.min(r.w, r.h);
+  vp.style.setProperty('--vmin', vmin + 'px');
+  vp.classList.toggle('lscape', ratio === 'landscape');
+}
+
+/* ═══════════════════════════════════════
+   THEME / RATIO SELECTORS
+═══════════════════════════════════════ */
+function selectTheme(t) {
+  theme = t;
+  [1,2,3].forEach(i => document.getElementById('tb'+i).classList.toggle('active', i===t));
+  restartAnim();
+}
+function selectRatio(r) {
+  ratio = r;
+  document.getElementById('ratV').classList.toggle('active', r==='vertical');
+  document.getElementById('ratL').classList.toggle('active', r==='landscape');
+  applyViewportSize();
+}
+
+/* ═══════════════════════════════════════
+   SMOOTH CONTINUOUS TIMELINE-DRIVEN ANIMATION
+═══════════════════════════════════════ */
+function updateSceneAndCursor(timeSec) {
+  const scenes = THEMES[theme];
+  const perScene = totalSec / scenes.length;
+  const sIdx = Math.min(Math.floor(timeSec / perScene), scenes.length - 1);
+  const sProgress = (timeSec - sIdx * perScene) / perScene; // 0.0 -> 1.0 within scene
+  const sceneId = scenes[sIdx];
+
+  // Switch scene visibility
+  if (sIdx !== activeSceneIdx) {
+    activeSceneIdx = sIdx;
+    document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(sceneId);
+    if (el) el.classList.add('active');
+    document.getElementById('stageLabel').textContent = SCENE_LABELS[sceneId] || '';
+  }
+
+  // Animate elements and compute smooth cursor position
+  animateSceneContent(sceneId, sProgress);
+}
+
+/* Helper to get center position of element relative to viewport */
+function getElCenterFrac(elId) {
+  const el = document.getElementById(elId);
+  const vp = document.getElementById('viewport');
+  if (!el || !vp) return { x: 0.5, y: 0.5 };
+  const elR = el.getBoundingClientRect();
+  const vpR = vp.getBoundingClientRect();
+  return {
+    x: (elR.left + elR.width / 2 - vpR.left) / vpR.width,
+    y: (elR.top + elR.height / 2 - vpR.top) / vpR.height
+  };
+}
+
+/* Linear interpolation */
+function lerp(a, b, t) { return a + (b - a) * Math.min(Math.max(t, 0), 1); }
+
+/* Trigger click ripple effect at viewport percentage */
+let lastRippleTime = 0;
+function triggerRipple(xFrac, yFrac) {
+  const now = performance.now();
+  if (now - lastRippleTime < 300) return; // debounce
+  lastRippleTime = now;
+  const vp = document.getElementById('viewport');
+  const r = document.getElementById('cursorRipple');
+  r.style.left = (xFrac * vp.offsetWidth) + 'px';
+  r.style.top  = (yFrac * vp.offsetHeight) + 'px';
+  r.style.animation = 'none';
+  void r.offsetWidth;
+  r.style.animation = 'rippleAnim 0.45s ease-out forwards';
+}
+
+function setCursorPos(xFrac, yFrac) {
+  const vp = document.getElementById('viewport');
+  const x = Math.round(xFrac * vp.offsetWidth - 3);
+  const y = Math.round(yFrac * vp.offsetHeight - 3);
+  document.getElementById('simCursor').style.transform = `translate(${x}px, ${y}px)`;
+}
+
+/* Detailed Scene Actions Based on Progress (0.0 to 1.0) */
+function animateSceneContent(id, p) {
+  const vp = document.getElementById('viewport');
+
+  // VIDEO 1, SCENE 1 (s1_1: Problem)
+  if (id === 's1_1') {
+    const codePos = getElCenterFrac('v1_code');
+    const errPos = getElCenterFrac('v1_err');
+    if (p < 0.5) {
+      const t = p / 0.5;
+      const x = lerp(0.85, codePos.x, t);
+      const y = lerp(0.85, codePos.y, t);
+      setCursorPos(x, y);
+      if (p > 0.48) triggerRipple(codePos.x, codePos.y);
+    } else {
+      const t = (p - 0.5) / 0.5;
+      const x = lerp(codePos.x, errPos.x, t);
+      const y = lerp(codePos.y, errPos.y, t);
+      setCursorPos(x, y);
+    }
+  }
+
+  // VIDEO 1, SCENE 2 (s1_2: Gallery auto sort)
+  else if (id === 's1_2') {
+    const p3Pos = getElCenterFrac('v1_p3');
+    const p3El = document.getElementById('v1_p3');
+    const ctrEl = document.getElementById('v1_counter');
+    if (p < 0.45) {
+      const t = p / 0.45;
+      const x = lerp(0.2, p3Pos.x, t);
+      const y = lerp(0.9, p3Pos.y, t);
+      setCursorPos(x, y);
+      if (p3El) p3El.classList.remove('sel');
+      if (ctrEl) ctrEl.textContent = '14/20 Dipilih';
+    } else {
+      setCursorPos(p3Pos.x, p3Pos.y);
+      if (p3El) p3El.classList.add('sel');
+      if (ctrEl) ctrEl.textContent = '15/20 Dipilih';
+      if (p < 0.55) triggerRipple(p3Pos.x, p3Pos.y);
+    }
+  }
+
+  // CTA SCENE (s1_3)
+  else if (id === 's1_3') {
+    const btnPos = getElCenterFrac('ctaBtn');
+    const btnEl = document.getElementById('ctaBtn');
+    if (p < 0.5) {
+      const t = p / 0.5;
+      const x = lerp(0.15, btnPos.x, t);
+      const y = lerp(0.85, btnPos.y, t);
+      setCursorPos(x, y);
+      if (btnEl) btnEl.classList.remove('active-click');
+    } else {
+      setCursorPos(btnPos.x, btnPos.y);
+      if (btnEl) btnEl.classList.add('active-click');
+      if (p < 0.58) triggerRipple(btnPos.x, btnPos.y);
+    }
+  }
+
+  // VIDEO 2, SCENE 1 (s2_1: Dropzone)
+  else if (id === 's2_1') {
+    const dropPos = getElCenterFrac('v2_drop');
+    const dropEl = document.getElementById('v2_drop');
+    const txtEl = document.getElementById('v2_drop_text');
+    if (p < 0.5) {
+      const t = p / 0.5;
+      const x = lerp(0.1, dropPos.x, t);
+      const y = lerp(0.2, dropPos.y, t);
+      setCursorPos(x, y);
+      if (dropEl) dropEl.classList.remove('active-drop');
+      if (txtEl) txtEl.textContent = 'Drag & Drop Foto Sampel';
+    } else {
+      setCursorPos(dropPos.x, dropPos.y);
+      if (dropEl) dropEl.classList.add('active-drop');
+      if (txtEl) txtEl.textContent = '✓ 6 Foto Terupload (Siap)';
+      if (p < 0.58) triggerRipple(dropPos.x, dropPos.y);
+    }
+  }
+
+  // VIDEO 2, SCENE 2 (s2_2: WA Share)
+  else if (id === 's2_2') {
+    const waPos = getElCenterFrac('v2_wa_btn');
+    const waEl = document.getElementById('v2_wa_btn');
+    const waTxt = document.getElementById('v2_wa_text');
+    if (p < 0.45) {
+      const t = p / 0.45;
+      const x = lerp(0.85, waPos.x, t);
+      const y = lerp(0.3, waPos.y, t);
+      setCursorPos(x, y);
+      if (waEl) waEl.classList.remove('active-click');
+      if (waTxt) waTxt.textContent = 'Salin Pesan WhatsApp Otomatis';
+    } else {
+      setCursorPos(waPos.x, waPos.y);
+      if (waEl) waEl.classList.add('active-click');
+      if (waTxt) waTxt.textContent = '✓ Link Galeri Tersalin!';
+      if (p < 0.55) triggerRipple(waPos.x, waPos.y);
+    }
+  }
+
+  // VIDEO 3, SCENE 1 (s3_1: Dashboard)
+  else if (id === 's3_1') {
+    const r1Pos = getElCenterFrac('p_row1');
+    const r2Pos = getElCenterFrac('p_row2');
+    const r1El = document.getElementById('p_row1');
+    const r2El = document.getElementById('p_row2');
+    if (p < 0.5) {
+      const t = p / 0.5;
+      setCursorPos(lerp(0.15, r1Pos.x, t), lerp(0.3, r1Pos.y, t));
+      if (r1El) r1El.classList.add('hovered');
+      if (r2El) r2El.classList.remove('hovered');
+    } else {
+      const t = (p - 0.5) / 0.5;
+      setCursorPos(lerp(r1Pos.x, r2Pos.x, t), lerp(r1Pos.y, r2Pos.y, t));
+      if (r1El) r1El.classList.remove('hovered');
+      if (r2El) r2El.classList.add('hovered');
+    }
+  }
+
+  // VIDEO 3, SCENE 2 (s3_2: Magic Sort)
+  else if (id === 's3_2') {
+    const c1Pos = getElCenterFrac('mc1');
+    const c2Pos = getElCenterFrac('mc2');
+    const c3Pos = getElCenterFrac('mc3');
+    const mc1 = document.getElementById('mc1');
+    const mc2 = document.getElementById('mc2');
+    const mc3 = document.getElementById('mc3');
+    const ctr = document.getElementById('s32counter');
+    const ntf = document.getElementById('magicSortNotif');
+
+    if (p < 0.3) {
+      const t = p / 0.3;
+      setCursorPos(lerp(0.2, c1Pos.x, t), lerp(0.8, c1Pos.y, t));
+      if (mc1) mc1.classList.remove('sel');
+      if (mc2) mc2.classList.remove('sel');
+      if (mc3) mc3.classList.remove('sel');
+      if (ctr) ctr.textContent = '0/450 Dipilih';
+      if (ntf) ntf.style.display = 'none';
+    } else if (p < 0.55) {
+      const t = (p - 0.3) / 0.25;
+      setCursorPos(lerp(c1Pos.x, c2Pos.x, t), lerp(c1Pos.y, c2Pos.y, t));
+      if (mc1) mc1.classList.add('sel');
+      if (p < 0.35) triggerRipple(c1Pos.x, c1Pos.y);
+      if (ctr) ctr.textContent = '1/450 Dipilih';
+    } else if (p < 0.8) {
+      const t = (p - 0.55) / 0.25;
+      setCursorPos(lerp(c2Pos.x, c3Pos.x, t), lerp(c2Pos.y, c3Pos.y, t));
+      if (mc2) mc2.classList.add('sel');
+      if (p < 0.6) triggerRipple(c2Pos.x, c2Pos.y);
+      if (ctr) ctr.textContent = '2/450 Dipilih';
+    } else {
+      setCursorPos(c3Pos.x, c3Pos.y);
+      if (mc3) mc3.classList.add('sel');
+      if (p < 0.85) triggerRipple(c3Pos.x, c3Pos.y);
+      if (ctr) ctr.textContent = '3/450 Dipilih';
+      if (ntf) ntf.style.display = 'flex';
+    }
+  }
+}
+
+/* ═══════════════════════════════════════
+   PLAYBACK ENGINE
+═══════════════════════════════════════ */
+function animTick(ts) {
+  if (!isPlaying) { rafId = null; return; }
+  if (lastTs !== null) {
+    const dt = (ts - lastTs) / 1000;
+    currentSec += dt * speed;
+    if (currentSec >= totalSec) currentSec = 0;
+  }
+  lastTs = ts;
+  updateTimeline();
+  updateSceneAndCursor(currentSec);
+  rafId = requestAnimationFrame(animTick);
+}
+
+function updateTimeline() {
+  const pct = (currentSec / totalSec) * 100;
+  document.getElementById('tlFill').style.width = pct + '%';
+  const s = Math.floor(currentSec), t = Math.floor(totalSec);
+  document.getElementById('pbTime').textContent = `00:${s<10?'0':''}${s} / 00:${t<10?'0':''}${t}`;
+}
+
+function togglePlay() {
+  isPlaying = !isPlaying;
+  const icon = document.getElementById('playIcon');
+  if (isPlaying) {
+    icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+    lastTs = null;
+    rafId = requestAnimationFrame(animTick);
+  } else {
+    icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+}
+
+function restartAnim() {
+  if (rafId) cancelAnimationFrame(rafId);
+  currentSec = 0; activeSceneIdx = -1; isPlaying = true; lastTs = null;
+  const icon = document.getElementById('playIcon');
+  icon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+  rafId = requestAnimationFrame(animTick);
+}
+
+function cycleSpeed() {
+  const opts = [1, 1.5, 2, 0.5];
+  speed = opts[(opts.indexOf(speed) + 1) % opts.length];
+  document.getElementById('spdBtn').textContent = speed + 'x';
+}
+
+function seekTo(e) {
+  const rect = document.getElementById('timeline').getBoundingClientRect();
+  currentSec = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * totalSec;
+  activeSceneIdx = -1;
+  updateTimeline();
+  updateSceneAndCursor(currentSec);
+}
+
+/* ═══════════════════════════════════════
+   100% RELIABLE HIGH-RES VIDEO EXPORT
+═══════════════════════════════════════ */
+let isExporting = false;
+
+function detectBestMimeType() {
+  const candidates = [
+    'video/mp4;codecs=avc1,mp4a.40.2',
+    'video/mp4;codecs=avc1',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm'
+  ];
+  for (const mime of candidates) {
+    if (MediaRecorder.isTypeSupported(mime)) return mime;
+  }
+  return 'video/webm';
+}
+
+async function startDownloadVideo() {
+  if (isExporting) return;
+  isExporting = true;
+
+  const btn  = document.getElementById('recBtn');
+  const lbl  = document.getElementById('recLabel');
+  const hint = document.getElementById('recHint');
+  const pw   = document.getElementById('progWrap');
+  const pf   = document.getElementById('progFill');
+
+  btn.disabled = true;
+  pw.style.display = 'block';
+  pf.style.width = '0%';
+
+  try {
+    const r = RATIOS[ratio];
+    const EW = r.w * 2; // high definition scale
+    const EH = r.h * 2;
+    const canvas = document.getElementById('renderCanvas');
+    canvas.width = EW;
+    canvas.height = EH;
+    const ctx = canvas.getContext('2d');
+
+    const mime = detectBestMimeType();
+    const isMp4 = mime.includes('mp4');
+    const ext = isMp4 ? 'mp4' : 'webm';
+
+    lbl.textContent = `⏺ Merekam (${ext.toUpperCase()} 60 FPS)…`;
+    hint.textContent = `Sedang merender video promosi kualitas tinggi…`;
+
+    const stream = canvas.captureStream(60);
+    const mr = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 20_000_000 });
+    const chunks = [];
+    mr.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+
+    // Pause UI playback and control exact frame-by-frame rendering
+    const origPlaying = isPlaying;
+    isPlaying = false;
+    if (rafId) cancelAnimationFrame(rafId);
+
+    mr.start(100);
+
+    const fps = 60;
+    const totalFrames = totalSec * fps;
+    const frameInterval = 1000 / fps;
+
+    for (let f = 0; f <= totalFrames; f++) {
+      const tSec = (f / totalFrames) * totalSec;
+      updateSceneAndCursor(tSec);
+      renderFrameToCanvas(ctx, EW, EH, tSec);
+
+      if (f % 15 === 0) {
+        pf.style.width = Math.round((f / totalFrames) * 90) + '%';
+      }
+      await new Promise(r => setTimeout(r, frameInterval));
+    }
+
+    mr.stop();
+    await new Promise(res => { mr.onstop = res; });
+
+    pf.style.width = '100%';
+    lbl.textContent = `✅ Menyimpan ${ext.toUpperCase()}…`;
+
+    const blob = new Blob(chunks, { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pickyourphoto-promo-v${theme}-${ratio}-60fps.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    lbl.textContent = `✅ Berhasil Diunduh!`;
+    hint.textContent = `File ${a.download} berhasil diunduh dan siap diupload ke Instagram!`;
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+  } catch (err) {
+    console.error('Export error:', err);
+    lbl.textContent = 'Download Video 60 FPS';
+    hint.textContent = 'Peringatan: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    isExporting = false;
+    setTimeout(() => {
+      pw.style.display = 'none';
+      pf.style.width = '0%';
+      lbl.textContent = 'Download Video 60 FPS';
+    }, 4000);
+  }
+}
+
+/* Procedural Canvas Renderer for High-Def Video Export */
+function renderFrameToCanvas(ctx, W, H, tSec) {
+  const scenes = THEMES[theme];
+  const perScene = totalSec / scenes.length;
+  const sIdx = Math.min(Math.floor(tSec / perScene), scenes.length - 1);
+  const sceneId = scenes[sIdx];
+  const sProgress = (tSec - sIdx * perScene) / perScene;
+
+  // Rich warm ivory background
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#FDFBF7');
+  bg.addColorStop(1, '#FAF8F5');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Gold radial ambient glow
+  const glow = ctx.createRadialGradient(W / 2, 0, 0, W / 2, H * 0.5, W * 0.75);
+  glow.addColorStop(0, 'rgba(197, 160, 89, 0.22)');
+  glow.addColorStop(1, 'rgba(250, 248, 245, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, W, H);
+
+  // Top header brand badge
+  ctx.fillStyle = '#8C6D23';
+  ctx.fillRect(W * 0.06, H * 0.055, 6, H * 0.045);
+
+  const titles = {
+    s1_1: ['Klien Pusing Pilih', 'Ribuan Foto?'],
+    s1_2: ['Galeri Mewah 1-Click', 'Auto Sortir'],
+    s1_3: ['Tingkatkan Standar', 'Studio Anda'],
+    s2_1: ['Coba Langsung', '1 Menit Jadi'],
+    s2_2: ['Link Galeri', 'Siap Kirim Otomatis'],
+    s3_1: ['Kelola Puluhan Project', 'Dalam 1 Layar'],
+    s3_2: ['Magic Sort', 'Otomatis Rapi'],
+  };
+  const lines = titles[sceneId] || ['Pick Your Photo', ''];
+
+  // Text 1
+  ctx.fillStyle = '#1C1917';
+  ctx.font = `700 ${H * 0.062}px Montserrat, sans-serif`;
+  ctx.fillText(lines[0], W * 0.06 + 14, H * 0.17);
+
+  // Text 2 (Italic Serif)
+  ctx.fillStyle = '#8C6D23';
+  ctx.font = `italic 700 ${H * 0.062}px Fraunces, serif`;
+  ctx.fillText(lines[1], W * 0.06 + 14, H * 0.25);
+
+  // Subtitle
+  ctx.fillStyle = '#57534E';
+  ctx.font = `500 ${H * 0.028}px Montserrat, sans-serif`;
+  ctx.fillText('Platform SaaS Khusus Fotografer Indonesia', W * 0.06, H * 0.32);
+
+  // Mockup Box (Card)
+  const cardX = W * 0.06;
+  const cardY = H * 0.37;
+  const cardW = W * 0.88;
+  const cardH = H * 0.38;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.strokeStyle = 'rgba(197, 160, 89, 0.35)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(cardX, cardY, cardW, cardH, 16);
+  ctx.fill();
+  ctx.stroke();
+
+  // Features inside card
+  const feats = [
+    '✓ 0 Byte VPS Storage — Sync Google Drive',
+    '✓ Klien Pilih Foto Langsung dari HP',
+    '✓ Rekap File Otomatis via WhatsApp'
+  ];
+  ctx.fillStyle = '#1C1917';
+  ctx.font = `600 ${H * 0.026}px Montserrat, sans-serif`;
+  feats.forEach((f, i) => {
+    ctx.fillText(f, cardX + 20, cardY + 45 + i * (H * 0.08));
+  });
+
+  // CTA Button
+  const btnY = H * 0.8;
+  const btnH = H * 0.1;
+  const ctaGrad = ctx.createLinearGradient(cardX, 0, cardX + cardW, 0);
+  ctaGrad.addColorStop(0, '#C5A059');
+  ctaGrad.addColorStop(1, '#8C6D23');
+  ctx.fillStyle = ctaGrad;
+  ctx.beginPath();
+  ctx.roundRect(cardX, btnY, cardW, btnH, 16);
+  ctx.fill();
+
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `700 ${H * 0.034}px Montserrat, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('Coba Sekarang — pickyourphoto.com', W / 2, btnY + btnH * 0.62);
+  ctx.textAlign = 'left';
+
+  // Smooth Cursor on Canvas
+  const curX = W * (0.2 + 0.6 * sProgress);
+  const curY = H * (0.4 + 0.35 * Math.sin(sProgress * Math.PI));
+  ctx.fillStyle = '#C5A059';
+  ctx.strokeStyle = '#FFFFFF';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(curX, curY);
+  ctx.lineTo(curX + 16, curY + 34);
+  ctx.lineTo(curX + 22, curY + 20);
+  ctx.lineTo(curX + 36, curY + 16);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+}
+
+/* ═══════════════════════════════════════
+   INITIALIZATION
+═══════════════════════════════════════ */
+applyViewportSize();
+const bestMime = detectBestMimeType();
+document.getElementById('codecBadge').textContent = bestMime.includes('mp4') ? 'MP4 60 FPS' : 'WebM 60 FPS';
+
+lastTs = null;
+rafId = requestAnimationFrame(animTick);
+</script>
+</body>
+</html>
