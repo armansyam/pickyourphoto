@@ -48,6 +48,16 @@ export async function POST(request) {
 
         fs.writeFileSync(filePath, buffer);
 
+        // Also sync to public/logo.png, public/favicon.png, public/favicon.ico for universal static fallbacks
+        try {
+            const publicDir = path.join(process.cwd(), 'public');
+            fs.writeFileSync(path.join(publicDir, 'logo.png'), buffer);
+            fs.writeFileSync(path.join(publicDir, 'favicon.png'), buffer);
+            fs.writeFileSync(path.join(publicDir, 'favicon.ico'), buffer);
+        } catch (copyErr) {
+            console.warn('[Sync Favicon Warn]:', copyErr);
+        }
+
         const logoUrl = `/uploads/${fileName}`;
 
         // Update database saas_settings

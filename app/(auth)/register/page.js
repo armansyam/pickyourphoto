@@ -488,7 +488,8 @@ export default function RegisterPage() {
                         {settings?.contact_whatsapp && (() => {
                             const selectedPlan = plans.find(p => p.id === parseInt(plan)) || plans[0];
                             const planName = selectedPlan ? `${selectedPlan.name} Plan` : 'Basic Plan';
-                            const waMessage = `Halo Admin, saya baru saja mendaftar sebagai fotografer di Pick Your Photo.\n\nBerikut detail pendaftaran saya:\n- Nama: ${name}\n- Email: ${email}\n- Paket: ${planName}\n\nSaya sudah menyelesaikan proses pembayaran. Mohon disetujui pendaftarannya. Terima kasih!`;
+                            const brandName = settings?.saas_name || 'aplikasi ini';
+                            const waMessage = `Halo Admin, saya baru saja mendaftar sebagai fotografer di ${brandName}.\n\nBerikut detail pendaftaran saya:\n- Nama: ${name}\n- Email: ${email}\n- Paket: ${planName}\n\nSaya sudah menyelesaikan proses pembayaran. Mohon disetujui pendaftarannya. Terima kasih!`;
                             
                             return (
                                 <a 
@@ -566,7 +567,19 @@ export default function RegisterPage() {
                 ) : (
                     <>
                         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                            <h2 className="title-gradient" style={{ fontSize: '28px', margin: '0 0 8px 0' }}>Join Pick Your Photo</h2>
+                            {settings?.saas_logo_url && (
+                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                                    <img
+                                        src={settings.saas_logo_url}
+                                        alt="Brand Logo"
+                                        style={{ maxHeight: '56px', maxWidth: '160px', objectFit: 'contain' }}
+                                        onError={(e) => { e.target.style.display = 'none'; }}
+                                    />
+                                </div>
+                            )}
+                            <h2 className="title-gradient" style={{ fontSize: '28px', margin: '0 0 8px 0' }}>
+                                {settings?.saas_name ? `Gabung ${settings.saas_name}` : 'Registrasi Akun Baru'}
+                            </h2>
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>
                                 {step === 1 ? 'Tahap 1: Isi Data Diri Anda' : 'Tahap 2: Pilih Paket Langganan'}
                             </p>

@@ -622,8 +622,16 @@ export default function AdminDashboard({ adminUser }) {
             {/* Header */}
             <header className="dashboard-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {saasLogoUrl && (
+                        <img 
+                            src={saasLogoUrl} 
+                            alt="Logo" 
+                            style={{ height: '32px', width: '32px', objectFit: 'contain', borderRadius: '8px' }} 
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                    )}
                     <h1 className="title-gradient" style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>
-                        Owner SaaS Console
+                        {saasName ? `${saasName} Console` : 'Owner Console'}
                     </h1>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

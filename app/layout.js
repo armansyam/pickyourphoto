@@ -26,8 +26,19 @@ export async function generateMetadata() {
 }
 
 export default function RootLayout({ children }) {
+    let faviconUrl = '/favicon.png';
+    try {
+        const row = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_favicon_url' OR key = 'saas_logo_url' LIMIT 1").get();
+        if (row && row.value) faviconUrl = row.value;
+    } catch (_) {}
+
     return (
         <html lang="en">
+            <head>
+                <link rel="icon" href={faviconUrl} />
+                <link rel="shortcut icon" href={faviconUrl} />
+                <link rel="apple-touch-icon" href={faviconUrl} />
+            </head>
             <body>
                 {children}
                 <DevWatermark />

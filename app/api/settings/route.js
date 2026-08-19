@@ -13,7 +13,9 @@ const PUBLIC_SAFE_FIELDS = new Set([
     'enable_payment_gateway',
     // Branding / UI
     'saas_name',
+    'saas_domain',
     'saas_logo_url',
+    'saas_favicon_url',
     'saas_primary_color',
     'saas_support_whatsapp',
     'saas_support_email',

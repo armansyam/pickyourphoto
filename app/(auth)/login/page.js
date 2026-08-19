@@ -11,6 +11,8 @@ function LoginForm() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [brandName, setBrandName] = useState('Pick Your Photo');
+    const [logoUrl, setLogoUrl] = useState('/logo.png');
 
     useEffect(() => {
         const checkExistingSession = async () => {
@@ -27,6 +29,18 @@ function LoginForm() {
             }
         };
         checkExistingSession();
+
+        const fetchBrand = async () => {
+            try {
+                const res = await fetch('/api/settings');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.saas_name) setBrandName(data.saas_name);
+                    if (data.saas_logo_url) setLogoUrl(data.saas_logo_url);
+                }
+            } catch {}
+        };
+        fetchBrand();
 
         const urlError = searchParams?.get('error');
         if (urlError) {
@@ -69,10 +83,20 @@ function LoginForm() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '16px', background: '#09090b', color: '#f4f4f5', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
             <div style={{ width: '100%', maxWidth: '400px', background: 'rgba(18, 18, 24, 0.85)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '16px', padding: '32px', boxShadow: '0 15px 40px rgba(0,0,0,0.5)' }}>
                 <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-                    <h2 style={{ fontSize: '28px', margin: '0 0 8px 0', background: 'linear-gradient(135deg, #a5b4fc, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800' }}>
-                        Pick Your Photo
+                    {logoUrl && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
+                            <img
+                                src={logoUrl}
+                                alt="Brand Logo"
+                                style={{ maxHeight: '56px', maxWidth: '160px', objectFit: 'contain' }}
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                        </div>
+                    )}
+                    <h2 style={{ fontSize: '24px', margin: '0 0 6px 0', background: 'linear-gradient(135deg, #a5b4fc, #6366f1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800' }}>
+                        {brandName}
                     </h2>
-                    <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>Masuk sebagai Fotografer / Vendor</p>
+                    <p style={{ color: '#a1a1aa', margin: 0, fontSize: '13.5px' }}>Masuk sebagai Fotografer / Vendor</p>
                 </div>
 
                 {error && (
