@@ -11,6 +11,7 @@ export default function AdminSettings({
   maxUploadConcurrencyThreads = 4, setMaxUploadConcurrencyThreads,
 
   saasName = 'Pick Your Photo', setSaasName,
+  saasLogoUrl = '/logo.png', setSaasLogoUrl,
   companyAddress = '', setCompanyAddress,
   operationalHours = 'Senin – Sabtu: 08:00 – 17:00 WIB', setOperationalHours,
 
@@ -53,6 +54,7 @@ export default function AdminSettings({
 }) {
   const [activeSubTab, setActiveSubTab] = useState('identity'); // 'identity' | 'integrations' | 'payments' | 'system'
   const [isEditingIdentity, setIsEditingIdentity] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [isEditingGoogleCredentials, setIsEditingGoogleCredentials] = useState(false);
   const [isEditingPaymentGateway, setIsEditingPaymentGateway] = useState(false);
   const [isEditingSmtp, setIsEditingSmtp] = useState(false);
@@ -127,6 +129,58 @@ export default function AdminSettings({
       if (addToast) addToast(err.message, 'error');
     } finally {
       setSavingSection('');
+    }
+  };
+
+  const handleUploadLogo = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      if (addToast) addToast('Ukuran berkas logo terlalu besar. Maksimal 5MB.', 'error');
+      return;
+    }
+
+    setUploadingLogo(true);
+    const formData = new FormData();
+    formData.append('logoFile', file);
+
+    try {
+      const res = await fetch('/api/admin/upload-logo', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        if (setSaasLogoUrl) setSaasLogoUrl(data.logoUrl);
+        if (addToast) addToast('✅ ' + data.message, 'success');
+        if (fetchSystemSettings) fetchSystemSettings();
+      } else {
+        if (addToast) addToast('❌ ' + (data.message || 'Gagal mengunggah logo.'), 'error');
+      }
+    } catch (err) {
+      if (addToast) addToast('❌ ' + err.message, 'error');
+    } finally {
+      setUploadingLogo(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleResetLogo = async () => {
+    if (!confirm('Kembalikan logo dan favicon platform ke default?')) return;
+    setUploadingLogo(true);
+    try {
+      const res = await fetch('/api/admin/upload-logo', { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        if (setSaasLogoUrl) setSaasLogoUrl('/logo.png');
+        if (addToast) addToast('✅ Logo berhasil di-reset ke default.', 'info');
+        if (fetchSystemSettings) fetchSystemSettings();
+      }
+    } catch (err) {
+      if (addToast) addToast('❌ ' + err.message, 'error');
+    } finally {
+      setUploadingLogo(false);
     }
   };
 
@@ -874,6 +928,89 @@ export default function AdminSettings({
                       </button>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Logo & Favicon Management Card */}
+              <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {/* Live Preview Box */}
+                    <div style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: '12px',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '6px',
+                      overflow: 'hidden'
+                    }}>
+                      <img
+                        src={saasLogoUrl || '/logo.png'}
+                        alt="Logo Platform"
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        onError={(e) => { e.target.src = '/logo.png'; }}
+                      />
+                    </div>
+                    <div>
+                      <h5 style={{ margin: '0 0 4px', fontSize: '14px', color: '#ffffff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        🖼️ Logo & Favicon Platform
+                      </h5>
+                      <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' }}>
+                        Logo ini digunakan sebagai favicon tab browser dan identitas utama pada seluruh halaman publik.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <label
+                      style={{
+                        background: 'linear-gradient(135deg, #38bdf8, #0284c7)',
+                        color: '#000000',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: uploadingLogo ? 'not-allowed' : 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 4px 12px rgba(56, 189, 248, 0.25)'
+                      }}
+                    >
+                      {uploadingLogo ? '⏳ Mengunggah...' : '📤 Unggah Logo Baru'}
+                      <input
+                        type="file"
+                        accept=".png,.jpg,.jpeg,.svg,.ico,.webp"
+                        onChange={handleUploadLogo}
+                        disabled={uploadingLogo}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+
+                    {saasLogoUrl && saasLogoUrl !== '/logo.png' && (
+                      <button
+                        type="button"
+                        onClick={handleResetLogo}
+                        disabled={uploadingLogo}
+                        style={{
+                          background: 'rgba(244,63,94,0.15)',
+                          border: '1px solid rgba(244,63,94,0.3)',
+                          color: '#fb7185',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '600',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🗑️ Reset Default
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 

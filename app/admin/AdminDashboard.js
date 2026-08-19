@@ -64,6 +64,7 @@ export default function AdminDashboard({ adminUser }) {
     const [bankAccountNumber, setBankAccountNumber] = useState('');
     const [bankAccountName, setBankAccountName] = useState('');
     const [saasName, setSaasName] = useState('Pick Your Photo');
+    const [saasLogoUrl, setSaasLogoUrl] = useState('');
     const [contactEmail, setContactEmail] = useState('');
     const [contactWhatsapp, setContactWhatsapp] = useState('');
     const [companyAddress, setCompanyAddress] = useState('');
@@ -226,6 +227,7 @@ export default function AdminDashboard({ adminUser }) {
 
                 if (data.saasSettings) {
                     if (data.saasSettings.saas_name) setSaasName(data.saasSettings.saas_name);
+                    if (data.saasSettings.saas_logo_url) setSaasLogoUrl(data.saasSettings.saas_logo_url);
                     if (data.saasSettings.bank_name) setBankName(data.saasSettings.bank_name);
                     if (data.saasSettings.bank_account_number) setBankAccountNumber(data.saasSettings.bank_account_number);
                     if (data.saasSettings.bank_account_name) setBankAccountName(data.saasSettings.bank_account_name);
@@ -693,6 +695,7 @@ export default function AdminDashboard({ adminUser }) {
 
                             newPassword={newPassword} setNewPassword={setNewPassword}
                             saasName={saasName} setSaasName={setSaasName}
+                            saasLogoUrl={saasLogoUrl} setSaasLogoUrl={setSaasLogoUrl}
                             bankName={bankName} setBankName={setBankName}
                             bankAccountNumber={bankAccountNumber} setBankAccountNumber={setBankAccountNumber}
                             bankAccountName={bankAccountName} setBankAccountName={setBankAccountName}
