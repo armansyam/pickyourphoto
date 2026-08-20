@@ -3,10 +3,17 @@ import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-    title: 'Kebijakan Privasi (Privacy Policy) — Pick Your Photo',
-    description: 'Kebijakan Privasi dan Perlindungan Data Pengguna Platform Pick Your Photo.'
-};
+export async function generateMetadata() {
+    let saasName = 'Pick Your Photo';
+    try {
+        const row = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_name'").get();
+        if (row?.value) saasName = row.value;
+    } catch (_) {}
+    return {
+        title: `Kebijakan Privasi (Privacy Policy) — ${saasName}`,
+        description: `Kebijakan Privasi dan Perlindungan Data Pengguna Platform ${saasName}.`
+    };
+}
 
 function getSettings() {
     try {

@@ -2,10 +2,18 @@ import { redirect } from 'next/navigation';
 import { getAuthVendor } from '@/lib/auth';
 import AdminDashboard from './AdminDashboard';
 
-export const metadata = {
-    title: 'Superadmin Console - Pick Your Photo',
-    description: 'Owner console to manage SaaS vendor accounts.'
-};
+export async function generateMetadata() {
+    let saasName = 'Pick Your Photo';
+    try {
+        const db = (await import('@/lib/db')).default;
+        const row = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_name'").get();
+        if (row?.value) saasName = row.value;
+    } catch (_) {}
+    return {
+        title: `Superadmin Console — ${saasName}`,
+        description: `Owner console to manage ${saasName} accounts.`
+    };
+}
 
 export const dynamic = 'force-dynamic';
 

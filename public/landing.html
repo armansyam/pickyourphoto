@@ -1046,6 +1046,7 @@
             const h = minutes / 60;
             durationStr = (Number.isInteger(h) ? h : h.toFixed(1)) + ' Jam';
           }
+          window._activeTrialDurationStr = durationStr;
 
           document.querySelectorAll('.trial-duration-val').forEach(function(el) {
             el.textContent = durationStr;
@@ -1194,7 +1195,7 @@
       function resetTrialState() {
         trialForm.reset();
         btn.disabled = false;
-        btn.innerHTML = '<span>Buat Galeri Trial (Aktif 1 Jam)</span>';
+        btn.innerHTML = '<span>' + (dynamicSubmitBtnText || 'Buat Galeri Trial') + '</span>';
         trialResultCard.style.display = 'none';
         trialResultCard.style.opacity = '0';
         trialLiveCard.style.display = 'none';
@@ -2067,7 +2068,7 @@
         "byos.c1.li2": "Otomatis Membentuk Folder Penampung Proyek di Google Drive Studio",
         "byos.c1.li3": "Gunakan Kapasitas Drive Sendiri (Tanpa Biaya Hosting Foto ke Platform)",
         "byos.c2.badge": "DEDICATED CLOUD STORAGE",
-        "byos.c2.h3": "Penyimpanan Cloud Dedicated SaaS",
+        "byos.c2.h3": "Penyimpanan Cloud Dedicated",
         "byos.c2.p": "Solusi praktis untuk studio yang membutuhkan kapasitas penyimpanan tambahan. Sewa Dedicated Cloud Storage berkecepatan tinggi dengan fitur akselerasi unggah hingga 10 jalur paralel.",
         "byos.c2.li1": "Pilihan Add-On Fleksibel 10 GB, 25 GB, hingga 50 GB",
         "byos.c2.li2": "Fitur Akselerasi Unggah Paralel hingga 10 Thread",
@@ -2209,7 +2210,7 @@
         "byos.c1.li2": "Automatically Creates a Project Container Folder in Your Studio Drive",
         "byos.c1.li3": "Utilize Your Own Drive Storage (No Extra Hosting Fees Charged by Platform)",
         "byos.c2.badge": "DEDICATED CLOUD STORAGE",
-        "byos.c2.h3": "Dedicated SaaS Cloud Storage",
+        "byos.c2.h3": "Dedicated Cloud Storage",
         "byos.c2.p": "A practical solution for studios requiring extra storage capacity. Rent high-speed Dedicated Cloud Storage with up to 10 parallel upload threads.",
         "byos.c2.li1": "Flexible Add-On Options from 10 GB, 25 GB, to 50 GB",
         "byos.c2.li2": "Parallel Upload Acceleration Feature up to 10 Threads",
@@ -2400,7 +2401,7 @@
                 if (data.enableFreeTrial !== false) {
                   heroCta.href = '#trial-box';
                   heroCta.style.background = 'linear-gradient(135deg, #C5A059, #996515)';
-                  heroCta.innerHTML = 'Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;';
+                  heroCta.innerHTML = 'Tes Trial Instan (<span class="trial-duration-val">' + (window._activeTrialDurationStr || 'Uji Coba') + '</span>) &rarr;';
                 } else {
                   heroCta.href = '#pricing';
                   heroCta.style.background = 'linear-gradient(135deg, #C5A059, #8C6D23)';
@@ -2423,7 +2424,7 @@
           if (data.enableFreeTrial !== false && !flashPromo.active) {
             heroCta.href = '#trial-box';
             heroCta.style.background = 'linear-gradient(135deg, #C5A059, #996515)';
-            heroCta.innerHTML = 'Tes Trial Instan (<span class="trial-duration-val">1 Jam</span>) &rarr;';
+            heroCta.innerHTML = 'Tes Trial Instan (<span class="trial-duration-val">' + (window._activeTrialDurationStr || 'Uji Coba') + '</span>) &rarr;';
           } else {
             heroCta.href = '#pricing';
             heroCta.style.background = 'linear-gradient(135deg, #C5A059, #8C6D23)';

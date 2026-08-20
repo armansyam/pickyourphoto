@@ -108,7 +108,12 @@ export default function AdminDashboard({ adminUser }) {
     const [sysEnableReg, setSysEnableReg] = useState(true);
     const [sysEnableTrial, setSysEnableTrial] = useState(true);
     const [sysMaxQuota, setSysMaxQuota] = useState(null);
-    const [sysTrialExpirationMinutes, setSysTrialExpirationMinutes] = useState(30);
+    const [sysTrialExpirationMinutes, setSysTrialExpirationMinutes] = useState(15);
+    const [trialMaxPhotos, setTrialMaxPhotos] = useState(50);
+    const [trialMaxSelection, setTrialMaxSelection] = useState(10);
+    const [trialPreviewPhotos, setTrialPreviewPhotos] = useState(12);
+    const [saasTagline, setSaasTagline] = useState('');
+    const [saasDescription, setSaasDescription] = useState('');
     const [sysEnableBackup, setSysEnableBackup] = useState(true);
     const [sysBackupInterval, setSysBackupInterval] = useState(6);
     const [lastBackupTime, setLastBackupTime] = useState('Belum pernah');
@@ -220,6 +225,7 @@ export default function AdminDashboard({ adminUser }) {
                 setSysEnableTrial(data.enable_free_trial === 1);
                 setSysEnableBackup(data.enable_auto_backup === 1);
                 setSysBackupInterval(data.backup_interval_hours);
+                if (data.trial_expiration_minutes !== undefined) setSysTrialExpirationMinutes(data.trial_expiration_minutes);
                 if (data.enable_auto_purge !== undefined) setSysEnableAutoPurge(data.enable_auto_purge === 1);
                 if (data.lastBackupTime) setLastBackupTime(data.lastBackupTime);
                 if (data.lastBackupFileName) setLastBackupFileName(data.lastBackupFileName);
@@ -229,6 +235,11 @@ export default function AdminDashboard({ adminUser }) {
                 if (data.saasSettings) {
                     if (data.saasSettings.saas_name) setSaasName(data.saasSettings.saas_name);
                     if (data.saasSettings.saas_domain) setSaasDomain(data.saasSettings.saas_domain);
+                    if (data.saasSettings.saas_tagline) setSaasTagline(data.saasSettings.saas_tagline);
+                    if (data.saasSettings.saas_description) setSaasDescription(data.saasSettings.saas_description);
+                    if (data.saasSettings.trial_max_photos) setTrialMaxPhotos(parseInt(data.saasSettings.trial_max_photos) || 50);
+                    if (data.saasSettings.trial_max_selection) setTrialMaxSelection(parseInt(data.saasSettings.trial_max_selection) || 10);
+                    if (data.saasSettings.trial_preview_photos) setTrialPreviewPhotos(parseInt(data.saasSettings.trial_preview_photos) || 12);
                     if (data.saasSettings.saas_logo_url) setSaasLogoUrl(data.saasSettings.saas_logo_url);
                     if (data.saasSettings.bank_name) setBankName(data.saasSettings.bank_name);
                     if (data.saasSettings.bank_account_number) setBankAccountNumber(data.saasSettings.bank_account_number);
@@ -706,6 +717,8 @@ export default function AdminDashboard({ adminUser }) {
                             newPassword={newPassword} setNewPassword={setNewPassword}
                             saasName={saasName} setSaasName={setSaasName}
                             saasDomain={saasDomain} setSaasDomain={setSaasDomain}
+                            saasTagline={saasTagline} setSaasTagline={setSaasTagline}
+                            saasDescription={saasDescription} setSaasDescription={setSaasDescription}
                             saasLogoUrl={saasLogoUrl} setSaasLogoUrl={setSaasLogoUrl}
                             bankName={bankName} setBankName={setBankName}
                             bankAccountNumber={bankAccountNumber} setBankAccountNumber={setBankAccountNumber}
@@ -727,7 +740,12 @@ export default function AdminDashboard({ adminUser }) {
                             smtpFromName={smtpFromName} setSmtpFromName={setSmtpFromName}
                             addToast={addToast}
                             sysEnableReg={sysEnableReg} setSysEnableReg={setSysEnableReg}
+                            sysEnableTrial={sysEnableTrial} setSysEnableTrial={setSysEnableTrial}
                             sysMaxQuota={sysMaxQuota} setSysMaxQuota={setSysMaxQuota}
+                            sysTrialExpirationMinutes={sysTrialExpirationMinutes} setSysTrialExpirationMinutes={setSysTrialExpirationMinutes}
+                            trialMaxPhotos={trialMaxPhotos} setTrialMaxPhotos={setTrialMaxPhotos}
+                            trialMaxSelection={trialMaxSelection} setTrialMaxSelection={setTrialMaxSelection}
+                            trialPreviewPhotos={trialPreviewPhotos} setTrialPreviewPhotos={setTrialPreviewPhotos}
                             sysEnableBackup={sysEnableBackup} setSysEnableBackup={setSysEnableBackup}
                             sysBackupInterval={sysBackupInterval} setSysBackupInterval={setSysBackupInterval}
                             lastBackupTime={lastBackupTime}

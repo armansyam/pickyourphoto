@@ -12,6 +12,8 @@ export default function AdminSettings({
 
   saasName = 'Pick Your Photo', setSaasName,
   saasDomain = '', setSaasDomain,
+  saasTagline = '', setSaasTagline,
+  saasDescription = '', setSaasDescription,
   saasLogoUrl = '/logo.png', setSaasLogoUrl,
   companyAddress = '', setCompanyAddress,
   operationalHours = 'Senin – Sabtu: 08:00 – 17:00 WIB', setOperationalHours,
@@ -35,7 +37,12 @@ export default function AdminSettings({
   smtpFromName = 'Pick Your Photo', setSmtpFromName,
   addToast,
   sysEnableReg, setSysEnableReg,
+  sysEnableTrial = true, setSysEnableTrial,
   sysMaxQuota, setSysMaxQuota,
+  sysTrialExpirationMinutes = 15, setSysTrialExpirationMinutes,
+  trialMaxPhotos = 50, setTrialMaxPhotos,
+  trialMaxSelection = 10, setTrialMaxSelection,
+  trialPreviewPhotos = 12, setTrialPreviewPhotos,
   sysEnableBackup, setSysEnableBackup,
   sysBackupInterval, setSysBackupInterval,
   lastBackupTime = 'Belum pernah',
@@ -65,7 +72,12 @@ export default function AdminSettings({
 
   const [savedSystemState, setSavedSystemState] = useState({
     sysEnableReg,
+    sysEnableTrial,
     sysMaxQuota,
+    sysTrialExpirationMinutes,
+    trialMaxPhotos,
+    trialMaxSelection,
+    trialPreviewPhotos,
     customStoragePricePerGb,
     workerStorageWarningThresholdGb,
     gracePeriodDays
@@ -76,25 +88,40 @@ export default function AdminSettings({
     if (!systemStateInitialized.current && (sysEnableReg !== undefined || sysMaxQuota !== undefined)) {
       setSavedSystemState({
         sysEnableReg,
+        sysEnableTrial,
         sysMaxQuota,
+        sysTrialExpirationMinutes,
+        trialMaxPhotos,
+        trialMaxSelection,
+        trialPreviewPhotos,
         customStoragePricePerGb,
         workerStorageWarningThresholdGb,
         gracePeriodDays
       });
       systemStateInitialized.current = true;
     }
-  }, [sysEnableReg, sysMaxQuota, customStoragePricePerGb, workerStorageWarningThresholdGb, gracePeriodDays]);
+  }, [sysEnableReg, sysEnableTrial, sysMaxQuota, sysTrialExpirationMinutes, trialMaxPhotos, trialMaxSelection, trialPreviewPhotos, customStoragePricePerGb, workerStorageWarningThresholdGb, gracePeriodDays]);
 
   const isSystemDirty = 
     Boolean(sysEnableReg) !== Boolean(savedSystemState.sysEnableReg) ||
+    Boolean(sysEnableTrial) !== Boolean(savedSystemState.sysEnableTrial) ||
     (sysMaxQuota ?? null) !== (savedSystemState.sysMaxQuota ?? null) ||
+    Number(sysTrialExpirationMinutes || 15) !== Number(savedSystemState.sysTrialExpirationMinutes || 15) ||
+    Number(trialMaxPhotos || 50) !== Number(savedSystemState.trialMaxPhotos || 50) ||
+    Number(trialMaxSelection || 10) !== Number(savedSystemState.trialMaxSelection || 10) ||
+    Number(trialPreviewPhotos || 12) !== Number(savedSystemState.trialPreviewPhotos || 12) ||
     Number(customStoragePricePerGb || 1250) !== Number(savedSystemState.customStoragePricePerGb || 1250) ||
     Number(workerStorageWarningThresholdGb || 10) !== Number(savedSystemState.workerStorageWarningThresholdGb || 10) ||
     Number(gracePeriodDays || 7) !== Number(savedSystemState.gracePeriodDays || 7);
 
   const handleCancelSystem = () => {
     setSysEnableReg(savedSystemState.sysEnableReg);
+    setSysEnableTrial(savedSystemState.sysEnableTrial);
     setSysMaxQuota(savedSystemState.sysMaxQuota);
+    setSysTrialExpirationMinutes(savedSystemState.sysTrialExpirationMinutes);
+    setTrialMaxPhotos(savedSystemState.trialMaxPhotos);
+    setTrialMaxSelection(savedSystemState.trialMaxSelection);
+    setTrialPreviewPhotos(savedSystemState.trialPreviewPhotos);
     setCustomStoragePricePerGb(savedSystemState.customStoragePricePerGb);
     setWorkerStorageWarningThresholdGb(savedSystemState.workerStorageWarningThresholdGb);
     setGracePeriodDays(savedSystemState.gracePeriodDays);
@@ -111,6 +138,8 @@ export default function AdminSettings({
           saasSettings: {
             saas_name: saasName || 'Pick Your Photo',
             saas_domain: saasDomain,
+            saas_tagline: saasTagline || '',
+            saas_description: saasDescription || '',
             contact_email: contactEmail,
             saas_support_email: contactEmail,
             contact_whatsapp: contactWhatsapp,
@@ -312,20 +341,30 @@ export default function AdminSettings({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           enable_registration: sysEnableReg,
+          enable_free_trial: sysEnableTrial,
           max_vendor_quota: sysMaxQuota,
+          trial_expiration_minutes: parseInt(sysTrialExpirationMinutes) || 15,
           saasSettings: {
             custom_storage_price_per_gb: String(customStoragePricePerGb || 1250),
             worker_storage_warning_threshold_gb: String(workerStorageWarningThresholdGb || 10),
-            grace_period_days: String(gracePeriodDays || 7)
+            grace_period_days: String(gracePeriodDays || 7),
+            trial_max_photos: String(trialMaxPhotos || 50),
+            trial_max_selection: String(trialMaxSelection || 10),
+            trial_preview_photos: String(trialPreviewPhotos || 12)
           }
         })
       });
       const data = await res.json();
       if (res.ok) {
-        if (addToast) addToast('Pengaturan Sistem & Pendaftaran berhasil disimpan!', 'success');
+        if (addToast) addToast('Pengaturan Sistem & Uji Coba Trial berhasil disimpan!', 'success');
         setSavedSystemState({
           sysEnableReg,
+          sysEnableTrial,
           sysMaxQuota,
+          sysTrialExpirationMinutes,
+          trialMaxPhotos,
+          trialMaxSelection,
+          trialPreviewPhotos,
           customStoragePricePerGb,
           workerStorageWarningThresholdGb,
           gracePeriodDays
@@ -1079,6 +1118,34 @@ export default function AdminSettings({
                 </div>
 
                 <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>✨ Slogan Singkat Platform (Tagline)</label>
+                  <input
+                    type="text"
+                    className="input-text"
+                    placeholder="Contoh: Meja Kerja Seleksi Foto Cepat untuk Studio & Fotografer Profesional"
+                    value={saasTagline}
+                    onChange={e => setSaasTagline(e.target.value)}
+                    disabled={!isEditingIdentity || savingSection === 'identity'}
+                  />
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
+                  <label className="form-label" style={{ fontSize: '12px' }}>🔗 Deskripsi Pratinjau Share Link (WhatsApp & Medsos Open Graph)</label>
+                  <textarea
+                    className="input-text"
+                    rows="2"
+                    placeholder="Contoh: Platform meja kerja seleksi foto interaktif yang cepat dan elegan untuk klien Anda."
+                    value={saasDescription}
+                    onChange={e => setSaasDescription(e.target.value)}
+                    disabled={!isEditingIdentity || savingSection === 'identity'}
+                    style={{ resize: 'vertical' }}
+                  />
+                  <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                    Deskripsi ini akan muncul di kartu pratinjau saat link platform atau uji coba dibagikan ke WhatsApp, Telegram, atau media sosial.
+                  </p>
+                </div>
+
+                <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
                   <label className="form-label" style={{ fontSize: '12px' }}>📍 Alamat Kantor / Domisili Legal Perusahaan</label>
                   <input
                     type="text"
@@ -1820,6 +1887,18 @@ export default function AdminSettings({
                         {gracePeriodDays || 7} Hari
                       </strong>
                     </div>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Durasi Galeri Trial:</span>
+                      <strong style={{ color: '#10b981', fontSize: '13px' }}>
+                        {sysTrialExpirationMinutes || 15} Menit {sysEnableTrial ? '(Aktif)' : '(Nonaktif)'}
+                      </strong>
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Batas Foto Trial:</span>
+                      <strong style={{ color: '#fbbf24', fontSize: '13px' }}>
+                        Maks {trialMaxPhotos || 50} Foto (Pilih {trialMaxSelection || 10})
+                      </strong>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1914,6 +1993,84 @@ export default function AdminSettings({
                     <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
                       Jumlah hari masa tenggang (grace period) sebelum berkas vendor kedaluwarsa dibersihkan total dari Google Drive Worker (Hard Purge).
                     </p>
+                  </div>
+
+                  {/* ── FREE INSTANT TRIAL SETTINGS SECTION ── */}
+                  <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <h5 style={{ margin: '0 0 14px 0', fontSize: '14px', color: '#10b981', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      🚀 Pengaturan Galeri Uji Coba Instan (Free Instant Trial)
+                    </h5>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                      <input
+                        type="checkbox"
+                        id="enable_free_trial"
+                        checked={sysEnableTrial}
+                        onChange={e => setSysEnableTrial(e.target.checked)}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <label htmlFor="enable_free_trial" style={{ cursor: 'pointer', fontSize: '13.5px', fontWeight: 'bold', color: sysEnableTrial ? '#34d399' : '#f87171' }}>
+                        Aktifkan Fitur Free Instant Trial di Landing Page (/trial)
+                      </label>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '12px' }}>⏱️ Durasi Waktu Aktif Trial (Menit)</label>
+                        <input
+                          type="number"
+                          className="input-text"
+                          placeholder="Default: 15 Menit"
+                          value={sysTrialExpirationMinutes}
+                          onChange={e => setSysTrialExpirationMinutes(parseInt(e.target.value) || 15)}
+                        />
+                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                          Hitung mundur countdown timer sebelum galeri trial terkunci expired.
+                        </p>
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '12px' }}>📸 Maksimal Foto Upload Trial</label>
+                        <input
+                          type="number"
+                          className="input-text"
+                          placeholder="Default: 50"
+                          value={trialMaxPhotos}
+                          onChange={e => setTrialMaxPhotos(parseInt(e.target.value) || 50)}
+                        />
+                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                          Batas maksimal jumlah file foto yang di-load dari folder GDrive trial.
+                        </p>
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '12px' }}>✅ Maksimal Foto Terpilih Trial</label>
+                        <input
+                          type="number"
+                          className="input-text"
+                          placeholder="Default: 10"
+                          value={trialMaxSelection}
+                          onChange={e => setTrialMaxSelection(parseInt(e.target.value) || 10)}
+                        />
+                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                          Batas kuota foto yang dapat dipilih oleh klien di sesi uji coba.
+                        </p>
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontSize: '12px' }}>👁️ Batas Grid Foto Terbuka (Preview)</label>
+                        <input
+                          type="number"
+                          className="input-text"
+                          placeholder="Default: 12"
+                          value={trialPreviewPhotos}
+                          onChange={e => setTrialPreviewPhotos(parseInt(e.target.value) || 12)}
+                        />
+                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                          Jumlah foto yang terlihat di grid (sisanya blur terkunci Pro).
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>

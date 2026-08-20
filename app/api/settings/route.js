@@ -14,11 +14,15 @@ const PUBLIC_SAFE_FIELDS = new Set([
     // Branding / UI
     'saas_name',
     'saas_domain',
+    'saas_tagline',
+    'saas_description',
     'saas_logo_url',
     'saas_favicon_url',
     'saas_primary_color',
     'saas_support_whatsapp',
     'saas_support_email',
+    'contact_whatsapp',
+    'contact_email',
     // Flash Sale (UI display only)
     'enable_flash_promo',
     'flash_promo_discount_percent',

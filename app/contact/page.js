@@ -3,10 +3,17 @@ import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-    title: 'Hubungi Kami — Pick Your Photo',
-    description: 'Layanan bantuan, kontak resmi, dan saluran dukungan teknis Pick Your Photo.'
-};
+export async function generateMetadata() {
+    let saasName = 'Pick Your Photo';
+    try {
+        const row = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_name'").get();
+        if (row?.value) saasName = row.value;
+    } catch (_) {}
+    return {
+        title: `Hubungi Kami — ${saasName}`,
+        description: `Layanan bantuan, kontak resmi, dan saluran dukungan teknis ${saasName}.`
+    };
+}
 
 function getSettings() {
     try {

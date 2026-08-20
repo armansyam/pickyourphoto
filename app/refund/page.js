@@ -3,10 +3,17 @@ import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-    title: 'Kebijakan Pengembalian Dana & Pembatalan — Pick Your Photo',
-    description: 'Kebijakan Refund, Pembatalan Langganan, dan Pengiriman/Aktivasi Layanan Digital Pick Your Photo.'
-};
+export async function generateMetadata() {
+    let saasName = 'Pick Your Photo';
+    try {
+        const row = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_name'").get();
+        if (row?.value) saasName = row.value;
+    } catch (_) {}
+    return {
+        title: `Kebijakan Pengembalian Dana & Pembatalan — ${saasName}`,
+        description: `Kebijakan Refund, Pembatalan Langganan, dan Pengiriman/Aktivasi Layanan Digital ${saasName}.`
+    };
+}
 
 function getSettings() {
     try {

@@ -3,10 +3,17 @@ import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata = {
-    title: 'Syarat & Ketentuan (Terms of Service) — Pick Your Photo',
-    description: 'Syarat dan Ketentuan Layanan Berlangganan Platform Pick Your Photo.'
-};
+export async function generateMetadata() {
+    let saasName = 'Pick Your Photo';
+    try {
+        const row = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_name'").get();
+        if (row?.value) saasName = row.value;
+    } catch (_) {}
+    return {
+        title: `Syarat & Ketentuan (Terms of Service) — ${saasName}`,
+        description: `Syarat dan Ketentuan Layanan Berlangganan Platform ${saasName}.`
+    };
+}
 
 function getSettings() {
     try {
