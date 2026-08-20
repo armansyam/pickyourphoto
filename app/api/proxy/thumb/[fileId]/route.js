@@ -3,7 +3,8 @@ import { google } from 'googleapis';
 import db from '@/lib/db';
 
 export async function GET(request, { params }) {
-  const { fileId } = params;
+  const resolvedParams = await params;
+  const fileId = resolvedParams?.fileId || params?.fileId;
   const { searchParams } = new URL(request.url);
 
   // [MED-01 FIX] Whitelist parameter sz — cegah injeksi karakter ke URL Google CDN

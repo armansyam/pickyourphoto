@@ -7,7 +7,15 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 export async function POST(request) {
     try {
         const clientIp = getClientIp(request);
-        const { email, password } = await request.json();
+
+        // Safe JSON parse — guard against empty or malformed body (SyntaxError → 400 not 500)
+        let body = {};
+        try {
+            body = await request.json();
+        } catch (_) {
+            return NextResponse.json({ message: 'Email and password are required.' }, { status: 400 });
+        }
+        const { email, password } = body;
 
         // Rate limiting check (max 5 login attempts per minute per IP / email)
         const ipRate = checkRateLimit(`login_ip_${clientIp}`, 5, 60);

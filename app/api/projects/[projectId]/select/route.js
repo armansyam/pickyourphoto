@@ -4,9 +4,20 @@ import db from '@/lib/db';
 // POST: Save client selections & set project status to completed
 export async function POST(request, { params }) {
     try {
-        const { projectId } = params;
-        const body = await request.json();
-        const { photoIds, action = 'submit' } = body; // 'draft' (simpan sementara) or 'submit' (final lock)
+        const resolvedParams = await params;
+        const projectId = resolvedParams?.projectId || params?.projectId;
+
+        // Validate projectId is a valid integer — prevents SQLi crashes from URL fuzzing
+        if (!projectId || !/^\d+$/.test(String(projectId))) {
+            return NextResponse.json({ message: 'ID proyek tidak valid.' }, { status: 400 });
+        }
+
+        // Safe JSON parse — guard against empty or malformed body (SyntaxError → 400 not 500)
+        let body = {};
+        try { body = await request.json(); } catch (_) {
+            return NextResponse.json({ message: 'Request body tidak valid.' }, { status: 400 });
+        }
+        const { photoIds, action = 'submit' } = body;
         const { searchParams } = new URL(request.url);
         const clientKey = searchParams.get('key');
 

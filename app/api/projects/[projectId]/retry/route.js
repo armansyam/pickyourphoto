@@ -13,7 +13,8 @@ export async function POST(request, { params }) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        const { projectId } = params;
+        const resolvedParams = await params;
+        const projectId = resolvedParams?.projectId || params?.projectId;
         if (!projectId) {
             return NextResponse.json({ message: 'Missing project ID.' }, { status: 400 });
         }

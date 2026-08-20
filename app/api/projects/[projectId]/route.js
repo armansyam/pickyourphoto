@@ -16,6 +16,11 @@ export async function GET(request, { params }) {
             return NextResponse.json({ message: 'Project ID wajib diisi.' }, { status: 400 });
         }
 
+        // Validate projectId is a pure integer — prevent SQLi crash from URL fuzzing (e.g. "1 UNION SELECT...")
+        if (!/^\d+$/.test(String(projectId).trim())) {
+            return NextResponse.json({ message: 'Project ID tidak valid.' }, { status: 400 });
+        }
+
         const vendor = getAuthVendor();
         let isAuthorized = false;
         let isClient = false;
@@ -136,7 +141,8 @@ export async function GET(request, { params }) {
 // DELETE: Permanent deletion of project & static staging files
 export async function DELETE(request, { params }) {
     try {
-        const { projectId } = params;
+        const resolvedParams = await params;
+        const projectId = resolvedParams?.projectId || params?.projectId;
         const vendor = getAuthVendor();
 
         if (!vendor) {
@@ -180,7 +186,8 @@ export async function DELETE(request, { params }) {
 // PUT: Update project settings (name, maxSelection, status) (Vendor only)
 export async function PUT(request, { params }) {
     try {
-        const { projectId } = params;
+        const resolvedParams = await params;
+        const projectId = resolvedParams?.projectId || params?.projectId;
         const vendor = getAuthVendor();
 
         if (!vendor) {

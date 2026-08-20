@@ -9,7 +9,8 @@ async function handleUpdatePlan(request, params) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { planId } = params;
+        const resolvedParams = await params;
+        const planId = resolvedParams?.planId || params?.planId;
         const body = await request.json();
         const { name, maxProjects, price, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo, allowRawSelector } = body;
 
@@ -46,7 +47,8 @@ export async function GET(request, { params }) {
         if (!currentUser || currentUser.role !== 'admin') {
             return NextResponse.json({ message: 'Forbidden.' }, { status: 403 });
         }
-        const { planId } = params;
+        const resolvedParams = await params;
+        const planId = resolvedParams?.planId || params?.planId;
         const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(planId);
         if (!plan) return NextResponse.json({ message: 'Plan not found.' }, { status: 404 });
         return NextResponse.json(plan);
@@ -70,7 +72,8 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { planId } = params;
+        const resolvedParams = await params;
+        const planId = resolvedParams?.planId || params?.planId;
 
         const plan = db.prepare('SELECT id FROM plans WHERE id = ?').get(planId);
         if (!plan) {

@@ -28,7 +28,9 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { name, maxProjects, price, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo, allowRawSelector } = await request.json();
+        let _body; try { _body = await request.json(); } catch (_) { return NextResponse.json({ message: 'Format body tidak valid.' }, { status: 400 }); }
+
+        const { name, maxProjects, price, maxPhotosPerProject, activePeriodDays, status, planType, maxStorageMB, allowCustomLogo, allowRawSelector } = _body || {};
 
         if (!name || maxProjects === undefined || price === undefined) {
             return NextResponse.json({ message: 'Name, max projects, and price are required.' }, { status: 400 });

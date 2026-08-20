@@ -22,7 +22,8 @@ async function handleUpdateVendor(request, params) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { vendorId } = params;
+        const resolvedParams = await params;
+        const vendorId = resolvedParams?.vendorId || params?.vendorId;
         const body = await request.json();
         const { planId, expiresAt, status, password, additionalProjects, additionalProjectsExpiresAt, additionalPhotosPerProject, action } = body;
 
@@ -126,7 +127,8 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { vendorId } = params;
+        const resolvedParams = await params;
+        const vendorId = resolvedParams?.vendorId || params?.vendorId;
 
         // Verify vendor exists and is not an admin
         const getVendor = db.prepare('SELECT id, name FROM vendors WHERE id = ? AND role != ?');

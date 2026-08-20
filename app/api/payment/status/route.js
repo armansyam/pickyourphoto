@@ -59,7 +59,9 @@ export async function GET(request) {
         try {
           const rawObj = JSON.parse(transaction.rawResponse || '{}');
           trxId = rawObj.Data?.TransactionId || rawObj.Data?.transactionId || rawObj.TransactionId;
-        } catch (e) {}
+        } catch (e) {
+          console.warn('[PayStatus] rawResponse JSON corrupt for order', orderId, ':', e.message);
+        }
 
         if (trxId) {
           const { checkIPaymuTransactionStatus } = await import('@/lib/payment-gateway/ipaymu.js');

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { 
   LockIcon, SparklesUpgradeIcon, ClockIcon, PhotoIcon, 
   FolderIcon, WhatsAppIcon, CopyLinkIcon, AlertTriangleIcon,
-  SpeedBoltIcon
+  SpeedBoltIcon, CloseIcon, CheckIcon, ExternalLinkIcon
 } from '@/components/StorageIcons.jsx';
 
 export default function TrialGalleryPage({ params }) {
@@ -294,6 +294,144 @@ export default function TrialGalleryPage({ params }) {
   }
 
   const isExpired = data?.isExpired || timeLeft.totalSec <= 0;
+
+  if (isExpired) {
+    return (
+      <div
+        onContextMenu={(e) => e.preventDefault()}
+        style={{
+          minHeight: '100vh',
+          background: '#090d16',
+          color: '#f8fafc',
+          padding: '40px 20px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+        }}
+      >
+        <div
+          style={{
+            background: '#1e293b',
+            border: '1px solid rgba(239, 68, 68, 0.4)',
+            borderRadius: '20px',
+            padding: '40px 32px',
+            maxWidth: '560px',
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+          }}
+        >
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: '20px',
+            }}
+          >
+            <AlertTriangleIcon size={32} color="#f87171" />
+          </div>
+
+          <h1 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 10px 0', color: '#ffffff' }}>
+            Masa Berlaku Galeri Telah Berakhir
+          </h1>
+
+          <p style={{ color: '#94a3b8', fontSize: '14px', lineHeight: '1.6', margin: '0 0 24px 0' }}>
+            Galeri trial instan <strong>&quot;{data?.title || 'Galeri Trial'}&quot;</strong> telah melewati batas waktu durasi trial ({data?.trialDurationMinutes || 15} menit) sehingga akses foto telah ditutup demi keamanan.
+          </p>
+
+          {data?.selectionStatus === 'completed' && (
+            <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '14px', marginBottom: '24px', textAlign: 'left' }}>
+              <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#34d399', marginBottom: '4px' }}>
+                ✓ Pilihan Foto Telah Dikirim
+              </div>
+              <p style={{ fontSize: '12px', color: '#cbd5e1', margin: 0 }}>
+                Klien telah menyelesaikan seleksi foto sebelum galeri kedaluwarsa.
+              </p>
+              <Link href={`/trial-gallery/${data.slug}/result`} style={{ display: 'inline-block', marginTop: '10px', fontSize: '12px', color: '#6ee7b7', fontWeight: 'bold', textDecoration: 'underline' }}>
+                Lihat Hasil Seleksi Foto →
+              </Link>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+            <Link
+              href="/register"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                color: '#fff',
+                padding: '14px 24px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                fontWeight: '700',
+                fontSize: '14px',
+                boxShadow: '0 4px 15px rgba(99,102,241,0.4)',
+              }}
+            >
+              <SparklesUpgradeIcon size={16} color="#fff" />
+              <span>Daftar Akun Pro (Galeri Tanpa Batas Waktu)</span>
+            </Link>
+
+            <Link
+              href="/trial"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                color: '#cbd5e1',
+                padding: '12px 20px',
+                borderRadius: '10px',
+                textDecoration: 'none',
+                fontWeight: '600',
+                fontSize: '13px',
+              }}
+            >
+              <span>Buat Galeri Trial Baru</span>
+            </Link>
+
+            {data?.contactWhatsapp && (
+              <a
+                href={`https://wa.me/${data.contactWhatsapp.replace(/\D/g, '')}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  color: '#4ade80',
+                  padding: '12px 20px',
+                  borderRadius: '10px',
+                  textDecoration: 'none',
+                  fontWeight: '600',
+                  fontSize: '13px',
+                }}
+              >
+                <WhatsAppIcon size={16} />
+                <span>Hubungi Studio via WhatsApp</span>
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -9,7 +9,9 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { targetEmail, smtpEmail, smtpPassword, smtpHost, smtpPort, smtpFromName } = await request.json();
+        let _body; try { _body = await request.json(); } catch (_) { return NextResponse.json({ message: 'Format body tidak valid.' }, { status: 400 }); }
+
+        const { targetEmail, smtpEmail, smtpPassword, smtpHost, smtpPort, smtpFromName } = _body || {};
         const testTarget = targetEmail || smtpEmail;
         if (!testTarget) {
             return NextResponse.json({ message: 'Target email is required.' }, { status: 400 });

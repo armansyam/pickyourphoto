@@ -10,7 +10,8 @@ export async function GET(request, { params }) {
             return NextResponse.json({ success: false, error: 'Akses ditolak. Hanya Superadmin yang diizinkan.' }, { status: 403 });
         }
 
-        const rawFilename = params?.filename;
+        const resolvedParams = await params;
+        const rawFilename = resolvedParams?.filename || params?.filename;
         if (!rawFilename) {
             return NextResponse.json({ success: false, error: 'Nama berkas tidak valid.' }, { status: 400 });
         }

@@ -21,7 +21,8 @@ export async function GET(request, { params }) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { filename } = params;
+        const resolvedParams = await params;
+    const filename = resolvedParams?.filename || params?.filename;
         if (!validateFilename(filename)) {
             return NextResponse.json({ message: 'Nama berkas tidak valid.' }, { status: 400 });
         }
@@ -56,7 +57,8 @@ export async function POST(request, { params }) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { filename } = params;
+        const resolvedParams = await params;
+    const filename = resolvedParams?.filename || params?.filename;
         if (!validateFilename(filename)) {
             return NextResponse.json({ message: 'Nama berkas tidak valid.' }, { status: 400 });
         }
@@ -121,7 +123,8 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { filename } = params;
+        const resolvedParams = await params;
+    const filename = resolvedParams?.filename || params?.filename;
         if (!validateFilename(filename)) {
             return NextResponse.json({ message: 'Nama berkas tidak valid.' }, { status: 400 });
         }

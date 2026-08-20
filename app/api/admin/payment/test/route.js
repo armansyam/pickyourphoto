@@ -8,7 +8,9 @@ export async function POST(request) {
             return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { provider, serverKey, clientKey, isProduction } = await request.json();
+        let _body; try { _body = await request.json(); } catch (_) { return NextResponse.json({ message: 'Format body tidak valid.' }, { status: 400 }); }
+
+        const { provider, serverKey, clientKey, isProduction } = _body || {};
 
         if (!serverKey || !serverKey.trim()) {
             return NextResponse.json({ message: 'Server Key wajib diisi untuk melakukan tes koneksi.' }, { status: 400 });

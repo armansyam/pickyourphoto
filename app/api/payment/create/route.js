@@ -19,7 +19,9 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Payment Gateway saat ini dinonaktifkan.' }, { status: 400 });
     }
 
-    const { vendorId, planId, addonPlanId, customAmount } = await request.json();
+    let _body; try { _body = await request.json(); } catch (_) { return NextResponse.json({ message: 'Format body tidak valid.' }, { status: 400 }); }
+
+    const { vendorId, planId, addonPlanId, customAmount } = _body || {};
 
     if (!vendorId || !planId) {
       return NextResponse.json({ message: 'vendorId dan planId wajib diisi.' }, { status: 400 });
@@ -35,13 +37,27 @@ export async function POST(request) {
       return NextResponse.json({ message: 'Paket berlangganan tidak ditemukan.' }, { status: 404 });
     }
 
-    // Import auth helper to verify caller session if customAmount is requested
+    // Import auth helper to verify caller session
     const { getAuthVendor } = await import('@/lib/auth');
     const authUser = getAuthVendor();
 
-    // Security: Logged-in vendor can only create payments for their own account
-    if (authUser && authUser.role !== 'admin' && String(authUser.id) !== String(vendorId)) {
-      return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
+    // SECURITY CRITICAL: Active vendors MUST be authenticated to create a payment.
+    // Unauthenticated payment creation is only allowed for new vendor registrants
+    // who don't yet have an account session (status: pending/pending_payment/new).
+    // This prevents unauthenticated attackers from creating fake payment sessions
+    // for active vendor accounts, which can cause auto-sync to mark them as expired_draft.
+    if (vendor.status === 'active') {
+      if (!authUser) {
+        return NextResponse.json({ message: 'Akses ditolak. Harap login untuk melanjutkan.' }, { status: 401 });
+      }
+      if (authUser.role !== 'admin' && String(authUser.id) !== String(vendorId)) {
+        return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
+      }
+    } else {
+      // For non-active vendors (new registrants): restrict cross-account if authenticated
+      if (authUser && authUser.role !== 'admin' && String(authUser.id) !== String(vendorId)) {
+        return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
+      }
     }
 
     // Security: Only super-admin can provide manual customAmount override. Vendors are strictly billed based on server-side pricing & active promos.
@@ -96,7 +112,9 @@ export async function POST(request) {
         SET status = 'replaced' 
         WHERE vendorId = ? AND status = 'pending' AND expiresAt <= CURRENT_TIMESTAMP
       `).run(vendor.id);
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[Payment Create] Failed to replace old expired sessions for vendor', vendor.id, ':', e.message);
+    }
 
     // Step 2: Create new payment via gateway
     const paymentResult = await createPayment({
@@ -164,9 +182,13 @@ export async function POST(request) {
     // Trigger Pending QRIS Instructions Email in background
     try {
       const mailer = await import('@/lib/mailer.js');
-      const addonName = addonPlanId ? (addonPlanId === 'addon-10gb' ? 'Drive 10 GB' : addonPlanId === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
-      mailer.sendPendingQrisEmail(vendor, plan, orderId, totalAmount, addonName).catch(() => {});
-    } catch (e) {}
+      const addonNameEmail = addonPlanId ? (addonPlanId === 'addon-10gb' ? 'Drive 10 GB' : addonPlanId === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
+      mailer.sendPendingQrisEmail(vendor, plan, orderId, totalAmount, addonNameEmail).catch((mailErr) => {
+        console.warn('[Payment Create] QRIS email failed for order', orderId, ':', mailErr.message);
+      });
+    } catch (e) {
+      console.warn('[Payment Create] Failed to import mailer for order', orderId, ':', e.message);
+    }
 
     return NextResponse.json({
       success: true,

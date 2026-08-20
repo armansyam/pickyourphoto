@@ -5,7 +5,8 @@ import crypto from 'crypto';
 
 export async function POST(request) {
   try {
-    const { folderUrl, title, maxSelection, logoUrl } = await request.json();
+    let _body; try { _body = await request.json(); } catch (_) { return NextResponse.json({ message: 'Format body tidak valid.' }, { status: 400 }); }
+    const { folderUrl, title, maxSelection, logoUrl } = _body || {};
 
     // Check if Free Trial is enabled in system_settings
     const settings = db.prepare('SELECT enable_free_trial, trial_expiration_minutes, trial_expiration_hours FROM system_settings WHERE id = 1').get() || {};

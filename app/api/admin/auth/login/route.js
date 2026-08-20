@@ -7,7 +7,8 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 export async function POST(request) {
     try {
         const clientIp = getClientIp(request);
-        const { email, password } = await request.json();
+        let _body; try { _body = await request.json(); } catch (_) { return NextResponse.json({ message: 'Format body tidak valid.' }, { status: 400 }); }
+        const { email, password } = _body || {};
 
         // Strict rate limiting for admin portal (max 5 login attempts per minute per IP / email)
         const ipRate = checkRateLimit(`admin_login_ip_${clientIp}`, 5, 60);

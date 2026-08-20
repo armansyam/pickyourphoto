@@ -6,7 +6,8 @@ import db from '@/lib/db';
 // Used by RAW Sorter to know which files to match in the local folder
 export async function GET(request, { params }) {
     try {
-        const { projectId } = params;
+        const resolvedParams = await params;
+        const projectId = resolvedParams?.projectId || params?.projectId;
         const vendor = getAuthVendor();
 
         if (!vendor) {

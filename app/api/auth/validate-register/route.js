@@ -3,7 +3,8 @@ import db from '@/lib/db';
 
 export async function POST(request) {
     try {
-        const { email, whatsapp } = await request.json();
+        let _body; try { _body = await request.json(); } catch (_) { return NextResponse.json({ message: 'Format body tidak valid.' }, { status: 400 }); }
+        const { email, whatsapp } = _body || {};
 
         if (email) {
             const existingEmail = db.prepare('SELECT id, status FROM vendors WHERE email = ?').get(email.toLowerCase().trim());

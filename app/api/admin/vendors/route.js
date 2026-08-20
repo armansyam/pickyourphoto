@@ -31,7 +31,9 @@ export async function GET() {
                       AND (paymentProof IS NULL OR paymentProof = '') 
                       AND createdAt <= DATETIME('now', '-24 hours')
                 `).run();
-            } catch (e) {}
+            } catch (e) {
+                console.error('[Admin Vendors] Auto-expire cleanup failed:', e.message);
+            }
 
             try {
                 // Auto-sync: ambil semua pending transactions (semua provider)

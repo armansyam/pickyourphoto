@@ -82,7 +82,9 @@ export async function PUT(request, { params }) {
   try {
     const resolvedParams = await params;
     const slug = resolvedParams?.slug;
-    const { selectedPhotos } = await request.json();
+    let _putBody; try { _putBody = await request.json(); } catch (_) { return (await import("next/server")).NextResponse.json({ message: "Format body tidak valid." }, { status: 400 }); }
+
+    const { selectedPhotos } = _putBody || {};
 
     const gallery = db.prepare('SELECT * FROM trial_galleries WHERE slug = ?').get(slug);
 
@@ -137,7 +139,9 @@ export async function POST(request, { params }) {
   try {
     const resolvedParams = await params;
     const slug = resolvedParams?.slug;
-    const { selectedPhotos, clientName } = await request.json();
+    let _postBody; try { _postBody = await request.json(); } catch (_) { return (await import("next/server")).NextResponse.json({ message: "Format body tidak valid." }, { status: 400 }); }
+
+    const { selectedPhotos, clientName } = _postBody || {};
 
     const gallery = db.prepare('SELECT * FROM trial_galleries WHERE slug = ?').get(slug);
 

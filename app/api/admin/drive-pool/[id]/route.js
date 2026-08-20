@@ -12,7 +12,8 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ success: false, error: 'Tidak memiliki akses admin' }, { status: 403 });
         }
 
-        const id = params?.id;
+        const resolvedParams = await params;
+        const id = resolvedParams?.id || params?.id;
         if (!id) {
             return NextResponse.json({ success: false, error: 'ID akun tidak valid' }, { status: 400 });
         }

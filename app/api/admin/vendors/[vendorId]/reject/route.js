@@ -18,7 +18,8 @@ export async function POST(request, { params }) {
       return NextResponse.json({ message: 'Forbidden. Admin access required.' }, { status: 403 });
     }
 
-    const vendorId = parseInt(params.vendorId);
+    const resolvedParams = await params;
+    const vendorId = parseInt(resolvedParams?.vendorId || params?.vendorId);
     if (!vendorId || isNaN(vendorId)) {
       return NextResponse.json({ message: 'VendorId tidak valid.' }, { status: 400 });
     }

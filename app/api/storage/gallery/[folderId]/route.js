@@ -3,7 +3,8 @@ import db from '@/lib/db';
 
 export async function GET(request, { params }) {
   try {
-    const { folderId } = params;
+    const resolvedParams = await params;
+    const folderId = resolvedParams?.folderId || params?.folderId;
     if (!folderId) {
       return NextResponse.json({ success: false, message: 'Folder ID required' }, { status: 400 });
     }
