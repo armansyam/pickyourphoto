@@ -9,14 +9,44 @@ let cachedGitInfo = null;
 
 function getGitInfo() {
     if (cachedGitInfo) return cachedGitInfo;
+
+    // 1. Cek environment variables (CI/CD, Vercel, Docker)
+    const envHash = process.env.VERCEL_GIT_COMMIT_SHA || process.env.GIT_COMMIT_SHA || process.env.COMMIT_HASH || '';
+    const envBranch = process.env.VERCEL_GIT_COMMIT_REF || process.env.GIT_BRANCH || '';
+
+    if (envHash) {
+        cachedGitInfo = {
+            hash: envHash.substring(0, 7),
+            count: '',
+            branch: envBranch || 'main'
+        };
+        return cachedGitInfo;
+    }
+
+    // 2. Fallback aman untuk development lokal
     try {
-        const hash = execSync('git rev-parse --short HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-        const count = execSync('git rev-list --count HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-        const branch = execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+        const hash = execSync('git rev-parse --short HEAD', { 
+            encoding: 'utf8', 
+            timeout: 2000,
+            stdio: ['ignore', 'pipe', 'ignore'] 
+        }).trim();
+        const count = execSync('git rev-list --count HEAD', { 
+            encoding: 'utf8', 
+            timeout: 2000,
+            stdio: ['ignore', 'pipe', 'ignore'] 
+        }).trim();
+        const branch = execSync('git rev-parse --abbrev-ref HEAD', { 
+            encoding: 'utf8', 
+            timeout: 2000,
+            stdio: ['ignore', 'pipe', 'ignore'] 
+        }).trim();
+
         cachedGitInfo = { hash, count, branch };
         return cachedGitInfo;
-    } catch {
-        return { hash: '', count: '', branch: '' };
+    } catch (err) {
+        // Fallback gracefully tanpa memblokir runtime
+        cachedGitInfo = { hash: '', count: '', branch: 'main' };
+        return cachedGitInfo;
     }
 }
 
@@ -27,7 +57,9 @@ function getAppVersion() {
             const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
             return pkg.version || '0.1.0';
         }
-    } catch {}
+    } catch (err) {
+        console.warn('[Version-Read-Warning]:', err.message);
+    }
     return '0.1.0';
 }
 

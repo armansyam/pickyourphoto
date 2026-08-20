@@ -70,3 +70,11 @@ SECURITY_STRATEGY.md
 # Offline markdown preview
 .offline-markdown-preview/
 
+# AI Agent & Local Dev Workspace (CRITICAL: Do not push to GitHub)
+.agents/
+.agents
+scratch/
+
+
+scratch
+scratch/

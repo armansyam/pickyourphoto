@@ -91,10 +91,17 @@ export async function POST(req) {
       }, { status: 403 });
     }
 
-    const usedBytes = vendor.usedStorageBytes || 0;
+    // 4. VALIDASI KUOTA PERSONAL VENDOR (Real-time Single Source of Truth dari storage_files)
+    const actualStorageBytesRow = db.prepare('SELECT COALESCE(SUM(fileSizeBytes), 0) as totalBytes FROM storage_files WHERE vendorId = ? AND (isExternalDrive IS NULL OR isExternalDrive = 0)').get(vendor.id);
+    const usedBytes = actualStorageBytesRow ? actualStorageBytesRow.totalBytes : (vendor.usedStorageBytes || 0);
+    if (vendor.usedStorageBytes !== usedBytes) {
+      try {
+        db.prepare('UPDATE vendors SET usedStorageBytes = ? WHERE id = ?').run(usedBytes, vendor.id);
+        vendor.usedStorageBytes = usedBytes;
+      } catch (_) {}
+    }
     const totalQuotaBytes = vendor.addonStorageQuotaBytes || 0;
 
-    // 4. VALIDASI KUOTA PERSONAL VENDOR (Hanya untuk SaaS Dedicated Worker Admin)
     if (usedBytes + sizeBytes > totalQuotaBytes) {
       const remainingBytes = Math.max(0, totalQuotaBytes - usedBytes);
       return NextResponse.json({

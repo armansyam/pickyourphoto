@@ -51,6 +51,17 @@ export async function GET() {
     if (vendor.addonPlanId) {
       activeAddon = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(vendor.addonPlanId);
     }
+    if (!activeAddon && (vendor.addonStorageQuotaBytes > 0 || vendor.hasStorageAddon)) {
+      const quotaGb = vendor.addonStorageQuotaBytes ? Math.round(vendor.addonStorageQuotaBytes / (1024 * 1024 * 1024)) : 0;
+      activeAddon = {
+        id: vendor.addonPlanId || 'addon_custom',
+        planKey: `addon_${quotaGb}gb`,
+        name: quotaGb > 0 ? `Add-On Storage ${quotaGb} GB` : 'Add-On Storage Cloud',
+        quotaBytes: vendor.addonStorageQuotaBytes || 0,
+        price: 0,
+        status: 'active'
+      };
+    }
 
     const quotaLimitBytes = vendor.addonStorageQuotaBytes || 0;
     const isOverQuota = quotaLimitBytes > 0 ? (usedBytes > quotaLimitBytes) : (usedBytes > 0 && !vendor.hasStorageAddon);

@@ -78,24 +78,28 @@ export async function POST(request) {
     let addonQuotaBytes = 0;
     let addonName = '';
     if (addonPlanId) {
-      if (addonPlanId === 'addon-10gb') {
-        addonAmount = 29000;
-        addonQuotaBytes = 10 * 1024 * 1024 * 1024;
-        addonName = 'Add-On Storage 10 GB';
-      } else if (addonPlanId === 'addon-25gb') {
-        addonAmount = 49000;
-        addonQuotaBytes = 25 * 1024 * 1024 * 1024;
-        addonName = 'Add-On Storage 25 GB';
-      } else if (addonPlanId === 'addon-50gb') {
-        addonAmount = 89000;
-        addonQuotaBytes = 50 * 1024 * 1024 * 1024;
-        addonName = 'Add-On Storage 50 GB';
-      } else {
-        const addonRow = db.prepare('SELECT name, price, quotaBytes FROM addon_plans WHERE planKey = ? OR id = ?').get(addonPlanId, addonPlanId);
-        if (addonRow) {
+      const addonRow = db.prepare("SELECT name, price, quotaBytes, status FROM addon_plans WHERE planKey = ? OR id = ?").get(addonPlanId, addonPlanId);
+      if (addonRow) {
+        if (addonRow.status === 'active') {
           addonAmount = addonRow.price;
           addonQuotaBytes = addonRow.quotaBytes;
           addonName = addonRow.name;
+        } else {
+          return NextResponse.json({ message: 'Paket Add-On Storage yang dipilih sedang dinonaktifkan.' }, { status: 400 });
+        }
+      } else {
+        if (addonPlanId === 'addon-10gb') {
+          addonAmount = 29000;
+          addonQuotaBytes = 10 * 1024 * 1024 * 1024;
+          addonName = 'Add-On Storage 10 GB';
+        } else if (addonPlanId === 'addon-25gb') {
+          addonAmount = 49000;
+          addonQuotaBytes = 25 * 1024 * 1024 * 1024;
+          addonName = 'Add-On Storage 25 GB';
+        } else if (addonPlanId === 'addon-50gb') {
+          addonAmount = 89000;
+          addonQuotaBytes = 50 * 1024 * 1024 * 1024;
+          addonName = 'Add-On Storage 50 GB';
         }
       }
     }

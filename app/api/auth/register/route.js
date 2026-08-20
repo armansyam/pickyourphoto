@@ -47,17 +47,21 @@ export async function POST(request) {
         }
         const finalWhatsapp = whatsapp ? whatsapp.trim() : '';
 
-        // Determine Add-On Storage Quota Bytes if addonPlanId is provided
+        // Determine Add-On Storage Quota Bytes if addonPlanId is provided (only if active)
         let addonQuotaBytes = 0;
         let selectedAddonKey = addonPlanId || null;
         if (selectedAddonKey) {
-            if (selectedAddonKey === 'addon-10gb') addonQuotaBytes = 10 * 1024 * 1024 * 1024;
-            else if (selectedAddonKey === 'addon-25gb') addonQuotaBytes = 25 * 1024 * 1024 * 1024;
-            else if (selectedAddonKey === 'addon-50gb') addonQuotaBytes = 50 * 1024 * 1024 * 1024;
-            else {
-                // Lookup from addon_plans table
-                const addonRow = db.prepare('SELECT quotaBytes FROM addon_plans WHERE planKey = ? OR id = ?').get(selectedAddonKey, selectedAddonKey);
-                if (addonRow) addonQuotaBytes = addonRow.quotaBytes;
+            const addonRow = db.prepare('SELECT id, quotaBytes, status FROM addon_plans WHERE planKey = ? OR id = ?').get(selectedAddonKey, selectedAddonKey);
+            if (addonRow) {
+                if (addonRow.status === 'active') {
+                    addonQuotaBytes = addonRow.quotaBytes;
+                } else {
+                    return NextResponse.json({ message: 'Paket Add-On Storage yang dipilih sedang dinonaktifkan.' }, { status: 400 });
+                }
+            } else {
+                if (selectedAddonKey === 'addon-10gb') addonQuotaBytes = 10 * 1024 * 1024 * 1024;
+                else if (selectedAddonKey === 'addon-25gb') addonQuotaBytes = 25 * 1024 * 1024 * 1024;
+                else if (selectedAddonKey === 'addon-50gb') addonQuotaBytes = 50 * 1024 * 1024 * 1024;
             }
         }
 

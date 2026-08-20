@@ -106,15 +106,37 @@ export default function AdminPlans({
     }
   };
 
-  const handleDeleteAddon = async (id, name) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus Storage Plan "${name}"?`)) return;
+  const handleToggleAddonStatus = async (addon) => {
+    const newStatus = addon.status === 'active' ? 'inactive' : 'active';
     try {
-      const res = await fetch(`/api/admin/addon-plans?id=${id}`, { method: 'DELETE' });
+      const res = await fetch('/api/admin/addon-plans', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: addon.id, status: newStatus })
+      });
       if (res.ok) {
         fetchAddonPlans();
       } else {
         const err = await res.json();
-        alert(err.error || 'Gagal menghapus Storage Plan');
+        alert(err.error || 'Gagal mengubah status Storage Plan');
+      }
+    } catch (err) {
+      console.error('Error toggling addon status:', err);
+    }
+  };
+
+  const handleDeleteAddon = async (id, name) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus Storage Plan "${name}"? Jika paket ini sedang digunakan, sistem akan menonaktifkannya (Soft-Disable) demi keamanan data vendor.`)) return;
+    try {
+      const res = await fetch(`/api/admin/addon-plans?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.softDeleted) {
+          alert(data.message || 'Paket dinonaktifkan (Soft-Disable) karena sedang digunakan.');
+        }
+        fetchAddonPlans();
+      } else {
+        alert(data.error || 'Gagal menghapus Storage Plan');
       }
     } catch (err) {
       console.error('Error deleting addon plan:', err);
@@ -275,44 +297,59 @@ export default function AdminPlans({
             Belum ada Storage Plan. Klik tombol di atas untuk membuat paket Add-On Storage.
           </p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
             {addonPlans.map(addon => {
               const quotaGb = addon.quotaBytes ? (addon.quotaBytes / (1024 * 1024 * 1024)).toFixed(0) : '0';
+              const isActive = addon.status === 'active';
               return (
                 <div
                   key={addon.id}
                   style={{
-                    background: 'rgba(255,255,255,0.02)',
-                    border: '1px solid rgba(52,211,153,0.15)',
+                    background: isActive ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.01)',
+                    border: `1px solid ${isActive ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.07)'}`,
                     borderRadius: '12px',
                     padding: '14px 16px',
                     display: 'flex',
                     flexDirection: 'column',
-                    justify: 'space-between',
-                    gap: '12px'
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    opacity: isActive ? 1 : 0.75,
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
-                      <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#f4f4f5' }}>{addon.name}</h4>
-                      <span style={{
-                        fontSize: '9px',
-                        padding: '2px 6px',
-                        borderRadius: '8px',
-                        fontWeight: '700',
-                        background: addon.status === 'active' ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.08)',
-                        color: addon.status === 'active' ? '#34d399' : '#71717a'
-                      }}>
-                        {addon.status === 'active' ? 'Aktif' : 'Off'}
-                      </span>
+                      <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: isActive ? '#f4f4f5' : '#a1a1aa' }}>{addon.name}</h4>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleAddonStatus(addon)}
+                        title={isActive ? 'Klik untuk nonaktifkan paket' : 'Klik untuk mengaktifkan paket'}
+                        style={{
+                          fontSize: '10px',
+                          padding: '3px 8px',
+                          borderRadius: '12px',
+                          fontWeight: '700',
+                          background: isActive ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.08)',
+                          color: isActive ? '#34d399' : '#a1a1aa',
+                          border: `1px solid ${isActive ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isActive ? '#34d399' : '#71717a' }}></span>
+                        {isActive ? 'Aktif' : 'Nonaktif'}
+                      </button>
                     </div>
 
-                    <div style={{ fontSize: '18px', fontWeight: '800', color: '#34d399', margin: '8px 0 2px 0' }}>
+                    <div style={{ fontSize: '18px', fontWeight: '800', color: isActive ? '#34d399' : '#71717a', margin: '8px 0 2px 0' }}>
                       {quotaGb} GB
                       <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal', marginLeft: '4px' }}>Storage</span>
                     </div>
 
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#fbbf24' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: isActive ? '#fbbf24' : '#a1a1aa' }}>
                       Rp {Number(addon.price).toLocaleString('id-ID')}
                       <span style={{ fontSize: '10px', color: '#71717a', fontWeight: 'normal' }}> / bln</span>
                     </div>
@@ -326,7 +363,23 @@ export default function AdminPlans({
                       ✏️ Edit
                     </button>
                     <button
+                      onClick={() => handleToggleAddonStatus(addon)}
+                      title={isActive ? 'Nonaktifkan paket ini' : 'Aktifkan paket ini'}
+                      style={{
+                        padding: '5px 8px',
+                        fontSize: '11px',
+                        background: isActive ? 'rgba(251,191,36,0.1)' : 'rgba(52,211,153,0.1)',
+                        color: isActive ? '#fbbf24' : '#34d399',
+                        border: `1px solid ${isActive ? 'rgba(251,191,36,0.2)' : 'rgba(52,211,153,0.2)'}`,
+                        borderRadius: '6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isActive ? 'Off' : 'On'}
+                    </button>
+                    <button
                       onClick={() => handleDeleteAddon(addon.id, addon.name)}
+                      title="Hapus atau Soft-Disable paket"
                       style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', cursor: 'pointer' }}
                     >
                       🗑️
