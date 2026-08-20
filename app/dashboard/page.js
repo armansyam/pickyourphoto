@@ -1676,7 +1676,7 @@ export default function DashboardPage() {
                                                             <span>Salin ({project.selectedPhotosCount})</span>
                                                         </button>
                                                     )}
-                                                    <button onClick={() => handleOpenEditSettings(project)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#a1a1aa', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Pengaturan">
+                                                    <button onClick={() => handleOpenEditProject(project)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.1)', color: '#a1a1aa', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Pengaturan">
                                                         <SettingsManageIcon size={13} />
                                                     </button>
                                                     <button onClick={() => setProjectToDelete(project)} style={{ background: 'none', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', borderRadius: '6px', padding: '5px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Hapus">

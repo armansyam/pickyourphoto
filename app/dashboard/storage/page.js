@@ -181,6 +181,7 @@ export default function VendorStorageManagerPage() {
   const [showStorageGalleryModal, setShowStorageGalleryModal] = useState(false);
   const [galleryModalFolder, setGalleryModalFolder] = useState(null);
   const [galleryModalFiles, setGalleryModalFiles] = useState([]);
+  const [loadingGalleryModal, setLoadingGalleryModal] = useState(false);
   const [activePreviewIndex, setActivePreviewIndex] = useState(null);
   const [previewSourceFiles, setPreviewSourceFiles] = useState([]);
   // BYOS (External Google Drive Vendor) State & Handlers

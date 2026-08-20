@@ -12,6 +12,17 @@ export async function GET(req) {
   }
 
   try {
+    const { searchParams } = new URL(req.url);
+    const folderId = searchParams.get('folderId');
+
+    // Jika folderId diberikan, validasi kepemilikan folder (cegah IDOR)
+    if (folderId) {
+      const targetFolder = db.prepare('SELECT id FROM storage_folders WHERE id = ? AND vendorId = ?').get(folderId, session.id);
+      if (!targetFolder) {
+        return NextResponse.json({ success: false, error: 'Folder tidak ditemukan atau akses tidak diizinkan.' }, { status: 403 });
+      }
+    }
+
     const vendor = db.prepare('SELECT id, externalDriveConnected, externalDriveRefreshToken, externalDriveFolderId FROM vendors WHERE id = ?').get(session.id);
     if (!vendor || !vendor.externalDriveConnected || !vendor.externalDriveRefreshToken) {
       return NextResponse.json({ success: true, hasUpdates: false });

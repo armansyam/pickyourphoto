@@ -7,9 +7,14 @@ import path from 'path';
 // GET: Retrieve project details & photos (Shared between Vendor & Client)
 export async function GET(request, { params }) {
     try {
-        const { projectId } = params;
+        const resolvedParams = await params;
+        const projectId = resolvedParams?.projectId || params?.projectId;
         const { searchParams } = new URL(request.url);
         const clientKey = searchParams.get('key');
+
+        if (!projectId) {
+            return NextResponse.json({ message: 'Project ID wajib diisi.' }, { status: 400 });
+        }
 
         const vendor = getAuthVendor();
         let isAuthorized = false;

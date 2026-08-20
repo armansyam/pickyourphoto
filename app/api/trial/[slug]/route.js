@@ -17,11 +17,13 @@ export async function GET(request, { params }) {
     }
 
     const now = new Date();
-    const expiresAt = new Date(gallery.expiresAt);
+    const expiresAtStr = String(gallery.expiresAt || '');
+    const expiresAtUTC = expiresAtStr.includes('T') ? (expiresAtStr.endsWith('Z') ? expiresAtStr : expiresAtStr + 'Z') : (expiresAtStr.replace(' ', 'T') + 'Z');
+    const expiresAt = new Date(expiresAtUTC);
     const createdAtStr = String(gallery.createdAt || '');
-    const createdAtUTC = createdAtStr.includes('T') ? createdAtStr : (createdAtStr.replace(' ', 'T') + 'Z');
+    const createdAtUTC = createdAtStr.includes('T') ? (createdAtStr.endsWith('Z') ? createdAtStr : createdAtStr + 'Z') : (createdAtStr.replace(' ', 'T') + 'Z');
     const createdAt = new Date(createdAtUTC);
-    const isExpired = now > expiresAt;
+    const isExpired = now.getTime() > expiresAt.getTime();
 
     // Hitung durasi aktual dari selisih expiresAt - createdAt (menit)
     let calculatedMinutes = Math.round((expiresAt.getTime() - createdAt.getTime()) / (1000 * 60));
@@ -57,8 +59,8 @@ export async function GET(request, { params }) {
         title: gallery.title,
         maxSelection: gallery.maxSelection,
         selectionStatus: gallery.selectionStatus,
-        createdAt: gallery.createdAt,
-        expiresAt: gallery.expiresAt,
+        createdAt: createdAt.toISOString(),
+        expiresAt: expiresAt.toISOString(),
         trialDurationMinutes,
         isExpired,
         photos: stagingFiles,
@@ -89,13 +91,22 @@ export async function POST(request, { params }) {
     }
 
     const now = new Date();
-    const expiresAt = new Date(gallery.expiresAt);
+    const expiresAtStr = String(gallery.expiresAt || '');
+    const expiresAtUTC = expiresAtStr.includes('T') ? expiresAtStr : (expiresAtStr.replace(' ', 'T') + 'Z');
+    const expiresAt = new Date(expiresAtUTC);
     if (now > expiresAt) {
       return NextResponse.json({ message: 'Masa berlaku galeri trial ini telah berakhir.' }, { status: 403 });
     }
 
     if (!Array.isArray(selectedPhotos)) {
       return NextResponse.json({ message: 'Daftar foto terpilih tidak valid' }, { status: 400 });
+    }
+
+    // Enforce maxSelection limit
+    if (gallery.maxSelection > 0 && selectedPhotos.length > gallery.maxSelection) {
+      return NextResponse.json({
+        message: `Jumlah foto yang dipilih (${selectedPhotos.length}) melebihi batas maksimal (${gallery.maxSelection}).`
+      }, { status: 400 });
     }
 
     db.prepare(`

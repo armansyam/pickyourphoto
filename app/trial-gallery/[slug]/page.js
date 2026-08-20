@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   LockIcon, SparklesUpgradeIcon, ClockIcon, PhotoIcon, 
-  FolderIcon, WhatsAppIcon, CopyLinkIcon, AlertTriangleIcon 
+  FolderIcon, WhatsAppIcon, CopyLinkIcon, AlertTriangleIcon,
+  SpeedBoltIcon
 } from '@/components/StorageIcons.jsx';
 
 export default function TrialGalleryPage({ params }) {
@@ -95,9 +96,16 @@ export default function TrialGalleryPage({ params }) {
   useEffect(() => {
     if (!data?.expiresAt) return;
 
+    const parseDateUTC = (dateStr) => {
+      if (!dateStr) return 0;
+      const s = String(dateStr).trim();
+      const iso = s.includes('T') ? (s.endsWith('Z') ? s : s + 'Z') : (s.replace(' ', 'T') + 'Z');
+      return new Date(iso).getTime();
+    };
+
     const interval = setInterval(() => {
       const now = new Date().getTime();
-      const expiry = new Date(data.expiresAt).getTime();
+      const expiry = parseDateUTC(data.expiresAt);
       const diff = Math.max(0, Math.floor((expiry - now) / 1000));
 
       const minutes = Math.floor(diff / 60);

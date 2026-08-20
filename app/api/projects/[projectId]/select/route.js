@@ -4,6 +4,7 @@ import db from '@/lib/db';
 // POST: Save client selections & set project status to completed
 export async function POST(request, { params }) {
     try {
+        const { projectId } = params;
         const body = await request.json();
         const { photoIds, action = 'submit' } = body; // 'draft' (simpan sementara) or 'submit' (final lock)
         const { searchParams } = new URL(request.url);
@@ -74,9 +75,12 @@ export async function POST(request, { params }) {
             }, { status: 400 });
         }
 
-        if (maxSelection > 0 && photoIds.length > maxSelection) {
+        // Deduplicate photo IDs to prevent duplicate count & constraint crashes
+        const uniquePhotoIds = Array.from(new Set(photoIds));
+
+        if (maxSelection > 0 && uniquePhotoIds.length > maxSelection) {
             return NextResponse.json({ 
-                message: `Jumlah foto yang dipilih (${photoIds.length}) melebihi batas maksimal (${maxSelection}). Silakan kurangi pilihan Anda.` 
+                message: `Jumlah foto yang dipilih (${uniquePhotoIds.length}) melebihi batas maksimal (${maxSelection}). Silakan kurangi pilihan Anda.` 
             }, { status: 400 });
         }
 
@@ -85,7 +89,7 @@ export async function POST(request, { params }) {
         const validPhotos = getProjectPhotoIds.all(projectId);
         const validPhotoIdsSet = new Set(validPhotos.map(p => p.id));
 
-        for (const id of photoIds) {
+        for (const id of uniquePhotoIds) {
             if (!validPhotoIdsSet.has(id)) {
                 return NextResponse.json({ message: `Photo ID ${id} is not part of this project.` }, { status: 400 });
             }
@@ -94,14 +98,14 @@ export async function POST(request, { params }) {
         // 4. Atomic Transaction: Bersihkan seleksi lama & masukkan seleksi terkini
         db.prepare('DELETE FROM selections WHERE clientId = ?').run(clientId);
 
-        if (photoIds.length > 0) {
-            const insertSelection = db.prepare('INSERT INTO selections (clientId, photoId) VALUES (?, ?)');
+        if (uniquePhotoIds.length > 0) {
+            const insertSelection = db.prepare('INSERT OR IGNORE INTO selections (clientId, photoId) VALUES (?, ?)');
             const insertMany = db.transaction((ids) => {
                 for (const id of ids) {
                     insertSelection.run(clientId, id);
                 }
             });
-            insertMany(photoIds);
+            insertMany(uniquePhotoIds);
         }
 
         // 5. Update status proyek: Hanya kunci menjadi 'completed' jika aksi adalah 'submit'
@@ -113,7 +117,7 @@ export async function POST(request, { params }) {
             success: true,
             isDraft: action === 'draft',
             message: action === 'draft' ? 'Draft pilihan foto berhasil disinkronkan.' : 'Pilihan foto berhasil dikirim dan galeri terkunci.',
-            selectedCount: photoIds.length
+            selectedCount: uniquePhotoIds.length
         });
 
     } catch (error) {
