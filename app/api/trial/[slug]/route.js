@@ -77,7 +77,62 @@ export async function GET(request, { params }) {
   }
 }
 
-// POST: Save photo selections for trial gallery
+// PUT: Auto-save draft selections (belum final, bisa diubah kapan saja)
+export async function PUT(request, { params }) {
+  try {
+    const resolvedParams = await params;
+    const slug = resolvedParams?.slug;
+    const { selectedPhotos } = await request.json();
+
+    const gallery = db.prepare('SELECT * FROM trial_galleries WHERE slug = ?').get(slug);
+
+    if (!gallery) {
+      return NextResponse.json({ message: 'Galeri trial tidak ditemukan' }, { status: 404 });
+    }
+
+    // Jika sudah final (completed), draft tidak bisa diubah
+    if (gallery.selectionStatus === 'completed') {
+      return NextResponse.json({ message: 'Pilihan sudah final dan tidak dapat diubah.' }, { status: 403 });
+    }
+
+    // Cek expiry
+    const now = new Date();
+    const expiresAtStr = String(gallery.expiresAt || '');
+    const expiresAtUTC = expiresAtStr.includes('T') ? (expiresAtStr.endsWith('Z') ? expiresAtStr : expiresAtStr + 'Z') : (expiresAtStr.replace(' ', 'T') + 'Z');
+    const expiresAt = new Date(expiresAtUTC);
+    if (now > expiresAt) {
+      return NextResponse.json({ message: 'Masa berlaku galeri trial ini telah berakhir.' }, { status: 403 });
+    }
+
+    if (!Array.isArray(selectedPhotos)) {
+      return NextResponse.json({ message: 'Daftar foto terpilih tidak valid' }, { status: 400 });
+    }
+
+    // Enforce maxSelection limit
+    if (gallery.maxSelection > 0 && selectedPhotos.length > gallery.maxSelection) {
+      return NextResponse.json({
+        message: `Jumlah foto yang dipilih (${selectedPhotos.length}) melebihi batas maksimal (${gallery.maxSelection}).`
+      }, { status: 400 });
+    }
+
+    db.prepare(`
+      UPDATE trial_galleries 
+      SET selectedPhotos = ?, selectionStatus = 'draft'
+      WHERE slug = ?
+    `).run(JSON.stringify(selectedPhotos), slug);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Draft tersimpan',
+      savedCount: selectedPhotos.length
+    });
+  } catch (error) {
+    console.error('[Trial PUT Draft Error]:', error);
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+  }
+}
+
+// POST: Finalize photo selections for trial gallery (locked/completed)
 export async function POST(request, { params }) {
   try {
     const resolvedParams = await params;
@@ -92,7 +147,7 @@ export async function POST(request, { params }) {
 
     const now = new Date();
     const expiresAtStr = String(gallery.expiresAt || '');
-    const expiresAtUTC = expiresAtStr.includes('T') ? expiresAtStr : (expiresAtStr.replace(' ', 'T') + 'Z');
+    const expiresAtUTC = expiresAtStr.includes('T') ? (expiresAtStr.endsWith('Z') ? expiresAtStr : expiresAtStr + 'Z') : (expiresAtStr.replace(' ', 'T') + 'Z');
     const expiresAt = new Date(expiresAtUTC);
     if (now > expiresAt) {
       return NextResponse.json({ message: 'Masa berlaku galeri trial ini telah berakhir.' }, { status: 403 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { 
   LockIcon, SparklesUpgradeIcon, ClockIcon, PhotoIcon, 
@@ -22,6 +22,12 @@ export default function TrialGalleryPage({ params }) {
   const [filterMode, setFilterMode] = useState('all'); // 'all' | 'selected'
   const [activeCategoryTab, setActiveCategoryTab] = useState(null); // Active category tab (null = auto-select root or first unlocked)
   const [activeLockedCategory, setActiveLockedCategory] = useState(null); // Locked category upsell modal
+  const [saveStatus, setSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved' | 'error'
+
+  // Ref untuk deteksi apakah perubahan selectedPhotos berasal dari user (bukan dari server load)
+  const userModifiedRef = useRef(false);
+  // Ref untuk debounce timer auto-save
+  const saveTimerRef = useRef(null);
 
   useEffect(() => {
     Promise.resolve(params).then((resolvedParams) => {
@@ -164,6 +170,9 @@ export default function TrialGalleryPage({ params }) {
   const toggleSelectPhoto = (filename) => {
     if (data?.isExpired || timeLeft.totalSec <= 0 || submitted) return;
 
+    // Tandai bahwa perubahan ini dari user (bukan dari server load)
+    userModifiedRef.current = true;
+
     if (selectedPhotos.includes(filename)) {
       setSelectedPhotos(selectedPhotos.filter((f) => f !== filename));
     } else {
@@ -174,6 +183,39 @@ export default function TrialGalleryPage({ params }) {
       setSelectedPhotos([...selectedPhotos, filename]);
     }
   };
+
+  // Auto-save draft setiap kali selectedPhotos berubah (hanya jika perubahan dari user, bukan dari server load)
+  useEffect(() => {
+    if (!userModifiedRef.current) return; // Skip jika bukan perubahan dari user
+    if (submitted || !slug || !data) return; // Skip jika sudah final atau data belum siap
+
+    // Debounce: tunggu 1.2 detik setelah perubahan terakhir baru kirim
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    setSaveStatus('saving');
+
+    saveTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/trial/${slug}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selectedPhotos }),
+        });
+        if (res.ok) {
+          setSaveStatus('saved');
+          // Reset badge setelah 2.5 detik
+          setTimeout(() => setSaveStatus('idle'), 2500);
+        } else {
+          setSaveStatus('error');
+        }
+      } catch {
+        setSaveStatus('error');
+      }
+    }, 1200);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [selectedPhotos]);
 
   const handleSubmitSelection = async () => {
     if (selectedPhotos.length === 0) {
@@ -356,16 +398,30 @@ export default function TrialGalleryPage({ params }) {
             {/* Divider */}
             <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
 
-            {/* Counter */}
-            <span style={{
-              padding: '0 14px',
-              fontSize: '14px',
-              fontWeight: 700,
-              color: selectedPhotos.length === data?.maxSelection ? '#34d399' : '#818cf8',
-              whiteSpace: 'nowrap',
-            }}>
-              {selectedPhotos.length}/{data?.maxSelection}
-            </span>
+            {/* Counter + Auto-save status badge */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '0 10px' }}>
+              <span style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: selectedPhotos.length === data?.maxSelection ? '#34d399' : '#818cf8',
+                whiteSpace: 'nowrap',
+              }}>
+                {selectedPhotos.length}/{data?.maxSelection}
+              </span>
+              {/* Auto-save badge */}
+              {saveStatus === 'saving' && (
+                <span style={{ fontSize: '11px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap' }}>
+                  <span style={{ display: 'inline-block', width: '7px', height: '7px', borderRadius: '50%', background: '#94a3b8', animation: 'pulse 1s ease-in-out infinite' }} />
+                  Menyimpan
+                </span>
+              )}
+              {saveStatus === 'saved' && (
+                <span style={{ fontSize: '11px', color: '#34d399', whiteSpace: 'nowrap' }}>☁ Tersimpan</span>
+              )}
+              {saveStatus === 'error' && (
+                <span style={{ fontSize: '11px', color: '#f87171', whiteSpace: 'nowrap' }}>⚠ Gagal simpan</span>
+              )}
+            </div>
 
             {/* Divider */}
             <div style={{ width: '1px', height: '20px', background: 'rgba(255,255,255,0.12)', flexShrink: 0 }} />
