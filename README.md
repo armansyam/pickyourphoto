@@ -228,6 +228,37 @@ Rincian spesifikasi teknis dan panduan integrasi lebih lanjut tersedia di folder
 
 ---
 
+## 🗺️ Roadmap & Rencana Skalabilitas Masa Depan (Future Scaling Plan)
+
+Sebagai bagian dari perencanaan rekayasa jangka panjang, platform ini dirancang dengan peta jalan skalabilitas modular berfase:
+
+```
+[Fase 1: Current Active] ────► [Fase 2: Medium Scale] ────► [Fase 3: Hyperscale Enterprise]
+  (0 – 2.000 Vendor)            (2.000 – 10.000 Vendor)          (>10.000+ Vendor Aktif)
+  • SQLite WAL Mode             • Dedicated Mail API (Resend)     • PostgreSQL + PgBouncer
+  • Zero-Storage Stream Pipe    • Gateway Auto-Reconciliation     • Redis Job Queue (BullMQ)
+  • Google Drive Pool           • PM2 Multi-Core Cluster          • S3/Cloudflare R2 Mirrors
+```
+
+### 🟢 Fase 1: Fondasi Produksi Saat Ini (0 – 2.000 Vendor Aktif) — [STATUS: AKTIF]
+* **Database:** SQLite WAL Mode (`better-sqlite3`) dengan *busy_timeout* 10s & *parameterized statements* (efisiensi memory & single-file disk).
+* **Media Stream:** *Native Pipe Stream* (`ReadableStream`) dengan RAM ~0 MB dan Cloudflare Edge CDN Caching 30 hari.
+* **Pembayaran:** 6 Provider Payment Gateway (IPaymu, Midtrans, Xendit, Tripay, Duitku, DOKU) dengan *atomic locking*.
+* **Storage:** Google Drive Master Hub + Worker Pool dengan *Smart Capacity Balancing*.
+
+### 🟡 Fase 2: Skala Menengah (2.000 – 10.000 Vendor Aktif) — [ROADMAP]
+* **Dedicated Transactional Mailer:** Migrasi pengiriman email dari Gmail SMTP ke *Transactional API Provider* (Resend / Postmark / Amazon SES) dengan verifikasi SPF/DKIM/DMARC untuk garansi 99.9% inbox delivery.
+* **Autonomous Payment Reconciliation Worker:** Cron worker latar belakang yang memindai dan memeriksa status order gantung langsung ke API Gateway setiap 5 menit.
+* **PM2 Multi-Core Cluster Mode:** Pemanfaatan seluruh core CPU VPS untuk memproses request API secara paralel.
+
+### 🔴 Fase 3: Skala Enterprise Hyperscale (>10.000+ Vendor Aktif) — [FUTURE ARCHITECTURE]
+* **Database Transition:** Migrasi basis data dari SQLite ke **PostgreSQL Cluster** menggunakan Connection Pooler (**PgBouncer**) untuk multi-writer concurrency tak terbatas.
+* **Distributed Queue & Caching:** Integrasi **Redis / DragonflyDB** dengan **BullMQ** untuk pemrosesan antrean import foto massal dan background jobs terisolasi.
+* **Multi-Cloud Storage Engine:** Dukungan penyimpanan objek S3-Compatible (**Cloudflare R2 / Wasabi / AWS S3**) sebagai opsi pendamping Google Drive Pool.
+* **Centralized APM & Error Tracking:** Integrasi **Sentry** dan **Grafana / Prometheus** untuk monitoring real-time latency dan error telemetry.
+
+---
+
 ## 🛡️ Lisensi & Hak Cipta
 
 Dikelola dan dikembangkan oleh **AMS DEV (Arman Syam)**.  
