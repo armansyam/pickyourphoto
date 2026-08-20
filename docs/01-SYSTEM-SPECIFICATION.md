@@ -2,7 +2,7 @@
 
 > **Dokumen Resmi Spesifikasi Terpadu Platform SaaS Pick Your Photo**  
 > Lokasi: `docs/01-SYSTEM-SPECIFICATION.md`  
-> **Terakhir diperbarui:** 10 Agustus 2026 — *Sinkronisasi Pasca-Audit 23 Bug: Multi-Provider Gateway, BYOS GDrive, Sub-Admin Team, Grace Period & Hard Purge Policy*
+> **Terakhir diperbarui:** 20 Agustus 2026 — *Audit Menyeluruh Seluruh Basis Kode Sumber (Frontend, Backend, UX/UI)*
 
 ---
 
@@ -13,10 +13,10 @@ Menjadi platform SaaS nomor satu bagi fotografer profesional untuk berkolaborasi
 
 ### Misi & Pilar Utama Arsitektur
 1. **Menghilangkan Kerumitan Manual:** Mengotomatisasi proses seleksi foto yang sebelumnya dilakukan via WhatsApp/spreadsheet.
-2. **Zero-Storage Direct Stream Architecture:** Import metadata foto secara langsung dari Google Drive tanpa menyimpan byte fisik foto di disk server.
-3. **Multi-Tenant Add-On Cloud Storage:** Menyediakan opsi kapasitas cloud storage tambahan dengan harga prorata harian yang transparan dan fleksibel.
+2. **Zero-Storage Direct Stream Architecture:** Import metadata foto dan streaming foto secara langsung dari Google Drive tanpa membebani disk lokal atau RAM server VPS (`ReadableStream`).
+3. **Multi-Account Cloud Storage Pool:** Menyediakan penyimpanan dedicated terdistribusi (Master Index Hub + Worker Accounts) dengan auto-balancing kapasitas.
 4. **Keamanan & Privasi:** Galeri klien diproteksi access key unik; URL Google CDN tidak pernah terekspos ke browser client.
-5. **Skalabilitas:** Pengelolaan banyak proyek dengan antrian import, Cloudflare CDN caching 30-hari, dan True Pipe Stream.
+5. **Skalabilitas:** Pengelolaan multi-proyek dengan antrean import background, Cloudflare CDN caching 30-hari, dan True Pipe Stream.
 
 ---
 
@@ -24,11 +24,11 @@ Menjadi platform SaaS nomor satu bagi fotografer profesional untuk berkolaborasi
 
 | Peran | Akses | Deskripsi |
 |---|---|---|
-| **Superadmin** | `/admin` | Pemilik SaaS — kelola vendor, paket utama, Add-On storage, payment gateway, setting sistem, sub-admin team, & audit pool |
-| **Sub-Admin** | `/admin` | Anggota tim admin — akses terbatas sesuai role yang ditetapkan Superadmin |
-| **Vendor (Fotografer)** | `/dashboard` & `/dashboard/storage` | Pelanggan aktif — buat galeri, kelola storage cloud, perpanjang Add-On, bagikan link galeri ke klien |
-| **Klien** | `/gallery/[id]?key=xxx` | Penerima galeri — pilih foto favorit, tidak perlu mendaftar akun |
-| **Pengunjung Trial** | `/trial-gallery/[slug]` | Demo galeri publik dari landing page tanpa perlu daftar akun |
+| **Superadmin** | `/admin` | Pemilik SaaS — kelola vendor, paket utama, Add-On storage, 6 payment gateway, Google Drive Pool, sub-admin team, & export laporan keuangan CSV |
+| **Sub-Admin** | `/admin` | Anggota tim admin — akses operasional sesuai role yang ditetapkan Superadmin |
+| **Vendor (Fotografer)** | `/dashboard` & `/dashboard/storage` | Pelanggan aktif — buat galeri, kelola cloud storage dedicated, upload foto batch, perpanjang langganan, bagikan link galeri ke klien |
+| **Klien** | `/gallery/[id]?key=xxx` | Penerima galeri — pilih foto favorit secara instan tanpa perlu mendaftar akun |
+| **Pengunjung Trial** | `/trial` & `/trial-gallery/[slug]` | Demo galeri publik dari landing page dengan batasan seleksi dan durasi kedaluwarsa otomatis |
 
 ---
 
@@ -52,7 +52,7 @@ expired_draft / cancelled / suspended
 expired (otomatis via autoCheckVendorSubscriptionExpiry saat login/request)
 ```
 
-**Aturan Akumulasi Renewal & Prorata Upgrade Paket Utama:**
+**Aturan Akumulasi Renewal & Prorata Upgrade:**
 - **Perpanjangan Paket Sama (Renewal):** Hari diakumulasikan dari tanggal kedaluwarsa lama jika belum lewat (`expiresAt = oldExpiresAt + activePeriodDays`), sehingga sisa hari vendor **tidak pernah hangus**.
 - **Upgrade Paket Utama:** Harga dikurangi sisa nilai prorata harian paket lama.
 
@@ -70,191 +70,71 @@ Sistem Add-On Cloud Storage bersifat dinamis dan dapat disesuaikan kebutuhan fot
 | **Drive 50 GB** | 50 GB | Rp 89.000 |
 | **Custom Enterprise (50–200 GB)** | 50 GB – 200 GB | Rp 1.250 / GB |
 
-**Strategi Penawaran Modal Popup Add-On saat Registrasi (Order Bump):**
-- **Clean Checkout:** Halaman checkout registrasi awal tetap bersih dan menampilkan total biaya default Paket Utama.
-- **Interactive Modal Selector:** Calon vendor dapat mengklik tombol `[ ⚡ + Tambahkan Cloud Storage Tambahan ]` untuk membuka Modal Popup pemilihan Add-On Storage.
-- **Dynamic Re-calculation:** Memilih paket pada modal akan menambahkan line item Add-On di rincian order dan menjumlahkan total tagihan secara instan. Vendor dapat menghapus Add-On (opsi reset) jika batal memilih.
+**Strategi Order Bump & Pembayaran:**
+- **Clean Checkout:** Halaman checkout registrasi awal menampilkan total biaya default Paket Utama, dengan opsi tombol order bump Add-On Storage.
+- **Dynamic Re-calculation:** Memilih paket pada modal akan menambahkan line item Add-On di rincian order dan menjumlahkan total tagihan secara instan.
 - **Bundled QRIS Payment:** Payment gateway membuat 1 transaksi tunggal dengan `item_details` berisi Paket Utama & Add-On Storage.
-- **Automated Instant Setup:** Webhook notification payment gateway mengaktifkan status vendor (`status = 'active'`) dan mengisi `addonStorageQuotaBytes` di database secara serentak (*100% co-terming & ready-to-use*).
-
-**Pengelolaan Upgrade di Admin Dashboard & Proteksi QRIS Expiry:**
-- **Kelola Vendor Scope (`/admin` → Tab Vendors):** Seluruh pengajuan upgrade dari vendor aktif (baik Upgrade Plan + Add-On maupun Standalone Add-On Storage) yang menggunakan **Manual Transfer** dikelola langsung di tabel Kelola Vendor.
-- **Emblem Notifikasi `⚡ UPGRADE PENDING`:** Baris vendor yang mengajukan upgrade manual menampilkan emblem terang `⚡ UPGRADE PENDING`. Mengklik emblem ini membuka Modal Konfirmasi Approval berisi rincian upgrade (prorata), nominal transfer, dan foto bukti bayar.
-- **QRIS Expiration Safety:** Transaksi upgrade QRIS memiliki timer countdown kedaluwarsa. Jika transaksi QRIS expired/dibatalkan, vendor **tetap menggunakan Paket Utama & kuota storage versi sebelumnya secara aman** tanpa ada gangguan pada langganan aktif.
-
-**Aturan Prorata Harian & Upgrade Add-On Storage:**
-- **Co-Terming Expiration:** Masa berlaku Add-On Storage **selalu diselaraskan (*co-terminous*)** dengan tanggal kedaluwarsa Paket Utama vendor (`expiresAt`).
-- **Prorata Upgrade Add-On Custom:** Vendor yang meng-upgrade kuota custom dari kuota sebelumnya hanya membayar selisih GB tambahan ($\text{Selisih GB} \times \text{Rp } 1.250$).
-- **Instant Quota Expansion:** Kuota storage (`addonStorageQuotaBytes`) diperbarui seketika saat Notifikasi Callback Payment Gateway / Polling Pending bernilai `paid` atau saat Admin menekan tombol Approve pada pengajuan manual.
+- **Automated Instant Setup:** Webhook notification payment gateway mengaktifkan status vendor (`status = 'active'`) dan mengisi `addonStorageQuotaBytes` di database secara serentak (*co-terminous* dengan `expiresAt`).
 
 ---
 
-### 3.3. Proteksi Galeri Klien: Glassmorphism Lock Overlay 🔒 & Grace Period
+### 3.3. Multi-Provider Payment Gateway (Zero-Code Switch)
+
+Platform mendukung **6 Gateway Pembayaran Indonesia** yang dapat dipilih dan dikonfigurasi dinamis via Admin Panel (`saas_settings`):
+
+| Provider | Driver File | Fitur Utama / Metode | Algoritma Signature Webhook |
+|---|---|---|---|
+| **IPaymu** (Rekomendasi) | `lib/payment-gateway/ipaymu.js` | Direct QRIS API (Bebas Iframe/Popup, Render Langsung di UI) | HMAC-SHA256 (API Key + VA) |
+| **Midtrans** | `lib/payment-gateway/midtrans.js` | Snap Embed / Direct QRIS / GoPay | SHA512 (OrderId + StatusCode + GrossAmount + ServerKey) |
+| **Xendit** | `lib/payment-gateway/xendit.js` | Xendit Invoice API, VA, QRIS | Token Header / Webhook Verification Token |
+| **Tripay** | `lib/payment-gateway/tripay.js` | Closed Payment QRIS & Virtual Account | HMAC-SHA256 (JSON Body + Private Key) |
+| **Duitku** | `lib/payment-gateway/duitku.js` | Duitku Pop / Direct QRIS | MD5 (MerchantCode + OrderId + Amount + ApiKey) |
+| **DOKU** | `lib/payment-gateway/doku.js` | DOKU Checkout / Direct Pay | HMAC-SHA256 (Component Signature Header) |
+
+- **Dispatcher Terpusat:** `lib/payment-gateway/index.js` mengelola alur pembuatan pembayaran `createPayment()` dan validasi `verifyPaymentWebhook()` secara transparan.
+- **Pengujian Live Gateway:** Endpoint `/api/admin/payment/test` untuk verifikasi koneksi dan kredensial API secara instan.
+
+---
+
+### 3.4. Dedicated Storage Pool & Direct Upload Tickets
+
+- **Multi-Account Storage Pool:** Mengelola Google Drive Master Hub dan Worker Accounts terdaftar di tabel `master_drive_accounts`.
+- **Smart Capacity Load Balancing:** Sistem memilih akun worker aktif dengan sisa kapasitas terbanyak (*Highest Free Space First*).
+- **Direct Upload Ticket (`/api/storage/upload/ticket`):** Vendor mengunggah berkas foto berukuran besar secara langsung melalui tiket otorisasi berdurasi terbatas ke worker account terpilih tanpa membebani disk server utama.
+- **Hardware Adaptive Concurrency & Latency Governor:** Kecepatan unggah paralel disesuaikan secara dinamis dengan spesifikasi CPU/RAM vendor (4 hingga 10 thread paralel) dan lag event-loop browser.
+
+---
+
+### 3.5. Proteksi Galeri Klien: Glassmorphism Lock Overlay 🔒 & Grace Period 30 Hari
 
 - **Proteksi Galeri Klien:**  
   Saat vendor/storage kedaluwarsa, galeri klien di `/gallery/[projectId]` menampilkan efek **Glassmorphism Lock Overlay 🔒** dengan pesan *"GALERI TERKUNCI SEMENTARA"* dan tombol hubungi studio via WhatsApp.
-- **Garansi Keamanan Berkas Foto — Grace Period 30 Hari:** Berkas foto **TIDAK DIHAPUS** selama masa tenggang (*Grace Period*) 30 hari. Saat vendor memperpanjang storage, galeri otomatis terbuka instan.
-- **Hard Purge setelah Grace Period:** Setelah 30 hari masa tenggang terlampaui, Background Daemon secara otomatis menghapus berkas foto fisik dari Google Drive sebagai *garbage collection*.
-- **Auto-Cleanup Background Daemon (`lib/db.js`):**  
-  Daemon background di Node.js mengeksekusi pembersihan otomatis setiap 60 detik:
-  1. Memeriksa vendor yang storage-nya kedaluwarsa >30 hari.
-  2. Menghapus berkas foto fisik untuk *garbage collection* jika melebihi masa tenggang 30 hari.
-  3. Mengirim email peringatan otomatis di H-15 dan H-3 via SMTP.
+- **Garansi Keamanan Berkas Foto (Grace Period 30 Hari):** Berkas foto **TIDAK DIHAPUS** selama masa tenggang 30 hari. Saat vendor memperpanjang storage, galeri otomatis terbuka instan.
+- **Hard Purge Policy (`/api/cron/purge-expired`):** Setelah 30 hari masa tenggang terlampaui, daemon pembersih menghapus metadata dan berkas foto fisik dari Google Drive storage pool.
 
 ---
 
-### 3.4. Multi-Tenant Storage Metering (`usedStorageBytes`) & Google Drive Size Ingestion
+### 3.6. Sistem Email Notifikasi White-Label (`lib/mailer.js`)
 
-- **Presisi Pengukuran Storage:**
-  - Google Drive API list (`lib/google-master-drive.js`) menyertakan parameter `size`: `fields: 'nextPageToken, files(id, name, mimeType, size)'`.
-  - Berkas foto diindeks dengan ukuran byte asli (`fileSizeBytes`).
-  - Total byte foto proyek diakumulasikan ke kolom `usedStorageBytes` milik vendor di tabel `vendors`.
-  - Hapus proyek/folder mengembalikan kuota secara instan (`usedStorageBytes - totalBytes`).
-- **Capacity Meter Visual:** Progress bar di `/dashboard/storage` berubah warna secara dinamis menjadi merah saat penggunaan mencapai $\ge 90\%$.
-
----
-
-### 3.5. Google Drive BYOS (Bring Your Own Storage)
-
-- **Konsep:** Vendor dapat menghubungkan akun Google Drive pribadi sebagai storage dedicated untuk upload foto proyek.
-- **Arsitektur Pool:** Platform mengelola multi-akun Google Drive (Master Index Hub + Worker Accounts) dalam satu pool terpadu.
-- **Smart Capacity Load Balancing:** Mesin pemilih akun worker memilih lokasi penyimpanan berdasarkan sisa kapasitas terbesar secara otomatis.
-- **Live GDrive API Rename & Move:** Superadmin dapat mengubah nama folder master cluster dan memindahkannya secara live via Google Drive API tanpa proses manual.
-- **Isolated Vendor Folder:** Setiap vendor mendapat folder dedicated di dalam worker account yang terpilih.
+1. **Email Tagihan QRIS Pending:** Instruksi pembayaran dengan QRIS dinamis dan tombol pelunasan instan.
+2. **Email Instruksi Transfer Manual (24 Jam):** Rincian nomor rekening, nominal, dan batas waktu 24 jam.
+3. **Email Bukti Transfer Diterima:** Konfirmasi penerimaan bukti transfer yang menunggu verifikasi admin.
+4. **Email Invoice Lunas Resmi:** Invoice HTML resmi dengan nomor `INV-xxx` dan rincian paket + storage.
+5. **Email Konfirmasi Upgrade:** Konfirmasi penambahan kuota storage atau kenaikan paket aktif.
+6. **Tester SMTP:** Endpoint `/api/admin/smtp/test` untuk pengujian koneksi email langsung dari dashboard admin.
 
 ---
 
-### 3.6. Google Drive Importer (Zero-Storage, Master OAuth)
+### 3.7. RAW Selector — Sortir File RAW Lokal (100% Client-Side)
 
-- **Metode:** Google OAuth 2.0 Master — menggunakan akun Google Studio Master Admin SaaS.
-- **Alur Import Background:**
-  1. Vendor memasukkan URL folder Google Drive → `parseFolderId()` mengurai ID folder.
-  2. Proyek dibuat dengan status `importing`.
-  3. `processImagesInBackground()` → `addToImportQueue()` (FIFO, max 1 concurrent).
-  4. Pemindaian rekursif hingga **depth 5** (subfolder bertingkat).
-  5. Memetakan foto & file RAW (`.cr2`, `.cr3`, `.arw`, `.nef`, `.dng`, `.heic`, dll.).
-  6. Simpan metadata foto: `originalPath` = `/api/proxy/thumb/{id}/{name}?sz=w1200`, `thumbnailPath` = `?sz=w400`.
+- **Teknologi:** File System Access API di browser vendor (Chrome/Edge 86+).
+- **Fungsi:** Menyalin/memindahkan file RAW asli (`.cr2`, `.cr3`, `.arw`, `.nef`, `.dng`, `.heic`) dari folder sumber lokal ke folder seleksi berdasarkan pilihan klien secara otomatis.
+- **Keamanan:** 100% client-side tanpa ada file RAW yang diunggah ke server.
 
 ---
 
-### 3.7. Proxy Media Stream (True Pipe Stream — Zero RAM)
+### 3.8. Hardened Version Endpoint & Developer Signature
 
-- **Route:** `GET /api/proxy/thumb/[fileId]`
-- **Response Stream:** Direct `ReadableStream` (`response.body`) tanpa memuat file ke RAM server (`arrayBuffer()`).
-- **CDN Caching Header:**
-  ```http
-  Cache-Control: public, max-age=604800, s-maxage=2592000, stale-while-revalidate=86400
-  CDN-Cache-Control: public, max-age=2592000
-  Cloudflare-CDN-Cache-Control: public, max-age=2592000
-  ```
-
----
-
-### 3.8. Multi-Provider Payment Gateway
-
-- **Arsitektur Multi-Provider:** Platform mendukung 4 payment gateway yang dapat dikonfigurasi Admin secara dinamis via `saas_settings` — tanpa mengubah kode apapun.
-  
-  | Provider | Metode Pembayaran | Driver |
-  |---|---|---|
-  | **Midtrans** (default) | QRIS + GoPay (Snap API) | `lib/payment-gateway/midtrans.js` |
-  | **Xendit** | Invoice / Virtual Account | `lib/payment-gateway/xendit.js` |
-  | **Tripay** | QRIS + VA | `lib/payment-gateway/tripay.js` |
-  | **Duitku** | QRIS + VA | `lib/payment-gateway/duitku.js` |
-
-- **Dispatcher terpusat:** `lib/payment-gateway/index.js` — semua API route memanggil `createPayment()` dan `verifyPaymentWebhook()` tanpa perlu tahu provider aktif.
-- **Pembatalan Transaksi QRIS Atomik:** Panggilan `/api/payment/cancel` memperbarui status di tabel `payment_sessions` dan `payment_transactions` menjadi `'cancelled'` secara bersamaan.
-- **Webhook Signature Verification:** Setiap provider memiliki algoritma verifikasi signature tersendiri (Midtrans: SHA512, Xendit: HMAC-SHA256, dll.) yang di-handle secara transparan oleh driver masing-masing.
-
----
-
-### 3.9. Panel Superadmin (`/admin`)
-
-- **Modul Pengaturan:** Integrasi Google Cloud OAuth, SMTP Mailer, Multi-Provider Payment Gateway, & System Quota.
-- **Sub-Admin Team Management:** Superadmin dapat menambahkan, mengelola, dan menonaktifkan akun Sub-Admin dengan level akses terpisah dari akun Superadmin.
-- **Kelola Add-On Plans:** Superadmin dapat mengubah harga, status, dan kuota Add-On Storage secara real-time.
-- **Analytics Dashboard:** Statistik platform real-time: jumlah vendor aktif, total transaksi, pendapatan, penggunaan storage, dll.
-- **Disk Stats Monitor:** Monitor penggunaan disk VPS secara real-time, lengkap dengan warning threshold yang dapat dikonfigurasi.
-- **Indicator SMTP Warning Badge:** Badge visual `🟢 SMTP Aktif` / `⚠️ SMTP Belum Aktif` memberikan kepastian status mailer pada Admin Panel.
-
----
-
-### 3.10. Sistem Email Notifikasi Terpadu (`lib/mailer.js`) & White-Label Invoice
-
-Sistem email notifikasi dirancang 100% white-label tanpa mencantumkan brand gateway pihak ketiga:
-
-1. **Email Tagihan QRIS Pending (`sendPendingQrisEmail`):**  
-   * **Pemicu:** Dikirim seketika saat QRIS dibuat (`/api/payment/create`).
-   * **Subjek:** `💳 Pendaftaran Akun [Nama App] Telah Diterima — Instruksi Pembayaran QRIS`
-   * **Isi:** Memuat No. Order, Rincian Paket + Add-On Storage, Total Nominal, & Tombol `[ 🚀 Selesaikan Pembayaran QRIS Sekarang ]`.
-
-2. **Email Instruksi Transfer Manual 24h (`sendPendingManualTransferInstructionEmail`):**  
-   * **Pemicu:** Dikirim saat registrasi manual dipilih tanpa upload bukti.
-   * **Subjek:** `📩 Pendaftaran Akun [Nama App] Telah Diterima — Instruksi Transfer Bank (Berlaku 24 Jam)`
-   * **Isi:** Memuat No. Rekening BCA, Nominal Bayar, Batas Waktu 24 Jam, & Tombol `[ 📤 Upload Bukti Transfer Sekarang ]`.
-
-3. **Email Pendaftaran Diterima (`sendPendingManualTransferReceivedEmail`):**  
-   * **Pemicu:** Dikirim saat registrasi manual dilengkapi foto bukti transfer.
-   * **Subjek:** `📩 Pendaftaran Akun [Nama App] Telah Diterima — Menunggu Verifikasi Pembayaran`
-   * **Isi:** Menginfokan bahwa foto bukti transfer sedang diperiksa oleh Tim Admin (Est. Max 1x24 Jam).
-
-4. **Email Bukti Invoice Lunas Resmi (`sendVendorApprovalEmail`):**  
-   * **Pemicu:** Dikirim seketika saat pembayaran QRIS `paid` atau saat Admin mengeklik **Setujui/Approve** di Admin Dashboard.
-   * **Subjek:** `🎉 Invoice Lunas: Akun Berlangganan [Nama App] Telah Aktif!`
-   * **Isi:** Memuat Kotak Invoice HTML resmi dengan No. Invoice (`INV-xxx`), Metode Pembayaran (`QRIS Otomatis / Transfer Bank Manual`), Rincian Paket + Add-On Storage, dan Status `🟢 PAID / LUNAS (VERIFIED)`.
-
-5. **Email Konfirmasi Upgrade/Perpanjangan & Add-On (`sendVendorUpgradeConfirmationEmail`):**  
-   * **Pemicu:** Dikirim setelah Admin approve upgrade/perpanjangan manual, atau setelah webhook QRIS settlement untuk Add-On Storage.
-   * **Subjek:** `🎉 Konfirmasi Upgrade/Perpanjangan Paket — [Nama App]`
-   * **Isi:** Rincian paket baru, metode pembayaran yang digunakan, tanggal kedaluwarsa baru, dan masa aktif tambahan.
-
-6. **Proteksi Privasi Klien:** Platform **TIDAK PERNAH** mengirimkan email otomatis ke pelanggan/klien akhir fotografer.
-
----
-
-### 3.11. Batas Waktu 1x24 Jam Transfer Manual & Auto-Cleanup Daemon
-
-- **Aturan Batas Waktu 24 Jam:** Pendaftaran Transfer Manual tanpa bukti bayar (`paymentProof IS NULL`) wajib diselesaikan dalam waktu 1x24 jam dari registrasi (`createdAt <= DATETIME('now', '-24 hours')`).
-- **Auto-Cleanup Background Sync (`/api/admin/vendors`):** Background worker otomatis memperbarui status pendaftaran manual gantung yang melebihi 24 jam menjadi `expired_draft` dan memindahkannya ke **Sub-Tab Arsip** di Admin Panel, sehingga antrean Admin Panel selalu bersih.
-
----
-
-### 3.12. RAW Selector — Sortir File RAW Lokal (100% Client-Side)
-
-- **Arsitektur:** 100% Client-Side menggunakan **File System Access API** — tidak ada file yang di-upload ke server.
-- **Fungsi:** Vendor dapat menyalin/memindahkan file RAW (`.cr2`, `.cr3`, `.arw`, `.nef`, `.dng`, `.raw`, dll.) dari folder lokal ke folder tujuan secara otomatis berdasarkan nama file yang dipilih klien.
-- **Akses Berdasarkan Paket:** Pro & Business Plan mendapatkan akses penuh; Starter Plan terkunci; Free Trial dibatasi oleh `raw_sorter_trial_limit`.
-- **Pencocokan:** Nama file galeri di-strip ekstensinya lalu dicocokkan secara *case-insensitive* dengan file di folder sumber.
-- **Kompatibilitas:** Chrome 86+ / Edge 86+ (Firefox & Safari tidak mendukung File System Access API).
-
----
-
-## 🔧 4. Tech Stack Produksi
-
-| Layer | Teknologi | Versi |
-|---|---|---|
-| **Framework** | Next.js (App Router) | 14.2.3 |
-| **Runtime** | Node.js | v24.x LTS |
-| **Database** | SQLite via `better-sqlite3` | 11.x (WAL Mode) |
-| **Auth** | JWT via `jsonwebtoken` | 9.x (httpOnly) |
-| **Google Drive API** | `googleapis` (Drive API v3) | 140.x |
-| **Email Mailer** | `nodemailer` (SMTP Gmail) | 9.x |
-| **Payment Gateway** | Midtrans / Xendit / Tripay / Duitku | Multi-Provider |
-| **Process Manager** | PM2 | Latest |
-| **Container** | Docker Compose | Latest |
-
----
-
-## 🚀 5. Fitur Laporan Keuangan Admin & Evaluasi Roadmap
-
-1. **🟢 Ekspor Laporan Keuangan Admin (CSV / Excel — ✅ SELESAI & AKTIF):**  
-   Superadmin dapat mengunduh berkas laporan transaksi pendapatan langganan paket utama dan Add-On Storage dalam format `.csv` melalui tombol **`📊 Unduh Laporan Keuangan (CSV)`** di Admin Dashboard.
-
-2. **🟢 Sub-Admin Team Management (✅ SELESAI & AKTIF):**  
-   Superadmin dapat menambahkan akun Sub-Admin dengan level akses terpisah dari akun Superadmin utama. Endpoint: `/api/admin/admins`.
-
-3. **❌ Email Alert Admin & CSV Seleksi Vendor (DIBATALKAN):**  
-   Email alert pendaftaran dibatalkan karena Admin sudah memiliki widget notifikasi real-time di dashboard. Rekap CSV seleksi vendor dibatalkan karena fitur RAW Selector lokal dan copy file name 1-klik sudah memenuhi kebutuhan fotografer.
-
----
-
-*Spesifikasi Master Sistem ini disusun secara resmi sebagai rujukan tunggal pengoperasian SaaS Pick Your Photo.*
+- **Endpoint Publik Aman:** `GET /api/public/version` menyajikan informasi versi sistem (`release`, `version`, `updateAvailable`) secara *asynchronous* dan *non-blocking*.
+- **CI/CD Awareness:** Otomatis membaca variabel lingkungan build-time (`VERCEL_GIT_COMMIT_SHA`, `GIT_COMMIT_SHA`) dengan timeout 2 detik untuk git CLI lokal.
+- **Anti-Reconnaissance:** Pesan commit internal dan metadata sensitif tidak diekspos ke publik.
