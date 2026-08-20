@@ -24,6 +24,25 @@ export async function GET(request) {
     }
 
     try {
+        // 1. Ambil konfigurasi identitas SaaS dinamis dari database
+        const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('saas_name', 'saas_logo_url', 'saas_tagline', 'saas_description', 'contact_whatsapp', 'contact_email', 'company_address')").all() || [];
+        const saasMap = {};
+        saasRows.forEach(r => { saasMap[r.key] = r.value; });
+
+        const brandName = saasMap.saas_name || 'Pick Your Photo';
+        const brandLogo = saasMap.saas_logo_url || '';
+        const brandTagline = saasMap.saas_tagline || 'Galeri Seleksi Foto untuk Fotografer & Vendor';
+
+        // Ganti Brand Name di Navbar Header & Footer secara dinamis
+        const logoHtml = brandLogo && brandLogo !== '/logo.png'
+            ? `<div class="logo"><img src="${brandLogo}" alt="${brandName}" style="height:28px;max-width:140px;object-fit:contain;vertical-align:middle;margin-right:8px;" />${brandName}</div>`
+            : `<div class="logo"><span class="dot"></span>${brandName}</div>`;
+
+        html = html.replace(/<div class="logo"><span class="dot"><\/span>Pick Your Photo<\/div>/g, logoHtml);
+        html = html.replace(/<title>Pick Your Photo.*?<\/title>/, `<title>${brandName} — ${brandTagline}</title>`);
+        html = html.replace(/&copy; 2026 Pick Your Photo\./g, `&copy; 2026 ${brandName}.`);
+
+        // 2. Inject Dynamic Plans
         const plans = db.prepare("SELECT * FROM plans WHERE status = 'active' ORDER BY price ASC").all();
         if (plans && plans.length > 0) {
             const dynamicTierHtml = plans.map(plan => {
@@ -62,7 +81,7 @@ export async function GET(request) {
             );
         }
 
-        // Inject dynamic Add-On Cloud Storage plans
+        // 3. Inject dynamic Add-On Cloud Storage plans
         const addonPlans = db.prepare("SELECT * FROM addon_plans WHERE status = 'active' ORDER BY sortOrder ASC, price ASC").all();
         if (addonPlans && addonPlans.length > 0) {
             const dynamicAddonHtml = addonPlans.map(addon => {
@@ -96,7 +115,7 @@ export async function GET(request) {
             );
         }
     } catch (e) {
-        console.error("Failed to inject dynamic plans to landing html:", e);
+        console.error("Failed to inject dynamic settings to landing html:", e);
     }
 
     return new NextResponse(html, {
