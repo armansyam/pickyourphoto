@@ -82,7 +82,8 @@ export default function ForgotPasswordPage() {
                         
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                             {settings?.contact_whatsapp && (() => {
-                                const waMessage = `Halo Admin, saya lupa password akun fotografer saya di Pick Your Photo.\n\nBerikut detail pendaftaran saya:\n- Nama: ${registeredName}\n- Email/WA: ${identifier}\n\nMohon bantuannya untuk mereset password akun saya. Terima kasih!`;
+                                const platformName = settings?.saas_name || 'Pick Your Photo';
+                                const waMessage = `Halo Admin, saya lupa password akun fotografer saya di ${platformName}.\n\nBerikut detail pendaftaran saya:\n- Nama: ${registeredName}\n- Email/WA: ${identifier}\n\nMohon bantuannya untuk mereset password akun saya. Terima kasih!`;
                                 
                                 return (
                                     <a 

@@ -41,14 +41,18 @@ export async function GET(request, { params }) {
       selectedPhotos = JSON.parse(gallery.selectedPhotos || '[]');
     } catch (e) {}
 
-    // Read preview limit and contact from saas_settings
+    // Read preview limit, contact, and platform brand from saas_settings
     let previewLimit = 12;
     let contactWhatsapp = '';
+    let brandName = 'Pick Your Photo';
+    let brandLogo = '';
     try {
-      const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('trial_preview_photos', 'contact_whatsapp')").all();
+      const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('trial_preview_photos', 'contact_whatsapp', 'saas_name', 'saas_logo_url')").all();
       for (const row of saasRows) {
         if (row.key === 'trial_preview_photos' && row.value) previewLimit = parseInt(row.value) || 12;
         if (row.key === 'contact_whatsapp') contactWhatsapp = row.value || '';
+        if (row.key === 'saas_name' && row.value) brandName = row.value;
+        if (row.key === 'saas_logo_url' && row.value) brandLogo = row.value;
       }
     } catch (e) {}
 
@@ -68,7 +72,9 @@ export async function GET(request, { params }) {
         totalPhotos: stagingFiles.filter(f => !f._isLocked).length,
         previewLimit,
         contactWhatsapp,
-        logoUrl: gallery.logoUrl || null
+        logoUrl: gallery.logoUrl || null,
+        brandName,
+        brandLogo
       }
     });
   } catch (error) {

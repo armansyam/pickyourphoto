@@ -458,11 +458,11 @@ export default function TrialGalleryPage({ params }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           {!data?.logoUrl && (
-            <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>Powered by Pick-Your-Photo (Trial Co-Branded)</span>
+            <span style={{ fontSize: '12px', background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: '20px' }}>Powered by {data?.brandName || 'Platform'} (Trial)</span>
           )}
           <Link href="/register" style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', color: '#1e1b4b', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 'bold', textDecoration: 'none', boxShadow: '0 2px 8px rgba(245,158,11,0.4)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             <SparklesUpgradeIcon size={13} color="#1e1b4b" />
-            <span>Hapus Badge SaaS (Upgrade Pro)</span>
+            <span>Hapus Watermark (Upgrade Pro)</span>
           </Link>
         </div>
       </div>
@@ -1197,7 +1197,7 @@ export default function TrialGalleryPage({ params }) {
                   <SpeedBoltIcon size={14} color="#facc15" />
                   <span>TRIAL PREVIEW</span>
                 </span>
-                <span style={{ fontSize: '11px', color: '#a5b4fc', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>PICK YOUR PHOTO</span>
+                <span style={{ fontSize: '11px', color: '#a5b4fc', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{(data?.brandName || 'TRIAL PREVIEW').toUpperCase()}</span>
               </div>
             </div>
 
@@ -1324,7 +1324,7 @@ export default function TrialGalleryPage({ params }) {
       <footer style={{ background: '#1e293b', borderTop: '1px solid #334155', padding: '20px', textAlign: 'center' }}>
         <p style={{ color: '#94a3b8', fontSize: '14px', margin: 0 }}>
           Suka dengan kinerja galeri ini? Nikmati galeri tanpa batas waktu, logo kustom, &amp; kuota lebih besar dengan berlangganan{' '}
-          <Link href="/register" style={{ color: '#6366f1', fontWeight: 'bold', textDecoration: 'underline' }}>Akun Pro Pick-Your-Photo</Link>.
+          <Link href="/register" style={{ color: '#6366f1', fontWeight: 'bold', textDecoration: 'underline' }}>Akun Pro {data?.brandName || 'Platform'}</Link>.
         </p>
       </footer>
 

@@ -1156,7 +1156,7 @@ export default function DashboardPage() {
                 <div className="dashboard-header-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                     {adminWhatsapp && (
                         <a
-                            href={`https://wa.me/${normalizeWhatsappNumber(adminWhatsapp)}?text=${encodeURIComponent('Halo Admin, saya vendor ' + (vendorDetails?.name || '') + '. Saya ingin bertanya mengenai layanan Pick Your Photo.')}`}
+                            href={`https://wa.me/${normalizeWhatsappNumber(adminWhatsapp)}?text=${encodeURIComponent('Halo Admin, saya vendor ' + (vendorDetails?.name || '') + '. Saya ingin bertanya mengenai layanan ' + (systemSettings?.saas_name || 'platform') + '.')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Hubungi Admin via WhatsApp"
@@ -2046,7 +2046,7 @@ export default function DashboardPage() {
                                         }}
                                     >
                                         <UploadCloudIcon size={13} color={projectSourceType === 'internal' ? '#ffffff' : '#a1a1aa'} />
-                                        <span>Dedicated SaaS</span>
+                                        <span>Cloud Storage Dedicated</span>
                                         {vendorDetails?.hasStorageAddon && (
                                             <span style={{ fontSize: '8px', background: '#34d399', color: '#000', padding: '1px 4px', borderRadius: '6px', fontWeight: '800' }}>AKTIF</span>
                                         )}

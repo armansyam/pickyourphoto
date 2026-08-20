@@ -1211,7 +1211,7 @@ export default function VendorStorageManagerPage() {
             }}
           >
             <CloudServerIcon size={18} color={activeStorageMode === 'system' ? '#818cf8' : '#9ca3af'} />
-            <span>Dedicated Cloud Storage SaaS</span>
+            <span>Dedicated Cloud Storage</span>
             <span style={{ fontSize: '10px', background: hasAddon ? 'rgba(99,102,241,0.2)' : 'rgba(251,191,36,0.15)', color: hasAddon ? '#818cf8' : '#fbbf24', padding: '2px 8px', borderRadius: '10px', fontWeight: '800', border: hasAddon ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(251,191,36,0.3)' }}>
               {hasAddon ? `${vendorQuotaGb} GB Aktif` : 'Sewa Tambahan'}
             </span>
@@ -1342,7 +1342,7 @@ export default function VendorStorageManagerPage() {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.4)', padding: '2px 8px', borderRadius: '10px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <CloudServerIcon size={12} color="#818cf8" /> DEDICATED STORAGE SAAS
+                        <CloudServerIcon size={12} color="#818cf8" /> DEDICATED CLOUD STORAGE
                       </span>
                     </div>
                     <div style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff', marginTop: '4px' }}>
@@ -1404,10 +1404,10 @@ export default function VendorStorageManagerPage() {
                 <CloudServerIcon size={44} color="#818cf8" />
                 <div>
                   <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>
-                    Dedicated Cloud Storage SaaS Belum Aktif
+                    Dedicated Cloud Storage Belum Aktif
                   </h3>
                   <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa', maxWidth: '500px', lineHeight: '1.5' }}>
-                    Sewa ruang penyimpanan super cepat berbasis Google Cloud Platform tanpa perlu menghubungkan akun Google pribadi Anda.
+                    Sewa ruang penyimpanan super cepat berbasis cloud storage tanpa perlu menghubungkan akun Google pribadi Anda.
                   </p>
                 </div>
                 <button
@@ -1944,7 +1944,7 @@ export default function VendorStorageManagerPage() {
                                   justifyContent: 'center',
                                   gap: '5px'
                                 }}
-                                title="Pindahkan Folder Asli buatan Master Hub Index SaaS Ini ke Google Drive Anda"
+                                title="Pindahkan Folder Asli ke Google Drive Anda"
                               >
                                 <TransferDriveIcon size={13} color="#818cf8" />
                                 <span>Pindahkan ke Drive Saya</span>
@@ -2154,7 +2154,7 @@ export default function VendorStorageManagerPage() {
               <span>Buat Folder Baru</span>
             </h3>
             <p style={{ margin: '0 0 14px 0', fontSize: '12px', color: activeStorageMode === 'byos' ? '#34d399' : '#818cf8' }}>
-              Target: <strong>{activeStorageMode === 'byos' ? 'Google Drive Pribadi (BYOS)' : 'Dedicated Cloud Storage SaaS'}</strong>
+              Target: <strong>{activeStorageMode === 'byos' ? 'Google Drive Pribadi (BYOS)' : 'Dedicated Cloud Storage'}</strong>
             </p>
             <form onSubmit={handleCreateFolder}>
               <label style={{ display: 'block', fontSize: '12px', color: '#a1a1aa', marginBottom: '6px' }}>Nama Folder:</label>

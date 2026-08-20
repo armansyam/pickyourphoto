@@ -110,11 +110,11 @@ export default function RefundPage() {
                             </svg>
                         </div>
                         <h2 style={{ fontSize: '19px', fontWeight: '700', color: '#1C1917', margin: 0, fontFamily: '"Fraunces", Georgia, serif' }}>
-                            1. Karakteristik Layanan Digital (Software as a Service)
+                            1. Karakteristik Layanan Digital &amp; Cloud Berlangganan
                         </h2>
                     </div>
                     <p style={{ color: '#44403C', fontSize: '15px' }}>
-                        Seluruh produk yang tersedia di <strong>{settings.saasName}</strong> berbentuk <strong>Produk Digital / Layanan Berlangganan Cloud (SaaS)</strong>. Kami tidak melakukan pengiriman fisik dalam bentuk barang cetak maupun paket logistik fisik.
+                        Seluruh produk yang tersedia di <strong>{settings.saasName}</strong> berbentuk <strong>Produk Digital / Layanan Berlangganan Cloud Platform</strong>. Kami tidak melakukan pengiriman fisik dalam bentuk barang cetak maupun paket logistik fisik.
                     </p>
                 </section>
 

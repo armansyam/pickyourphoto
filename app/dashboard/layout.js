@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAuthVendor } from '@/lib/auth';
 import Link from 'next/link';
+import db from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,15 +24,24 @@ export default function DashboardLayout({ children }) {
         redirect('/admin');
     }
 
+    let brandName = 'Pick Your Photo';
+    let brandLogo = '/ams-logo.png';
+    try {
+        const rows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('saas_name', 'saas_logo_url')").all() || [];
+        for (const r of rows) {
+            if (r.key === 'saas_name' && r.value) brandName = r.value;
+            if (r.key === 'saas_logo_url' && r.value) brandLogo = r.value;
+        }
+    } catch (_) {}
 
     return (
         <div>
             <header className="dashboard-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <img src="/ams-logo.png" alt="AMS Logo" style={{ height: '36px', objectFit: 'contain' }} />
+                    <img src={brandLogo} alt={brandName} style={{ height: '36px', objectFit: 'contain' }} />
                     <Link href="/dashboard" style={{ textDecoration: 'none' }}>
                         <span className="title-gradient" style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                            Pick Your Photo
+                            {brandName}
                         </span>
                     </Link>
                 </div>

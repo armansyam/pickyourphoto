@@ -784,7 +784,7 @@ export default function RegisterPage() {
                                                     const selPlan = plans.find(p => p.id === parseInt(plan));
                                                     return selPlan ? (
                                                         <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', borderRadius: '12px', padding: '16px' }}>
-                                                            <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', marginBottom: '8px' }}>PAKET SAAS YANG DIPILIH</div>
+                                                            <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', marginBottom: '8px' }}>PAKET BERLANGGANAN YANG DIPILIH</div>
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                                                 <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>{selPlan.name}</span>
                                                                 {selPlan.discountedPrice && selPlan.discountedPrice < selPlan.originalPrice ? (
