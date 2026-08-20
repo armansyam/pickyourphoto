@@ -70,6 +70,46 @@ export default function AdminSettings({
   const [isEditingSystem, setIsEditingSystem] = useState(false);
   const [savingSection, setSavingSection] = useState(''); // 'identity' | 'google' | 'smtp' | 'bank' | 'gateway' | 'system' | 'password'
 
+  const [savedIdentityState, setSavedIdentityState] = useState({
+    saasName,
+    saasDomain,
+    saasTagline,
+    saasDescription,
+    contactEmail,
+    contactWhatsapp,
+    operationalHours,
+    companyAddress
+  });
+
+  const identityStateInitialized = React.useRef(false);
+  React.useEffect(() => {
+    if (!identityStateInitialized.current && (saasName || saasDomain || contactEmail)) {
+      setSavedIdentityState({
+        saasName,
+        saasDomain,
+        saasTagline,
+        saasDescription,
+        contactEmail,
+        contactWhatsapp,
+        operationalHours,
+        companyAddress
+      });
+      identityStateInitialized.current = true;
+    }
+  }, [saasName, saasDomain, saasTagline, saasDescription, contactEmail, contactWhatsapp, operationalHours, companyAddress]);
+
+  const handleCancelIdentity = () => {
+    setSaasName(savedIdentityState.saasName);
+    setSaasDomain(savedIdentityState.saasDomain);
+    setSaasTagline(savedIdentityState.saasTagline);
+    setSaasDescription(savedIdentityState.saasDescription);
+    setContactEmail(savedIdentityState.contactEmail);
+    setContactWhatsapp(savedIdentityState.contactWhatsapp);
+    setOperationalHours(savedIdentityState.operationalHours);
+    setCompanyAddress(savedIdentityState.companyAddress);
+    setIsEditingIdentity(false);
+  };
+
   const [savedSystemState, setSavedSystemState] = useState({
     sysEnableReg,
     sysEnableTrial,
@@ -151,6 +191,16 @@ export default function AdminSettings({
       const data = await res.json();
       if (res.ok) {
         if (addToast) addToast('Identitas platform & kontak resmi berhasil disimpan!', 'success');
+        setSavedIdentityState({
+          saasName,
+          saasDomain,
+          saasTagline,
+          saasDescription,
+          contactEmail,
+          contactWhatsapp,
+          operationalHours,
+          companyAddress
+        });
         setIsEditingIdentity(false);
         if (fetchSystemSettings) fetchSystemSettings();
       } else {
@@ -925,238 +975,367 @@ export default function AdminSettings({
 
       <div>
         {/* ════════════════════════════════════════════════════════════════ */}
-        {/* SUB-TAB 0: IDENTITAS PLATFORM & KONTAK RESMI SAAS                */}
+        {/* SUB-TAB 0: IDENTITAS PLATFORM & KONTAK RESMI                     */}
         {/* ════════════════════════════════════════════════════════════════ */}
         {activeSubTab === 'identity' && (
           <div className="fade-in">
             {/* Header Box */}
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '24px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px' }}>
+                <h4 style={{ margin: 0, fontSize: '16px', color: '#38bdf8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  🏢 Identitas Brand &amp; Saluran Kontak Resmi Platform
+                </h4>
+                <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
+                  Informasi ini ditampilkan secara dinamis di halaman publik <strong>/contact</strong>, <strong>/about</strong>, footer sistem, dan syarat &amp; ketentuan aplikasi.
+                </p>
+              </div>
+
+              {!isEditingIdentity ? (
+                /* ── MODE 1: READ-ONLY SUMMARY CARDS (CLEAN TEXT DISPLAY) ── */
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '16px', color: '#38bdf8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    🏢 Identitas Brand & Saluran Kontak Resmi Platform
-                  </h4>
-                  <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: '#94a3b8' }}>
-                    Informasi ini ditampilkan secara dinamis di halaman publik <strong>/contact</strong>, <strong>/about</strong>, footer sistem, dan syarat & ketentuan aplikasi.
-                  </p>
-                </div>
-                <div>
-                  {!isEditingIdentity ? (
+                  {/* Hero Brand Identity Card */}
+                  <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', padding: '20px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{
+                        width: '64px',
+                        height: '64px',
+                        borderRadius: '12px',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '6px',
+                        overflow: 'hidden'
+                      }}>
+                        <img
+                          src={saasLogoUrl || '/logo.png'}
+                          alt="Logo Platform"
+                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                          onError={(e) => { e.target.src = '/logo.png'; }}
+                        />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '11px', color: '#38bdf8', fontWeight: '800', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: '2px' }}>
+                          BRAND UTAMA PLATFORM
+                        </div>
+                        <h3 style={{ margin: 0, fontSize: '20px', color: '#ffffff', fontWeight: '800' }}>
+                          {saasName || 'Pick Your Photo'}
+                        </h3>
+                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+                          {saasDomain ? saasDomain : 'Domain belum diatur'}
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '11px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '4px 12px', borderRadius: '20px', fontWeight: '700' }}>
+                      Identitas Resmi Aktif
+                    </span>
+                  </div>
+
+                  {/* Key-Value Summary Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px', marginBottom: '20px' }}>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>✉️ Email Resmi Dukungan (CS):</span>
+                      <strong style={{ color: '#f4f4f5', fontSize: '13.5px', wordBreak: 'break-all' }}>
+                        {contactEmail || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
+                      </strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>📱 WhatsApp Resmi CS:</span>
+                      <strong style={{ color: '#34d399', fontSize: '13.5px' }}>
+                        {contactWhatsapp || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
+                      </strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>⏰ Jam Operasional Respon:</span>
+                      <strong style={{ color: '#f4f4f5', fontSize: '13.5px' }}>
+                        {operationalHours || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
+                      </strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', gridColumn: '1 / -1' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>✨ Slogan Singkat Platform (Tagline):</span>
+                      <strong style={{ color: '#fbbf24', fontSize: '13.5px' }}>
+                        {saasTagline || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
+                      </strong>
+                    </div>
+
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', gridColumn: '1 / -1' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>🔗 Deskripsi Pratinjau Share Link (WhatsApp &amp; Medsos Open Graph):</span>
+                      <p style={{ color: '#e4e4e7', fontSize: '13px', margin: 0, lineHeight: '1.5' }}>
+                        {saasDescription || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur (menggunakan ringkasan default platform)</span>}
+                      </p>
+                    </div>
+
+                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', gridColumn: '1 / -1' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>📍 Alamat Kantor / Domisili Legal Perusahaan:</span>
+                      <strong style={{ color: '#f4f4f5', fontSize: '13.5px' }}>
+                        {companyAddress || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
+                      </strong>
+                    </div>
+                  </div>
+
+                  {/* Bottom Action Bar */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                     <button
                       type="button"
                       onClick={() => setIsEditingIdentity(true)}
-                      style={{ background: 'linear-gradient(135deg, #38bdf8, #0284c7)', color: '#000000', border: 'none', padding: '7px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      ✏️ Edit Identitas
-                    </button>
-                  ) : (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setIsEditingIdentity(false)}
-                        disabled={savingSection === 'identity'}
-                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#e4e4e7', padding: '7px 12px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}
-                      >
-                        Batal
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSaveIdentity}
-                        disabled={savingSection === 'identity'}
-                        style={{ background: 'linear-gradient(135deg, #10b981, #059669)', color: '#ffffff', border: 'none', padding: '7px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                      >
-                        {savingSection === 'identity' ? 'Menyimpan...' : '✓ Simpan Perubahan'}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Logo & Favicon Management Card */}
-              <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    {/* Live Preview Box */}
-                    <div style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: '12px',
-                      background: 'rgba(255,255,255,0.06)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '6px',
-                      overflow: 'hidden'
-                    }}>
-                      <img
-                        src={saasLogoUrl || '/logo.png'}
-                        alt="Logo Platform"
-                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                        onError={(e) => { e.target.src = '/logo.png'; }}
-                      />
-                    </div>
-                    <div>
-                      <h5 style={{ margin: '0 0 4px', fontSize: '14px', color: '#ffffff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        🖼️ Logo & Favicon Platform
-                      </h5>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' }}>
-                        Logo ini digunakan sebagai favicon tab browser dan identitas utama pada seluruh halaman publik.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <label
                       style={{
-                        background: 'linear-gradient(135deg, #38bdf8, #0284c7)',
-                        color: '#000000',
-                        padding: '8px 16px',
+                        background: 'rgba(56, 189, 248, 0.15)',
+                        border: '1px solid rgba(56, 189, 248, 0.3)',
+                        color: '#38bdf8',
+                        padding: '9px 20px',
                         borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: 'bold',
-                        cursor: uploadingLogo ? 'not-allowed' : 'pointer',
-                        display: 'inline-flex',
+                        fontSize: '12.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        boxShadow: '0 4px 12px rgba(56, 189, 248, 0.25)'
+                        transition: 'all 0.2s ease',
                       }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.25)'; e.currentTarget.style.color = '#fff'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)'; e.currentTarget.style.color = '#38bdf8'; }}
                     >
-                      {uploadingLogo ? '⏳ Mengunggah...' : '📤 Unggah Logo Baru'}
-                      <input
-                        type="file"
-                        accept=".png,.jpg,.jpeg,.svg,.ico,.webp"
-                        onChange={handleUploadLogo}
-                        disabled={uploadingLogo}
-                        style={{ display: 'none' }}
-                      />
-                    </label>
-
-                    {saasLogoUrl && saasLogoUrl !== '/logo.png' && (
-                      <button
-                        type="button"
-                        onClick={handleResetLogo}
-                        disabled={uploadingLogo}
-                        style={{
-                          background: 'rgba(244,63,94,0.15)',
-                          border: '1px solid rgba(244,63,94,0.3)',
-                          color: '#fb7185',
-                          padding: '8px 12px',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          fontWeight: '600',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        🗑️ Reset Default
-                      </button>
-                    )}
+                      <span>✏️</span>
+                      <span>Edit Identitas &amp; Logo</span>
+                    </button>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* ── MODE 2: ACTIVE EDITABLE FORM MODE ── */
+                <div>
+                  {/* Logo & Favicon Management Card (With Upload & Reset Buttons) */}
+                  <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {/* Live Preview Box */}
+                        <div style={{
+                          width: '64px',
+                          height: '64px',
+                          borderRadius: '12px',
+                          background: 'rgba(255,255,255,0.06)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '6px',
+                          overflow: 'hidden'
+                        }}>
+                          <img
+                            src={saasLogoUrl || '/logo.png'}
+                            alt="Logo Platform"
+                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                            onError={(e) => { e.target.src = '/logo.png'; }}
+                          />
+                        </div>
+                        <div>
+                          <h5 style={{ margin: '0 0 4px', fontSize: '14px', color: '#ffffff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            🖼️ Logo &amp; Favicon Platform
+                          </h5>
+                          <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' }}>
+                            Logo ini digunakan sebagai favicon tab browser dan identitas utama pada seluruh halaman publik.
+                          </p>
+                        </div>
+                      </div>
 
-              {/* Form Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>🏷️ Nama Layanan / Brand Aplikasi</label>
-                  <input
-                    type="text"
-                    className="input-text"
-                    placeholder="Contoh: Pick Your Photo / Photota"
-                    value={saasName}
-                    onChange={e => setSaasName(e.target.value)}
-                    disabled={!isEditingIdentity || savingSection === 'identity'}
-                  />
-                </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <label
+                          style={{
+                            background: 'linear-gradient(135deg, #38bdf8, #0284c7)',
+                            color: '#000000',
+                            padding: '8px 16px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            cursor: uploadingLogo ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 4px 12px rgba(56, 189, 248, 0.25)'
+                          }}
+                        >
+                          {uploadingLogo ? '⏳ Mengunggah...' : '📤 Unggah Logo Baru'}
+                          <input
+                            type="file"
+                            accept=".png,.jpg,.jpeg,.svg,.ico,.webp"
+                            onChange={handleUploadLogo}
+                            disabled={uploadingLogo}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>🌐 Nama Domain / URL Resmi Platform</label>
-                  <input
-                    type="text"
-                    className="input-text"
-                    placeholder="Contoh: photota.my.id atau https://photota.my.id"
-                    value={saasDomain}
-                    onChange={e => setSaasDomain(e.target.value)}
-                    disabled={!isEditingIdentity || savingSection === 'identity'}
-                  />
-                </div>
+                        {saasLogoUrl && saasLogoUrl !== '/logo.png' && (
+                          <button
+                            type="button"
+                            onClick={handleResetLogo}
+                            disabled={uploadingLogo}
+                            style={{
+                              background: 'rgba(244,63,94,0.15)',
+                              border: '1px solid rgba(244,63,94,0.3)',
+                              color: '#fb7185',
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            🗑️ Reset Default
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>✉️ Email Resmi Dukungan Pelanggan (CS)</label>
-                  <input
-                    type="email"
-                    className="input-text"
-                    placeholder="Contoh: support@photota.my.id"
-                    value={contactEmail}
-                    onChange={e => setContactEmail(e.target.value)}
-                    disabled={!isEditingIdentity || savingSection === 'identity'}
-                  />
-                </div>
+                  {/* Form Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>🏷️ Nama Layanan / Brand Aplikasi</label>
+                      <input
+                        type="text"
+                        className="input-text"
+                        placeholder="Contoh: Pick Your Photo / Photota"
+                        value={saasName}
+                        onChange={e => setSaasName(e.target.value)}
+                        disabled={savingSection === 'identity'}
+                      />
+                    </div>
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>📱 Nomor WhatsApp Resmi Helpdesk / CS</label>
-                  <input
-                    type="text"
-                    className="input-text"
-                    placeholder="Contoh: 081234567890 (Mendukung link WA otomatis)"
-                    value={contactWhatsapp}
-                    onChange={e => setContactWhatsapp(e.target.value)}
-                    disabled={!isEditingIdentity || savingSection === 'identity'}
-                  />
-                </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>🌐 Nama Domain / URL Resmi Platform</label>
+                      <input
+                        type="text"
+                        className="input-text"
+                        placeholder="Contoh: photota.my.id atau https://photota.my.id"
+                        value={saasDomain}
+                        onChange={e => setSaasDomain(e.target.value)}
+                        disabled={savingSection === 'identity'}
+                      />
+                    </div>
 
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>⏰ Jam Operasional Layanan Respon</label>
-                  <input
-                    type="text"
-                    className="input-text"
-                    placeholder="Contoh: Senin – Sabtu: 08:00 – 17:00 WIB"
-                    value={operationalHours}
-                    onChange={e => setOperationalHours(e.target.value)}
-                    disabled={!isEditingIdentity || savingSection === 'identity'}
-                  />
-                </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>✉️ Email Resmi Dukungan Pelanggan (CS)</label>
+                      <input
+                        type="email"
+                        className="input-text"
+                        placeholder="Contoh: support@photota.my.id"
+                        value={contactEmail}
+                        onChange={e => setContactEmail(e.target.value)}
+                        disabled={savingSection === 'identity'}
+                      />
+                    </div>
 
-                <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>✨ Slogan Singkat Platform (Tagline)</label>
-                  <input
-                    type="text"
-                    className="input-text"
-                    placeholder="Contoh: Meja Kerja Seleksi Foto Cepat untuk Studio & Fotografer Profesional"
-                    value={saasTagline}
-                    onChange={e => setSaasTagline(e.target.value)}
-                    disabled={!isEditingIdentity || savingSection === 'identity'}
-                  />
-                </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>📱 Nomor WhatsApp Resmi Helpdesk / CS</label>
+                      <input
+                        type="text"
+                        className="input-text"
+                        placeholder="Contoh: 081234567890 (Mendukung link WA otomatis)"
+                        value={contactWhatsapp}
+                        onChange={e => setContactWhatsapp(e.target.value)}
+                        disabled={savingSection === 'identity'}
+                      />
+                    </div>
 
-                <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>🔗 Deskripsi Pratinjau Share Link (WhatsApp & Medsos Open Graph)</label>
-                  <textarea
-                    className="input-text"
-                    rows="2"
-                    placeholder="Contoh: Platform meja kerja seleksi foto interaktif yang cepat dan elegan untuk klien Anda."
-                    value={saasDescription}
-                    onChange={e => setSaasDescription(e.target.value)}
-                    disabled={!isEditingIdentity || savingSection === 'identity'}
-                    style={{ resize: 'vertical' }}
-                  />
-                  <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                    Deskripsi ini akan muncul di kartu pratinjau saat link platform atau uji coba dibagikan ke WhatsApp, Telegram, atau media sosial.
-                  </p>
-                </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>⏰ Jam Operasional Layanan Respon</label>
+                      <input
+                        type="text"
+                        className="input-text"
+                        placeholder="Contoh: Senin – Sabtu: 08:00 – 17:00 WIB"
+                        value={operationalHours}
+                        onChange={e => setOperationalHours(e.target.value)}
+                        disabled={savingSection === 'identity'}
+                      />
+                    </div>
 
-                <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
-                  <label className="form-label" style={{ fontSize: '12px' }}>📍 Alamat Kantor / Domisili Legal Perusahaan</label>
-                  <input
-                    type="text"
-                    className="input-text"
-                    placeholder="Contoh: Jakarta, Indonesia / Makassar, Sulawesi Selatan"
-                    value={companyAddress}
-                    onChange={e => setCompanyAddress(e.target.value)}
-                    disabled={!isEditingIdentity || savingSection === 'identity'}
-                  />
+                    <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>✨ Slogan Singkat Platform (Tagline)</label>
+                      <input
+                        type="text"
+                        className="input-text"
+                        placeholder="Contoh: Meja Kerja Seleksi Foto Cepat untuk Studio & Fotografer Profesional"
+                        value={saasTagline}
+                        onChange={e => setSaasTagline(e.target.value)}
+                        disabled={savingSection === 'identity'}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>🔗 Deskripsi Pratinjau Share Link (WhatsApp &amp; Medsos Open Graph)</label>
+                      <textarea
+                        className="input-text"
+                        rows="2"
+                        placeholder="Contoh: Platform meja kerja seleksi foto interaktif yang cepat dan elegan untuk klien Anda."
+                        value={saasDescription}
+                        onChange={e => setSaasDescription(e.target.value)}
+                        disabled={savingSection === 'identity'}
+                        style={{ resize: 'vertical' }}
+                      />
+                      <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                        Deskripsi ini akan muncul di kartu pratinjau saat link platform atau uji coba dibagikan ke WhatsApp, Telegram, atau media sosial.
+                      </p>
+                    </div>
+
+                    <div className="form-group" style={{ gridColumn: '1 / -1', margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px' }}>📍 Alamat Kantor / Domisili Legal Perusahaan</label>
+                      <input
+                        type="text"
+                        className="input-text"
+                        placeholder="Contoh: Jakarta, Indonesia / Makassar, Sulawesi Selatan"
+                        value={companyAddress}
+                        onChange={e => setCompanyAddress(e.target.value)}
+                        disabled={savingSection === 'identity'}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Form Action Bar at Bottom */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                    <button
+                      type="button"
+                      onClick={handleCancelIdentity}
+                      disabled={savingSection === 'identity'}
+                      style={{
+                        padding: '9px 18px',
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        borderRadius: '8px',
+                        color: '#a1a1aa',
+                        fontSize: '12.5px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveIdentity}
+                      disabled={savingSection === 'identity'}
+                      style={{
+                        padding: '9px 22px',
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        border: 'none',
+                        borderRadius: '8px',
+                        color: '#ffffff',
+                        fontSize: '12.5px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      {savingSection === 'identity' ? '⏳ Menyimpan...' : '💾 Simpan Perubahan'}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         )}
