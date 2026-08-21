@@ -30,6 +30,7 @@ export default function RegisterPage() {
     const [checkingStatus, setCheckingStatus] = useState(true);
     const [paymentMethod, setPaymentMethod] = useState('');
     const [selectedAddon, setSelectedAddon] = useState(null);
+    const [availableAddonPlans, setAvailableAddonPlans] = useState([]);
     const [isAddonModalOpen, setIsAddonModalOpen] = useState(false);
     const [flashPromoInfo, setFlashPromoInfo] = useState(null);
     const [countdownText, setCountdownText] = useState('00:00:00');
@@ -90,11 +91,12 @@ export default function RegisterPage() {
                 const script = document.createElement('script');
                 script.id = 'midtrans-snap-script';
                 script.src = snapUrl;
-                if (clientKey) script.setAttribute('data-client-key', clientKey);
+                script.setAttribute('data-client-key', clientKey);
+                script.async = true;
                 document.body.appendChild(script);
             }
         }
-    }, [settings, isGatewayEnabled]);
+    }, [isGatewayEnabled, settings]);
 
 
     // Free plan removed from registration — use trial gallery on landing page instead
@@ -147,9 +149,22 @@ export default function RegisterPage() {
                 console.error('Failed to load SaaS settings:', err);
             }
         };
+        const fetchAddonPlans = async () => {
+            try {
+                const res = await fetch('/api/addon-plans');
+                if (res.ok) {
+                    const data = await res.json();
+                    const list = data?.success && Array.isArray(data.plans) ? data.plans : [];
+                    if (isMounted) setAvailableAddonPlans(list);
+                }
+            } catch (err) {
+                console.error('Failed to load addon plans:', err);
+            }
+        };
         checkRegStatus();
         fetchPlans();
         fetchSettings();
+        fetchAddonPlans();
 
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
@@ -825,44 +840,46 @@ export default function RegisterPage() {
                                                     ) : null;
                                                 })()}
 
-                                                {/* Add-On Storage Section */}
-                                                <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '12px', padding: '16px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                                        <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>CLOUD STORAGE ADD-ON (OPSIONAL)</span>
-                                                        {selectedAddon && (
-                                                            <button type="button" onClick={() => setSelectedAddon(null)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                <TrashIcon size={11} color="#f87171" />
-                                                                <span>Hapus Add-On</span>
-                                                            </button>
+                                                {/* Add-On Storage Section (Only shown when active addon plans exist) */}
+                                                {availableAddonPlans && availableAddonPlans.length > 0 && (
+                                                    <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '12px', padding: '16px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                            <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>CLOUD STORAGE ADD-ON (OPSIONAL)</span>
+                                                            {selectedAddon && (
+                                                                <button type="button" onClick={() => setSelectedAddon(null)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    <TrashIcon size={11} color="#f87171" />
+                                                                    <span>Hapus Add-On</span>
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        {selectedAddon ? (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <div>
+                                                                    <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>{selectedAddon.name}</div>
+                                                                    <div style={{ color: '#94a3b8', fontSize: '11px' }}>Kapasitas Tambahan Khusus Studio</div>
+                                                                </div>
+                                                                <span style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '15px' }}>
+                                                                    + Rp {selectedAddon.price.toLocaleString('id-ID')}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                                                                <span style={{ color: '#cbd5e1', fontSize: '12px' }}>Ingin menambah kuota cloud storage khusus studio?</span>
+                                                                <button 
+                                                                    type="button" 
+                                                                    onClick={() => setIsAddonModalOpen(true)} 
+                                                                    style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
+                                                                >
+                                                                    <PlusIcon size={12} color="#fff" />
+                                                                    <span>Tambahkan Cloud Storage</span>
+                                                                </button>
+                                                            </div>
                                                         )}
                                                     </div>
-                                                    {selectedAddon ? (
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                            <div>
-                                                                <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>{selectedAddon.name}</div>
-                                                                <div style={{ color: '#94a3b8', fontSize: '11px' }}>Kapasitas Tambahan Khusus Studio</div>
-                                                            </div>
-                                                            <span style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '15px' }}>
-                                                                + Rp {selectedAddon.price.toLocaleString('id-ID')}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                                                            <span style={{ color: '#cbd5e1', fontSize: '12px' }}>Ingin menambah kuota cloud storage khusus studio?</span>
-                                                            <button 
-                                                                type="button" 
-                                                                onClick={() => setIsAddonModalOpen(true)} 
-                                                                style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                                                            >
-                                                                <PlusIcon size={12} color="#fff" />
-                                                                <span>Tambahkan Cloud Storage</span>
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                )}
 
                                                 {/* Add-On Selection Modal */}
-                                                {isAddonModalOpen && (
+                                                {isAddonModalOpen && availableAddonPlans && availableAddonPlans.length > 0 && (
                                                     <div onClick={() => setIsAddonModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
                                                         <div onClick={e => e.stopPropagation()} style={{ background: '#0f172a', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
                                                             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
@@ -878,40 +895,39 @@ export default function RegisterPage() {
                                                             </div>
 
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-                                                                {[
-                                                                    { key: 'addon-10gb', name: 'Drive 10 GB', price: 29000, desc: 'Cocok untuk studio pemula (10 GB Extra)' },
-                                                                    { key: 'addon-25gb', name: 'Drive 25 GB', price: 49000, desc: 'Paling Populer & Hemat (25 GB Extra)', popular: true },
-                                                                    { key: 'addon-50gb', name: 'Drive 50 GB', price: 89000, desc: 'Kapasitas Besar Studio Pro (50 GB Extra)' }
-                                                                ].map(opt => (
-                                                                    <div 
-                                                                        key={opt.key}
-                                                                        onClick={() => {
-                                                                            setSelectedAddon(opt);
-                                                                            setIsAddonModalOpen(false);
-                                                                        }}
-                                                                        style={{
-                                                                            background: selectedAddon?.key === opt.key ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.03)',
-                                                                            border: selectedAddon?.key === opt.key ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
-                                                                            borderRadius: '12px',
-                                                                            padding: '14px 16px',
-                                                                            cursor: 'pointer',
-                                                                            display: 'flex',
-                                                                            justifyContent: 'space-between',
-                                                                            alignItems: 'center'
-                                                                        }}
-                                                                    >
-                                                                        <div>
-                                                                            <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                {opt.name}
-                                                                                {opt.popular && <span style={{ fontSize: '10px', background: 'rgba(251, 191, 36, 0.2)', color: '#fbbf24', padding: '2px 6px', borderRadius: '4px' }}>TERFAVORIT</span>}
+                                                                {availableAddonPlans.map(opt => {
+                                                                    const quotaGb = opt.quotaBytes ? Math.round(opt.quotaBytes / (1024 * 1024 * 1024)) : 0;
+                                                                    const optKey = opt.planKey || `addon-${quotaGb}gb`;
+                                                                    return (
+                                                                        <div 
+                                                                            key={opt.id || optKey}
+                                                                            onClick={() => {
+                                                                                setSelectedAddon({ key: optKey, name: opt.name, price: Number(opt.price) });
+                                                                                setIsAddonModalOpen(false);
+                                                                            }}
+                                                                            style={{
+                                                                                background: selectedAddon?.key === optKey ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.03)',
+                                                                                border: selectedAddon?.key === optKey ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
+                                                                                borderRadius: '12px',
+                                                                                padding: '14px 16px',
+                                                                                cursor: 'pointer',
+                                                                                display: 'flex',
+                                                                                justifyContent: 'space-between',
+                                                                                alignItems: 'center'
+                                                                            }}
+                                                                        >
+                                                                            <div>
+                                                                                <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                    {opt.name}
+                                                                                </div>
+                                                                                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{quotaGb} GB Ekstra Dedicated Storage</div>
                                                                             </div>
-                                                                            <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{opt.desc}</div>
+                                                                            <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '14px' }}>
+                                                                                + Rp {Number(opt.price).toLocaleString('id-ID')}
+                                                                            </div>
                                                                         </div>
-                                                                        <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '14px' }}>
-                                                                            + Rp {opt.price.toLocaleString('id-ID')}
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
+                                                                    );
+                                                                })}
                                                             </div>
 
                                                             <div style={{ display: 'flex', gap: '12px' }}>
@@ -922,7 +938,6 @@ export default function RegisterPage() {
                                                         </div>
                                                     </div>
                                                 )}
-
 
                                                 {/* 3. METODE PEMBAYARAN */}
                                                 <div>
