@@ -592,8 +592,11 @@ export default function RegisterPage() {
                                     />
                                 </div>
                             )}
-                            <h2 className="title-gradient" style={{ fontSize: '28px', margin: '0 0 8px 0' }}>
-                                {settings?.saas_name ? `Gabung ${settings.saas_name}` : 'Registrasi Akun Baru'}
+                            <h2 style={{ fontSize: '28px', fontWeight: '800', margin: '0 0 8px 0', letterSpacing: '-0.02em' }}>
+                                <span style={{ color: '#94a3b8', fontWeight: '500' }}>Join with </span>
+                                <span className="title-gradient" style={{ background: 'linear-gradient(135deg, #38bdf8, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: '800' }}>
+                                    {settings?.saas_name || 'Photota'}
+                                </span>
                             </h2>
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>
                                 {step === 1 ? 'Tahap 1: Isi Data Diri Anda' : 'Tahap 2: Pilih Paket Langganan'}
@@ -757,6 +760,7 @@ export default function RegisterPage() {
                                     ) : pendingOrder ? (
                                         <NativeQrisDisplay
                                             pendingOrder={pendingOrder}
+                                            platformName={settings?.saas_name || 'Photota'}
                                             onCancel={async () => {
                                                 if (pendingOrder.orderId) {
                                                     try {

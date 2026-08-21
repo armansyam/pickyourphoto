@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SparklesUpgradeIcon, RefreshCwIcon, ClockIcon } from '@/components/StorageIcons.jsx';
 
-export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
+export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName }) {
+    const brandTitle = platformName || pendingOrder?.platformName || pendingOrder?.saasName || 'Photota';
     // Deteksi provider dari pendingOrder (dikirim dari /api/payment/create response)
     const provider = (pendingOrder?.provider || 'midtrans').toLowerCase();
     const isMidtrans = provider === 'midtrans';
@@ -225,7 +226,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                     {/* Merchant + Logo header */}
                     <div style={{ width: '100%', maxWidth: '380px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <div>
-                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#e2e8f0' }}>Pick Your Photo</div>
+                            <div style={{ fontSize: '12px', fontWeight: '700', color: '#e2e8f0' }}>{brandTitle}</div>
                             <div style={{ fontSize: '10px', color: '#64748b' }}>{pendingOrder.planName || pendingOrder.addonName || 'Add-On Storage'} — <strong style={{ color: '#34d399' }}>Rp {(pendingOrder.planPrice || pendingOrder.amount || pendingOrder.proratedPrice || 0).toLocaleString('id-ID')}</strong></div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
