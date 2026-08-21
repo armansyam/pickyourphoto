@@ -51,7 +51,7 @@ export async function GET(request) {
             ORDER BY id DESC LIMIT 1
         `).get(vendor.id);
 
-        // If no active QRIS session, check if there was an actual expired payment session
+        // If no active QRIS session, check if there was an actual expired payment session or selected plan
         if (!session) {
             const lastSession = db.prepare(`
                 SELECT orderId, planId, amount, paymentMethod, expiresAt, status
@@ -60,7 +60,7 @@ export async function GET(request) {
                 ORDER BY id DESC LIMIT 1
             `).get(vendor.id);
 
-            // Only mark as expired if there was a real payment session that has expired
+            // 1. Only mark as expired if there was a real payment session that has expired
             if (lastSession && (lastSession.status === 'expired' || (lastSession.expiresAt && new Date(lastSession.expiresAt) <= new Date()))) {
                 const plan = lastSession.planId ? db.prepare("SELECT id, name, price FROM plans WHERE id = ?").get(lastSession.planId) : null;
                 if (plan) {
@@ -81,9 +81,31 @@ export async function GET(request) {
                 }
             }
 
+            // 2. If vendor already selected a plan (Step 3: Detail), return plan details without expired alert
+            if (vendor.planId) {
+                const plan = db.prepare("SELECT id, name, price FROM plans WHERE id = ?").get(vendor.planId);
+                if (plan) {
+                    return NextResponse.json({
+                        hasPending: false,
+                        hasExpired: false,
+                        vendorId: vendor.id,
+                        name: vendor.name,
+                        email: vendor.email,
+                        rawWhatsapp: vendor.whatsapp || '',
+                        whatsapp: maskedPhone,
+                        planName: plan.name,
+                        planPrice: plan.price,
+                        planId: plan.id,
+                        amount: plan.price,
+                    });
+                }
+            }
+
+            // 3. New registrant with no plan selected (Step 2: Choose Plan)
             return NextResponse.json({ 
                 hasPending: false, 
                 hasExpired: false, 
+                planId: null,
                 vendorId: vendor.id, 
                 email: vendor.email, 
                 rawWhatsapp: vendor.whatsapp || '' 

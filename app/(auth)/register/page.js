@@ -209,7 +209,14 @@ export default function RegisterPage() {
                         setShowSummary(true);
                         setPendingOrder(null);
                         setExpiredNotice(true);
+                    } else if (d.planId) {
+                        setPlan(String(d.planId));
+                        setShowSummary(true);
+                        setPendingOrder(null);
+                        setExpiredNotice(false);
                     } else {
+                        setPlan('');
+                        setShowSummary(false);
                         setPendingOrder(null);
                         setExpiredNotice(false);
                     }
