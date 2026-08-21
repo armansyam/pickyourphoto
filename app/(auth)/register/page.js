@@ -37,7 +37,7 @@ export default function RegisterPage() {
                 const res = await fetch('/api/vendor/profile');
                 if (res.ok) {
                     const data = await res.json();
-                    if (data && data.id) {
+                    if (data && data.id && data.status === 'active') {
                         window.location.href = '/dashboard';
                     }
                 }
@@ -66,113 +66,106 @@ export default function RegisterPage() {
         }
     }, [flashPromoInfo]);
 
-    // 3. Load initial configuration and plans
+    // 3. Unified Fast Bootstrap: Single Request on Mount
     useEffect(() => {
         let isMounted = true;
-        const checkRegStatus = async () => {
+
+        const bootstrap = async () => {
+            let targetEmail = '';
+            let targetName = '';
+            let targetStep = 1;
+            let targetPlanId = '';
+
+            if (typeof window !== 'undefined') {
+                const urlParams = new URLSearchParams(window.location.search);
+                targetEmail = (urlParams.get('email') || '').trim();
+                targetName = (urlParams.get('name') || '').trim();
+                targetPlanId = (urlParams.get('planId') || '').trim();
+                if (urlParams.get('step') === 'select-plan') {
+                    targetStep = 2;
+                }
+            }
+
             try {
-                const res = await fetch('/api/register/status', { cache: 'no-store' });
+                const initUrl = targetEmail 
+                    ? `/api/register/init?email=${encodeURIComponent(targetEmail)}` 
+                    : '/api/register/init';
+
+                const res = await fetch(initUrl, { cache: 'no-store' });
                 if (res.ok) {
                     const data = await res.json();
-                    if (isMounted) setRegStatus(data);
+                    if (!isMounted) return;
+
+                    // A. Registration Status
+                    setRegStatus({
+                        registration_open: data.registrationOpen !== false,
+                        reason_closed: data.reasonClosed || null
+                    });
+
+                    // B. SaaS Settings & Plans
+                    setSettings({
+                        saas_name: data.platformName,
+                        saas_logo_url: data.logoUrl,
+                        logo_url: data.logoUrl
+                    });
+                    setPlans(data.plans || []);
+                    if (data.flashPromo) {
+                        setFlashPromoInfo(data.flashPromo);
+                    }
+
+                    // C. Form Identity
+                    if (targetEmail) setEmail(targetEmail);
+                    if (targetName) setName(targetName);
+
+                    // D. Restore Stage State from DB Session
+                    const session = data.vendorSession;
+                    if (session) {
+                        if (session.name) setName(session.name);
+                        if (session.whatsapp) setWhatsapp(session.whatsapp);
+
+                        if (session.hasPending && session.pendingOrder) {
+                            setPendingOrder(session.pendingOrder);
+                            setShowSummary(false);
+                            setExpiredNotice(false);
+                            setStep(2);
+                        } else if (session.hasExpired && session.planId) {
+                            setPlan(String(session.planId));
+                            setShowSummary(true);
+                            setPendingOrder(null);
+                            setExpiredNotice(true);
+                            setStep(2);
+                        } else if (session.planId) {
+                            setPlan(String(session.planId));
+                            setShowSummary(true);
+                            setPendingOrder(null);
+                            setExpiredNotice(false);
+                            setStep(2);
+                        } else {
+                            if (targetPlanId) setPlan(targetPlanId);
+                            setStep(targetStep);
+                            setShowSummary(false);
+                            setPendingOrder(null);
+                        }
+                    } else {
+                        if (targetPlanId) setPlan(targetPlanId);
+                        setStep(targetStep);
+                    }
                 }
             } catch (err) {
-                console.error('Failed to check registration status:', err);
+                console.error('[Register Bootstrap Error]:', err);
             } finally {
-                if (isMounted) setCheckingStatus(false);
-            }
-        };
-
-        const timeout = setTimeout(() => {
-            if (isMounted) setCheckingStatus(false);
-        }, 2500);
-
-        const fetchPlans = async () => {
-            try {
-                const res = await fetch('/api/plans');
-                if (res.ok) {
-                    const data = await res.json();
-                    const plansList = Array.isArray(data) ? data : (data.plans || []);
-                    if (isMounted) setPlans(plansList);
-                    if (data.flashPromo && isMounted) setFlashPromoInfo(data.flashPromo);
+                if (isMounted) {
+                    setCheckingStatus(false);
                 }
-            } catch (err) {
-                console.error('Failed to load plans:', err);
             }
         };
 
-        const fetchSettings = async () => {
-            try {
-                const res = await fetch('/api/settings');
-                if (res.ok) {
-                    const data = await res.json();
-                    if (isMounted) setSettings(data);
-                }
-            } catch (err) {
-                console.error('Failed to load SaaS settings:', err);
-            }
-        };
-
-        checkRegStatus();
-        fetchPlans();
-        fetchSettings();
-
-        if (typeof window !== 'undefined') {
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetPlanId = urlParams.get('planId');
-            if (targetPlanId && isMounted) {
-                setPlan(targetPlanId);
-            }
-            if (urlParams.get('step') === 'select-plan') {
-                const userEmail = urlParams.get('email');
-                const userName = urlParams.get('name');
-                if (userEmail && isMounted) setEmail(userEmail);
-                if (userName && isMounted) setName(userName);
-                if (isMounted) setStep(2);
-            }
-        }
+        bootstrap();
 
         return () => {
             isMounted = false;
-            clearTimeout(timeout);
         };
     }, []);
-
-    // 4. Synchronize live payment session or persisted step on refresh
-    useEffect(() => {
-        if (email && email.includes('@')) {
-            fetch(`/api/payment/check-pending?email=${encodeURIComponent(email)}`)
-                .then(r => r.json())
-                .then(d => {
-                    if (d.name) {
-                        setName(d.name);
-                    }
-                    if (d.hasPending) {
-                        setPendingOrder(d);
-                        setShowSummary(false);
-                        setExpiredNotice(false);
-                    } else if (d.hasExpired && d.planId) {
-                        setPlan(String(d.planId));
-                        setShowSummary(true);
-                        setPendingOrder(null);
-                        setExpiredNotice(true);
-                    } else if (d.planId) {
-                        setPlan(String(d.planId));
-                        setShowSummary(true);
-                        setPendingOrder(null);
-                        setExpiredNotice(false);
-                    } else {
-                        setPlan('');
-                        setShowSummary(false);
-                        setPendingOrder(null);
-                        setExpiredNotice(false);
-                    }
-                })
-                .catch(() => { setPendingOrder(null); });
-        } else {
-            setPendingOrder(null);
-        }
-    }, [email]);
 
     // Backward transition: Ubah Paket (Step 3 -> Step 2)
     const handleResetPlan = async () => {
@@ -253,6 +246,7 @@ export default function RegisterPage() {
                     qrUrl: payData.qrUrl || payData.redirectUrl,
                     amount: payData.amount || selectedPlan.price,
                     expiresAt: payData.expiresAt,
+                    planId: selectedPlan.id, // Strictly bind planId to pendingOrder
                     planName: selectedPlan.name,
                     planPrice: selectedPlan.price
                 });
@@ -327,13 +321,16 @@ export default function RegisterPage() {
                         pendingOrder={pendingOrder}
                         platformName={platformName}
                         onExpired={(order) => {
-                            setPlan(String(order.planId));
+                            const targetPlanId = order?.planId || pendingOrder?.planId || plan;
+                            if (targetPlanId) {
+                                setPlan(String(targetPlanId));
+                            }
                             setShowSummary(true);
                             setPendingOrder(null);
                             setExpiredNotice(true);
                         }}
                         onCancel={async () => {
-                            if (pendingOrder.orderId) {
+                            if (pendingOrder?.orderId) {
                                 try {
                                     await fetch('/api/payment/cancel', {
                                         method: 'POST',
@@ -341,6 +338,10 @@ export default function RegisterPage() {
                                         body: JSON.stringify({ orderId: pendingOrder.orderId, email })
                                     });
                                 } catch (e) {}
+                            }
+                            const targetPlanId = pendingOrder?.planId || plan;
+                            if (targetPlanId) {
+                                setPlan(String(targetPlanId));
                             }
                             setPendingOrder(null);
                             setShowSummary(true);
