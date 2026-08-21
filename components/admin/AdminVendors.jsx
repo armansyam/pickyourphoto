@@ -407,11 +407,11 @@ export default function AdminVendors({
                               style={{ padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: '6px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                               title="Hubungi calon vendor via WhatsApp"
                             >
-                              💬 WA
+                              WhatsApp
                             </a>
                           </>
                         ) : (
-                          <span style={{ color: '#71717a', fontSize: '12px' }}>– (OAuth Google)</span>
+                          <span style={{ color: '#71717a', fontSize: '12px' }}>–</span>
                         )}
                       </div>
                     </td>
@@ -426,7 +426,7 @@ export default function AdminVendors({
                           </span>
                         </div>
                       ) : (
-                        <span style={{ color: '#71717a', fontSize: '12px' }}>Sedang Memilih</span>
+                        <span style={{ color: '#94a3b8', fontSize: '12px' }}>Sedang Memilih</span>
                       )}
                       {hasPendingPlanUpgrade && (
                         <div style={{ marginTop: '4px' }}>
@@ -445,7 +445,7 @@ export default function AdminVendors({
                     <td style={{ padding: '12px 14px' }}>
                       {storageGb > 0 ? (
                         <span style={{ color: '#38bdf8', background: 'rgba(56,189,248,0.12)', border: '1px solid rgba(56,189,248,0.3)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                          💾 {storageGb} GB Extra
+                          +{storageGb} GB
                         </span>
                       ) : (
                         <span style={{ color: '#71717a', fontSize: '12px' }}>–</span>
@@ -498,15 +498,14 @@ export default function AdminVendors({
                       {vendorSubTab === 'inquiry' && inquirySubTab === 'prospect' && (
                         <div>
                           {v.planName ? (
-                            <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
+                            <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block' }}>
                               Sudah Pilih Paket (Detail)
                             </span>
                           ) : (
-                            <span style={{ color: '#38bdf8', background: 'rgba(56,189,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
+                            <span style={{ color: '#38bdf8', background: 'rgba(56,189,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block' }}>
                               Sedang Memilih Paket
                             </span>
                           )}
-                          <div style={{ fontSize: '11px', color: '#71717a' }}>OAuth Google Lead</div>
                         </div>
                       )}
                       {vendorSubTab === 'inquiry' && inquirySubTab === 'pending' && (
