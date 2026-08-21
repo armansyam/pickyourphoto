@@ -694,311 +694,219 @@ export default function RegisterPage() {
                                         />
                                     ) : showSummary ? (
 
-                                        <div className="fade-in-up" style={{ background: 'rgba(30, 41, 59, 0.7)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: '16px', padding: '24px', marginBottom: '20px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                                <span style={{ fontSize: '11px', fontWeight: 'bold', background: 'rgba(99, 102, 241, 0.2)', color: '#818cf8', padding: '4px 12px', borderRadius: '20px' }}>
-                                                    KONFIRMASI DETAIL & PEMBAYARAN
-                                                </span>
-                                                <h3 style={{ margin: '8px 0 4px 0', fontSize: '20px', fontWeight: 'bold', color: '#ffffff' }}>
-                                                    Periksa Pesanan & Pilih Metode Pembayaran
+                                        <div className="fade-in-up" style={{ 
+                                            background: 'linear-gradient(160deg, rgba(15, 23, 42, 0.96), rgba(10, 15, 30, 0.98))', 
+                                            border: '1px solid rgba(255, 255, 255, 0.08)', 
+                                            borderRadius: '20px', 
+                                            padding: '28px 24px', 
+                                            marginBottom: '20px', 
+                                            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)' 
+                                        }}>
+                                            {/* Header */}
+                                            <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+                                                <h3 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.02em' }}>
+                                                    Ringkasan Pesanan
                                                 </h3>
                                                 <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
-                                                    Pastikan data pendaftaran benar lalu pilih metode pembayaran Anda.
+                                                    Periksa detail pesanan Anda sebelum melanjutkan pembayaran
                                                 </p>
                                             </div>
 
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '13px' }}>
-                                                {/* 1. Account Info Summary */}
-                                                <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px' }}>
-                                                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', marginBottom: '6px' }}>DETAIL AKUN VENDOR</div>
-                                                    <div style={{ color: '#ffffff', fontWeight: '600' }}>{name}</div>
-                                                    <div style={{ color: '#cbd5e1', fontSize: '12px' }}>{email}</div>
-                                                    <InlineWhatsappContact email={email} initialWhatsapp={whatsapp} onSaved={(newWa) => setWhatsapp(newWa)} />
+                                            {/* 1. Account Info Row */}
+                                            <div style={{ paddingBottom: '16px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                                                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+                                                    Akun Pemesan
                                                 </div>
-
-                                                {/* 2. Selected Plan Summary */}
-                                                {(() => {
-                                                    const selPlan = plans.find(p => p.id === parseInt(plan));
-                                                    return selPlan ? (
-                                                        <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', borderRadius: '12px', padding: '16px' }}>
-                                                            <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', marginBottom: '8px' }}>PAKET BERLANGGANAN YANG DIPILIH</div>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                                                <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>{selPlan.name}</span>
-                                                                {selPlan.discountedPrice && selPlan.discountedPrice < selPlan.originalPrice ? (
-                                                                    <div style={{ textAlign: 'right' }}>
-                                                                        <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '12px', marginRight: '6px' }}>
-                                                                            Rp {selPlan.originalPrice ? selPlan.originalPrice.toLocaleString('id-ID') : '0'}
-                                                                        </span>
-                                                                        <span style={{ color: '#ef4444', fontWeight: '850', fontSize: '17px' }}>
-                                                                            Rp {selPlan.discountedPrice ? selPlan.discountedPrice.toLocaleString('id-ID') : '0'}
-                                                                        </span>
-                                                                    </div>
-                                                                ) : (
-                                                                    <span style={{ color: '#fbbf24', fontWeight: '850', fontSize: '17px' }}>
-                                                                        Rp {selPlan.price ? selPlan.price.toLocaleString('id-ID') : '0'}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            
-                                                            <div style={{ width: '100%', height: '1px', background: 'rgba(255,255,255,0.08)', margin: '10px 0' }} />
-
-                                                            {/* Plan Features List Details */}
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#d4d4d8' }}>
-                                                                <div>✓ Maksimal <strong>{selPlan.maxProjects} Project Aktif</strong></div>
-                                                                <div>✓ Foto <strong>Unlimited</strong> / project</div>
-                                                                <div>✓ <strong>Galeri Online &amp; Seleksi Foto Klien</strong></div>
-                                                                {selPlan.allowCustomLogo === 1 || selPlan.allowCustomLogo === true || selPlan.name.includes('Pro') || selPlan.name.includes('Business') ? (
-                                                                    <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Bisa Menggunakan Logo Studio Sendiri</div>
-                                                                ) : (
-                                                                    <div style={{ color: '#71717a' }}>• Logo Platform Standard</div>
-                                                                )}
-                                                                {selPlan.allowRawSelector === 1 || selPlan.allowRawSelector === true ? (
-                                                                    <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Fitur Auto-Sorter / Selector File RAW</div>
-                                                                ) : (
-                                                                    <div style={{ color: '#71717a' }}>• Fitur RAW Selector Nonaktif</div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ) : null;
-                                                })()}
-
-                                                {/* Add-On Storage Section (Only shown when active addon plans exist) */}
-                                                {availableAddonPlans && availableAddonPlans.length > 0 && (
-                                                    <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '12px', padding: '16px' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                                            <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>CLOUD STORAGE ADD-ON (OPSIONAL)</span>
-                                                            {selectedAddon && (
-                                                                <button type="button" onClick={() => setSelectedAddon(null)} style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                    <TrashIcon size={11} color="#f87171" />
-                                                                    <span>Hapus Add-On</span>
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                        {selectedAddon ? (
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <div>
-                                                                    <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>{selectedAddon.name}</div>
-                                                                    <div style={{ color: '#94a3b8', fontSize: '11px' }}>Kapasitas Tambahan Khusus Studio</div>
-                                                                </div>
-                                                                <span style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '15px' }}>
-                                                                    + Rp {selectedAddon.price.toLocaleString('id-ID')}
-                                                                </span>
-                                                            </div>
-                                                        ) : (
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                                                                <span style={{ color: '#cbd5e1', fontSize: '12px' }}>Ingin menambah kuota cloud storage khusus studio?</span>
-                                                                <button 
-                                                                    type="button" 
-                                                                    onClick={() => setIsAddonModalOpen(true)} 
-                                                                    style={{ background: 'linear-gradient(135deg, #0284c7, #0369a1)', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
-                                                                >
-                                                                    <PlusIcon size={12} color="#fff" />
-                                                                    <span>Tambahkan Cloud Storage</span>
-                                                                </button>
-                                                            </div>
-                                                        )}
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                                    <div>
+                                                        <span style={{ color: '#ffffff', fontWeight: '700', fontSize: '14px' }}>{name}</span>
+                                                        <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>({email})</span>
                                                     </div>
-                                                )}
-
-                                                {/* Add-On Selection Modal */}
-                                                {isAddonModalOpen && availableAddonPlans && availableAddonPlans.length > 0 && (
-                                                    <div onClick={() => setIsAddonModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                                                        <div onClick={e => e.stopPropagation()} style={{ background: '#0f172a', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
-                                                            {/* Top Right Close Button */}
-                                                            <button 
-                                                                type="button" 
-                                                                onClick={() => setIsAddonModalOpen(false)} 
-                                                                title="Tutup Modal"
-                                                                style={{
-                                                                    position: 'absolute',
-                                                                    top: '16px',
-                                                                    right: '16px',
-                                                                    background: 'rgba(255,255,255,0.06)',
-                                                                    border: '1px solid rgba(255,255,255,0.12)',
-                                                                    color: '#a1a1aa',
-                                                                    width: '32px',
-                                                                    height: '32px',
-                                                                    borderRadius: '8px',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    cursor: 'pointer',
-                                                                    fontSize: '14px',
-                                                                    fontWeight: 'bold',
-                                                                    transition: 'all 0.2s ease'
-                                                                }}
-                                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.4)'; }}
-                                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#a1a1aa'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
-                                                            >
-                                                                ✕
-                                                            </button>
-
-                                                            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                                                                <span style={{ fontSize: '11px', fontWeight: 'bold', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '4px 12px', borderRadius: '20px' }}>
-                                                                    PILIH ADD-ON CLOUD STORAGE
-                                                                </span>
-                                                                <h3 style={{ margin: '8px 0 4px 0', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
-                                                                    Tingkatkan Kapasitas Storage Studio Anda
-                                                                </h3>
-                                                                <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
-                                                                    Tambah kuota agar dapat mengunggah &amp; mengirim lebih banyak foto ke klien.
-                                                                </p>
-                                                            </div>
-
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-                                                                {availableAddonPlans.map(opt => {
-                                                                    const quotaGb = opt.quotaBytes ? Math.round(opt.quotaBytes / (1024 * 1024 * 1024)) : 0;
-                                                                    const optKey = opt.planKey || `addon-${quotaGb}gb`;
-                                                                    return (
-                                                                        <div 
-                                                                            key={opt.id || optKey}
-                                                                            onClick={() => {
-                                                                                setSelectedAddon({ key: optKey, name: opt.name, price: Number(opt.price) });
-                                                                                setIsAddonModalOpen(false);
-                                                                            }}
-                                                                            style={{
-                                                                                background: selectedAddon?.key === optKey ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.03)',
-                                                                                border: selectedAddon?.key === optKey ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
-                                                                                borderRadius: '12px',
-                                                                                padding: '14px 16px',
-                                                                                cursor: 'pointer',
-                                                                                display: 'flex',
-                                                                                justifyContent: 'space-between',
-                                                                                alignItems: 'center'
-                                                                            }}
-                                                                        >
-                                                                            <div>
-                                                                                <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                    {opt.name}
-                                                                                </div>
-                                                                                <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{quotaGb} GB Ekstra Dedicated Storage</div>
-                                                                            </div>
-                                                                            <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '14px' }}>
-                                                                                + Rp {Number(opt.price).toLocaleString('id-ID')}
-                                                                            </div>
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
-
-                                                            <div style={{ display: 'flex', gap: '12px' }}>
-                                                                <button 
-                                                                    type="button" 
-                                                                    onClick={() => setIsAddonModalOpen(false)} 
-                                                                    style={{
-                                                                        flex: 1,
-                                                                        padding: '11px',
-                                                                        borderRadius: '10px',
-                                                                        border: '1px solid rgba(255,255,255,0.15)',
-                                                                        background: 'rgba(255,255,255,0.04)',
-                                                                        color: '#cbd5e1',
-                                                                        fontSize: '13px',
-                                                                        fontWeight: '600',
-                                                                        cursor: 'pointer',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        gap: '8px',
-                                                                        transition: 'all 0.2s ease'
-                                                                    }}
-                                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; }}
-                                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
-                                                                >
-                                                                    <span style={{ fontSize: '12px' }}>✕</span>
-                                                                    <span>Batal / Lanjut Tanpa Add-On</span>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* 3. METODE PEMBAYARAN */}
-                                                <div>
-                                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#e4e4e7', marginBottom: '12px' }}>
-                                                        Metode Pembayaran
-                                                    </label>
-
-                                                    {isGatewayEnabled ? (
-                                                        // QRIS Otomatis Aktif
-                                                        <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '16px', borderRadius: '12px' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                                <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#34d399' }}>Pembayaran QRIS Otomatis</span>
-                                                                <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>AKTIF &amp; INSTAN</span>
-                                                            </div>
-                                                            <span style={{ fontSize: '12px', color: '#a1a1aa', lineHeight: '1.5' }}>
-                                                                Bayar via QRIS (BCA, Mandiri, BRI, BNI, GoPay, OVO, Dana, LinkAja, ShopeePay). Akun <strong>otomatis aktif seketika</strong> tanpa perlu upload bukti.
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        // Transfer Manual Aktif
-                                                        <>
-                                                            <div style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)', padding: '16px', borderRadius: '12px', marginBottom: '14px' }}>
-                                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                                                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#818cf8' }}>Transfer Bank Manual</span>
-                                                                    <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.08)', color: '#a1a1aa', padding: '2px 8px', borderRadius: '6px' }}>PERLU KONFIRMASI ADMIN</span>
-                                                                </div>
-                                                                <div style={{ fontSize: '13px', color: '#f4f4f5', lineHeight: '1.7' }}>
-                                                                    <div>Bank: <strong>{settings?.bank_name || 'Belum dikonfigurasi Admin'}</strong></div>
-                                                                    <div>No. Rekening: <strong style={{ color: '#818cf8', fontSize: '14px' }}>{settings?.bank_account_number || '-'}</strong></div>
-                                                                    <div>Atas Nama: <strong>{settings?.bank_account_name || '-'}</strong></div>
-                                                                    {settings?.contact_email && (
-                                                                        <div style={{ fontSize: '11px', color: '#a1a1aa', marginTop: '6px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '6px' }}>
-                                                                            Hubungi: {settings.contact_email}{settings.contact_whatsapp && ` | WA: +${settings.contact_whatsapp}`}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            <div className="form-group">
-                                                                <label className="form-label">Upload Bukti Pembayaran / Transfer</label>
-                                                                <input
-                                                                    type="file"
-                                                                    className="input-text"
-                                                                    required
-                                                                    accept="image/*"
-                                                                    onChange={(e) => setPaymentProof(e.target.files ? e.target.files[0] : null)}
-                                                                    disabled={loading}
-                                                                    style={{ cursor: 'pointer' }}
-                                                                />
-                                                                <span style={{ fontSize: '11px', color: '#71717a' }}>Format: JPG, PNG. Wajib diisi untuk proses konfirmasi.</span>
-                                                            </div>
-                                                        </>
-                                                    )}
                                                 </div>
+                                                <InlineWhatsappContact email={email} initialWhatsapp={whatsapp} onSaved={(newWa) => setWhatsapp(newWa)} />
                                             </div>
 
-                                            {expiredNotice && (
-                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', padding: '8px 14px', borderRadius: '8px', marginTop: '16px' }}>
-                                                    <ClockIcon size={13} color="#f87171" />
-                                                    <span>Sesi QRIS sebelumnya telah kedaluwarsa. Silakan periksa pesanan Anda dan klik tombol di bawah untuk membuat pembayaran baru.</span>
+                                            {/* 2. Selected Plan Item Line */}
+                                            {(() => {
+                                                const selPlan = plans.find(p => p.id === parseInt(plan));
+                                                if (!selPlan) return null;
+                                                const planPrice = Number(selPlan.discountedPrice || selPlan.price || 0);
+                                                const addonPrice = selectedAddon ? Number(selectedAddon.price || 0) : 0;
+                                                const grandTotal = planPrice + addonPrice;
+
+                                                return (
+                                                    <div>
+                                                        <div style={{ padding: '16px 0', borderBottom: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                                                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '12px' }}>
+                                                                Item Langganan
+                                                            </div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                                                                <div>
+                                                                    <div style={{ color: '#ffffff', fontWeight: '700', fontSize: '15px' }}>{selPlan.name}</div>
+                                                                    <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '3px', lineHeight: '1.4' }}>
+                                                                        {selPlan.maxProjects} Project Aktif • Unlimited Foto • Galeri &amp; Seleksi
+                                                                        {(selPlan.allowCustomLogo === 1 || selPlan.allowCustomLogo === true || selPlan.name.includes('Pro') || selPlan.name.includes('Business')) && ' • Custom Logo'}
+                                                                    </div>
+                                                                </div>
+                                                                <div style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                                                    <span style={{ color: '#fbbf24', fontWeight: '800', fontSize: '16px' }}>
+                                                                        Rp {planPrice.toLocaleString('id-ID')}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Add-On Storage Item (If selected) */}
+                                                            {selectedAddon && (
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed rgba(255, 255, 255, 0.06)' }}>
+                                                                    <div>
+                                                                        <div style={{ color: '#38bdf8', fontWeight: '600', fontSize: '13px' }}>{selectedAddon.name}</div>
+                                                                        <div style={{ color: '#64748b', fontSize: '11px' }}>Kapasitas Cloud Storage Khusus Studio</div>
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <span style={{ color: '#38bdf8', fontWeight: '700', fontSize: '14px' }}>
+                                                                            + Rp {addonPrice.toLocaleString('id-ID')}
+                                                                        </span>
+                                                                        <button type="button" onClick={() => setSelectedAddon(null)} style={{ background: 'none', border: 'none', color: '#f87171', fontSize: '11px', cursor: 'pointer', padding: '0 4px', textDecoration: 'underline' }}>Hapus</button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Add-on Trigger Link (If not selected) */}
+                                                            {!selectedAddon && availableAddonPlans && availableAddonPlans.length > 0 && (
+                                                                <div style={{ marginTop: '12px' }}>
+                                                                    <button 
+                                                                        type="button" 
+                                                                        onClick={() => setIsAddonModalOpen(true)}
+                                                                        style={{ background: 'none', border: 'none', color: '#38bdf8', fontSize: '11px', fontWeight: '600', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                                                                    >
+                                                                        <PlusIcon size={11} color="#38bdf8" />
+                                                                        <span>+ Tambah Kuota Storage Ekstra (Opsional)</span>
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* 3. Grand Total Row */}
+                                                        <div style={{ padding: '16px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                            <div>
+                                                                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Pembayaran</div>
+                                                                <div style={{ fontSize: '11px', color: '#34d399', fontWeight: '600', marginTop: '2px' }}>QRIS Otomatis • Aktivasi Instan</div>
+                                                            </div>
+                                                            <div style={{ textAlign: 'right' }}>
+                                                                <span style={{ fontSize: '22px', fontWeight: '900', color: '#ffffff', letterSpacing: '-0.02em' }}>
+                                                                    Rp {grandTotal.toLocaleString('id-ID')}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
+
+                                            {/* Add-On Selection Modal */}
+                                            {isAddonModalOpen && availableAddonPlans && availableAddonPlans.length > 0 && (
+                                                <div onClick={() => setIsAddonModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+                                                    <div onClick={e => e.stopPropagation()} style={{ background: '#0f172a', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => setIsAddonModalOpen(false)} 
+                                                            title="Tutup Modal"
+                                                            style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#a1a1aa', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '14px', fontWeight: 'bold' }}
+                                                        >
+                                                            ✕
+                                                        </button>
+
+                                                        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                                                            <span style={{ fontSize: '11px', fontWeight: 'bold', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '4px 12px', borderRadius: '20px' }}>
+                                                                PILIH ADD-ON CLOUD STORAGE
+                                                            </span>
+                                                            <h3 style={{ margin: '8px 0 4px 0', fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
+                                                                Tingkatkan Kapasitas Storage Studio
+                                                            </h3>
+                                                            <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
+                                                                Tambah kuota agar dapat mengunggah &amp; mengirim lebih banyak foto ke klien.
+                                                            </p>
+                                                        </div>
+
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                                                            {availableAddonPlans.map(opt => {
+                                                                const quotaGb = opt.quotaBytes ? Math.round(opt.quotaBytes / (1024 * 1024 * 1024)) : 0;
+                                                                const optKey = opt.planKey || `addon-${quotaGb}gb`;
+                                                                return (
+                                                                    <div 
+                                                                        key={opt.id || optKey}
+                                                                        onClick={() => {
+                                                                            setSelectedAddon({ key: optKey, name: opt.name, price: Number(opt.price) });
+                                                                            setIsAddonModalOpen(false);
+                                                                        }}
+                                                                        style={{
+                                                                            background: selectedAddon?.key === optKey ? 'rgba(56, 189, 248, 0.15)' : 'rgba(255,255,255,0.03)',
+                                                                            border: selectedAddon?.key === optKey ? '2px solid #38bdf8' : '1px solid rgba(255,255,255,0.08)',
+                                                                            borderRadius: '12px',
+                                                                            padding: '14px 16px',
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            justifyContent: 'space-between',
+                                                                            alignItems: 'center'
+                                                                        }}
+                                                                    >
+                                                                        <div>
+                                                                            <div style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>{opt.name}</div>
+                                                                            <div style={{ color: '#94a3b8', fontSize: '11px', marginTop: '2px' }}>{quotaGb} GB Ekstra Dedicated Storage</div>
+                                                                        </div>
+                                                                        <div style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '14px' }}>
+                                                                            + Rp {Number(opt.price).toLocaleString('id-ID')}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+
+                                                        <button 
+                                                            type="button" 
+                                                            onClick={() => setIsAddonModalOpen(false)} 
+                                                            style={{ width: '100%', padding: '11px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
+                                                        >
+                                                            Batal / Lanjut Tanpa Add-On
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             )}
 
-                                            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                                            {/* Expired Plain Text Notice (Zero Card Clutter) */}
+                                            {expiredNotice && (
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: '#f87171', marginBottom: '14px', textAlign: 'center' }}>
+                                                    <ClockIcon size={13} color="#f87171" />
+                                                    <span>Sesi QRIS sebelumnya telah kedaluwarsa. Silakan buat QRIS baru untuk melanjutkan.</span>
+                                                </div>
+                                            )}
+
+                                            {/* Action Buttons */}
+                                            <div style={{ display: 'flex', gap: '10px' }}>
                                                 <button
                                                     type="button"
                                                     onClick={handleResetPlan}
                                                     style={{
-                                                        background: 'rgba(255, 255, 255, 0.05)',
-                                                        color: '#e4e4e7',
-                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                                        borderRadius: '12px',
-                                                        padding: '14px 20px',
+                                                        background: 'rgba(255, 255, 255, 0.04)',
+                                                        color: '#94a3b8',
+                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        borderRadius: '10px',
+                                                        padding: '12px 18px',
                                                         fontWeight: '600',
                                                         fontSize: '13px',
                                                         cursor: 'pointer',
                                                         flex: 1
                                                     }}
                                                 >
-                                                    Ubah / Pilih Paket Lain
+                                                    Ubah Paket
                                                 </button>
                                                 <button 
                                                     type="submit" 
                                                     className="btn-primary" 
                                                     style={{ 
                                                         flex: 2, 
-                                                        padding: '14px 20px', 
+                                                        padding: '12px 20px', 
                                                         fontSize: '14px',
+                                                        fontWeight: '700',
                                                         opacity: loading ? 0.5 : 1,
                                                         cursor: loading ? 'not-allowed' : 'pointer',
                                                         display: 'flex',
@@ -1013,7 +921,7 @@ export default function RegisterPage() {
                                                     ) : (
                                                         <>
                                                             <SparklesUpgradeIcon size={14} />
-                                                            <span>Bayar Sekarang via QRIS</span>
+                                                            <span>Bayar via QRIS</span>
                                                         </>
                                                     )}
                                                 </button>
