@@ -161,6 +161,44 @@ export default function AdminSettings({
     setIsEditingSystem(false);
   };
 
+  const [savedGatewayState, setSavedGatewayState] = useState({
+    enablePaymentGateway,
+    paymentGatewayProvider,
+    paymentGatewayClientKey,
+    paymentGatewayServerKey,
+    qrisExpirationMinutes
+  });
+
+  const gatewayStateInitialized = React.useRef(false);
+  React.useEffect(() => {
+    if (!gatewayStateInitialized.current && (paymentGatewayProvider !== undefined || paymentGatewayClientKey !== undefined || enablePaymentGateway !== undefined)) {
+      setSavedGatewayState({
+        enablePaymentGateway,
+        paymentGatewayProvider,
+        paymentGatewayClientKey,
+        paymentGatewayServerKey,
+        qrisExpirationMinutes
+      });
+      gatewayStateInitialized.current = true;
+    }
+  }, [enablePaymentGateway, paymentGatewayProvider, paymentGatewayClientKey, paymentGatewayServerKey, qrisExpirationMinutes]);
+
+  const isGatewayDirty = 
+    Boolean(enablePaymentGateway) !== Boolean(savedGatewayState.enablePaymentGateway) ||
+    (paymentGatewayProvider || 'midtrans') !== (savedGatewayState.paymentGatewayProvider || 'midtrans') ||
+    (paymentGatewayClientKey || '').trim() !== (savedGatewayState.paymentGatewayClientKey || '').trim() ||
+    (paymentGatewayServerKey || '').trim() !== (savedGatewayState.paymentGatewayServerKey || '').trim() ||
+    Number(qrisExpirationMinutes || 15) !== Number(savedGatewayState.qrisExpirationMinutes || 15);
+
+  const handleCancelGateway = () => {
+    setEnablePaymentGateway(savedGatewayState.enablePaymentGateway);
+    setPaymentGatewayProvider(savedGatewayState.paymentGatewayProvider);
+    setPaymentGatewayClientKey(savedGatewayState.paymentGatewayClientKey);
+    setPaymentGatewayServerKey(savedGatewayState.paymentGatewayServerKey);
+    setQrisExpirationMinutes(savedGatewayState.qrisExpirationMinutes);
+    setIsEditingPaymentGateway(false);
+  };
+
   const handleSaveIdentity = async () => {
     setSavingSection('identity');
     try {
@@ -346,6 +384,7 @@ export default function AdminSettings({
   };
 
   const handleSaveGateway = async () => {
+    if (!isGatewayDirty) return;
     setSavingSection('gateway');
     try {
       const res = await fetch('/api/admin/settings', {
@@ -364,6 +403,13 @@ export default function AdminSettings({
       const data = await res.json();
       if (res.ok) {
         if (addToast) addToast('Konfigurasi Payment Gateway & QRIS berhasil disimpan!', 'success');
+        setSavedGatewayState({
+          enablePaymentGateway,
+          paymentGatewayProvider,
+          paymentGatewayClientKey,
+          paymentGatewayServerKey,
+          qrisExpirationMinutes
+        });
         setIsEditingPaymentGateway(false);
       } else {
         if (addToast) addToast(data.message || 'Gagal menyimpan konfigurasi payment gateway.', 'error');
@@ -1898,12 +1944,12 @@ export default function AdminSettings({
                       {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes Gateway'}
                     </button>
 
-                    {enablePaymentGateway && paymentGatewayClientKey && paymentGatewayServerKey && (
+                    {isGatewayDirty && (
                       <button 
                         type="button" 
-                        onClick={() => setIsEditingPaymentGateway(false)} 
+                        onClick={handleCancelGateway} 
                         className="btn-secondary" 
-                        style={{ padding: '8px 16px', fontSize: '12px' }}
+                        style={{ padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
                       >
                         Batal
                       </button>
@@ -1911,18 +1957,21 @@ export default function AdminSettings({
 
                     <button 
                       type="button" 
-                      disabled={savingSection === 'gateway'} 
+                      disabled={!isGatewayDirty || savingSection === 'gateway'} 
                       onClick={handleSaveGateway}
                       style={{ 
-                        background: 'linear-gradient(135deg, #10b981, #059669)', 
-                        color: '#ffffff', 
-                        border: 'none', 
+                        background: isGatewayDirty 
+                          ? 'linear-gradient(135deg, #10b981, #059669)' 
+                          : 'rgba(255,255,255,0.06)', 
+                        color: isGatewayDirty ? '#ffffff' : '#71717a', 
+                        border: isGatewayDirty ? 'none' : '1px solid rgba(255,255,255,0.1)', 
                         padding: '8px 20px', 
                         borderRadius: '8px', 
                         fontSize: '12px', 
                         fontWeight: 'bold', 
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                        cursor: isGatewayDirty && savingSection !== 'gateway' ? 'pointer' : 'not-allowed',
+                        boxShadow: isGatewayDirty ? '0 2px 10px rgba(16, 185, 129, 0.3)' : 'none',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       {savingSection === 'gateway' ? '⏳ Menyimpan...' : '💾 Simpan Konfigurasi Gateway'}
