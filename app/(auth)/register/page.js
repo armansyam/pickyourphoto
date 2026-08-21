@@ -881,7 +881,36 @@ export default function RegisterPage() {
                                                 {/* Add-On Selection Modal */}
                                                 {isAddonModalOpen && availableAddonPlans && availableAddonPlans.length > 0 && (
                                                     <div onClick={() => setIsAddonModalOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-                                                        <div onClick={e => e.stopPropagation()} style={{ background: '#0f172a', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+                                                        <div onClick={e => e.stopPropagation()} style={{ background: '#0f172a', border: '1px solid rgba(56, 189, 248, 0.3)', borderRadius: '20px', width: '100%', maxWidth: '480px', padding: '24px', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+                                                            {/* Top Right Close Button */}
+                                                            <button 
+                                                                type="button" 
+                                                                onClick={() => setIsAddonModalOpen(false)} 
+                                                                title="Tutup Modal"
+                                                                style={{
+                                                                    position: 'absolute',
+                                                                    top: '16px',
+                                                                    right: '16px',
+                                                                    background: 'rgba(255,255,255,0.06)',
+                                                                    border: '1px solid rgba(255,255,255,0.12)',
+                                                                    color: '#a1a1aa',
+                                                                    width: '32px',
+                                                                    height: '32px',
+                                                                    borderRadius: '8px',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '14px',
+                                                                    fontWeight: 'bold',
+                                                                    transition: 'all 0.2s ease'
+                                                                }}
+                                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = 'rgba(239,68,68,0.4)'; }}
+                                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#a1a1aa'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
+                                                            >
+                                                                ✕
+                                                            </button>
+
                                                             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                                                                 <span style={{ fontSize: '11px', fontWeight: 'bold', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '4px 12px', borderRadius: '20px' }}>
                                                                     PILIH ADD-ON CLOUD STORAGE
@@ -931,8 +960,30 @@ export default function RegisterPage() {
                                                             </div>
 
                                                             <div style={{ display: 'flex', gap: '12px' }}>
-                                                                <button type="button" onClick={() => setIsAddonModalOpen(false)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: '#94a3b8', fontSize: '13px', cursor: 'pointer' }}>
-                                                                    Batal
+                                                                <button 
+                                                                    type="button" 
+                                                                    onClick={() => setIsAddonModalOpen(false)} 
+                                                                    style={{
+                                                                        flex: 1,
+                                                                        padding: '11px',
+                                                                        borderRadius: '10px',
+                                                                        border: '1px solid rgba(255,255,255,0.15)',
+                                                                        background: 'rgba(255,255,255,0.04)',
+                                                                        color: '#cbd5e1',
+                                                                        fontSize: '13px',
+                                                                        fontWeight: '600',
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        gap: '8px',
+                                                                        transition: 'all 0.2s ease'
+                                                                    }}
+                                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.25)'; }}
+                                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; }}
+                                                                >
+                                                                    <span style={{ fontSize: '12px' }}>✕</span>
+                                                                    <span>Batal / Lanjut Tanpa Add-On</span>
                                                                 </button>
                                                             </div>
                                                         </div>
