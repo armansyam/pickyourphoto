@@ -120,17 +120,14 @@ export async function GET(request) {
             return response;
         }
 
-        // New Vendor Registration via Google: Create a lead record with status='draft_plan'
+        // New Vendor Registration via Google: Create a lead record with status='draft_plan' and planId=null
         const defaultPasswordHash = await bcrypt.hash(Math.random().toString(36), 10);
-        const defaultPlan = db.prepare("SELECT id, maxProjects FROM plans WHERE price > 0 ORDER BY price ASC LIMIT 1").get();
-        const planId = defaultPlan?.id || 1;
-        const maxProjects = defaultPlan?.maxProjects || 10;
 
         const insertStmt = db.prepare(`
             INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, resetRequested, createdAt) 
-            VALUES (?, ?, ?, ?, ?, 'draft_plan', ?, ?, 'Google OAuth Lead', 0, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, 'vendor', 'draft_plan', 0, NULL, NULL, 0, CURRENT_TIMESTAMP)
         `);
-        const info = insertStmt.run(name, email, '', defaultPasswordHash, 'vendor', maxProjects, planId);
+        const info = insertStmt.run(name, email, '', defaultPasswordHash);
         const newVendorId = info.lastInsertRowid;
 
         const token = generateToken({

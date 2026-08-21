@@ -51,7 +51,7 @@ export async function GET(request) {
             ORDER BY id DESC LIMIT 1
         `).get(vendor.id);
 
-        // If no active QRIS session, check last order or vendor's selected plan
+        // If no active QRIS session, check if there was an actual expired payment session
         if (!session) {
             const lastSession = db.prepare(`
                 SELECT orderId, planId, amount, paymentMethod, expiresAt, status
@@ -60,26 +60,34 @@ export async function GET(request) {
                 ORDER BY id DESC LIMIT 1
             `).get(vendor.id);
 
-            const targetPlanId = lastSession?.planId || vendor.planId;
-            const plan = targetPlanId ? db.prepare("SELECT id, name, price FROM plans WHERE id = ?").get(targetPlanId) : null;
-
-            if (plan) {
-                return NextResponse.json({
-                    hasPending: false,
-                    hasExpired: true,
-                    vendorId: vendor.id,
-                    name: vendor.name,
-                    email: vendor.email,
-                    rawWhatsapp: vendor.whatsapp || '',
-                    whatsapp: maskedPhone,
-                    orderId: lastSession?.orderId || null,
-                    planName: plan.name,
-                    planPrice: plan.price,
-                    planId: plan.id,
-                    amount: lastSession?.amount || plan.price,
-                });
+            // Only mark as expired if there was a real payment session that has expired
+            if (lastSession && (lastSession.status === 'expired' || (lastSession.expiresAt && new Date(lastSession.expiresAt) <= new Date()))) {
+                const plan = lastSession.planId ? db.prepare("SELECT id, name, price FROM plans WHERE id = ?").get(lastSession.planId) : null;
+                if (plan) {
+                    return NextResponse.json({
+                        hasPending: false,
+                        hasExpired: true,
+                        vendorId: vendor.id,
+                        name: vendor.name,
+                        email: vendor.email,
+                        rawWhatsapp: vendor.whatsapp || '',
+                        whatsapp: maskedPhone,
+                        orderId: lastSession.orderId || null,
+                        planName: plan.name,
+                        planPrice: plan.price,
+                        planId: plan.id,
+                        amount: lastSession.amount || plan.price,
+                    });
+                }
             }
-            return NextResponse.json({ hasPending: false, vendorId: vendor.id, email: vendor.email, rawWhatsapp: vendor.whatsapp || '' });
+
+            return NextResponse.json({ 
+                hasPending: false, 
+                hasExpired: false, 
+                vendorId: vendor.id, 
+                email: vendor.email, 
+                rawWhatsapp: vendor.whatsapp || '' 
+            });
         }
 
         let token = null;
