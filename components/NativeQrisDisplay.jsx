@@ -8,14 +8,9 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
     const provider = (pendingOrder?.provider || 'midtrans').toLowerCase();
     const isMidtrans = provider === 'midtrans';
     const isDirectQr = Boolean(
-        provider === 'ipaymu' || 
         pendingOrder?.qrImage || 
-        (pendingOrder?.qrUrl && (
-            pendingOrder.qrUrl.includes('googleusercontent') ||
-            pendingOrder.qrUrl.includes('storage.googleapis.com') ||
-            pendingOrder.qrUrl.includes('/qr/') ||
-            pendingOrder.qrUrl.match(/\.(png|jpg|jpeg|svg|webp)($|\?)/i)
-        ))
+        pendingOrder?.qrUrl || 
+        provider === 'ipaymu'
     );
     const [timeLeft, setTimeLeft] = useState('');
     const [isExpired, setIsExpired] = useState(false);
