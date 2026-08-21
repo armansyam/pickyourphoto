@@ -15,6 +15,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
     const [timeLeft, setTimeLeft] = useState('');
     const [isExpired, setIsExpired] = useState(false);
     const [checkingStatus, setCheckingStatus] = useState(false);
+    const [statusNotice, setStatusNotice] = useState(null);
     const [paidSuccess, setPaidSuccess] = useState(false);
     const [redirectCountdown, setRedirectCountdown] = useState(5);
     const [regenerating, setRegenerating] = useState(false);
@@ -350,11 +351,36 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
 
                 {/* Action buttons */}
                 <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {statusNotice && (
+                        <div style={{
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            background: statusNotice.type === 'warning' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            border: `1px solid ${statusNotice.type === 'warning' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                            color: statusNotice.type === 'warning' ? '#fbbf24' : '#f87171',
+                            fontSize: '12px',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            animation: 'fadeIn 0.2s ease'
+                        }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
+                            <span>{statusNotice.text}</span>
+                        </div>
+                    )}
+
                     <button
                         type="button"
                         onClick={async () => {
                             if (checkingStatus) return;
                             setCheckingStatus(true);
+                            setStatusNotice(null);
                             try {
                                 const res = await fetch(`/api/payment/status?orderId=${pendingOrder.orderId}`);
                                 const data = await res.json();
@@ -362,14 +388,24 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                                     window.__paymentRedirectUrl = data.redirectUrl || '/dashboard';
                                     setPaidSuccess(true);
                                 } else {
-                                    alert('Pembayaran belum terdeteksi. Pastikan sudah scan & konfirmasi di aplikasi.');
+                                    setStatusNotice({ type: 'warning', text: 'Pembayaran belum terdeteksi' });
                                 }
-                            } catch { alert('Gagal cek status. Coba lagi.'); }
-                            finally { setCheckingStatus(false); }
+                            } catch {
+                                setStatusNotice({ type: 'error', text: 'Gagal memeriksa status' });
+                            } finally {
+                                setCheckingStatus(false);
+                            }
                         }}
                         style={{ padding: '13px', width: '100%', borderRadius: '12px', border: 'none', background: checkingStatus ? 'rgba(16,185,129,0.4)' : 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: checkingStatus ? 'not-allowed' : 'pointer', boxShadow: checkingStatus ? 'none' : '0 4px 20px rgba(16,185,129,0.3)' }}
                     >
-                        {checkingStatus ? '⏳ Memeriksa...' : 'Cek Pembayaran'}
+                        {checkingStatus ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite', marginRight: '6px' }}>
+                                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                </svg>
+                                Memeriksa...
+                            </span>
+                        ) : 'Cek Pembayaran'}
                     </button>
                     <button type="button" onClick={onCancel} style={{ padding: '10px', width: '100%', borderRadius: '10px', background: 'transparent', color: '#64748b', border: '1px solid rgba(255,255,255,0.08)', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
                         Batalkan & Pilih Paket Lain
@@ -381,6 +417,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                 @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
                 @keyframes scaleIn { from { transform:scale(0.88);opacity:0 } to { transform:scale(1);opacity:1 } }
                 @keyframes qrisPulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
             `}</style>
         </>
     );
