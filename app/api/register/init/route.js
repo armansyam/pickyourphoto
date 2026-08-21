@@ -159,19 +159,22 @@ export async function GET(request) {
                         }
                     };
                 } else {
-                    // Check if there was an expired payment session
-                    const lastSession = db.prepare(`
-                        SELECT orderId, planId, amount, paymentMethod, expiresAt, status
-                        FROM payment_sessions 
-                        WHERE vendorId = ? 
-                        ORDER BY id DESC LIMIT 1
-                    `).get(vendor.id);
+                    // No active pending session. Check if vendor currently has a selected plan
+                    let hasExpired = false;
+                    let effectivePlanId = vendor.planId || null;
 
-                    const hasExpired = Boolean(
-                        lastSession && (lastSession.status === 'expired' || (lastSession.expiresAt && new Date(lastSession.expiresAt) <= new Date()))
-                    );
+                    if (vendor.planId) {
+                        const lastSession = db.prepare(`
+                            SELECT orderId, planId, amount, paymentMethod, expiresAt, status
+                            FROM payment_sessions 
+                            WHERE vendorId = ? 
+                            ORDER BY id DESC LIMIT 1
+                        `).get(vendor.id);
 
-                    const effectivePlanId = lastSession?.planId || vendor.planId || null;
+                        hasExpired = Boolean(
+                            lastSession && (lastSession.status === 'expired' || (lastSession.expiresAt && new Date(lastSession.expiresAt) <= new Date()))
+                        );
+                    }
 
                     vendorSession = {
                         vendorId: vendor.id,
