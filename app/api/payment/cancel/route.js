@@ -62,10 +62,10 @@ export async function POST(request) {
       ).run(orderId);
     } catch (e) {}
 
-    // Archive the vendor draft
+    // Return vendor status to draft_plan
     db.prepare(
-      "UPDATE vendors SET status = 'cancelled', archivedAt = ? WHERE id = ? AND status = 'pending_payment'"
-    ).run(now, session.vendorId);
+      "UPDATE vendors SET status = 'draft_plan' WHERE id = ? AND status != 'active'"
+    ).run(session.vendorId);
 
     console.log(`[Payment Cancel] Session ${orderId} (vendorId: ${session.vendorId}) cancelled.`);
 

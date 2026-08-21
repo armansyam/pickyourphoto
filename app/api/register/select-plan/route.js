@@ -25,7 +25,7 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: 'Email tidak valid.' }, { status: 400 });
     }
 
-    const vendor = db.prepare("SELECT id, status FROM vendors WHERE email = ? AND status IN ('draft_plan', 'pending_payment', 'expired_draft')").get(email);
+    const vendor = db.prepare("SELECT id, status FROM vendors WHERE lower(email) = ? AND role = 'vendor' AND status != 'active'").get(email);
     if (!vendor) {
       return NextResponse.json({ success: false, message: 'Data pendaftaran tidak ditemukan.' }, { status: 404 });
     }
