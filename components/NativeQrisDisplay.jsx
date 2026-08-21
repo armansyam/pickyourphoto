@@ -227,48 +227,55 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                         </div>
                     </div>
 
-                    {/* QR Area — Direct QRIS Image (IPaymu) OR snap.embed (Midtrans) OR Iframe (Fallback) */}
-                    <div style={{
-                        width: '100%', maxWidth: '380px',
-                        background: '#fff', borderRadius: '12px', overflow: 'hidden',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                        position: 'relative', minHeight: isDirectQr ? '320px' : '680px',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        boxSizing: 'border-box'
-                    }}>
-                        {/* LOADING STATE: IN-PLACE SKELETON & SPINNER */}
-                        {pendingOrder.isLoading || (!pendingOrder.qrImage && !pendingOrder.qrUrl && !pendingOrder.token) ? (
-                            <div style={{ width: '100%', padding: '48px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
-                                <div style={{
-                                    width: '240px',
-                                    height: '240px',
-                                    background: '#f8fafc',
-                                    borderRadius: '16px',
-                                    border: '2px dashed #cbd5e1',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '14px'
-                                }}>
-                                    <div style={{
-                                        width: '36px',
-                                        height: '36px',
-                                        border: '3px solid rgba(99, 102, 241, 0.2)',
-                                        borderTop: '3px solid #6366f1',
-                                        borderRadius: '50%',
-                                        animation: 'spin 0.8s linear infinite'
-                                    }} />
-                                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
-                                        Menyiapkan Barcode QRIS...
-                                    </span>
+                    {/* Loading State: Dark-themed formal transaction loader */}
+                    {pendingOrder.isLoading || (!pendingOrder.qrImage && !pendingOrder.qrUrl && !pendingOrder.token) ? (
+                        <div style={{
+                            width: '100%',
+                            maxWidth: '380px',
+                            background: 'rgba(255, 255, 255, 0.02)',
+                            border: '1px dashed rgba(255, 255, 255, 0.12)',
+                            borderRadius: '16px',
+                            padding: '36px 20px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            gap: '14px',
+                            boxSizing: 'border-box',
+                            minHeight: '220px'
+                        }}>
+                            <div style={{
+                                width: '36px',
+                                height: '36px',
+                                border: '3px solid rgba(56, 189, 248, 0.2)',
+                                borderTop: '3px solid #38bdf8',
+                                borderRadius: '50%',
+                                animation: 'spin 0.8s linear infinite'
+                            }} />
+                            <div>
+                                <div style={{ fontSize: '14px', fontWeight: '700', color: '#ffffff', marginBottom: '4px' }}>
+                                    Memproses Transaksi...
                                 </div>
-                                <div style={{ marginTop: '16px', fontSize: '11px', color: '#94a3b8' }}>
-                                    Menghubungkan ke jaringan pembayaran nasional
+                                <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' }}>
+                                    Sistem sedang menyiapkan tagihan QRIS untuk pesanan Anda.
                                 </div>
                             </div>
-                        ) : isDirectQr ? (
-                            <div style={{ width: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                        </div>
+                    ) : (
+                        /* QR Area — Direct QRIS Image (IPaymu) OR snap.embed (Midtrans) OR Iframe (Fallback) */
+                        <div style={{
+                            width: '100%', maxWidth: '380px',
+                            background: '#fff', borderRadius: '12px', overflow: 'hidden',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                            position: 'relative', minHeight: isDirectQr ? '320px' : '680px',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            boxSizing: 'border-box',
+                            animation: 'fadeIn 0.3s ease'
+                        }}>
+                            {/* MODE 1: DIRECT QRIS IMAGE (IPaymu / Native Direct QR) */}
+                            {isDirectQr ? (
+                                <div style={{ width: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
                                 <div style={{
                                     background: '#ffffff',
                                     padding: '10px',
@@ -367,6 +374,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                             }
                         `}</style>
                     </div>
+                )}
 
 
 
