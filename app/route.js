@@ -113,6 +113,11 @@ export async function GET(request) {
                 /<div class="tier-grid reveal" id="landingAddonTierGrid">[\s\S]*?<\/div>/,
                 `<div class="tier-grid reveal" id="landingAddonTierGrid">${dynamicAddonHtml}</div>`
             );
+        } else {
+            html = html.replace(
+                /<div class="tier-grid reveal" id="landingAddonTierGrid">[\s\S]*?<\/div>/,
+                ''
+            );
         }
     } catch (e) {
         console.error("Failed to inject dynamic settings to landing html:", e);

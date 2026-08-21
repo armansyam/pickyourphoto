@@ -1353,29 +1353,31 @@ export default function VendorStorageManagerPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={handleOpenAddonModal}
-                      style={{
-                        padding: '8px 16px',
-                        background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '10px',
-                        fontSize: '12px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 10px rgba(99,102,241,0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <SparklesUpgradeIcon size={14} color="#ffffff" />
-                      <span>Upgrade Kuota Storage</span>
-                    </button>
-                  </div>
+                  {addonPlans && addonPlans.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={handleOpenAddonModal}
+                        style={{
+                          padding: '8px 16px',
+                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                          color: '#ffffff',
+                          border: 'none',
+                          borderRadius: '10px',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 10px rgba(99,102,241,0.3)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
+                      >
+                        <SparklesUpgradeIcon size={14} color="#ffffff" />
+                        <span>Upgrade Kuota Storage</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Progress Bar */}
@@ -1389,7 +1391,7 @@ export default function VendorStorageManagerPage() {
                   }} />
                 </div>
               </div>
-            ) : (
+            ) : (addonPlans && addonPlans.length > 0) ? (
               <div style={{
                 background: 'rgba(99,102,241,0.06)',
                 border: '1px solid rgba(99,102,241,0.3)',
@@ -1431,7 +1433,7 @@ export default function VendorStorageManagerPage() {
                   <span>Beli Paket Add-On Storage Sekarang</span>
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
         )}
 
