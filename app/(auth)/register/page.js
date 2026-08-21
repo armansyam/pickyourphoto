@@ -918,15 +918,15 @@ export default function RegisterPage() {
                                                         Metode Pembayaran
                                                     </label>
 
-                                                    {paymentMethod === 'gateway' ? (
-                                                        // QRIS Aktif
+                                                    {isGatewayEnabled ? (
+                                                        // QRIS Otomatis Aktif
                                                         <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', padding: '16px', borderRadius: '12px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                                                                 <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#34d399' }}>Pembayaran QRIS Otomatis</span>
                                                                 <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>AKTIF &amp; INSTAN</span>
                                                             </div>
                                                             <span style={{ fontSize: '12px', color: '#a1a1aa', lineHeight: '1.5' }}>
-                                                                Bayar via QRIS, Virtual Account Bank, GoPay, atau ShopeePay. Akun <strong>otomatis aktif seketika</strong> tanpa perlu upload bukti atau menunggu approval.
+                                                                Bayar via QRIS (BCA, Mandiri, BRI, BNI, GoPay, OVO, Dana, LinkAja, ShopeePay). Akun <strong>otomatis aktif seketika</strong> tanpa perlu upload bukti.
                                                             </span>
                                                         </div>
                                                     ) : (
@@ -999,23 +999,21 @@ export default function RegisterPage() {
                                                         flex: 2, 
                                                         padding: '14px 20px', 
                                                         fontSize: '14px',
-                                                        opacity: (loading || !paymentMethod) ? 0.5 : 1,
-                                                        cursor: (loading || !paymentMethod) ? 'not-allowed' : 'pointer',
+                                                        opacity: loading ? 0.5 : 1,
+                                                        cursor: loading ? 'not-allowed' : 'pointer',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         gap: '6px'
                                                     }} 
-                                                    disabled={loading || !paymentMethod}
+                                                    disabled={loading}
                                                 >
                                                     {loading ? (
                                                         <span>Memproses Transaksi...</span>
-                                                    ) : !paymentMethod ? (
-                                                        <span>Pilih Metode Pembayaran</span>
                                                     ) : (
                                                         <>
                                                             <SparklesUpgradeIcon size={14} />
-                                                            <span>Confirm &amp; Bayar Sekarang</span>
+                                                            <span>Bayar Sekarang via QRIS</span>
                                                         </>
                                                     )}
                                                 </button>
