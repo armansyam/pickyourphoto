@@ -345,21 +345,33 @@ export default function RegisterPage() {
                             setExpiredNotice(true);
                         }}
                         onCancel={async () => {
-                            if (pendingOrder?.orderId) {
+                            const orderToCancel = pendingOrder?.orderId;
+                            // Immediately switch UI to Stage 2
+                            setPendingOrder(null);
+                            setShowSummary(false);
+                            setPlan('');
+                            setExpiredNotice(false);
+                            setStep(2);
+
+                            // Cancel payment session and reset plan in database
+                            if (orderToCancel) {
                                 try {
                                     await fetch('/api/payment/cancel', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ orderId: pendingOrder.orderId, email })
+                                        body: JSON.stringify({ orderId: orderToCancel, email })
                                     });
                                 } catch (e) {}
                             }
-                            const targetPlanId = pendingOrder?.planId || plan;
-                            if (targetPlanId) {
-                                setPlan(String(targetPlanId));
+                            if (email) {
+                                try {
+                                    await fetch('/api/register/select-plan', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ email, planId: null })
+                                    });
+                                } catch (e) {}
                             }
-                            setPendingOrder(null);
-                            setShowSummary(true);
                         }}
                     />
                 ) : showSummary && selectedPlanObj ? (

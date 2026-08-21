@@ -151,6 +151,7 @@ export async function GET(request) {
                             token,
                             redirectUrl,
                             qrUrl,
+                            qrImage: qrUrl,
                             amount: activeSession.amount,
                             expiresAt: activeSession.expiresAt,
                             planId: activeSession.planId || vendor.planId,
