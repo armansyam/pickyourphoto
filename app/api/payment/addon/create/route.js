@@ -149,6 +149,11 @@ export async function POST(req) {
     if (config && config.enabled) {
       const orderId = `ADDON-${vendor.id}-${addonPlan.id}-${Date.now()}`;
 
+      // Determine dynamic request origin (localhost, custom staging domain, or production domain)
+      const host = request.headers.get('host') || 'localhost:3000';
+      const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+      const origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
+
       const paymentResult = await createPayment({
         orderId,
         amount: proratedPrice,
@@ -156,9 +161,15 @@ export async function POST(req) {
         vendorEmail: vendor.email,
         vendorPhone: vendor.whatsapp || '',
         planName: `Add-On ${addonPlan.name}`,
+        baseUrl: origin,
+        notifyUrl: `${origin}/api/payment/notification`,
+        returnUrl: `${origin}/dashboard`,
+        cancelUrl: `${origin}/dashboard/storage`,
       });
 
-      const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 15;
+      // Dynamic QRIS expiration time strictly from Admin SaaS settings
+      const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 5;
+      const now = new Date();
       const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000).toISOString();
       const qrUrl = paymentResult.qrUrl || paymentResult.redirectUrl || '';
 

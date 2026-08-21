@@ -60,6 +60,11 @@ export async function POST(request) {
     // Create new Midtrans Snap transaction
     const orderId = `ORDER-${Date.now()}-${vendorId}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
+    // Determine dynamic request origin (localhost, custom staging domain, or production domain)
+    const host = request.headers.get('host') || 'localhost:3000';
+    const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    const origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
+
     const paymentResult = await createPayment({
       orderId,
       amount: plan.price,
@@ -67,12 +72,17 @@ export async function POST(request) {
       vendorEmail: vendor.email,
       vendorPhone: vendor.whatsapp || '',
       planName: plan.name,
+      baseUrl: origin,
+      notifyUrl: `${origin}/api/payment/notification`,
+      returnUrl: `${origin}/dashboard`,
+      cancelUrl: `${origin}/register`,
     });
 
     const config = getPaymentGatewayConfig();
-    // Record new payment session — expiry from admin settings (default: 15 minutes)
-    const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 15;
-    const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000).toISOString();
+    // Dynamic QRIS expiration time strictly from Admin SaaS settings
+    const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 5;
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000).toISOString();
     db.prepare(`
       INSERT INTO payment_sessions (orderId, vendorId, planId, amount, status, paymentMethod, expiresAt)
       VALUES (?, ?, ?, ?, 'pending', ?, ?)

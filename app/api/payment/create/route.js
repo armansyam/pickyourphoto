@@ -106,6 +106,41 @@ export async function POST(request) {
 
     const totalAmount = planAmount + addonAmount;
 
+    // Handle Free Plan / 100% Promo (Zero Amount) directly without calling payment gateway
+    if (totalAmount <= 0) {
+      const activeDays = plan.activePeriodDays || 30;
+      const expiresAtDate = new Date();
+      expiresAtDate.setDate(expiresAtDate.getDate() + activeDays);
+      const expiresAtIso = expiresAtDate.toISOString();
+
+      db.prepare(`
+        UPDATE vendors 
+        SET status = 'active', 
+            planId = ?, 
+            maxProjects = ?, 
+            expiresAt = ?, 
+            hasStorageAddon = ?, 
+            addonStorageQuotaBytes = ?, 
+            addonPlanId = ? 
+        WHERE id = ?
+      `).run(
+        plan.id,
+        plan.maxProjects || 5,
+        expiresAtIso,
+        addonQuotaBytes > 0 ? 1 : 0,
+        addonQuotaBytes,
+        addonPlanId || null,
+        vendor.id
+      );
+
+      return NextResponse.json({
+        success: true,
+        isFree: true,
+        redirectUrl: '/setup',
+        message: 'Paket berhasil diaktifkan. Silakan lanjutkan konfigurasi studio.'
+      });
+    }
+
     // Generate unique orderId
     const orderId = `ORDER-${Date.now()}-${vendor.id}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
@@ -120,6 +155,11 @@ export async function POST(request) {
       console.warn('[Payment Create] Failed to replace old expired sessions for vendor', vendor.id, ':', e.message);
     }
 
+    // Determine dynamic request origin (localhost, custom staging domain, or production domain)
+    const host = request.headers.get('host') || 'localhost:3000';
+    const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+    const origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
+
     // Step 2: Create new payment via gateway
     const paymentResult = await createPayment({
       orderId,
@@ -128,10 +168,14 @@ export async function POST(request) {
       vendorEmail: vendor.email,
       vendorPhone: vendor.whatsapp,
       planName: addonName ? `${plan.name} + ${addonName}` : plan.name,
+      baseUrl: origin,
+      notifyUrl: `${origin}/api/payment/notification`,
+      returnUrl: `${origin}/dashboard`,
+      cancelUrl: `${origin}/register`,
     });
 
-    // Calculate dynamic QRIS expiration time from Admin SaaS settings (default: 15 minutes)
-    const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 15;
+    // Dynamic QRIS expiration time strictly from Admin SaaS settings
+    const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 5;
     const now = new Date();
     const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000).toISOString();
 
