@@ -1,9 +1,4 @@
-'use client';
-
-import React, { useState, useEffect, useRef } from 'react';
-import { SparklesUpgradeIcon, RefreshCwIcon, ClockIcon } from '@/components/StorageIcons.jsx';
-
-export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName }) {
+export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName, onExpired }) {
     const brandTitle = platformName || pendingOrder?.platformName || pendingOrder?.saasName || 'Photota';
     // Deteksi provider dari pendingOrder (dikirim dari /api/payment/create response)
     const provider = (pendingOrder?.provider || 'midtrans').toLowerCase();
@@ -19,7 +14,6 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
     const [statusNotice, setStatusNotice] = useState(null);
     const [paidSuccess, setPaidSuccess] = useState(false);
     const [redirectCountdown, setRedirectCountdown] = useState(5);
-    const [regenerating, setRegenerating] = useState(false);
     const snapEmbedDone = useRef(false);
 
     // Live countdown timer
@@ -29,7 +23,12 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
 
         const update = () => {
             const diff = new Date(pendingOrder.expiresAt).getTime() - Date.now();
-            if (diff <= 0) { setTimeLeft('00:00'); setIsExpired(true); return; }
+            if (diff <= 0) {
+                setTimeLeft('00:00');
+                setIsExpired(true);
+                if (onExpired) onExpired(pendingOrder);
+                return;
+            }
             const s = Math.floor(diff / 1000);
             setTimeLeft(`${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`);
         };
@@ -37,25 +36,6 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
         const t = setInterval(update, 1000);
         return () => clearInterval(t);
     }, [pendingOrder?.expiresAt]);
-
-    // Auto-regenerate when expired
-    useEffect(() => {
-        if (!isExpired || paidSuccess || regenerating) return;
-
-        const autoRegen = async () => {
-            setRegenerating(true);
-            try {
-                await fetch(`/api/payment/cancel?orderId=${pendingOrder.orderId}`, { method: 'POST' });
-            } catch {}
-            // Trigger parent to reload fresh order
-            setTimeout(() => {
-                setRegenerating(false);
-                onCancel(); // reset so user can pick plan again with fresh QR
-            }, 2000);
-        };
-
-        autoRegen();
-    }, [isExpired, paidSuccess, regenerating]);
 
     // Auto polling every 3 seconds
     useEffect(() => {
@@ -245,25 +225,47 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         boxSizing: 'border-box'
                     }}>
-                        {/* Expired / Regenerating Overlay */}
-                        {(isExpired || regenerating) && (
+                        {/* Expired Overlay */}
+                        {isExpired && (
                             <div style={{
                                 position: 'absolute', inset: 0, zIndex: 10,
-                                background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(4px)',
+                                background: 'rgba(15,23,42,0.92)', backdropFilter: 'blur(6px)',
                                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                                borderRadius: '12px'
+                                borderRadius: '12px', padding: '20px', textAlign: 'center'
                             }}>
                                 <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                    {regenerating ? <RefreshCwIcon size={28} color="#fbbf24" /> : <ClockIcon size={28} color="#fbbf24" />}
+                                    <ClockIcon size={36} color="#f87171" />
                                 </div>
-                                <div style={{ fontSize: '13px', fontWeight: '700', color: '#fbbf24', textAlign: 'center' }}>
-                                    {regenerating ? 'Membuat ulang QRIS...' : 'QRIS Kedaluwarsa'}
+                                <div style={{ fontSize: '15px', fontWeight: '800', color: '#fca5a5' }}>
+                                    QRIS Kedaluwarsa
                                 </div>
-                                {!regenerating && (
-                                    <div style={{ fontSize: '10px', color: '#94a3b8', textAlign: 'center' }}>
-                                        Sedang memuat ulang otomatis...
-                                    </div>
-                                )}
+                                <div style={{ fontSize: '11px', color: '#94a3b8', maxWidth: '240px', lineHeight: '1.4' }}>
+                                    Batas waktu transaksi telah habis. Silakan buat QRIS baru untuk melanjutkan.
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (onExpired) onExpired(pendingOrder);
+                                    }}
+                                    style={{
+                                        marginTop: '6px',
+                                        padding: '8px 18px',
+                                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                        fontWeight: '700',
+                                        cursor: 'pointer',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        boxShadow: '0 4px 14px rgba(99,102,241,0.4)'
+                                    }}
+                                >
+                                    <RefreshCwIcon size={13} color="#fff" />
+                                    <span>Lihat Detail & Bayar Ulang</span>
+                                </button>
                             </div>
                         )}
                         {/* MODE 1: DIRECT QRIS IMAGE (IPaymu / Native Direct QR) */}

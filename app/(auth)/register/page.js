@@ -662,8 +662,9 @@ export default function RegisterPage() {
                                                     <div style={{ fontSize: '13px', fontWeight: '700', color: '#fca5a5' }}>Pembayaran QRIS Kedaluwarsa</div>
                                                     <div style={{ fontSize: '11px', color: '#64748b' }}>{expiredOrder.email}</div>
                                                 </div>
-                                                <div style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: '99px' }}>
-                                                    <span style={{ fontSize: '10px', fontWeight: '700', color: '#ef4444' }}>⏰ EXPIRED</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: '99px' }}>
+                                                    <ClockIcon size={12} color="#ef4444" />
+                                                    <span style={{ fontSize: '10px', fontWeight: '700', color: '#ef4444' }}>KEDALUWARSA</span>
                                                 </div>
                                             </div>
                                             {/* Body */}
@@ -708,6 +709,7 @@ export default function RegisterPage() {
                                                                     provider: payData.provider || 'midtrans',
                                                                     token: payData.token,
                                                                     qrUrl: payData.qrUrl,
+                                                                    qrImage: payData.qrImage || payData.qrUrl,
                                                                     expiresAt: payData.expiresAt,
                                                                     planName: expiredOrder.planName,
                                                                     planPrice: expiredOrder.planPrice || expiredOrder.amount,
@@ -761,6 +763,18 @@ export default function RegisterPage() {
                                         <NativeQrisDisplay
                                             pendingOrder={pendingOrder}
                                             platformName={settings?.saas_name || 'Photota'}
+                                            onExpired={(order) => {
+                                                setExpiredOrder({
+                                                    orderId: order.orderId,
+                                                    vendorId: order.vendorId,
+                                                    email: order.email,
+                                                    planId: order.planId,
+                                                    planName: order.planName,
+                                                    planPrice: order.planPrice || order.amount,
+                                                    amount: order.amount,
+                                                });
+                                                setPendingOrder(null);
+                                            }}
                                             onCancel={async () => {
                                                 if (pendingOrder.orderId) {
                                                     try {
