@@ -357,8 +357,8 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                 <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button
                         type="button"
-                        disabled={checkingStatus}
                         onClick={async () => {
+                            if (checkingStatus) return;
                             setCheckingStatus(true);
                             try {
                                 const res = await fetch(`/api/payment/status?orderId=${pendingOrder.orderId}`);
@@ -374,7 +374,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                         }}
                         style={{ padding: '13px', width: '100%', borderRadius: '12px', border: 'none', background: checkingStatus ? 'rgba(16,185,129,0.4)' : 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: checkingStatus ? 'not-allowed' : 'pointer', boxShadow: checkingStatus ? 'none' : '0 4px 20px rgba(16,185,129,0.3)' }}
                     >
-                        {checkingStatus ? '⏳ Memverifikasi...' : '✅ Saya Sudah Bayar — Verifikasi Sekarang'}
+                        {checkingStatus ? '⏳ Memeriksa...' : 'Cek Pembayaran'}
                     </button>
                     <button type="button" onClick={onCancel} style={{ padding: '10px', width: '100%', borderRadius: '10px', background: 'transparent', color: '#64748b', border: '1px solid rgba(255,255,255,0.08)', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
                         Batalkan & Pilih Paket Lain
