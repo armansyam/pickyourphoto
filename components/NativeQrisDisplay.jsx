@@ -235,52 +235,38 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                         position: 'relative', minHeight: isDirectQr ? '320px' : '680px',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         boxSizing: 'border-box'
-                    }}>
-                        {/* Expired Overlay */}
-                        {isExpired && (
-                            <div style={{
-                                position: 'absolute', inset: 0, zIndex: 10,
-                                background: 'rgba(15,23,42,0.92)', backdropFilter: 'blur(6px)',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                                borderRadius: '12px', padding: '20px', textAlign: 'center'
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                    <ClockIcon size={36} color="#f87171" />
+                        {/* LOADING STATE: IN-PLACE SKELETON & SPINNER */}
+                        {pendingOrder.isLoading || (!pendingOrder.qrImage && !pendingOrder.qrUrl && !pendingOrder.token) ? (
+                            <div style={{ width: '100%', padding: '48px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
+                                <div style={{
+                                    width: '240px',
+                                    height: '240px',
+                                    background: '#f8fafc',
+                                    borderRadius: '16px',
+                                    border: '2px dashed #cbd5e1',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '14px'
+                                }}>
+                                    <div style={{
+                                        width: '36px',
+                                        height: '36px',
+                                        border: '3px solid rgba(99, 102, 241, 0.2)',
+                                        borderTop: '3px solid #6366f1',
+                                        borderRadius: '50%',
+                                        animation: 'spin 0.8s linear infinite'
+                                    }} />
+                                    <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
+                                        Menyiapkan Barcode QRIS...
+                                    </span>
                                 </div>
-                                <div style={{ fontSize: '15px', fontWeight: '800', color: '#fca5a5' }}>
-                                    QRIS Kedaluwarsa
+                                <div style={{ marginTop: '16px', fontSize: '11px', color: '#94a3b8' }}>
+                                    Menghubungkan ke jaringan pembayaran nasional
                                 </div>
-                                <div style={{ fontSize: '11px', color: '#94a3b8', maxWidth: '240px', lineHeight: '1.4' }}>
-                                    Batas waktu transaksi telah habis. Silakan buat QRIS baru untuk melanjutkan.
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        if (onExpired) onExpired(pendingOrder);
-                                    }}
-                                    style={{
-                                        marginTop: '6px',
-                                        padding: '8px 18px',
-                                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                        color: '#fff',
-                                        border: 'none',
-                                        borderRadius: '8px',
-                                        fontSize: '12px',
-                                        fontWeight: '700',
-                                        cursor: 'pointer',
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '6px',
-                                        boxShadow: '0 4px 14px rgba(99,102,241,0.4)'
-                                    }}
-                                >
-                                    <RefreshCwIcon size={13} color="#fff" />
-                                    <span>Lihat Detail & Bayar Ulang</span>
-                                </button>
                             </div>
-                        )}
-                        {/* MODE 1: DIRECT QRIS IMAGE (IPaymu / Native Direct QR) */}
-                        {isDirectQr ? (
+                        ) : isDirectQr ? (
                             <div style={{ width: '100%', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
                                 <div style={{
                                     background: '#ffffff',

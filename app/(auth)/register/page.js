@@ -207,19 +207,32 @@ export default function RegisterPage() {
         }
     };
 
-    // Forward transition: Detail Summary -> QRIS Payment (Step 3 -> Step 4)
+    // Forward transition: Detail Summary -> QRIS Payment (Instant Optimistic Transition to Stage 4)
     const handlePayQris = async (e) => {
         if (e) e.preventDefault();
-        setLoading(true);
         setError('');
 
         const selectedPlan = plans.find(p => p.id === parseInt(plan));
         if (!selectedPlan) {
             setError('Paket yang dipilih tidak valid.');
-            setLoading(false);
             return;
         }
 
+        // 1. Immediately switch to Stage 4 (0ms delay) with in-place skeleton loading
+        setShowSummary(false);
+        setExpiredNotice(false);
+        setPendingOrder({
+            isLoading: true,
+            name: name || 'Vendor',
+            email: email,
+            whatsapp: whatsapp,
+            planId: selectedPlan.id,
+            planName: selectedPlan.name,
+            planPrice: selectedPlan.price,
+            amount: selectedPlan.price
+        });
+
+        // 2. Fetch gateway in background
         try {
             const payRes = await fetch('/api/payment/create', {
                 method: 'POST',
@@ -234,34 +247,36 @@ export default function RegisterPage() {
             
             if (payRes.ok && (payData.token || payData.qrUrl || payData.redirectUrl)) {
                 setPendingOrder({
+                    isLoading: false,
                     hasPending: true,
                     vendorId: payData.vendorId,
                     name: name || 'Vendor',
                     email: email,
                     whatsapp: whatsapp,
                     orderId: payData.orderId,
-                    provider: payData.provider || 'midtrans',
+                    provider: payData.provider || 'ipaymu',
                     token: payData.token,
                     redirectUrl: payData.redirectUrl,
                     qrUrl: payData.qrUrl || payData.redirectUrl,
+                    qrImage: payData.qrUrl || payData.redirectUrl,
                     amount: payData.amount || selectedPlan.price,
                     expiresAt: payData.expiresAt,
-                    planId: selectedPlan.id, // Strictly bind planId to pendingOrder
+                    planId: selectedPlan.id,
                     planName: selectedPlan.name,
                     planPrice: selectedPlan.price
                 });
-                setShowSummary(false);
-                setExpiredNotice(false);
-                setLoading(false);
                 return;
             }
 
+            // If failed, gracefully return to summary
             setError(payData.message || 'Sesi pembayaran QRIS gagal dibuat. Silakan coba lagi.');
+            setPendingOrder(null);
+            setShowSummary(true);
         } catch (payErr) {
             console.error('[Payment Launch Error]:', payErr);
             setError('Koneksi ke sistem pembayaran gagal. Silakan coba beberapa saat lagi.');
-        } finally {
-            setLoading(false);
+            setPendingOrder(null);
+            setShowSummary(true);
         }
     };
 
