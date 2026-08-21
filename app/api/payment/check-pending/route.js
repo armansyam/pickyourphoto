@@ -31,40 +31,17 @@ export async function GET(request) {
             return NextResponse.json({ hasPending: false });
         }
 
-        // Check vendor — include expired_draft so they can regenerate from register page
+        // Check vendor — include pending_payment, draft_plan, and expired_draft
         const vendor = db.prepare(`
             SELECT id, name, email, whatsapp, planId, status 
             FROM vendors 
-            WHERE email = ? AND status IN ('pending_payment', 'expired_draft')
+            WHERE email = ? AND status IN ('pending_payment', 'expired_draft', 'draft_plan')
         `).get(email);
         if (!vendor) {
             return NextResponse.json({ hasPending: false });
         }
 
         const maskedPhone = maskPhoneNumber(vendor.whatsapp);
-
-        // Vendor sudah di-archive (expired_draft) — langsung tampilkan card expired
-        if (vendor.status === 'expired_draft') {
-            const plan = db.prepare("SELECT id, name, price FROM plans WHERE id = ?").get(vendor.planId);
-            // Try to get last order info from payment_sessions
-            const lastSession = db.prepare(`
-                SELECT orderId, amount FROM payment_sessions 
-                WHERE vendorId = ? ORDER BY id DESC LIMIT 1
-            `).get(vendor.id);
-            return NextResponse.json({
-                hasPending: false,
-                hasExpired: true,
-                vendorId: vendor.id,
-                name: vendor.name,
-                email: vendor.email,
-                whatsapp: maskedPhone,
-                orderId: lastSession?.orderId || null,
-                planName: plan?.name || 'Paket SaaS',
-                planPrice: plan?.price || lastSession?.amount || 0,
-                planId: vendor.planId,
-                amount: lastSession?.amount || plan?.price || 0,
-            });
-        }
 
         // Find active pending payment session (not yet expired)
         const session = db.prepare(`
@@ -74,32 +51,35 @@ export async function GET(request) {
             ORDER BY id DESC LIMIT 1
         `).get(vendor.id);
 
-        // Check if there's an expired session (no active one) — vendor still pending_payment
+        // If no active QRIS session, check last order or vendor's selected plan
         if (!session) {
-            const expiredSession = db.prepare(`
-                SELECT orderId, planId, amount, paymentMethod, expiresAt
+            const lastSession = db.prepare(`
+                SELECT orderId, planId, amount, paymentMethod, expiresAt, status
                 FROM payment_sessions 
-                WHERE vendorId = ? AND status = 'pending' AND expiresAt <= CURRENT_TIMESTAMP 
+                WHERE vendorId = ? 
                 ORDER BY id DESC LIMIT 1
             `).get(vendor.id);
 
-            if (expiredSession) {
-                const plan = db.prepare("SELECT id, name, price FROM plans WHERE id = ?").get(expiredSession.planId || vendor.planId);
+            const targetPlanId = lastSession?.planId || vendor.planId;
+            const plan = targetPlanId ? db.prepare("SELECT id, name, price FROM plans WHERE id = ?").get(targetPlanId) : null;
+
+            if (plan) {
                 return NextResponse.json({
                     hasPending: false,
                     hasExpired: true,
                     vendorId: vendor.id,
                     name: vendor.name,
                     email: vendor.email,
+                    rawWhatsapp: vendor.whatsapp || '',
                     whatsapp: maskedPhone,
-                    orderId: expiredSession.orderId,
-                    planName: plan?.name || 'Paket SaaS',
-                    planPrice: plan?.price || expiredSession.amount,
-                    planId: expiredSession.planId || vendor.planId,
-                    amount: expiredSession.amount,
+                    orderId: lastSession?.orderId || null,
+                    planName: plan.name,
+                    planPrice: plan.price,
+                    planId: plan.id,
+                    amount: lastSession?.amount || plan.price,
                 });
             }
-            return NextResponse.json({ hasPending: false });
+            return NextResponse.json({ hasPending: false, vendorId: vendor.id, email: vendor.email, rawWhatsapp: vendor.whatsapp || '' });
         }
 
         let token = null;
@@ -122,6 +102,7 @@ export async function GET(request) {
             vendorId: vendor.id,
             name: vendor.name,
             email: vendor.email,
+            rawWhatsapp: vendor.whatsapp || '',
             whatsapp: maskedPhone,
             orderId: session.orderId,
             provider: session.paymentMethod || 'midtrans',

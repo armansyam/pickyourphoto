@@ -1,3 +1,9 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { SparklesUpgradeIcon, RefreshCwIcon, ClockIcon } from '@/components/StorageIcons.jsx';
+import InlineWhatsappContact from '@/components/InlineWhatsappContact';
+
 export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName, onExpired }) {
     const brandTitle = platformName || pendingOrder?.platformName || pendingOrder?.saasName || 'Photota';
     // Deteksi provider dari pendingOrder (dikirim dari /api/payment/create response)
@@ -193,6 +199,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                     <div>
                         <div style={{ fontSize: '13px', fontWeight: '700', color: '#e2e8f0' }}>Pembayaran QRIS</div>
                         <div style={{ fontSize: '11px', color: '#64748b' }}>{pendingOrder.email}</div>
+                        <InlineWhatsappContact email={pendingOrder.email} initialWhatsapp={pendingOrder.rawWhatsapp || pendingOrder.whatsapp} />
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', padding: '4px 10px', borderRadius: '99px' }}>
                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#fbbf24', animation: 'qrisPulse 1.5s infinite' }}></span>

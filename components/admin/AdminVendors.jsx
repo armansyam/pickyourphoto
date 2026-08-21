@@ -396,19 +396,38 @@ export default function AdminVendors({
 
                     {/* Contact */}
                     <td style={{ padding: '12px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ color: '#e4e4e7', fontSize: '12px' }}>{v.whatsapp || '– (OAuth)'}</span>
-                        {waUrl && vendorSubTab === 'active' && (
-                          <a href={waUrl} target="_blank" rel="noopener noreferrer"
-                            style={{ padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: '6px', textDecoration: 'none' }}
-                            title="Kirim reminder via WhatsApp">💬 WA</a>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        {v.whatsapp ? (
+                          <>
+                            <span style={{ color: '#22c55e', fontSize: '12px', fontWeight: '600' }}>+{v.whatsapp}</span>
+                            <a 
+                              href={`https://wa.me/${v.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Halo Kak ${v.name}, terima kasih telah mendaftar di ${settings?.saas_name || 'Photota'}. Ada yang bisa kami bantu terkait pemilihan paket atau pembayaran?`)}`}
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              style={{ padding: '2px 8px', fontSize: '10px', fontWeight: '700', color: '#25D366', border: '1px solid rgba(37,211,102,0.3)', borderRadius: '6px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                              title="Hubungi calon vendor via WhatsApp"
+                            >
+                              💬 WA
+                            </a>
+                          </>
+                        ) : (
+                          <span style={{ color: '#71717a', fontSize: '12px' }}>– (OAuth Google)</span>
                         )}
                       </div>
                     </td>
 
                     {/* Plan */}
-                    <td style={{ padding: '12px 14px', color: '#fbbf24', fontWeight: '500' }}>
-                      <div>{v.status === 'draft_plan' ? '⏳ Belum Pilih' : (v.planName || 'Free Trial')}</div>
+                    <td style={{ padding: '12px 14px' }}>
+                      {v.planName ? (
+                        <div>
+                          <strong style={{ color: '#fbbf24', display: 'block', fontSize: '13px' }}>{v.planName}</strong>
+                          <span style={{ fontSize: '11px', color: '#34d399', fontWeight: '600' }}>
+                            Rp {(v.planPrice || 0).toLocaleString('id-ID')}
+                          </span>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#71717a', fontSize: '12px' }}>Sedang Memilih</span>
+                      )}
                       {hasPendingPlanUpgrade && (
                         <div style={{ marginTop: '4px' }}>
                           <span 
@@ -449,7 +468,7 @@ export default function AdminVendors({
                       {vendorSubTab === 'active' && (
                         <div>
                           <span style={{ color: '#34d399', background: 'rgba(16,185,129,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                            {expired ? '❌ Expired' : '🟢 Aktif'}
+                            {expired ? 'Expired' : 'Aktif'}
                           </span>
                           {v.expiresAt && (
                             <div style={{ fontSize: '11px', color: '#71717a', marginTop: '3px' }}>
@@ -469,7 +488,7 @@ export default function AdminVendors({
                                   style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', color: '#000000', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 6px rgba(245,158,11,0.3)' }}
                                   title="Klik untuk meninjau bukti transfer manual & mengonfirmasi upgrade"
                                 >
-                                  📄 Verifikasi Bukti Transfer
+                                  Verifikasi Bukti Transfer
                                 </button>
                               )}
                             </div>
@@ -478,9 +497,15 @@ export default function AdminVendors({
                       )}
                       {vendorSubTab === 'inquiry' && inquirySubTab === 'prospect' && (
                         <div>
-                          <span style={{ color: '#38bdf8', background: 'rgba(56,189,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
-                            📝 Tahap 1: Pilih Paket
-                          </span>
+                          {v.planName ? (
+                            <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
+                              Sudah Pilih Paket (Detail)
+                            </span>
+                          ) : (
+                            <span style={{ color: '#38bdf8', background: 'rgba(56,189,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px' }}>
+                              Sedang Memilih Paket
+                            </span>
+                          )}
                           <div style={{ fontSize: '11px', color: '#71717a' }}>OAuth Google Lead</div>
                         </div>
                       )}
@@ -490,13 +515,13 @@ export default function AdminVendors({
                             <>
                               <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
                                 <img src="/icons/qris-logo.svg" alt="QRIS" style={{ height: '14px', background: '#ffffff', padding: '1px 4px', borderRadius: '3px' }} />
-                                Menunggu Bayar
+                                Menunggu Pembayaran
                               </span>
                               <div><QrisCountdown expiresAt={v.qrisExpiresAt || v.paymentExpiresAt} /></div>
                             </>
                           ) : (
                             <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                              📄 Transfer Manual
+                              Transfer Manual
                             </span>
                           )}
                         </div>
@@ -504,11 +529,11 @@ export default function AdminVendors({
                       {vendorSubTab === 'inquiry' && inquirySubTab === 'archive' && (
                         <div>
                           <span style={{
-                            color: v.status === 'rejected' ? '#f87171' : v.status === 'cancelled' ? '#fbbf24' : '#71717a',
-                            background: v.status === 'rejected' ? 'rgba(248,113,113,0.12)' : 'rgba(255,255,255,0.05)',
+                            color: v.status === 'rejected' ? '#f87171' : v.status === 'cancelled' ? '#fbbf24' : '#f87171',
+                            background: v.status === 'rejected' ? 'rgba(248,113,113,0.12)' : v.status === 'cancelled' ? 'rgba(251,191,36,0.12)' : 'rgba(239,68,68,0.12)',
                             padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-block', marginBottom: '4px'
                           }}>
-                            {v.status === 'rejected' ? '✗ Ditolak' : v.status === 'cancelled' ? '🚫 Dibatalkan' : '⏰ QRIS Expired'}
+                            {v.status === 'rejected' ? 'Ditolak' : v.status === 'cancelled' ? 'Dibatalkan' : 'Sesi Kedaluwarsa'}
                           </span>
                           <div><AutoDeleteBadge archivedAt={v.archivedAt} /></div>
                         </div>

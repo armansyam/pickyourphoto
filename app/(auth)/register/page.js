@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import NativeQrisDisplay from '@/components/NativeQrisDisplay';
+import InlineWhatsappContact from '@/components/InlineWhatsappContact';
 import { 
     LockIcon, SpeedBoltIcon, SparklesUpgradeIcon, RefreshCwIcon, TrashIcon, 
     PlusIcon, ClockIcon, CheckCircleIcon, WhatsAppIcon, CopyLinkIcon, FolderIcon 
@@ -186,28 +187,36 @@ export default function RegisterPage() {
     }, []);
 
     const [pendingOrder, setPendingOrder] = useState(null);
-    const [expiredOrder, setExpiredOrder] = useState(null);
+    const [expiredNotice, setExpiredNotice] = useState(false);
 
     useEffect(() => {
         if (email && email.includes('@')) {
             fetch(`/api/payment/check-pending?email=${encodeURIComponent(email)}`)
                 .then(r => r.json())
                 .then(d => {
+                    if (d.rawWhatsapp) {
+                        setWhatsapp(d.rawWhatsapp);
+                    }
+                    if (d.name) {
+                        setName(d.name);
+                    }
                     if (d.hasPending) {
                         setPendingOrder(d);
-                        setExpiredOrder(null);
-                    } else if (d.hasExpired) {
-                        setExpiredOrder(d);
+                        setShowSummary(false);
+                        setExpiredNotice(false);
+                    } else if (d.hasExpired && d.planId) {
+                        setPlan(String(d.planId));
+                        setShowSummary(true);
                         setPendingOrder(null);
+                        setExpiredNotice(true);
                     } else {
                         setPendingOrder(null);
-                        setExpiredOrder(null);
+                        setExpiredNotice(false);
                     }
                 })
-                .catch(() => { setPendingOrder(null); setExpiredOrder(null); });
+                .catch(() => { setPendingOrder(null); });
         } else {
             setPendingOrder(null);
-            setExpiredOrder(null);
         }
     }, [email]);
 
@@ -228,6 +237,20 @@ export default function RegisterPage() {
         setStep(2);
     };
 
+    const handleResetPlan = async () => {
+        setShowSummary(false);
+        setPlan('');
+        setExpiredNotice(false);
+        if (email) {
+            try {
+                await fetch('/api/register/select-plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, planId: null })
+                });
+            } catch (e) {}
+        }
+    };
 
     const handleProceedToSummary = async (e) => {
         if (e) e.preventDefault();
@@ -238,25 +261,17 @@ export default function RegisterPage() {
             return;
         }
 
+        setShowSummary(true);
+        setExpiredNotice(false);
 
-        setValidatingSummary(true);
-        try {
-            const res = await fetch('/api/auth/validate-register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, whatsapp })
-            });
-
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.message || 'Validasi registrasi gagal.');
-            }
-
-            setShowSummary(true);
-        } catch (err) {
-            setError(err.message || 'Gagal memverifikasi nomor WhatsApp.');
-        } finally {
-            setValidatingSummary(false);
+        if (email) {
+            try {
+                await fetch('/api/register/select-plan', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, planId: parseInt(plan, 10) })
+                });
+            } catch (e) {}
         }
     };
 
@@ -653,127 +668,15 @@ export default function RegisterPage() {
                                 </div>
                             ) : (
                                 <div className="fade-in-up" key="step2">
-                                    {expiredOrder ? (
-                                        /* ===== EXPIRED QRIS STATE ===== */
-                                        <div className="fade-in-up" style={{ background: 'linear-gradient(160deg,rgba(15,23,42,0.98),rgba(10,17,35,0.99))', border: '1.5px solid rgba(239,68,68,0.5)', borderRadius: '22px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 20px 60px rgba(239,68,68,0.15)' }}>
-                                            {/* Header */}
-                                            <div style={{ background: 'linear-gradient(90deg,rgba(239,68,68,0.15),rgba(220,38,38,0.1))', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <div>
-                                                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#fca5a5' }}>Pembayaran QRIS Kedaluwarsa</div>
-                                                    <div style={{ fontSize: '11px', color: '#64748b' }}>{expiredOrder.email}</div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: '99px' }}>
-                                                    <ClockIcon size={12} color="#ef4444" />
-                                                    <span style={{ fontSize: '10px', fontWeight: '700', color: '#ef4444' }}>KEDALUWARSA</span>
-                                                </div>
-                                            </div>
-                                            {/* Body */}
-                                            <div style={{ padding: '28px 24px', textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>
-                                                    <ClockIcon size={44} color="#f87171" />
-                                                </div>
-                                                <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '800', color: '#fca5a5' }}>
-                                                    QRIS untuk {expiredOrder.planName} Telah Kedaluwarsa
-                                                </h3>
-                                                <p style={{ margin: '0 0 6px', fontSize: '13px', color: '#94a3b8' }}>
-                                                    Nominal: <strong style={{ color: '#34d399' }}>Rp {(expiredOrder.planPrice || expiredOrder.amount || 0).toLocaleString('id-ID')}</strong>
-                                                </p>
-                                                <p style={{ margin: '0 0 24px', fontSize: '12px', color: '#64748b' }}>
-                                                    Silakan lakukan pembayaran ulang. Pilih metode yang diinginkan:
-                                                </p>
-                                                {/* Retry options */}
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                    <button
-                                                        type="button"
-                                                        onClick={async () => {
-                                                            setLoading(true);
-                                                            try {
-                                                                // Cancel expired order
-                                                                await fetch('/api/payment/cancel', {
-                                                                    method: 'POST',
-                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                    body: JSON.stringify({ orderId: expiredOrder.orderId, email: expiredOrder.email })
-                                                                });
-                                                                // Create new QRIS payment
-                                                                const payRes = await fetch('/api/payment/create', {
-                                                                    method: 'POST',
-                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                    body: JSON.stringify({ vendorId: expiredOrder.vendorId, planId: expiredOrder.planId })
-                                                                });
-                                                                const payData = await payRes.json();
-                                                                if (!payRes.ok) throw new Error(payData.message || 'Gagal membuat pembayaran baru');
-                                                                setExpiredOrder(null);
-                                                                setPendingOrder({
-                                                                    orderId: payData.orderId,
-                                                                    email: expiredOrder.email,
-                                                                    provider: payData.provider || 'midtrans',
-                                                                    token: payData.token,
-                                                                    qrUrl: payData.qrUrl,
-                                                                    qrImage: payData.qrImage || payData.qrUrl,
-                                                                    expiresAt: payData.expiresAt,
-                                                                    planName: expiredOrder.planName,
-                                                                    planPrice: expiredOrder.planPrice || expiredOrder.amount,
-                                                                });
-                                                            } catch (e) {
-                                                                setError(e.message);
-                                                            } finally {
-                                                                setLoading(false);
-                                                            }
-                                                        }}
-                                                        style={{ padding: '13px', borderRadius: '12px', border: 'none', background: loading ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff', fontWeight: '700', fontSize: '14px', cursor: loading ? 'not-allowed' : 'pointer', boxShadow: '0 4px 20px rgba(99,102,241,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                                                        disabled={loading}
-                                                    >
-                                                        {loading ? (
-                                                            <span>Memproses...</span>
-                                                        ) : (
-                                                            <>
-                                                                <RefreshCwIcon size={14} color="#fff" />
-                                                                <span>Bayar Ulang via QRIS</span>
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setExpiredOrder(null);
-                                                            setPlan(String(expiredOrder.planId));
-                                                            setShowSummary(true);
-                                                        }}
-                                                        style={{ padding: '13px', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.08)', color: '#a5b4fc', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}
-                                                    >
-                                                        Transfer Manual / Upload Bukti Bayar
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setExpiredOrder(null);
-                                                            setPlan('');
-                                                            setShowSummary(false);
-                                                        }}
-                                                        style={{ padding: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#64748b', fontWeight: '500', fontSize: '13px', cursor: 'pointer' }}
-                                                    >
-                                                        Ganti Paket
-                                                    </button>
-                                                </div>
-                                                {error && <p style={{ marginTop: '12px', color: '#ef4444', fontSize: '12px' }}>{error}</p>}
-                                            </div>
-                                        </div>
-
-                                    ) : pendingOrder ? (
+                                    {pendingOrder ? (
                                         <NativeQrisDisplay
                                             pendingOrder={pendingOrder}
                                             platformName={settings?.saas_name || 'Photota'}
                                             onExpired={(order) => {
-                                                setExpiredOrder({
-                                                    orderId: order.orderId,
-                                                    vendorId: order.vendorId,
-                                                    email: order.email,
-                                                    planId: order.planId,
-                                                    planName: order.planName,
-                                                    planPrice: order.planPrice || order.amount,
-                                                    amount: order.amount,
-                                                });
+                                                setPlan(String(order.planId));
+                                                setShowSummary(true);
                                                 setPendingOrder(null);
+                                                setExpiredNotice(true);
                                             }}
                                             onCancel={async () => {
                                                 if (pendingOrder.orderId) {
@@ -786,6 +689,7 @@ export default function RegisterPage() {
                                                     } catch (e) {}
                                                 }
                                                 setPendingOrder(null);
+                                                setShowSummary(true);
                                             }}
                                         />
                                     ) : showSummary ? (
@@ -809,7 +713,7 @@ export default function RegisterPage() {
                                                     <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', marginBottom: '6px' }}>DETAIL AKUN VENDOR</div>
                                                     <div style={{ color: '#ffffff', fontWeight: '600' }}>{name}</div>
                                                     <div style={{ color: '#cbd5e1', fontSize: '12px' }}>{email}</div>
-                                                    {whatsapp && <div style={{ color: '#38bdf8', fontSize: '12px', fontWeight: 'bold', marginTop: '4px' }}>+{whatsapp}</div>}
+                                                    <InlineWhatsappContact email={email} initialWhatsapp={whatsapp} onSaved={(newWa) => setWhatsapp(newWa)} />
                                                 </div>
 
                                                 {/* 2. Selected Plan Summary */}
@@ -1063,10 +967,17 @@ export default function RegisterPage() {
                                                 </div>
                                             </div>
 
-                                            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                                            {expiredNotice && (
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '11px', color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', padding: '8px 14px', borderRadius: '8px', marginTop: '16px' }}>
+                                                    <ClockIcon size={13} color="#f87171" />
+                                                    <span>Sesi QRIS sebelumnya telah kedaluwarsa. Silakan periksa pesanan Anda dan klik tombol di bawah untuk membuat pembayaran baru.</span>
+                                                </div>
+                                            )}
+
+                                            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
                                                 <button
                                                     type="button"
-                                                    onClick={() => setShowSummary(false)}
+                                                    onClick={handleResetPlan}
                                                     style={{
                                                         background: 'rgba(255, 255, 255, 0.05)',
                                                         color: '#e4e4e7',
@@ -1079,7 +990,7 @@ export default function RegisterPage() {
                                                         flex: 1
                                                     }}
                                                 >
-                                                    Ubah Data
+                                                    Ubah / Pilih Paket Lain
                                                 </button>
                                                 <button 
                                                     type="submit" 
