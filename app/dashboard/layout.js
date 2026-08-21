@@ -24,6 +24,16 @@ export default function DashboardLayout({ children }) {
         redirect('/admin');
     }
 
+    // Direct first-time active vendor to Onboarding Setup Wizard
+    if (vendor && vendor.role !== 'admin') {
+        try {
+            const checkSetup = db.prepare('SELECT is_setup_completed, status FROM vendors WHERE id = ?').get(vendor.id);
+            if (checkSetup && checkSetup.status === 'active' && !checkSetup.is_setup_completed) {
+                redirect('/setup');
+            }
+        } catch (_) {}
+    }
+
     let brandName = 'Pick Your Photo';
     let brandLogo = '/ams-logo.png';
     try {

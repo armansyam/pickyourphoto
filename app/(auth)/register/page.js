@@ -614,7 +614,7 @@ export default function RegisterPage() {
                                 </span>
                             </h2>
                             <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>
-                                {step === 1 ? 'Tahap 1: Isi Data Diri Anda' : 'Tahap 2: Pilih Paket Langganan'}
+                                {pendingOrder ? 'Pembayaran' : showSummary ? 'Ringkasan Pesanan' : step === 2 ? 'Pilih Paket Langganan' : 'Daftar Akun Baru'}
                             </p>
                         </div>
 
