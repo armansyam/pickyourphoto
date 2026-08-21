@@ -460,7 +460,7 @@ export default function AdminVendors({
                             <div style={{ marginTop: '6px' }}>
                               {isQris ? (
                                 <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                  <img src="/qris-logo.svg" alt="QRIS" style={{ height: '12px', background: '#ffffff', padding: '1px 3px', borderRadius: '2px' }} />
+                                  <img src="/icons/qris-logo.svg" alt="QRIS" style={{ height: '12px', background: '#ffffff', padding: '1px 3px', borderRadius: '2px' }} />
                                   QRIS Upgrade (Otomatis)
                                 </span>
                               ) : (
@@ -489,7 +489,7 @@ export default function AdminVendors({
                           {isQris ? (
                             <>
                               <span style={{ color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                                <img src="/qris-logo.svg" alt="QRIS" style={{ height: '14px', background: '#ffffff', padding: '1px 4px', borderRadius: '3px' }} />
+                                <img src="/icons/qris-logo.svg" alt="QRIS" style={{ height: '14px', background: '#ffffff', padding: '1px 4px', borderRadius: '3px' }} />
                                 Menunggu Bayar
                               </span>
                               <div><QrisCountdown expiresAt={v.qrisExpiresAt || v.paymentExpiresAt} /></div>

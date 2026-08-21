@@ -1,5 +1,5 @@
 import ClientGalleryView from '@/components/ClientGalleryView';
 
-export default function GalleryPage({ params }) {
+export default function StudioGalleryPage({ params }) {
     return <ClientGalleryView params={params} />;
 }

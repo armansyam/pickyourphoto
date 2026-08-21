@@ -15,7 +15,7 @@ export async function GET() {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        const freshVendor = db.prepare('SELECT id, name, email, whatsapp, brandName, brandLogo, copyDelimiter, copyIncludeExt, copySortOrder FROM vendors WHERE id = ?').get(vendor.id);
+        const freshVendor = db.prepare('SELECT id, name, email, whatsapp, brandName, brandLogo, copyDelimiter, copyIncludeExt, copySortOrder, subdomain, subdomain_active, subdomain_set_at FROM vendors WHERE id = ?').get(vendor.id);
         return NextResponse.json(freshVendor);
     } catch (error) {
         console.error('Failed to get vendor profile:', error);

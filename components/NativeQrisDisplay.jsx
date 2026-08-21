@@ -233,9 +233,9 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                             <div style={{ fontSize: '10px', color: '#64748b' }}>{pendingOrder.planName || pendingOrder.addonName || 'Add-On Storage'} — <strong style={{ color: '#34d399' }}>Rp {(pendingOrder.planPrice || pendingOrder.amount || pendingOrder.proratedPrice || 0).toLocaleString('id-ID')}</strong></div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <img src="/qris-logo.svg" alt="QRIS" onError={e => e.target.src = '/qris-logo.png'} style={{ height: '18px', width: 'auto' }} />
+                            <img src="/icons/qris-logo.svg" alt="QRIS" onError={e => e.target.src = '/icons/qris-logo.png'} style={{ height: '18px', width: 'auto' }} />
                             <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.2)' }}></div>
-                            <img src="/gpn-logo.svg" alt="GPN" style={{ height: '18px', width: 'auto', filter: 'brightness(0) invert(1)', opacity: 0.7 }} />
+                            <img src="/icons/gpn-logo.svg" alt="GPN" style={{ height: '18px', width: 'auto', filter: 'brightness(0) invert(1)', opacity: 0.7 }} />
                         </div>
                     </div>
 

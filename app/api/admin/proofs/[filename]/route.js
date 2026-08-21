@@ -22,8 +22,9 @@ export async function GET(request, { params }) {
             return NextResponse.json({ success: false, error: 'Nama berkas tidak valid.' }, { status: 400 });
         }
 
-        // Cari lokasi berkas di private storage terlebih dahulu, lalu fallback ke lokasi legacy
+        // Cari lokasi berkas di payment_proofs terlebih dahulu, lalu fallback ke lokasi legacy
         const candidatePaths = [
+            path.join(process.cwd(), 'data', 'payment_proofs', safeFilename),
             path.join(process.cwd(), 'data', 'private_storage', 'proofs', safeFilename),
             path.join(process.cwd(), 'public', 'uploads', 'proofs', safeFilename),
             path.join(process.cwd(), 'public', 'staging_uploads', 'payment_proofs', safeFilename)

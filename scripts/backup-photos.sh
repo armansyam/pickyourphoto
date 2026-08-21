@@ -14,10 +14,10 @@ if [ -d "$PROJECT_DIR/public/vendor_logos" ]; then
     rsync -a --delete "$PROJECT_DIR/public/vendor_logos/" "$BACKUP_DIR/vendor_logos/"
 fi
 
-# 2. Backup private storage proofs jika folder ada
-if [ -d "$PROJECT_DIR/data/private_storage" ]; then
-    mkdir -p "$BACKUP_DIR/private_storage"
-    rsync -a --delete "$PROJECT_DIR/data/private_storage/" "$BACKUP_DIR/private_storage/"
+# 2. Backup payment proofs jika folder ada
+if [ -d "$PROJECT_DIR/data/payment_proofs" ]; then
+    mkdir -p "$BACKUP_DIR/payment_proofs"
+    rsync -a --delete "$PROJECT_DIR/data/payment_proofs/" "$BACKUP_DIR/payment_proofs/"
 fi
 
 echo "[$(date)] Backup asset persisten (Logo & Proofs) selesai dengan sukses."

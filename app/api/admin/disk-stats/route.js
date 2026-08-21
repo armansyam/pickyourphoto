@@ -81,8 +81,8 @@ export async function GET() {
         const warnThr = settings.disk_warning_threshold_percent;
         const critThr = settings.disk_critical_threshold_percent;
 
-        // Path Private Storage
-        const defaultPrivatePath = path.join(process.cwd(), 'data', 'private_storage');
+        // Path Payment Proofs Storage
+        const defaultPrivatePath = path.join(process.cwd(), 'data', 'payment_proofs');
         const privateStoragePath = fs.existsSync(defaultPrivatePath) ? defaultPrivatePath : path.join(process.cwd(), 'data');
 
         // Path Database & System

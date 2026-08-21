@@ -22,13 +22,20 @@ out/
 *.db-journal
 *.db-wal
 *.db-shm
-database.db
+*.sqlite
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.backup
+data/database.db*
+scratch/
 
 # Dynamic client upload directories (CRITICAL: Do not upload client photos or logos to GitHub)
 public/staging_uploads/
-public/vendor_logos/
 public/staging_uploads/*
 public/vendor_logos/*
+data/payment_proofs/
+data/payment_proofs/*
 data/private_storage/
 data/private_storage/*
 

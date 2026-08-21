@@ -85,7 +85,7 @@ export async function GET() {
             developer: {
                 name: 'AMS Developer',
                 githubUrl: 'https://github.com/armansyam',
-                logo: '/ams-logo.png'
+                logo: '/branding/ams-logo.png'
             },
             timestamp: new Date().toISOString()
         }, {
@@ -103,7 +103,7 @@ export async function GET() {
             developer: {
                 name: 'AMS Developer',
                 githubUrl: 'https://github.com/armansyam',
-                logo: '/ams-logo.png'
+                logo: '/branding/ams-logo.png'
             }
         }, { status: 200 });
     }

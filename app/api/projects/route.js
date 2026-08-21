@@ -85,6 +85,9 @@ export async function GET() {
                 planType: vendor.planType || 'limit',
                 allowCustomLogo: vendor.allowCustomLogo === 1 || vendor.allowCustomLogo === true ? 1 : 0,
                 allowRawSelector: vendor.allowRawSelector !== undefined ? (vendor.allowRawSelector ? 1 : 0) : 1,
+                subdomain: vendor.subdomain || '',
+                subdomain_active: vendor.subdomain_active === 1 || vendor.subdomain_active === true ? 1 : 0,
+                subdomain_set_at: vendor.subdomain_set_at || null,
                 upgradeRequest: pendingRequest || null
             }
         });

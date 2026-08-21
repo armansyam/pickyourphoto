@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import { getPaymentGatewayConfig } from '@/lib/payment-gateway';
+import { autoGenerateUniqueSubdomain } from '@/lib/subdomain';
 
 export async function POST(request) {
     try {
@@ -128,7 +129,7 @@ export async function POST(request) {
                 const buffer = Buffer.from(await paymentProofFile.arrayBuffer());
                 const ext = path.extname(paymentProofFile.name || '.png') || '.png';
                 const filename = `proof_${Date.now()}_${Math.random().toString(36).slice(2, 7)}${ext}`;
-                const uploadDir = path.join(process.cwd(), 'data', 'private_storage', 'proofs');
+                const uploadDir = path.join(process.cwd(), 'data', 'payment_proofs');
 
                 if (!fs.existsSync(uploadDir)) {
                     fs.mkdirSync(uploadDir, { recursive: true });
@@ -160,12 +161,13 @@ export async function POST(request) {
                 db.prepare("UPDATE payment_sessions SET status = 'replaced' WHERE vendorId = ? AND status = 'expired'").run(existingVendor.id);
             } catch (e) {}
 
+            const currentSub = existingVendor.subdomain || autoGenerateUniqueSubdomain(vendorName, existingVendor.id);
             const updateStmt = db.prepare(`
                 UPDATE vendors 
-                SET name = ?, whatsapp = ?, password = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?, pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?, archivedAt = NULL
+                SET name = ?, whatsapp = ?, password = ?, planId = ?, maxProjects = ?, paymentProof = ?, status = ?, pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?, archivedAt = NULL, subdomain = ?, subdomain_active = 1, subdomain_set_at = COALESCE(subdomain_set_at, datetime('now'))
                 WHERE id = ?
             `);
-            updateStmt.run(vendorName, finalWhatsapp, hashedPassword, planDetails.id, planDetails.maxProjects, paymentProofPath, initialStatus, selectedAddonKey, addonQuotaBytes, existingVendor.id);
+            updateStmt.run(vendorName, finalWhatsapp, hashedPassword, planDetails.id, planDetails.maxProjects, paymentProofPath, initialStatus, selectedAddonKey, addonQuotaBytes, currentSub, existingVendor.id);
 
             const targetVendorId = existingVendor.id;
             
@@ -187,12 +189,13 @@ export async function POST(request) {
         }
 
         const hashedPassword = await bcrypt.hash(password || Math.random().toString(36), 10);
+        const autoSubdomain = autoGenerateUniqueSubdomain(name || email.split('@')[0]);
 
         const insertStmt = db.prepare(`
-            INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, pendingAddonPlanId, pendingAddonQuotaBytes, resetRequested) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+            INSERT INTO vendors (name, email, whatsapp, password, role, status, maxProjects, planId, paymentProof, pendingAddonPlanId, pendingAddonQuotaBytes, resetRequested, subdomain, subdomain_active, subdomain_set_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 1, datetime('now'))
         `);
-        const info = insertStmt.run(name || email.split('@')[0], email, finalWhatsapp, hashedPassword, 'vendor', initialStatus, planDetails.maxProjects, planDetails.id, paymentProofPath, selectedAddonKey, addonQuotaBytes);
+        const info = insertStmt.run(name || email.split('@')[0], email, finalWhatsapp, hashedPassword, 'vendor', initialStatus, planDetails.maxProjects, planDetails.id, paymentProofPath, selectedAddonKey, addonQuotaBytes, autoSubdomain);
         const newVendorId = info.lastInsertRowid;
 
         // Trigger Manual Transfer Pending Email if not gateway

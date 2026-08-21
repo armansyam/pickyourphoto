@@ -11,7 +11,7 @@ export default function DevWatermark() {
         status: 'Active Release',
         developer: {
             githubUrl: 'https://github.com/armansyam',
-            logo: '/ams-logo.png'
+            logo: '/branding/ams-logo.png'
         }
     });
     const popupRef = useRef(null);
@@ -92,7 +92,7 @@ export default function DevWatermark() {
                 aria-label="Developer Credit & System Version"
             >
                 <img
-                    src={versionData.developer?.logo || "/ams-logo.png"}
+                    src={versionData.developer?.logo || "/branding/ams-logo.png"}
                     alt="AMS Logo"
                     style={{ width: '38px', height: '38px', objectFit: 'contain' }}
                 />
@@ -124,7 +124,7 @@ export default function DevWatermark() {
 
                     <div>
                         <img
-                            src={versionData.developer?.logo || "/ams-logo.png"}
+                            src={versionData.developer?.logo || "/branding/ams-logo.png"}
                             alt="AMS Logo"
                             style={{ height: '36px', objectFit: 'contain', marginBottom: '8px', display: 'block' }}
                         />

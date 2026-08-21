@@ -141,8 +141,14 @@ export default function DashboardPage() {
     const [brandLogoPreview, setBrandLogoPreview] = useState('');
     const [copyDelimiter, setCopyDelimiter] = useState(', ');
     const [copyIncludeExt, setCopyIncludeExt] = useState(0);
-    const [copySortOrder, setCopySortOrder] = useState('name_asc');
     const [savingBranding, setSavingBranding] = useState(false);
+
+    // Subdomain Studio states
+    const [subdomainInput, setSubdomainInput] = useState('');
+    const [subdomainStatus, setSubdomainStatus] = useState('idle'); // 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
+    const [subdomainMsg, setSubdomainMsg] = useState('');
+    const [subdomainSuggestions, setSubdomainSuggestions] = useState([]);
+    const [savingSubdomain, setSavingSubdomain] = useState(false);
 
     // Upgrade plan & WA admin states
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -231,6 +237,11 @@ export default function DashboardPage() {
         };
     };
 
+    const sanitizeSubdomainClient = (str) => {
+        if (!str) return '';
+        return str.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').slice(0, 30);
+    };
+
     // Instant Render Memory Cache
     const fetchProjects = async (silentRevalidate = false, clearCache = false) => {
         if (clearCache && typeof window !== 'undefined') {
@@ -245,6 +256,7 @@ export default function DashboardPage() {
                 setBrandName(cached.vendor.brandName || '');
                 setVendorWhatsapp(cached.vendor.whatsapp || '');
                 setBrandLogoPreview(cached.vendor.brandLogo || '');
+                setSubdomainInput(cached.vendor.subdomain || sanitizeSubdomainClient(cached.vendor.brandName || cached.vendor.name || ''));
                 if (cached.vendor.copyDelimiter !== undefined) setCopyDelimiter(cached.vendor.copyDelimiter);
                 if (cached.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(cached.vendor.copyIncludeExt);
                 if (cached.vendor.copySortOrder !== undefined) setCopySortOrder(cached.vendor.copySortOrder);
@@ -264,6 +276,7 @@ export default function DashboardPage() {
                     setBrandName(data.vendor.brandName || '');
                     setVendorWhatsapp(data.vendor.whatsapp || '');
                     setBrandLogoPreview(data.vendor.brandLogo || '');
+                    setSubdomainInput(data.vendor.subdomain || sanitizeSubdomainClient(data.vendor.brandName || data.vendor.name || ''));
                     if (data.vendor.copyDelimiter !== undefined) setCopyDelimiter(data.vendor.copyDelimiter);
                     if (data.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(data.vendor.copyIncludeExt);
                     if (data.vendor.copySortOrder !== undefined) setCopySortOrder(data.vendor.copySortOrder);
@@ -828,10 +841,95 @@ export default function DashboardPage() {
         }
     };
 
+    // ── Helper Generator Link Galeri Klien (Subdomain Tenant vs Root Origin) ──
+    const getClientGalleryLink = (projectId, accessKey) => {
+        const keyParam = accessKey ? `?key=${accessKey}` : '';
+        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'photota.my.id';
+        if (vendorDetails?.subdomain && (vendorDetails?.subdomain_active === 1 || vendorDetails?.subdomain_active === true)) {
+            if (typeof window !== 'undefined') {
+                const host = window.location.hostname;
+                if (host.includes('localhost') || host.includes('127.0.0.1')) {
+                    return `${window.location.protocol}//${vendorDetails.subdomain}.localhost:${window.location.port || '3000'}/gallery/${projectId}${keyParam}`;
+                }
+            }
+            return `https://${vendorDetails.subdomain}.${rootDomain}/gallery/${projectId}${keyParam}`;
+        }
+        const origin = typeof window !== 'undefined' ? window.location.origin : `https://${rootDomain}`;
+        return `${origin}/gallery/${projectId}${keyParam}`;
+    };
+
+    // Subdomain Availability Checker
+    const checkSubdomainAvailability = useCallback(async (slug) => {
+        if (!slug || slug.length < 3) {
+            setSubdomainStatus('idle');
+            setSubdomainMsg('Masukkan minimal 3 karakter.');
+            setSubdomainSuggestions([]);
+            return;
+        }
+        setSubdomainStatus('checking');
+        setSubdomainMsg('Memeriksa ketersediaan...');
+        try {
+            const res = await fetch(`/api/subdomain/check?slug=${encodeURIComponent(slug)}`);
+            const data = await res.json();
+            if (data.available) {
+                setSubdomainStatus('available');
+                setSubdomainMsg('✅ Subdomain tersedia!');
+                setSubdomainSuggestions([]);
+            } else {
+                setSubdomainStatus(data.reason?.includes('sudah digunakan') ? 'taken' : 'invalid');
+                setSubdomainMsg(data.reason || 'Subdomain tidak tersedia.');
+                setSubdomainSuggestions(data.suggestions || []);
+            }
+        } catch (e) {
+            setSubdomainStatus('idle');
+            setSubdomainMsg('');
+        }
+    }, []);
+
+    // Debounce check saat user mengetik subdomain
+    useEffect(() => {
+        if (!subdomainInput) return;
+        const timer = setTimeout(() => {
+            if (subdomainInput !== vendorDetails?.subdomain) {
+                checkSubdomainAvailability(subdomainInput);
+            } else {
+                setSubdomainStatus('available');
+                setSubdomainMsg('✅ Subdomain aktif studio Anda saat ini.');
+                setSubdomainSuggestions([]);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [subdomainInput, checkSubdomainAvailability, vendorDetails?.subdomain]);
+
+    // Simpan / Klaim Subdomain Studio
+    const handleSaveSubdomain = async () => {
+        if (!subdomainInput || (subdomainStatus !== 'available' && subdomainInput !== vendorDetails?.subdomain)) return;
+        setSavingSubdomain(true);
+        try {
+            const isUpdate = Boolean(vendorDetails?.subdomain && vendorDetails?.subdomain_active);
+            const endpoint = isUpdate ? '/api/subdomain/update' : '/api/subdomain/claim';
+            const method = isUpdate ? 'PUT' : 'POST';
+
+            const res = await fetch(endpoint, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subdomain: subdomainInput })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.message || 'Gagal menyimpan subdomain.');
+            }
+            addToast(data.message || 'Subdomain berhasil diaktifkan!', 'success');
+            fetchProjects(true);
+        } catch (err) {
+            addToast(err.message, 'error');
+        } finally {
+            setSavingSubdomain(false);
+        }
+    };
+
     const handleCopyGalleryLink = (project) => {
-        const origin = window.location.origin;
-        const keyParam = project.clientAccessKey ? `?key=${project.clientAccessKey}` : '';
-        const link = `${origin}/gallery/${project.id}${keyParam}`;
+        const link = getClientGalleryLink(project.id, project.clientAccessKey);
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(link).then(() => {
                 addToast('Link galeri klien berhasil disalin ke clipboard!', 'success');
@@ -843,69 +941,8 @@ export default function DashboardPage() {
         }
     };
 
-
-    const handleUpdateProjectStatus = async (projectId, status, actionLabel) => {
-
-        if (status === 'archived') {
-            const proj = projects.find(p => p.id === projectId);
-            setProjectToArchive({ ...proj, actionLabel });
-            return;
-        }
-        await executeStatusUpdate(projectId, status, actionLabel);
-    };
-
-    const executeStatusUpdate = async (projectId, status, actionLabel) => {
-        try {
-            const res = await fetch(`/api/projects/${projectId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.message || 'Failed to update status.');
-            }
-            addToast(`Project berhasil ${actionLabel}!`, 'success');
-            fetchProjects();
-        } catch (err) {
-            addToast(err.message, 'error');
-        }
-    };
-
-    const confirmArchiveProject = async () => {
-        if (!projectToArchive) return;
-        setArchivingProject(true);
-        try {
-            await executeStatusUpdate(projectToArchive.id, 'archived', projectToArchive.actionLabel);
-            setProjectToArchive(null);
-        } catch (err) {
-            // error logged inside helper
-        } finally {
-            setArchivingProject(false);
-        }
-    };
-
-    // Retry GDrive Import
-    const handleRetryImport = async (projectId) => {
-        try {
-            const res = await fetch(`/api/projects/${projectId}/retry`, { method: 'POST' });
-            const data = await res.json();
-            if (!res.ok) {
-                throw new Error(data.message || 'Failed to retry import.');
-            }
-            addToast('Proses impor ulang berhasil dijalankan kembali!', 'success');
-            fetchProjects();
-        } catch (err) {
-            addToast(err.message, 'error');
-        }
-    };
-
-    // Copy Client Gallery Link
     const handleCopyLink = (projectId, accessKey) => {
-        const keyParam = accessKey ? `?key=${accessKey}` : '';
-        const link = `${window.location.origin}/gallery/${projectId}${keyParam}`;
-        
-        // Try modern clipboard API first, fallback to textarea method
+        const link = getClientGalleryLink(projectId, accessKey);
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(link)
                 .then(() => addToast('Link klien berhasil disalin!', 'success'))
@@ -915,20 +952,17 @@ export default function DashboardPage() {
         }
     };
 
-    // Open Gallery Page in New Tab
     const handleOpenGallery = (project) => {
         if (!project) {
             addToast('Data project tidak ditemukan.', 'warning');
             return;
         }
-        const keyParam = project.clientAccessKey ? `?key=${project.clientAccessKey}` : '';
-        window.open(`/gallery/${project.id}${keyParam}`, '_blank');
+        const link = getClientGalleryLink(project.id, project.clientAccessKey);
+        window.open(link, '_blank');
     };
 
-    // Send Gallery Link via WhatsApp to Client using Direct WhatsApp API
     const handleSendWhatsApp = (project) => {
-        const keyParam = project.clientAccessKey ? `?key=${project.clientAccessKey}` : '';
-        const link = `${window.location.origin}/gallery/${project.id}${keyParam}`;
+        const link = getClientGalleryLink(project.id, project.clientAccessKey);
         let rawPhone = (project.clientPhone || '').replace(/\D/g, '');
         if (rawPhone.startsWith('0')) {
             rawPhone = '62' + rawPhone.slice(1);
@@ -2751,6 +2785,115 @@ export default function DashboardPage() {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+
+                            {/* ── SUBDOMAIN STUDIO EKSKLUSIF SECTION ── */}
+                            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                    <label className="form-label" style={{ fontSize: '12px', color: '#c5a059', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span>🌐</span>
+                                        <span>Subdomain Studio Eksklusif</span>
+                                    </label>
+                                    {vendorDetails?.subdomain && (vendorDetails?.subdomain_active === 1 || vendorDetails?.subdomain_active === true) && (
+                                        <span style={{ fontSize: '10px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', padding: '2px 8px', borderRadius: '12px', fontWeight: 700, border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+                                            AKTIF
+                                        </span>
+                                    )}
+                                </div>
+                                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                                    Gunakan link seleksi foto dengan identitas nama studio Anda sendiri (contoh: <code>nama.photota.my.id</code>) untuk meningkatkan kepercayaan klien.
+                                </p>
+
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                                    <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            type="text"
+                                            className="input-text"
+                                            placeholder="nama-studio"
+                                            value={subdomainInput}
+                                            onChange={(e) => setSubdomainInput(sanitizeSubdomainClient(e.target.value))}
+                                            disabled={savingSubdomain || savingBranding}
+                                            style={{
+                                                padding: '8px 12px',
+                                                fontSize: '13px',
+                                                fontFamily: 'monospace',
+                                                borderColor: subdomainStatus === 'available' ? '#10b981' : subdomainStatus === 'taken' || subdomainStatus === 'invalid' ? '#ef4444' : 'rgba(255,255,255,0.15)'
+                                            }}
+                                        />
+                                    </div>
+                                    <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: 700, fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                                        .{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'photota.my.id'}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveSubdomain}
+                                        disabled={savingSubdomain || (subdomainStatus !== 'available' && subdomainInput !== vendorDetails?.subdomain)}
+                                        style={{
+                                            padding: '8px 14px',
+                                            fontSize: '12px',
+                                            fontWeight: 700,
+                                            borderRadius: '8px',
+                                            background: (subdomainStatus === 'available' || subdomainInput === vendorDetails?.subdomain) ? 'linear-gradient(135deg, #c5a059, #996515)' : 'rgba(255,255,255,0.1)',
+                                            color: (subdomainStatus === 'available' || subdomainInput === vendorDetails?.subdomain) ? '#ffffff' : '#71717a',
+                                            border: 'none',
+                                            cursor: (subdomainStatus === 'available' || subdomainInput === vendorDetails?.subdomain) ? 'pointer' : 'not-allowed',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {savingSubdomain ? 'Menyimpan...' : (vendorDetails?.subdomain ? 'Perbarui' : 'Aktifkan')}
+                                    </button>
+                                </div>
+
+                                {/* Status message & Suggestion chips */}
+                                {subdomainMsg && (
+                                    <div style={{
+                                        fontSize: '11px',
+                                        color: subdomainStatus === 'available' ? '#34d399' : subdomainStatus === 'checking' ? '#fbbf24' : '#f87171',
+                                        marginBottom: '8px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}>
+                                        {subdomainMsg}
+                                    </div>
+                                )}
+
+                                {subdomainSuggestions && subdomainSuggestions.length > 0 && (
+                                    <div style={{ marginBottom: '10px' }}>
+                                        <div style={{ fontSize: '10.5px', color: '#a1a1aa', marginBottom: '4px' }}>Rekomendasi alternatif yang tersedia:</div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                            {subdomainSuggestions.map((sug) => (
+                                                <button
+                                                    key={sug}
+                                                    type="button"
+                                                    onClick={() => setSubdomainInput(sug)}
+                                                    style={{
+                                                        fontSize: '11px',
+                                                        fontFamily: 'monospace',
+                                                        background: 'rgba(197, 160, 89, 0.1)',
+                                                        color: '#fbbf24',
+                                                        border: '1px solid rgba(197, 160, 89, 0.3)',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    {sug}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Live preview URL */}
+                                {subdomainInput && (
+                                    <div style={{ background: 'rgba(197, 160, 89, 0.05)', border: '1px solid rgba(197, 160, 89, 0.2)', padding: '6px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '10px', color: '#c5a059', fontWeight: 'bold' }}>PREVIEW URL:</span>
+                                        <span style={{ fontSize: '11px', color: '#34d399', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            https://{subdomainInput}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'photota.my.id'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* ── PREFERENSI SALIN NAMA FILE SECTION (MINIMALIST) ── */}

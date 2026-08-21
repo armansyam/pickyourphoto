@@ -130,8 +130,8 @@ export async function POST(request) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Setup private storage folder
-        const uploadDir = path.join(process.cwd(), 'data', 'private_storage', 'proofs');
+        // Setup payment proofs storage folder
+        const uploadDir = path.join(process.cwd(), 'data', 'payment_proofs');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }

@@ -27,10 +27,13 @@ pick-your-photo/
 ├── app/                   # Next.js 14 App Router (pages & 70+ API routes)
 ├── components/            # React Client & Server components
 ├── lib/                   # Shared utilities (db, auth, mailer, gdrive, payment-gateway, rate-limit)
-├── data/                  # 📂 DATABASE VOLUME — database.db disimpan di sini (WAJIB DIPERSIST!)
-│   └── database.db        # SQLite database produksi
+├── data/                  # 📂 DATABASE & PROOFS VOLUME (WAJIB DIPERSIST!)
+│   ├── database.db        # SQLite database produksi
+│   └── payment_proofs/    # Berkas bukti transfer pembayaran
 ├── public/
-│   └── vendor_logos/      # Logo vendor terunggah
+│   ├── branding/          # Aset brand & logo platform
+│   ├── icons/             # Ikon gateway pembayaran (QRIS, GPN)
+│   └── vendor_logos/      # Logo vendor terunggah (WAJIB DIPERSIST!)
 ├── .env.local             # Environment variables lokal server (JANGAN commit ke Git!)
 ├── deploy.sh              # Script deployment PM2 otomatis (One-Click Deploy)
 ├── deploy-docker.sh       # Script deployment Docker Compose
