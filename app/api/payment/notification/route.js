@@ -146,7 +146,10 @@ export async function POST(request) {
           const addonKey = transaction.addonPlanId || vendor.pendingAddonPlanId;
           let quotaBytes = vendor.pendingAddonQuotaBytes || 0;
           if (!quotaBytes && addonKey) {
-            if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
+            const row = db.prepare('SELECT quotaBytes FROM addon_plans WHERE planKey = ? OR id = ?').get(addonKey, addonKey);
+            if (row && row.quotaBytes) {
+              quotaBytes = row.quotaBytes;
+            } else if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
             else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
             else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
           }
