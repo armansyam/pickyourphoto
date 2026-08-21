@@ -21,15 +21,22 @@ export async function POST(request) {
 
     let _body; try { _body = await request.json(); } catch (_) { return NextResponse.json({ message: 'Format body tidak valid.' }, { status: 400 }); }
 
-    const { vendorId, planId, addonPlanId, customAmount } = _body || {};
+    const { vendorId, email, vendorEmail, planId, addonPlanId, customAmount } = _body || {};
+    const targetEmail = (email || vendorEmail || '').trim().toLowerCase();
 
-    if (!vendorId || !planId) {
-      return NextResponse.json({ message: 'vendorId dan planId wajib diisi.' }, { status: 400 });
+    let vendor = null;
+    if (vendorId) {
+      vendor = db.prepare('SELECT id, name, email, whatsapp, status FROM vendors WHERE id = ?').get(vendorId);
+    } else if (targetEmail) {
+      vendor = db.prepare('SELECT id, name, email, whatsapp, status FROM vendors WHERE lower(email) = ?').get(targetEmail);
     }
 
-    const vendor = db.prepare('SELECT id, name, email, whatsapp FROM vendors WHERE id = ?').get(vendorId);
     if (!vendor) {
-      return NextResponse.json({ message: 'Vendor tidak ditemukan.' }, { status: 404 });
+      return NextResponse.json({ message: 'Akun vendor tidak ditemukan.' }, { status: 404 });
+    }
+
+    if (!planId) {
+      return NextResponse.json({ message: 'Paket langganan wajib dipilih.' }, { status: 400 });
     }
 
     const plan = db.prepare('SELECT id, name, price FROM plans WHERE id = ?').get(planId);
@@ -50,12 +57,12 @@ export async function POST(request) {
       if (!authUser) {
         return NextResponse.json({ message: 'Akses ditolak. Harap login untuk melanjutkan.' }, { status: 401 });
       }
-      if (authUser.role !== 'admin' && String(authUser.id) !== String(vendorId)) {
+      if (authUser.role !== 'admin' && String(authUser.id) !== String(vendor.id)) {
         return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
       }
     } else {
       // For non-active vendors (new registrants): restrict cross-account if authenticated
-      if (authUser && authUser.role !== 'admin' && String(authUser.id) !== String(vendorId)) {
+      if (authUser && authUser.role !== 'admin' && String(authUser.id) !== String(vendor.id)) {
         return NextResponse.json({ message: 'Akses ditolak.' }, { status: 403 });
       }
     }

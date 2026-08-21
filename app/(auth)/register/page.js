@@ -306,21 +306,17 @@ export default function RegisterPage() {
             <div style={{ maxWidth: (step === 2 && !showSummary && !pendingOrder) ? '980px' : '520px', width: '100%', transition: 'max-width 0.3s ease' }}>
                 
                 {/* Header Branding */}
-                <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                     <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center' }}>
-                        {settings?.logo_url ? (
-                            <img src={settings.logo_url} alt={platformName} style={{ height: '40px', objectFit: 'contain', marginBottom: '12px' }} />
-                        ) : (
-                            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #6366f1, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px', boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)' }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                            </div>
+                        {(settings?.saas_logo_url || settings?.logo_url) && (
+                            <img src={settings.saas_logo_url || settings.logo_url} alt={platformName} style={{ height: '38px', objectFit: 'contain', marginBottom: '10px' }} />
                         )}
-                        <h1 style={{ fontSize: '24px', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
+                        <h1 style={{ fontSize: '22px', fontWeight: '800', margin: 0, letterSpacing: '-0.02em', color: '#ffffff' }}>
                             Join with <span style={{ color: '#38bdf8' }}>{platformName}</span>
                         </h1>
                     </Link>
                     <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0 0' }}>
-                        {pendingOrder ? 'Tahap 4: Pembayaran QRIS' : showSummary ? 'Ringkasan Pesanan' : step === 2 ? 'Tahap 2: Pilih Paket Langganan' : 'Pendaftaran Studio Baru'}
+                        {pendingOrder ? 'Pembayaran QRIS' : showSummary ? 'Konfirmasi Pesanan' : step === 2 ? 'Pilih Paket Langganan' : 'Pendaftaran Studio Baru'}
                     </p>
                 </div>
 
@@ -396,10 +392,10 @@ export default function RegisterPage() {
                 )}
 
                 {/* Footer Login Link */}
-                <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '13px', color: '#64748b' }}>
-                    Already have an account?{' '}
-                    <Link href="/login" style={{ color: '#818cf8', fontWeight: '600', textDecoration: 'none' }}>
-                        Sign in instead
+                <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: '#64748b' }}>
+                    Sudah memiliki akun studio?{' '}
+                    <Link href="/login" style={{ color: '#38bdf8', fontWeight: '600', textDecoration: 'none' }}>
+                        Masuk di sini
                     </Link>
                 </div>
             </div>

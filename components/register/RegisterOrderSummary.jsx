@@ -30,27 +30,13 @@ export default function RegisterOrderSummary({
             marginBottom: '20px',
             boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)'
         }}>
-            {/* Header with Badge */}
-            <div style={{ textAlign: 'center', marginBottom: '22px' }}>
-                <div style={{ display: 'inline-block', marginBottom: '8px' }}>
-                    <span style={{
-                        fontSize: '10px',
-                        fontWeight: '800',
-                        letterSpacing: '0.06em',
-                        color: '#818cf8',
-                        background: 'rgba(99, 102, 241, 0.12)',
-                        border: '1px solid rgba(99, 102, 241, 0.25)',
-                        padding: '3px 10px',
-                        borderRadius: '99px'
-                    }}>
-                        KONFIRMASI DETAIL &amp; PEMBAYARAN
-                    </span>
-                </div>
-                <h3 style={{ margin: '0 0 6px 0', fontSize: '20px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.02em' }}>
-                    Periksa Pesanan &amp; Pilih Metode Pembayaran
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.02em' }}>
+                    Konfirmasi Pesanan
                 </h3>
                 <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8' }}>
-                    Pastikan data pendaftaran benar lalu pilih metode pembayaran Anda.
+                    Periksa detail pesanan Anda sebelum melanjutkan pembayaran
                 </p>
             </div>
 
@@ -68,19 +54,19 @@ export default function RegisterOrderSummary({
                 </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 {/* 1. Detail Akun Vendor Card */}
                 <div style={{
                     background: 'rgba(255, 255, 255, 0.03)',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
                     borderRadius: '12px',
-                    padding: '16px'
+                    padding: '14px 16px'
                 }}>
-                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        DETAIL AKUN VENDOR
+                    <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Detail Akun
                     </div>
                     <div style={{ color: '#ffffff', fontWeight: '700', fontSize: '14px' }}>{name}</div>
-                    <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '10px' }}>{email}</div>
+                    <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>{email}</div>
                     <InlineWhatsappContact email={email} initialWhatsapp={whatsapp} onSaved={onWhatsappSaved} />
                 </div>
 
@@ -92,9 +78,9 @@ export default function RegisterOrderSummary({
                     padding: '16px'
                 }}>
                     <div style={{ fontSize: '11px', color: '#a5b4fc', fontWeight: 'bold', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        PAKET BERLANGGANAN YANG DIPILIH
+                        Paket Pilihan
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                         <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>{selectedPlan.name}</span>
                         {selectedPlan.discountedPrice && selectedPlan.discountedPrice < originalPrice ? (
                             <div style={{ textAlign: 'right' }}>
@@ -112,10 +98,10 @@ export default function RegisterOrderSummary({
                         )}
                     </div>
 
-                    <div style={{ width: '100%', height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '10px 0' }} />
+                    <div style={{ width: '100%', height: '1px', background: 'rgba(255, 255, 255, 0.08)', margin: '8px 0 10px 0' }} />
 
                     {/* Features Checklist */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#d4d4d8' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '12px', color: '#d4d4d8' }}>
                         <div>✓ Maksimal <strong>{selectedPlan.maxProjects} Project Aktif</strong></div>
                         <div>✓ Foto <strong>Unlimited</strong> / project</div>
                         <div>✓ <strong>Galeri Online &amp; Seleksi Foto Klien</strong></div>
@@ -132,35 +118,23 @@ export default function RegisterOrderSummary({
                     </div>
                 </div>
 
-                {/* 3. Metode Pembayaran Info Card */}
-                <div style={{ marginTop: '4px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#e2e8f0', marginBottom: '8px' }}>
-                        Metode Pembayaran
+                {/* 3. Metode Pembayaran Info Row */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '12px',
+                    padding: '12px 16px'
+                }}>
+                    <div>
+                        <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', textTransform: 'uppercase' }}>Metode Pembayaran</div>
+                        <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: '600', marginTop: '2px' }}>QRIS (Semua Bank &amp; E-Wallet)</div>
                     </div>
-                    <div style={{
-                        background: 'rgba(16, 185, 129, 0.08)',
-                        border: '1px solid rgba(16, 185, 129, 0.25)',
-                        borderRadius: '12px',
-                        padding: '14px 16px'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ color: '#34d399', fontWeight: '700', fontSize: '13px' }}>Pembayaran QRIS Otomatis</span>
-                            <span style={{
-                                fontSize: '10px',
-                                fontWeight: '800',
-                                background: 'rgba(16, 185, 129, 0.2)',
-                                color: '#34d399',
-                                padding: '2px 8px',
-                                borderRadius: '99px',
-                                letterSpacing: '0.04em'
-                            }}>
-                                AKTIF &amp; INSTAN
-                            </span>
-                        </div>
-                        <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', lineHeight: '1.4' }}>
-                            Bayar via QRIS (BCA, Mandiri, BRI, BNI, GoPay, OVO, Dana, LinkAja, ShopeePay). Akun <strong>otomatis aktif seketika</strong> tanpa perlu upload bukti.
-                        </p>
-                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: '700', color: '#34d399', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '3px 8px', borderRadius: '6px' }}>
+                        Aktivasi Instan
+                    </span>
                 </div>
 
                 {/* 4. Expired Notice Bar (If Expired) */}
@@ -179,12 +153,12 @@ export default function RegisterOrderSummary({
                         textAlign: 'center'
                     }}>
                         <ClockIcon size={14} color="#f87171" />
-                        <span>Sesi QRIS sebelumnya telah kedaluwarsa. Silakan periksa pesanan Anda dan klik tombol di bawah untuk membuat pembayaran baru.</span>
+                        <span>Sesi QRIS sebelumnya telah kedaluwarsa. Silakan klik tombol di bawah untuk membuat pembayaran baru.</span>
                     </div>
                 )}
 
                 {/* 5. Action Buttons */}
-                <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
                     <button
                         type="button"
                         onClick={onResetPlan}
@@ -192,15 +166,15 @@ export default function RegisterOrderSummary({
                             background: 'rgba(255, 255, 255, 0.04)',
                             color: '#cbd5e1',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '12px',
-                            padding: '13px 18px',
+                            borderRadius: '10px',
+                            padding: '12px 16px',
                             fontWeight: '600',
                             fontSize: '13px',
                             cursor: 'pointer',
                             flex: 1
                         }}
                     >
-                        Ubah / Pilih Paket Lain
+                        Ubah Paket
                     </button>
                     <button
                         type="button"
@@ -208,7 +182,7 @@ export default function RegisterOrderSummary({
                         className="btn-primary"
                         style={{
                             flex: 2,
-                            padding: '13px 20px',
+                            padding: '12px 20px',
                             fontSize: '14px',
                             fontWeight: '700',
                             opacity: loading ? 0.5 : 1,
@@ -221,11 +195,11 @@ export default function RegisterOrderSummary({
                         disabled={loading}
                     >
                         {loading ? (
-                            <span>Memproses Transaksi...</span>
+                            <span>Memproses...</span>
                         ) : (
                             <>
                                 <SparklesUpgradeIcon size={14} />
-                                <span>Bayar Sekarang via QRIS</span>
+                                <span>Bayar via QRIS</span>
                             </>
                         )}
                     </button>

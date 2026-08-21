@@ -88,14 +88,6 @@ export default function RegisterGoogleEntry({ platformName = 'Photota', onStartG
 
                 <div style={{ marginTop: '20px', fontSize: '11px', color: '#64748b', lineHeight: '1.4' }}>
                     Dengan mendaftar, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi {platformName}.
-                </div>
-            </div>
-
-            <div style={{ marginTop: '24px', fontSize: '13px', color: '#94a3b8' }}>
-                Sudah memiliki akun studio?{' '}
-                <Link href="/login" style={{ color: '#38bdf8', fontWeight: '600', textDecoration: 'none' }}>
-                    Masuk di sini
-                </Link>
             </div>
         </div>
     );

@@ -1,8 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { SpeedBoltIcon, SparklesUpgradeIcon } from '@/components/StorageIcons.jsx';
+import React from 'react';
 
 export default function RegisterPlanSelector({
     plans = [],
@@ -15,45 +13,19 @@ export default function RegisterPlanSelector({
     userEmail,
     onLogout
 }) {
-    const [selectedTab, setSelectedTab] = useState('limit');
-    const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
-
-    const filteredPlans = plans.filter(p => {
-        if (!p.planType) return true;
-        return p.planType === selectedTab;
-    });
-
-    const activeList = filteredPlans.length > 0 ? filteredPlans : plans;
-
     return (
         <div className="fade-in-up">
             {/* Header Title */}
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: 'rgba(99, 102, 241, 0.12)',
-                    border: '1px solid rgba(99, 102, 241, 0.25)',
-                    padding: '3px 12px',
-                    borderRadius: '99px',
-                    color: '#818cf8',
-                    fontSize: '11px',
-                    fontWeight: '800',
-                    letterSpacing: '0.04em',
-                    marginBottom: '8px'
-                }}>
-                    <span>TAHAP 2: PILIH PAKET LANGGANAN</span>
-                </div>
                 <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#ffffff', margin: '0 0 6px 0', letterSpacing: '-0.02em' }}>
-                    Pilih Paket Terbaik untuk Studio Anda
+                    Pilih Paket Langganan
                 </h2>
                 <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0 }}>
-                    Tersedia pilihan kuota fleksibel untuk mendukung operasional galeri foto klien Anda.
+                    Pilih paket yang sesuai dengan kebutuhan studio Anda
                 </p>
                 {userEmail && (
                     <div style={{ marginTop: '6px', fontSize: '12px', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                        <span>Terhubung sebagai: <strong>{userEmail}</strong></span>
+                        <span>Akun: <strong>{userEmail}</strong></span>
                         {onLogout && (
                             <button
                                 type="button"
@@ -86,7 +58,7 @@ export default function RegisterPlanSelector({
                             {flashPromoInfo.title || 'Flash Promo Terbatas'}
                         </div>
                         <div style={{ color: '#fca5a5', fontSize: '11px' }}>
-                            Diskon spesial otomatis berlaku saat konfirmasi detail.
+                            Diskon spesial otomatis berlaku saat konfirmasi pesanan.
                         </div>
                     </div>
                     <div style={{
@@ -111,7 +83,7 @@ export default function RegisterPlanSelector({
                 gap: '20px',
                 marginBottom: '28px'
             }}>
-                {activeList.map((p) => {
+                {plans.map((p) => {
                     const isSelected = String(selectedPlanId) === String(p.id);
                     const isPopular = p.name.includes('Pro') || p.name.includes('Business');
                     const finalPrice = Number(p.discountedPrice || p.price || 0);
@@ -162,7 +134,7 @@ export default function RegisterPlanSelector({
                                     {p.name}
                                 </div>
                                 <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '16px', minHeight: '34px' }}>
-                                    {p.description || `Kapasitas hingga ${p.maxProjects} project aktif dengan fitur seleksi online.`}
+                                    {p.description || `Kapasitas hingga ${p.maxProjects} project aktif.`}
                                 </div>
 
                                 <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -229,14 +201,14 @@ export default function RegisterPlanSelector({
                     onClick={onProceedToSummary}
                     disabled={!selectedPlanId || loading}
                     style={{
-                        minWidth: '240px',
-                        padding: '14px 28px',
+                        minWidth: '220px',
+                        padding: '13px 26px',
                         background: selectedPlanId 
                             ? 'linear-gradient(135deg, #6366f1, #4f46e5)' 
                             : 'rgba(255,255,255,0.08)',
                         color: selectedPlanId ? '#ffffff' : '#64748b',
                         border: 'none',
-                        borderRadius: '12px',
+                        borderRadius: '10px',
                         fontSize: '14px',
                         fontWeight: '700',
                         cursor: selectedPlanId && !loading ? 'pointer' : 'not-allowed',
@@ -244,7 +216,7 @@ export default function RegisterPlanSelector({
                         transition: 'all 0.2s ease'
                     }}
                 >
-                    {loading ? 'Memproses...' : 'Lanjut Konfirmasi Detail'}
+                    {loading ? 'Memproses...' : 'Lanjut Konfirmasi'}
                 </button>
             </div>
         </div>
