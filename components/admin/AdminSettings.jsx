@@ -143,28 +143,18 @@ export default function AdminSettings({
       });
       systemStateInitialized.current = true;
     }
-  }, [sysEnableReg, sysEnableTrial, sysMaxQuota, sysTrialExpirationMinutes, trialMaxPhotos, trialMaxSelection, trialPreviewPhotos, customStoragePricePerGb, workerStorageWarningThresholdGb, gracePeriodDays]);
+  }, [sysEnableReg, sysMaxQuota, customStoragePricePerGb, workerStorageWarningThresholdGb, gracePeriodDays]);
 
   const isSystemDirty = 
     Boolean(sysEnableReg) !== Boolean(savedSystemState.sysEnableReg) ||
-    Boolean(sysEnableTrial) !== Boolean(savedSystemState.sysEnableTrial) ||
     (sysMaxQuota ?? null) !== (savedSystemState.sysMaxQuota ?? null) ||
-    Number(sysTrialExpirationMinutes || 15) !== Number(savedSystemState.sysTrialExpirationMinutes || 15) ||
-    Number(trialMaxPhotos || 50) !== Number(savedSystemState.trialMaxPhotos || 50) ||
-    Number(trialMaxSelection || 10) !== Number(savedSystemState.trialMaxSelection || 10) ||
-    Number(trialPreviewPhotos || 12) !== Number(savedSystemState.trialPreviewPhotos || 12) ||
     Number(customStoragePricePerGb || 1250) !== Number(savedSystemState.customStoragePricePerGb || 1250) ||
     Number(workerStorageWarningThresholdGb || 10) !== Number(savedSystemState.workerStorageWarningThresholdGb || 10) ||
     Number(gracePeriodDays || 7) !== Number(savedSystemState.gracePeriodDays || 7);
 
   const handleCancelSystem = () => {
     setSysEnableReg(savedSystemState.sysEnableReg);
-    setSysEnableTrial(savedSystemState.sysEnableTrial);
     setSysMaxQuota(savedSystemState.sysMaxQuota);
-    setSysTrialExpirationMinutes(savedSystemState.sysTrialExpirationMinutes);
-    setTrialMaxPhotos(savedSystemState.trialMaxPhotos);
-    setTrialMaxSelection(savedSystemState.trialMaxSelection);
-    setTrialPreviewPhotos(savedSystemState.trialPreviewPhotos);
     setCustomStoragePricePerGb(savedSystemState.customStoragePricePerGb);
     setWorkerStorageWarningThresholdGb(savedSystemState.workerStorageWarningThresholdGb);
     setGracePeriodDays(savedSystemState.gracePeriodDays);
@@ -394,30 +384,20 @@ export default function AdminSettings({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           enable_registration: sysEnableReg,
-          enable_free_trial: sysEnableTrial,
           max_vendor_quota: sysMaxQuota,
-          trial_expiration_minutes: parseInt(sysTrialExpirationMinutes) || 15,
           saasSettings: {
             custom_storage_price_per_gb: String(customStoragePricePerGb || 1250),
             worker_storage_warning_threshold_gb: String(workerStorageWarningThresholdGb || 10),
-            grace_period_days: String(gracePeriodDays || 7),
-            trial_max_photos: String(trialMaxPhotos || 50),
-            trial_max_selection: String(trialMaxSelection || 10),
-            trial_preview_photos: String(trialPreviewPhotos || 12)
+            grace_period_days: String(gracePeriodDays || 7)
           }
         })
       });
       const data = await res.json();
       if (res.ok) {
-        if (addToast) addToast('Pengaturan Sistem & Uji Coba Trial berhasil disimpan!', 'success');
+        if (addToast) addToast('Pengaturan Akses Sistem & Kuota Storage berhasil disimpan!', 'success');
         setSavedSystemState({
           sysEnableReg,
-          sysEnableTrial,
           sysMaxQuota,
-          sysTrialExpirationMinutes,
-          trialMaxPhotos,
-          trialMaxSelection,
-          trialPreviewPhotos,
           customStoragePricePerGb,
           workerStorageWarningThresholdGb,
           gracePeriodDays
@@ -2006,16 +1986,10 @@ export default function AdminSettings({
                         {gracePeriodDays || 7} Hari
                       </strong>
                     </div>
-                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Durasi Galeri Trial:</span>
-                      <strong style={{ color: '#10b981', fontSize: '13px' }}>
-                        {sysTrialExpirationMinutes || 15} Menit {sysEnableTrial ? '(Aktif)' : '(Nonaktif)'}
-                      </strong>
-                    </div>
-                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Batas Foto Trial:</span>
-                      <strong style={{ color: '#fbbf24', fontSize: '13px' }}>
-                        Maks {trialMaxPhotos || 50} Foto (Pilih {trialMaxSelection || 10})
+                    <div style={{ background: 'rgba(99,102,241,0.08)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(99,102,241,0.25)' }}>
+                      <span style={{ color: '#a5b4fc', display: 'block', fontSize: '11px', marginBottom: '4px' }}>Pusat Kendali Trial:</span>
+                      <strong style={{ color: '#818cf8', fontSize: '13px' }}>
+                        🎯 Terpusat di Tab Trial
                       </strong>
                     </div>
                   </div>
@@ -2114,80 +2088,28 @@ export default function AdminSettings({
                     </p>
                   </div>
 
-                  {/* ── FREE INSTANT TRIAL SETTINGS SECTION ── */}
-                  <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    <h5 style={{ margin: '0 0 14px 0', fontSize: '14px', color: '#10b981', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      🚀 Pengaturan Galeri Uji Coba Instan (Free Instant Trial)
-                    </h5>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-                      <input
-                        type="checkbox"
-                        id="enable_free_trial"
-                        checked={sysEnableTrial}
-                        onChange={e => setSysEnableTrial(e.target.checked)}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                      />
-                      <label htmlFor="enable_free_trial" style={{ cursor: 'pointer', fontSize: '13.5px', fontWeight: 'bold', color: sysEnableTrial ? '#34d399' : '#f87171' }}>
-                        Aktifkan Fitur Free Instant Trial di Landing Page (/trial)
-                      </label>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '12px' }}>⏱️ Durasi Waktu Aktif Trial (Menit)</label>
-                        <input
-                          type="number"
-                          className="input-text"
-                          placeholder="Default: 15 Menit"
-                          value={sysTrialExpirationMinutes}
-                          onChange={e => setSysTrialExpirationMinutes(parseInt(e.target.value) || 15)}
-                        />
-                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                          Hitung mundur countdown timer sebelum galeri trial terkunci expired.
-                        </p>
-                      </div>
-
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '12px' }}>📸 Maksimal Foto Upload Trial</label>
-                        <input
-                          type="number"
-                          className="input-text"
-                          placeholder="Default: 50"
-                          value={trialMaxPhotos}
-                          onChange={e => setTrialMaxPhotos(parseInt(e.target.value) || 50)}
-                        />
-                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                          Batas maksimal jumlah file foto yang di-load dari folder GDrive trial.
-                        </p>
-                      </div>
-
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '12px' }}>✅ Maksimal Foto Terpilih Trial</label>
-                        <input
-                          type="number"
-                          className="input-text"
-                          placeholder="Default: 10"
-                          value={trialMaxSelection}
-                          onChange={e => setTrialMaxSelection(parseInt(e.target.value) || 10)}
-                        />
-                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                          Batas kuota foto yang dapat dipilih oleh klien di sesi uji coba.
-                        </p>
-                      </div>
-
-                      <div className="form-group" style={{ margin: 0 }}>
-                        <label className="form-label" style={{ fontSize: '12px' }}>👁️ Batas Grid Foto Terbuka (Preview)</label>
-                        <input
-                          type="number"
-                          className="input-text"
-                          placeholder="Default: 12"
-                          value={trialPreviewPhotos}
-                          onChange={e => setTrialPreviewPhotos(parseInt(e.target.value) || 12)}
-                        />
-                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '4px 0 0 0' }}>
-                          Jumlah foto yang terlihat di grid (sisanya blur terkunci Pro).
-                        </p>
+                  {/* ── CENTRALIZED TRIAL SETTINGS NOTICE ── */}
+                  <div style={{
+                    marginTop: '24px',
+                    padding: '16px 20px',
+                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08))',
+                    border: '1px solid rgba(99, 102, 241, 0.25)',
+                    borderRadius: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '24px' }}>🎯</span>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#818cf8' }}>
+                          Pusat Kendali Pengaturan Trial (Trial Command Center)
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#94a3b8', marginTop: '2px' }}>
+                          Seluruh kendali durasi, limit kuota foto, RAW Sorter, preset, dan Flash Sale Promo kini terpusat penuh pada Tab <strong>Trial</strong> di bilah navigasi utama.
+                        </div>
                       </div>
                     </div>
                   </div>
