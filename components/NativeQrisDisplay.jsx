@@ -284,10 +284,47 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                                         style={{ width: '250px', height: '250px', objectFit: 'contain', display: 'block', borderRadius: '6px' }} 
                                     />
                                 </div>
-                                <div style={{ marginTop: '14px', textAlign: 'center' }}>
+                                <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '11px', color: '#475569', fontWeight: '600' }}>
                                         Scan dengan aplikasi e-Wallet atau Mobile Banking apa saja
                                     </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const qrSrc = pendingOrder.qrImage || pendingOrder.qrUrl;
+                                            if (!qrSrc) return;
+                                            const link = document.createElement('a');
+                                            link.href = qrSrc;
+                                            link.download = `QRIS-${pendingOrder.orderId || 'Payment'}.png`;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                        }}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '6px',
+                                            padding: '6px 14px',
+                                            background: '#f8fafc',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: '6px',
+                                            color: '#334155',
+                                            fontSize: '11px',
+                                            fontWeight: '600',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease'
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                                    >
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="7 10 12 15 17 10" />
+                                            <line x1="12" y1="15" x2="12" y2="3" />
+                                        </svg>
+                                        <span>Unduh QR</span>
+                                    </button>
                                 </div>
                             </div>
                         ) : (
