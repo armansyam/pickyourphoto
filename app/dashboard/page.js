@@ -3208,7 +3208,11 @@ export default function DashboardPage() {
                                     {selectedUpgradePlan.id !== vendorDetails?.planId && !getProrationDetails(selectedUpgradePlan).isDowngrade && getProrationDetails(selectedUpgradePlan).discount > 0 && (
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: '#34d399', marginBottom: '8px' }}>
                                             <span>Sisa Langganan ({getProrationDetails(selectedUpgradePlan).daysRemaining} Hari)</span>
-                                           {/* Add-On Storage Offer Card & Trigger for Dashboard Upgrade (Only shown when active addon plans exist) */}
+                                            <span>- Rp {getProrationDetails(selectedUpgradePlan).discount.toLocaleString('id-ID')}</span>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Add-On Storage Offer Card & Trigger for Dashboard Upgrade (Only shown when active addon plans exist) */}
                                     {availableAddonPlans && availableAddonPlans.length > 0 && (
                                         <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px dashed rgba(56, 189, 248, 0.3)', borderRadius: '10px', padding: '12px 14px', margin: '12px 0' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
