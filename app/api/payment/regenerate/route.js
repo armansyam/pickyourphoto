@@ -60,10 +60,18 @@ export async function POST(request) {
     // Create new Midtrans Snap transaction
     const orderId = `ORDER-${Date.now()}-${vendorId}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
-    // Determine dynamic request origin (localhost, custom staging domain, or production domain)
+    // Determine dynamic request origin, prioritizing public domain/tunnel from saas_settings
     const host = request.headers.get('host') || 'localhost:3000';
     const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-    const origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
+    let origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
+
+    const saasDomainRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_domain'").get();
+    if (saasDomainRow?.value && saasDomainRow.value.trim()) {
+      const cleanDomain = saasDomainRow.value.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      if (!cleanDomain.includes('localhost') && !cleanDomain.includes('127.0.0.1')) {
+        origin = `https://${cleanDomain}`;
+      }
+    }
 
     const paymentResult = await createPayment({
       orderId,

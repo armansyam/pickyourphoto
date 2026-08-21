@@ -162,10 +162,18 @@ export async function POST(request) {
       console.warn('[Payment Create] Failed to replace old expired sessions for vendor', vendor.id, ':', e.message);
     }
 
-    // Determine dynamic request origin (localhost, custom staging domain, or production domain)
+    // Determine dynamic request origin, prioritizing public domain/tunnel from saas_settings
     const host = request.headers.get('host') || 'localhost:3000';
     const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-    const origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
+    let origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
+
+    const saasDomainRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_domain'").get();
+    if (saasDomainRow?.value && saasDomainRow.value.trim()) {
+      const cleanDomain = saasDomainRow.value.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      if (!cleanDomain.includes('localhost') && !cleanDomain.includes('127.0.0.1')) {
+        origin = `https://${cleanDomain}`;
+      }
+    }
 
     // Step 2: Create new payment via gateway
     const paymentResult = await createPayment({
