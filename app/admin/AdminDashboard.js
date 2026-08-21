@@ -342,16 +342,41 @@ export default function AdminDashboard({ adminUser }) {
         fetchSystemSettings();
         fetchDiskStats();
 
-        // Smart real-time auto polling every 8 seconds (Pauses when tab is hidden)
+        // 1. Instant sync when admin switches back to this browser tab (0s delay)
+        const handleVisibilityChange = () => {
+            if (typeof document !== 'undefined' && !document.hidden) {
+                fetchData(true);
+                fetchAnalytics();
+            }
+        };
+
+        const handleWindowFocus = () => {
+            fetchData(true);
+            fetchAnalytics();
+        };
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener('focus', handleWindowFocus);
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+        }
+
+        // 2. High-frequency live polling: 3s on Inquiry & Vendors tabs, 6s on other tabs
+        const pollIntervalMs = (activeTab === 'inquiry' || activeTab === 'vendors') ? 3000 : 6000;
         const interval = setInterval(() => {
             if (typeof document !== 'undefined' && !document.hidden) {
                 fetchData(true);
                 fetchAnalytics();
             }
-        }, 8000);
+        }, pollIntervalMs);
 
-        return () => clearInterval(interval);
-    }, []);
+        return () => {
+            if (typeof window !== 'undefined') {
+                window.removeEventListener('focus', handleWindowFocus);
+                document.removeEventListener('visibilitychange', handleVisibilityChange);
+            }
+            clearInterval(interval);
+        };
+    }, [activeTab]);
 
 
     const handleToggleVendorStatus = async (vendorId, newStatus) => {
