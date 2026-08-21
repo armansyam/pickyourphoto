@@ -353,20 +353,17 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel }) {
                 <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {statusNotice && (
                         <div style={{
-                            padding: '8px 12px',
-                            borderRadius: '8px',
-                            background: statusNotice.type === 'warning' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                            border: `1px solid ${statusNotice.type === 'warning' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
-                            color: statusNotice.type === 'warning' ? '#fbbf24' : '#f87171',
-                            fontSize: '12px',
-                            fontWeight: '500',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            gap: '6px',
+                            gap: '5px',
+                            color: statusNotice.type === 'warning' ? '#f59e0b' : '#f87171',
+                            fontSize: '11px',
+                            fontWeight: '500',
+                            padding: '2px 0',
                             animation: 'fadeIn 0.2s ease'
                         }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="12" y1="8" x2="12" y2="12" />
                                 <line x1="12" y1="16" x2="12.01" y2="16" />
