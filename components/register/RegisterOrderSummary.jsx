@@ -16,7 +16,15 @@ export default function RegisterOrderSummary({
     loading = false,
     error = ''
 }) {
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+
     if (!selectedPlan) return null;
+
+    const handleSingleClickPay = (e) => {
+        if (isSubmitting || loading) return;
+        setIsSubmitting(true);
+        if (onPayQris) onPayQris(e);
+    };
 
     const planPrice = Number(selectedPlan.discountedPrice || selectedPlan.price || 0);
     const originalPrice = Number(selectedPlan.originalPrice || selectedPlan.price || 0);
@@ -178,23 +186,23 @@ export default function RegisterOrderSummary({
                     </button>
                     <button
                         type="button"
-                        onClick={onPayQris}
+                        onClick={handleSingleClickPay}
                         className="btn-primary"
                         style={{
                             flex: 2,
                             padding: '12px 20px',
                             fontSize: '14px',
                             fontWeight: '700',
-                            opacity: loading ? 0.5 : 1,
-                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: (loading || isSubmitting) ? 0.5 : 1,
+                            cursor: (loading || isSubmitting) ? 'not-allowed' : 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '6px'
                         }}
-                        disabled={loading}
+                        disabled={loading || isSubmitting}
                     >
-                        {loading ? (
+                        {(loading || isSubmitting) ? (
                             <span>Memproses...</span>
                         ) : (
                             <>
