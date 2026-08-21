@@ -1,0 +1,230 @@
+/* AdminPlans.module.css
+   CSS Module untuk komponen AdminPlans
+   Menggantikan inline styles yang berulang
+*/
+
+/* ── Wrapper utama ── */
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* ── Header section ── */
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.sectionTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 2px;
+}
+
+.sectionSub {
+    font-size: 11.5px;
+    color: #a1a1aa;
+    margin: 0;
+}
+
+/* ── Plans Grid ── */
+.plansGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    gap: 14px;
+}
+
+/* ── Plan Card ── */
+.planCard {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 18px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.planCard:hover {
+    border-color: rgba(99, 102, 241, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.planCardPro {
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* ── Best Seller badge ── */
+.bestSellerBadge {
+    position: absolute;
+    top: -10px;
+    right: 16px;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 8px;
+    letter-spacing: 0.05em;
+}
+
+/* ── Plan header row ── */
+.planHeaderRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.planName {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.planStatus {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-weight: bold;
+}
+
+.planStatusActive {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+}
+
+.planStatusInactive {
+    background: rgba(255, 255, 255, 0.08);
+    color: #a1a1aa;
+}
+
+/* ── Price display ── */
+.planPrice {
+    font-size: 24px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 8px 0 2px;
+}
+
+.planPricePeriod {
+    font-size: 13px;
+    font-weight: 400;
+    color: #71717a;
+}
+
+.planPriceSub {
+    font-size: 11px;
+    color: #71717a;
+    margin: 0 0 14px;
+}
+
+/* ── Feature list ── */
+.featureList {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.featureItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #a1a1aa;
+}
+
+.featureIcon {
+    flex-shrink: 0;
+}
+
+/* ── Action buttons ── */
+.actionRow {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Add-On Section ── */
+.addonSection {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: clamp(14px, 2.5vw, 22px);
+}
+
+.addonGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.addonCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.2s ease;
+}
+
+.addonCard:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.addonName {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+}
+
+.addonPrice {
+    font-size: 18px;
+    font-weight: 700;
+    color: #818cf8;
+    margin: 0;
+}
+
+.addonDesc {
+    font-size: 11px;
+    color: #71717a;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── Empty state ── */
+.emptyState {
+    text-align: center;
+    color: #71717a;
+    padding: 20px 0;
+    font-size: 13px;
+}
+
+.loadingState {
+    text-align: center;
+    color: #a1a1aa;
+    padding: 20px 0;
+    font-size: 12px;
+}

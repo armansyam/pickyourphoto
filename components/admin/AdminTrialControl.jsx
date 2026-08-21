@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import styles from './AdminTrialControl.module.css';
+import { TrialIcon, AnalyticsIcon } from '@/components/AdminIcons';
+import { SpeedBoltIcon, CheckIcon, CloseIcon, ClockIcon } from '@/components/StorageIcons';
 
 // ── PEAK SEASON PRESETS ──────────────────────────────────────────────────
 const PRESETS = [
@@ -44,18 +47,11 @@ const PRESETS = [
 // ── STAT CARD ────────────────────────────────────────────────────────────
 function StatCard({ icon, label, value, sub, color = '#818cf8' }) {
     return (
-        <div style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.07)',
-            borderRadius: '14px',
-            padding: '20px',
-            flex: '1',
-            minWidth: '140px',
-        }}>
-            <div style={{ fontSize: '22px', marginBottom: '8px' }}>{icon}</div>
-            <div style={{ fontSize: '28px', fontWeight: '800', color, lineHeight: 1 }}>{value}</div>
-            <div style={{ fontSize: '13px', color: '#a1a1aa', marginTop: '6px', fontWeight: '600' }}>{label}</div>
-            {sub && <div style={{ fontSize: '11px', color: '#71717a', marginTop: '4px' }}>{sub}</div>}
+        <div className={styles.statCard}>
+            <div className={styles.statIcon}>{icon}</div>
+            <div className={styles.statValue} style={{ color }}>{value}</div>
+            <div className={styles.statLabel}>{label}</div>
+            {sub && <div className={styles.statSub}>{sub}</div>}
         </div>
     );
 }
@@ -225,15 +221,15 @@ export default function AdminTrialControl({ addToast }) {
     }
 
     return (
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div className={styles.wrapper}>
 
             {/* ── HEADER ── */}
-            <div style={{ marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+            <div className={styles.headerRow}>
                 <div>
-                    <h3 style={{ margin: 0, fontSize: '22px', fontWeight: '800', color: '#f4f4f5' }}>
+                    <h3 className={styles.headerTitle}>
                         🎯 Trial Command Center
                     </h3>
-                    <p style={{ margin: '6px 0 0', color: '#a1a1aa', fontSize: '14px' }}>
+                    <p className={styles.headerSub}>
                         Kendalikan seluruh pengalaman trial secara real-time — tanpa deploy ulang.
                     </p>
                 </div>
@@ -246,29 +242,14 @@ export default function AdminTrialControl({ addToast }) {
                         handleSave({ enable_free_trial: nextTrial, enable_flash_promo: nextTrial ? false : enableFlashPromo });
                     }}
                     disabled={saving}
-                    style={{
-                        padding: '10px 22px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        fontWeight: '700',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        background: enableTrial
-                            ? 'linear-gradient(135deg, #10b981, #059669)'
-                            : 'linear-gradient(135deg, #ef4444, #dc2626)',
-                        color: '#fff',
-                        boxShadow: enableTrial
-                            ? '0 4px 16px rgba(16,185,129,0.3)'
-                            : '0 4px 16px rgba(239,68,68,0.3)',
-                    }}
+                    className={`${styles.masterToggleBtn} ${enableTrial ? styles.toggleActive : styles.toggleInactive}`}
                 >
                     {enableTrial ? '🟢 Trial AKTIF' : '🔴 Trial NONAKTIF'}
                 </button>
             </div>
 
             {/* ── STATS ROW ── */}
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '28px' }}>
+            <div className={styles.statsRow}>
                 <StatCard icon="🧪" label="Total Trial" value={stats?.totalTrials ?? 0} sub="Sepanjang masa" color="#818cf8" />
                 <StatCard icon="📅" label="Hari Ini" value={stats?.trialsToday ?? 0} sub="Trial dibuat hari ini" color="#38bdf8" />
                 <StatCard icon="⏳" label="Aktif" value={stats?.trialsActive ?? 0} sub="Belum expired" color="#f59e0b" />
@@ -277,17 +258,10 @@ export default function AdminTrialControl({ addToast }) {
             </div>
 
             {/* ── ⚡ FLASH SALE & DISCOUNT ENGINE CARD ── */}
-            <div style={{
-                background: enableFlashPromo ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%)' : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${enableFlashPromo ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255,255,255,0.07)'}`,
-                borderRadius: '14px',
-                padding: '22px',
-                marginBottom: '20px',
-                transition: 'all 0.3s'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            <div className={`${styles.flashCard} ${enableFlashPromo ? styles.flashCardActive : styles.flashCardInactive}`}>
+                <div className={styles.flashHeader}>
                     <div>
-                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: enableFlashPromo ? '#f87171' : '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h4 className={styles.flashTitle} style={{ color: enableFlashPromo ? '#f87171' : '#ffffff' }}>
                             <span>⚡ Flash Sale & Engine Diskon Otomatis</span>
                         </h4>
                         <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#a1a1aa' }}>
@@ -329,7 +303,7 @@ export default function AdminTrialControl({ addToast }) {
                 <div style={{ opacity: enableFlashPromo ? 1 : 0.45, transition: 'opacity 0.2s', display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     
                     {/* MODE STRATEGI SWITCHER */}
-                    <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.25)', padding: '6px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div className={styles.modeSwitcher}>
                         <button
                             type="button"
                             disabled={!enableFlashPromo}
@@ -337,17 +311,12 @@ export default function AdminTrialControl({ addToast }) {
                                 setFlashPromoType('percent');
                                 handleSave({ flash_promo_type: 'percent' });
                             }}
+                            className={styles.modeBtn}
                             style={{
-                                flex: 1,
-                                padding: '10px 14px',
-                                borderRadius: '8px',
                                 border: flashPromoType === 'percent' ? '1px solid #ef4444' : 'none',
                                 background: flashPromoType === 'percent' ? 'linear-gradient(135deg, rgba(239,68,68,0.25), rgba(220,38,38,0.15))' : 'transparent',
                                 color: flashPromoType === 'percent' ? '#f87171' : '#a1a1aa',
-                                fontWeight: '700',
-                                fontSize: '12px',
-                                cursor: enableFlashPromo ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.2s'
+                                cursor: enableFlashPromo ? 'pointer' : 'not-allowed'
                             }}
                         >
                             🏷️ Mode Diskon Persentase (%)
@@ -359,17 +328,12 @@ export default function AdminTrialControl({ addToast }) {
                                 setFlashPromoType('bundle');
                                 handleSave({ flash_promo_type: 'bundle' });
                             }}
+                            className={styles.modeBtn}
                             style={{
-                                flex: 1,
-                                padding: '10px 14px',
-                                borderRadius: '8px',
                                 border: flashPromoType === 'bundle' ? '1px solid #10b981' : 'none',
                                 background: flashPromoType === 'bundle' ? 'linear-gradient(135deg, rgba(16,185,129,0.25), rgba(5,150,105,0.15))' : 'transparent',
                                 color: flashPromoType === 'bundle' ? '#34d399' : '#a1a1aa',
-                                fontWeight: '700',
-                                fontSize: '12px',
-                                cursor: enableFlashPromo ? 'pointer' : 'not-allowed',
-                                transition: 'all 0.2s'
+                                cursor: enableFlashPromo ? 'pointer' : 'not-allowed'
                             }}
                         >
                             🎁 Mode Flash Sale Bundle (Plan + Add-on) ⭐
@@ -542,7 +506,7 @@ export default function AdminTrialControl({ addToast }) {
                         </div>
                     </div>
 
-                    <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '16px' }}>
+                    <div className={styles.simulatorBox}>
                         <div style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span>💡 Simulator Tampilan Vendor (Live Real-Time)</span>
                             <span style={{ fontSize: '10px', color: flashPromoType === 'bundle' ? '#34d399' : '#f87171' }}>
@@ -644,39 +608,26 @@ export default function AdminTrialControl({ addToast }) {
             </div>
 
             {/* ── PEAK SEASON PRESETS ── */}
-            <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: '14px',
-                padding: '22px',
-                marginBottom: '20px',
-            }}>
-                <h4 style={{ margin: '0 0 6px', fontSize: '15px', fontWeight: '700', color: '#f4f4f5' }}>
+            <div className={styles.sectionCard}>
+                <h4 className={styles.sectionTitle}>
                     ⚡ Peak Season Presets
                 </h4>
-                <p style={{ margin: '0 0 16px', color: '#71717a', fontSize: '13px' }}>
+                <p className={styles.sectionSub}>
                     Terapkan sekaligus — durasi & limit RAW Sorter langsung tersimpan.
                 </p>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <div className={styles.presetsGrid}>
                     {PRESETS.map(preset => (
                         <div key={preset.id}>
                             <button
                                 onClick={() => applyPreset(preset)}
                                 disabled={saving}
+                                className={styles.presetBtn}
                                 style={{
-                                    padding: '10px 16px',
-                                    borderRadius: '10px',
                                     border: `1px solid ${activePreset === preset.id ? preset.color : 'rgba(255,255,255,0.1)'}`,
                                     background: activePreset === preset.id
                                         ? `linear-gradient(135deg, ${preset.color}22, ${preset.color}11)`
                                         : 'rgba(255,255,255,0.03)',
-                                    color: activePreset === preset.id ? preset.color : '#a1a1aa',
-                                    fontWeight: '600',
-                                    fontSize: '13px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s',
-                                    textAlign: 'left',
-                                    minWidth: '140px',
+                                    color: activePreset === preset.id ? preset.color : '#a1a1aa'
                                 }}
                                 title={preset.desc}
                             >
@@ -702,17 +653,11 @@ export default function AdminTrialControl({ addToast }) {
             </div>
 
             {/* ── SETTINGS FORM ── */}
-            <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: '14px',
-                padding: '22px',
-                marginBottom: '20px',
-            }}>
-                <h4 style={{ margin: '0 0 18px', fontSize: '15px', fontWeight: '700', color: '#f4f4f5' }}>
+            <div className={styles.sectionCard}>
+                <h4 className={styles.sectionTitle} style={{ marginBottom: '18px' }}>
                     ⚙️ Pengaturan Manual
                 </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+                <div className={styles.formGrid}>
 
                     {/* Durasi */}
                     <div>
@@ -723,12 +668,13 @@ export default function AdminTrialControl({ addToast }) {
                             type="number" min="5" max="10080"
                             value={expirationMinutes}
                             onChange={e => setExpirationMinutes(Math.max(5, parseInt(e.target.value) || 30))}
-                            style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
+                            className={styles.inputField}
                         />
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                             {[15, 30, 60, 90, 120].map(m => (
                                 <button key={m} type="button" onClick={() => setExpirationMinutes(m)}
-                                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s',
+                                    className={styles.pillBtn}
+                                    style={{
                                         background: expirationMinutes === m ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.05)',
                                         color: expirationMinutes === m ? '#818cf8' : '#71717a',
                                         border: expirationMinutes === m ? '1px solid #6366f1' : '1px solid rgba(255,255,255,0.1)'
@@ -747,12 +693,13 @@ export default function AdminTrialControl({ addToast }) {
                             type="number" min="1" max="10000"
                             value={sorterLimit}
                             onChange={e => setSorterLimit(Math.max(1, parseInt(e.target.value) || 5))}
-                            style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
+                            className={styles.inputField}
                         />
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                             {[3, 5, 8, 10, 15].map(n => (
                                 <button key={n} type="button" onClick={() => setSorterLimit(n)}
-                                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s',
+                                    className={styles.pillBtn}
+                                    style={{
                                         background: sorterLimit === n ? 'rgba(168,85,247,0.25)' : 'rgba(255,255,255,0.05)',
                                         color: sorterLimit === n ? '#a855f7' : '#71717a',
                                         border: sorterLimit === n ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.1)'
@@ -760,7 +707,7 @@ export default function AdminTrialControl({ addToast }) {
                                 >{n} file</button>
                             ))}
                         </div>
-                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
+                        <div className={styles.inputHint}>
                             RAW Sorter berhenti di tengah jalan setelah {sorterLimit} file berhasil disortir.
                         </div>
                     </div>
@@ -774,12 +721,13 @@ export default function AdminTrialControl({ addToast }) {
                             type="number" min="1" max="10000"
                             value={maxSelection}
                             onChange={e => setMaxSelection(Math.max(1, parseInt(e.target.value) || 10))}
-                            style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
+                            className={styles.inputField}
                         />
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                             {[5, 10, 15, 20, 30].map(n => (
                                 <button key={n} type="button" onClick={() => setMaxSelection(n)}
-                                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s',
+                                    className={styles.pillBtn}
+                                    style={{
                                         background: maxSelection === n ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.05)',
                                         color: maxSelection === n ? '#10b981' : '#71717a',
                                         border: maxSelection === n ? '1px solid #10b981' : '1px solid rgba(255,255,255,0.1)'
@@ -787,7 +735,7 @@ export default function AdminTrialControl({ addToast }) {
                                 >{n} foto</button>
                             ))}
                         </div>
-                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
+                        <div className={styles.inputHint}>
                             Klien hanya bisa memilih maks {maxSelection} foto dari galeri trial.
                         </div>
                     </div>
@@ -801,12 +749,13 @@ export default function AdminTrialControl({ addToast }) {
                             type="number" min="1" max="10000"
                             value={maxPhotos}
                             onChange={e => setMaxPhotos(Math.max(1, parseInt(e.target.value) || 50))}
-                            style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
+                            className={styles.inputField}
                         />
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                             {[20, 30, 50, 75, 100].map(n => (
                                 <button key={n} type="button" onClick={() => setMaxPhotos(n)}
-                                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s',
+                                    className={styles.pillBtn}
+                                    style={{
                                         background: maxPhotos === n ? 'rgba(56,189,248,0.25)' : 'rgba(255,255,255,0.05)',
                                         color: maxPhotos === n ? '#38bdf8' : '#71717a',
                                         border: maxPhotos === n ? '1px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)'
@@ -814,7 +763,7 @@ export default function AdminTrialControl({ addToast }) {
                                 >{n} foto</button>
                             ))}
                         </div>
-                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
+                        <div className={styles.inputHint}>
                             Total pool kuota foto yang di-load dan dibagi ke seluruh tab subfolder terbuka.
                         </div>
                     </div>
@@ -828,12 +777,13 @@ export default function AdminTrialControl({ addToast }) {
                             type="number" min="1" max="100"
                             value={maxSubfolders}
                             onChange={e => setMaxSubfolders(Math.max(1, parseInt(e.target.value) || 1))}
-                            style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
+                            className={styles.inputField}
                         />
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                             {[1, 2, 3, 5, 10].map(n => (
                                 <button key={n} type="button" onClick={() => setMaxSubfolders(n)}
-                                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s',
+                                    className={styles.pillBtn}
+                                    style={{
                                         background: maxSubfolders === n ? 'rgba(234,179,8,0.25)' : 'rgba(255,255,255,0.05)',
                                         color: maxSubfolders === n ? '#eab308' : '#71717a',
                                         border: maxSubfolders === n ? '1px solid #eab308' : '1px solid rgba(255,255,255,0.1)'
@@ -841,7 +791,7 @@ export default function AdminTrialControl({ addToast }) {
                                 >{n} tab</button>
                             ))}
                         </div>
-                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
+                        <div className={styles.inputHint}>
                             {maxSubfolders === 1
                                 ? 'Hanya 1 tab subfolder pertama yang dapat dibuka. Tab lainnya terkunci (upsell).'
                                 : `${maxSubfolders} tab subfolder pertama terbuka. Selebihnya terkunci (upsell).`
@@ -858,12 +808,13 @@ export default function AdminTrialControl({ addToast }) {
                             type="number" min="1" max="10000"
                             value={previewPhotos}
                             onChange={e => setPreviewPhotos(Math.max(1, parseInt(e.target.value) || 12))}
-                            style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '14px', boxSizing: 'border-box' }}
+                            className={styles.inputField}
                         />
                         <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
                             {[6, 9, 12, 15, 20].map(n => (
                                 <button key={n} type="button" onClick={() => setPreviewPhotos(n)}
-                                    style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s',
+                                    className={styles.pillBtn}
+                                    style={{
                                         background: previewPhotos === n ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.05)',
                                         color: previewPhotos === n ? '#f59e0b' : '#71717a',
                                         border: previewPhotos === n ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.1)'
@@ -871,7 +822,7 @@ export default function AdminTrialControl({ addToast }) {
                                 >{n} foto</button>
                             ))}
                         </div>
-                        <div style={{ marginTop: '6px', fontSize: '11px', color: '#52525b' }}>
+                        <div className={styles.inputHint}>
                             Maks foto yang diambil per tab dari shared pool. Sisa pool mengalir ke tab berikutnya.
                         </div>
                     </div>
@@ -891,7 +842,8 @@ export default function AdminTrialControl({ addToast }) {
                                 value={ctaText}
                                 onChange={e => setCtaText(e.target.value)}
                                 placeholder="e.g. Masih ada 18 file menunggu..."
-                                style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '13px', boxSizing: 'border-box' }}
+                                className={styles.inputField}
+                                style={{ fontSize: '13px' }}
                             />
                         </div>
                         <div>
@@ -901,7 +853,8 @@ export default function AdminTrialControl({ addToast }) {
                                 value={ctaSubtext}
                                 onChange={e => setCtaSubtext(e.target.value)}
                                 placeholder="e.g. Upgrade sekarang, selesaikan semua dalam 1 klik"
-                                style={{ width: '100%', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#f4f4f5', fontSize: '13px', boxSizing: 'border-box' }}
+                                className={styles.inputField}
+                                style={{ fontSize: '13px' }}
                             />
                         </div>
                     </div>
@@ -910,45 +863,29 @@ export default function AdminTrialControl({ addToast }) {
                 <button
                     onClick={() => handleSave()}
                     disabled={saving}
-                    style={{
-                        marginTop: '20px',
-                        padding: '12px 28px',
-                        borderRadius: '10px',
-                        border: 'none',
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        color: '#fff',
-                        fontWeight: '700',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        opacity: saving ? 0.6 : 1,
-                        boxShadow: '0 4px 16px rgba(99,102,241,0.3)',
-                    }}
+                    className={styles.saveBtn}
                 >
-                    {saving ? '⏳ Menyimpan...' : '💾 Simpan Pengaturan Trial'}
+                    {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
                 </button>
             </div>
 
             {/* ── RECENT TRIALS TABLE ── */}
-            <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.07)',
-                borderRadius: '14px',
-                padding: '22px',
-            }}>
-                <h4 style={{ margin: '0 0 16px', fontSize: '15px', fontWeight: '700', color: '#f4f4f5' }}>
-                    📋 10 Trial Terbaru
+            <div className={styles.sectionCard}>
+                <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: '700', color: '#f4f4f5', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <TrialIcon size={14} color="#a855f7" />
+                    <span>Trial Terbaru</span>
                 </h4>
                 {recentTrials.length === 0 ? (
-                    <div style={{ color: '#52525b', textAlign: 'center', padding: '32px', fontSize: '14px' }}>
+                    <div style={{ color: '#52525b', textAlign: 'center', padding: '32px', fontSize: '13px' }}>
                         Belum ada trial yang dibuat.
                     </div>
                 ) : (
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <div className={styles.tableWrap}>
+                        <table className={styles.table}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                                     {['Nama', 'Slug', 'Foto', 'Dipilih', 'Dibuat', 'Expires', 'Status'].map(h => (
-                                        <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: '#71717a', fontWeight: '600', whiteSpace: 'nowrap' }}>{h}</th>
+                                        <th key={h} className={styles.th}>{h}</th>
                                     ))}
                                 </tr>
                             </thead>
@@ -958,19 +895,20 @@ export default function AdminTrialControl({ addToast }) {
                                     const isExpired = new Date(t.expiresAt) < new Date();
                                     return (
                                         <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                                            <td style={{ padding: '10px 12px', color: '#e4e4e7', fontWeight: '600' }}>{t.title}</td>
-                                            <td style={{ padding: '10px 12px', color: '#71717a', fontFamily: 'monospace', fontSize: '11px' }}>{t.slug}</td>
-                                            <td style={{ padding: '10px 12px', color: '#a1a1aa', textAlign: 'center' }}>{t.photoCount}</td>
-                                            <td style={{ padding: '10px 12px', color: '#10b981', textAlign: 'center', fontWeight: '700' }}>{t.selectedCount}</td>
-                                            <td style={{ padding: '10px 12px', color: '#71717a', whiteSpace: 'nowrap' }}>{formatDate(t.createdAt)}</td>
-                                            <td style={{ padding: '10px 12px', color: isExpired ? '#f87171' : '#fbbf24', whiteSpace: 'nowrap' }}>{formatDate(t.expiresAt)}</td>
-                                            <td style={{ padding: '10px 12px' }}>
+                                            <td className={styles.td} style={{ color: '#e4e4e7', fontWeight: '600' }}>{t.title}</td>
+                                            <td className={styles.td} style={{ color: '#71717a', fontFamily: 'monospace', fontSize: '11px' }}>{t.slug}</td>
+                                            <td className={styles.td} style={{ color: '#a1a1aa', textAlign: 'center' }}>{t.photoCount}</td>
+                                            <td className={styles.td} style={{ color: '#10b981', textAlign: 'center', fontWeight: '700' }}>{t.selectedCount}</td>
+                                            <td className={styles.td} style={{ color: '#71717a', whiteSpace: 'nowrap' }}>{formatDate(t.createdAt)}</td>
+                                            <td className={styles.td} style={{ color: isExpired ? '#f87171' : '#fbbf24', whiteSpace: 'nowrap' }}>{formatDate(t.expiresAt)}</td>
+                                            <td className={styles.td}>
                                                 <span style={{
-                                                    padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700',
+                                                    padding: '3px 8px', borderRadius: '6px', fontSize: '10.5px', fontWeight: '700',
                                                     background: isCompleted ? 'rgba(16,185,129,0.15)' : isExpired ? 'rgba(239,68,68,0.12)' : 'rgba(251,191,36,0.12)',
                                                     color: isCompleted ? '#10b981' : isExpired ? '#f87171' : '#fbbf24',
+                                                    display: 'inline-flex', alignItems: 'center', gap: '4px'
                                                 }}>
-                                                    {isCompleted ? '✅ Completed' : isExpired ? '💀 Expired' : '⏳ Active'}
+                                                    {isCompleted ? <><CheckIcon size={11} color="#10b981" /><span>Selesai</span></> : isExpired ? <><CloseIcon size={11} color="#f87171" /><span>Expired</span></> : <><ClockIcon size={11} color="#fbbf24" /><span>Aktif</span></>}
                                                 </span>
                                             </td>
                                         </tr>
@@ -984,3 +922,4 @@ export default function AdminTrialControl({ addToast }) {
         </div>
     );
 }
+

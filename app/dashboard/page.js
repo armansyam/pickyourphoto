@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import styles from './dashboard.module.css';
 import RawSorterDrawer from '@/components/RawSorterDrawer';
 import { 
     CopyLinkIcon, FolderIcon, UploadCloudIcon, PaletteThemeIcon, PlusIcon, LockIcon, 
@@ -1100,32 +1101,32 @@ export default function DashboardPage() {
     return (
         <div className="app-container">
             {vendorDetails && vendorDetails.isExpired && (
-                <div style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#f87171', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', lineHeight: '1.5' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <AlertTriangleIcon size={22} color="#f87171" />
+                <div className={`${styles.warningAlert} ${styles.warningAlertDanger}`}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <AlertTriangleIcon size={20} color="#f87171" />
                         <div>
-                            <strong>Masa Aktif Paket Berlangganan Habis!</strong> Paket <strong>{vendorDetails.planName} Plan</strong> Anda telah berakhir pada {new Date(vendorDetails.expiresAt).toLocaleDateString()}. Fungsionalitas pembuatan project baru dan akses galeri klien dinonaktifkan sementara.
+                            <strong>Masa Aktif Berakhir!</strong> Paket <strong>{vendorDetails.planName}</strong> telah berakhir pada {new Date(vendorDetails.expiresAt).toLocaleDateString()}. Fungsionalitas pembuatan project dinonaktifkan sementara.
                         </div>
                     </div>
                     {vendorDetails.planPrice > 0 && (
                         <button 
                             onClick={handleOpenUpgradeModal} 
                             className="btn-primary" 
-                            style={{ background: '#f87171', border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            style={{ background: '#f87171', border: 'none', color: '#000', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                         >
-                            <RefreshCwIcon size={14} color="#000" />
-                            <span>Perpanjang Sekarang</span>
+                            <RefreshCwIcon size={13} color="#000" />
+                            <span>Perpanjang</span>
                         </button>
                     )}
                 </div>
             )}
 
             {vendorDetails && vendorDetails.upgradeRequest && (
-                <div style={{ background: 'rgba(251, 191, 36, 0.15)', border: '1px solid rgba(251, 191, 36, 0.3)', color: '#fbbf24', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', lineHeight: '1.5' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <ClockIcon size={22} color="#fbbf24" />
+                <div className={`${styles.warningAlert} ${styles.warningAlertPending}`}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <ClockIcon size={20} color="#fbbf24" />
                         <div>
-                            <strong>Upgrade/Renewal Plan need confirmation!</strong> Permintaan Anda untuk paket <strong>{vendorDetails.upgradeRequest.planName}</strong> dengan biaya <strong>Rp {Number(vendorDetails.upgradeRequest.proratedPrice).toLocaleString('id-ID')}</strong> telah diajukan dan sedang menunggu verifikasi superadmin.
+                            <strong>Menunggu Konfirmasi Upgrade!</strong> Permintaan paket <strong>{vendorDetails.upgradeRequest.planName}</strong> (Rp {Number(vendorDetails.upgradeRequest.proratedPrice).toLocaleString('id-ID')}) sedang menunggu verifikasi admin.
                         </div>
                     </div>
                     {adminWhatsapp && (
@@ -1134,33 +1135,33 @@ export default function DashboardPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-primary"
-                            style={{ background: '#fbbf24', border: 'none', color: '#000', padding: '8px 16px', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', textDecoration: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                            style={{ background: '#fbbf24', border: 'none', color: '#000', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', textDecoration: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}
                         >
-                            <WhatsAppIcon size={15} color="#000" />
-                            <span>Hubungi Admin via WA</span>
+                            <WhatsAppIcon size={14} color="#000" />
+                            <span>WA Admin</span>
                         </a>
                     )}
                 </div>
             )}
 
-            <div className="dashboard-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: '16px', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            <div className={`dashboard-header-row ${styles.headerRow}`}>
                 <div>
-                    <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Dashboard</h1>
-                    <p style={{ color: '#a1a1aa', margin: '4px 0 0 0', fontSize: '13px' }}>
+                    <h1 className={styles.headerTitle}>Dashboard</h1>
+                    <p className={styles.headerSub}>
                         Kelola project seleksi foto klien
                         {vendorDetails && (
-                            <span> — Paket: <strong>{vendorDetails.planName ? (vendorDetails.planName.endsWith('Plan') ? vendorDetails.planName : `${vendorDetails.planName} Plan`) : 'Basic Plan'}</strong> (Masa aktif s/d: {vendorDetails.expiresAt ? new Date(vendorDetails.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Lifetime'})</span>
+                            <span> — <strong>{vendorDetails.planName ? (vendorDetails.planName.endsWith('Plan') ? vendorDetails.planName : `${vendorDetails.planName} Plan`) : 'Basic Plan'}</strong> (s/d {vendorDetails.expiresAt ? new Date(vendorDetails.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Lifetime'})</span>
                         )}
                     </p>
                 </div>
-                <div className="dashboard-header-actions" style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                <div className={`dashboard-header-actions ${styles.headerActions}`}>
                     {adminWhatsapp && (
                         <a
                             href={`https://wa.me/${normalizeWhatsappNumber(adminWhatsapp)}?text=${encodeURIComponent('Halo Admin, saya vendor ' + (vendorDetails?.name || '') + '. Saya ingin bertanya mengenai layanan ' + (systemSettings?.saas_name || 'platform') + '.')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Hubungi Admin via WhatsApp"
-                            style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', color: '#34d399', border: '1px solid rgba(52,211,153,0.2)', background: 'rgba(52,211,153,0.06)', borderRadius: '8px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
+                            className={`${styles.actionBtn} ${styles.actionBtnWa}`}
                         >
                             <WhatsAppIcon size={14} color="#34d399" /> <span>WA Admin</span>
                         </a>
@@ -1168,14 +1169,14 @@ export default function DashboardPage() {
                     <button
                         onClick={handleOpenUpgradeModal}
                         title="Lihat & Upgrade Plan"
-                        style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)', background: 'rgba(251,191,36,0.06)', borderRadius: '8px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
+                        className={`${styles.actionBtn} ${styles.actionBtnUpgrade}`}
                     >
                         <SparklesUpgradeIcon size={13} color="#fbbf24" /> <span>Upgrade</span>
                     </button>
                     <button
                         onClick={() => setShowBrandingModal(true)}
                         title="Pengaturan Brand"
-                        style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '12px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s' }}
+                        className={`${styles.actionBtn} ${styles.actionBtnBrand}`}
                     >
                         <SettingsManageIcon size={13} color="#a1a1aa" /> <span>Brand</span>
                     </button>
@@ -1184,19 +1185,19 @@ export default function DashboardPage() {
 
             {/* ── PLAN INFO CARDS ── */}
             {vendorDetails ? (
-                <div className="dashboard-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+                <div className={`dashboard-stats-grid ${styles.statsGrid}`}>
 
-                    <div style={{ background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
-                        <p style={{ margin: 0, fontSize: '11px', color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Kuota Project Aktif</p>
-                        <p style={{ margin: '6px 0 0 0', fontSize: '22px', fontWeight: '700', color: '#e4e4e7' }}>
-                            {projects.length} <span style={{ fontSize: '14px', color: '#71717a', fontWeight: '400' }}>/ {vendorDetails.maxProjects || '∞'} Project</span>
+                    <div className={`${styles.statCard} ${styles.statCardIndigo}`}>
+                        <p className={styles.statLabel} style={{ color: '#818cf8' }}>Kuota Proyek</p>
+                        <p className={styles.statValue}>
+                            {projects.length} <span style={{ fontSize: '12px', color: '#71717a', fontWeight: '400' }}>/ {vendorDetails.maxProjects || '∞'} Project</span>
                         </p>
                     </div>
-                    <div style={{ background: (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) ? 'rgba(52,211,153,0.06)' : 'rgba(251,191,36,0.06)', border: `1px solid ${(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) ? 'rgba(52,211,153,0.15)' : 'rgba(251,191,36,0.15)'}`, borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div className={`${styles.statCard} ${(vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0 || vendorDetails.externalDriveConnected) ? styles.statCardEmerald : styles.statCardAmber}`} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                                <p style={{ margin: 0, fontSize: '11px', color: (vendorDetails.externalDriveConnected || vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>
-                                    PUSAT STORAGE PROJECT
+                                <p className={styles.statLabel} style={{ color: (vendorDetails.externalDriveConnected || vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) ? '#34d399' : '#fbbf24' }}>
+                                    Storage
                                 </p>
                                 <Link
                                     href="/dashboard/storage"
@@ -1218,34 +1219,29 @@ export default function DashboardPage() {
                                     <span>→</span>
                                 </Link>
                             </div>
-                            <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <p style={{ margin: '4px 0 0 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {vendorDetails.externalDriveConnected 
                                     ? 'Storage Studio' 
                                     : (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) 
                                         ? `${((vendorDetails.storageUsedMb || 0) / 1024 < 0.1 ? (vendorDetails.storageUsedMb || 0).toFixed(1) + ' MB' : ((vendorDetails.storageUsedMb || 0) / 1024).toFixed(1) + ' GB')}`
-                                        : 'Google Drive Utama'
+                                        : 'Google Drive'
                                 }
                             </p>
                             {vendorDetails.externalDriveConnected && (
-                                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#71717a', fontWeight: '400', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#71717a', fontWeight: '400', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                     {vendorDetails.externalDriveEmail || 'Connected'}
                                 </p>
                             )}
                             {!vendorDetails.externalDriveConnected && (vendorDetails.hasStorageAddon || vendorDetails.storageQuotaGb > 0) && (
-                                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#71717a', fontWeight: '400' }}>
-                                    / {vendorDetails.storageQuotaGb} GB Cloud Storage
-                                </p>
-                            )}
-                            {!vendorDetails.externalDriveConnected && !vendorDetails.hasStorageAddon && vendorDetails.storageQuotaGb <= 0 && (
-                                <p style={{ margin: '3px 0 0 0', fontSize: '12px', color: '#71717a', fontWeight: '400' }}>
-                                    Default Google Drive
+                                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#71717a', fontWeight: '400' }}>
+                                    / {vendorDetails.storageQuotaGb} GB Storage
                                 </p>
                             )}
                         </div>
                     </div>
-                    <div style={{ background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: '12px', padding: '14px 18px' }}>
-                        <p style={{ margin: 0, fontSize: '11px', color: '#34d399', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600' }}>Masa Aktif Akun</p>
-                        <p style={{ margin: '6px 0 0 0', fontSize: '18px', fontWeight: '700', color: '#e4e4e7' }}>
+                    <div className={`${styles.statCard} ${styles.statCardEmerald}`}>
+                        <p className={styles.statLabel} style={{ color: '#34d399' }}>Masa Aktif</p>
+                        <p className={styles.statValue} style={{ fontSize: '18px' }}>
                             {vendorDetails.expiresAt 
                                 ? new Date(vendorDetails.expiresAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
                                 : 'Aktif'
@@ -1745,24 +1741,24 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Project Name */}
-                                <h3 style={{ fontSize: '20px', margin: '0 0 12px 0', fontWeight: '700', color: '#ffffff', wordBreak: 'break-word' }}>{project.name}</h3>
+                                <h3 style={{ fontSize: 'clamp(15px, 2vw, 18px)', margin: '0 0 10px 0', fontWeight: '700', color: '#ffffff', wordBreak: 'break-word', lineHeight: '1.35' }}>{project.name}</h3>
 
                                 {/* Progress Box / Importing Status Box */}
                                 {project.status === 'importing' ? (
-                                    <div style={{ background: 'rgba(99,102,241,0.06)', borderRadius: '12px', padding: '16px', marginBottom: '18px', border: '1px solid rgba(99,102,241,0.2)', textAlign: 'center' }}>
-                                        <div className="dev-watermark-dot" style={{ margin: '0 auto 10px auto', width: '8px', height: '8px' }} />
-                                        <p style={{ margin: 0, fontSize: '13px', color: '#a5b4fc', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                    <div style={{ background: 'rgba(99,102,241,0.06)', borderRadius: '12px', padding: '14px', marginBottom: '14px', border: '1px solid rgba(99,102,241,0.2)', textAlign: 'center' }}>
+                                        <div className="dev-watermark-dot" style={{ margin: '0 auto 8px auto', width: '8px', height: '8px' }} />
+                                        <p style={{ margin: 0, fontSize: '12.5px', color: '#a5b4fc', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                                             <SpeedBoltIcon size={14} color="#818cf8" />
-                                            <span>Sedang mengindeks foto &amp; subfolder...</span>
+                                            <span>Sedang mengindeks foto...</span>
                                         </p>
-                                        <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#71717a' }}>Proses background berjalan. Kartu akan aktif otomatis.</p>
+                                        <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#71717a' }}>Proses background berjalan otomatis.</p>
                                     </div>
                                 ) : (
-                                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '12px 14px', marginBottom: '18px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#a1a1aa', marginBottom: '6px' }}>
+                                    <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '10px', padding: '10px 12px', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', color: '#a1a1aa', marginBottom: '5px' }}>
                                             <span>Pilihan Klien:</span>
                                             <span style={{ fontWeight: '600', color: '#e4e4e7' }}>
-                                                <strong style={{ color: '#818cf8', fontSize: '14px' }}>{project.selectedPhotosCount}</strong> {project.maxSelection > 0 ? `/ ${project.maxSelection}` : 'foto'} <span style={{ fontSize: '11px', color: '#71717a' }}>(Total: {project.totalPhotos} foto)</span>
+                                                <strong style={{ color: '#818cf8', fontSize: '13.5px' }}>{project.selectedPhotosCount}</strong> {project.maxSelection > 0 ? `/ ${project.maxSelection}` : 'foto'} <span style={{ fontSize: '10.5px', color: '#71717a' }}>(Total: {project.totalPhotos})</span>
                                             </span>
                                         </div>
                                         {project.maxSelection > 0 && (
@@ -1776,12 +1772,12 @@ export default function DashboardPage() {
 
                             {/* Clean Action Buttons (Only shown when not importing) */}
                             {project.status !== 'importing' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
                                     {project.status === 'failed' && (
                                         <button
                                             onClick={() => handleRetryImport(project.id)}
                                             className="btn-primary"
-                                            style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: '#000', fontWeight: '700', fontSize: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                            style={{ width: '100%', padding: '8px', background: 'linear-gradient(135deg, #fbbf24, #d97706)', color: '#000', fontWeight: '700', fontSize: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                         >
                                             <RefreshCwIcon size={13} color="#000" />
                                             <span>Coba Impor Lagi</span>
@@ -1792,63 +1788,87 @@ export default function DashboardPage() {
                                         <button
                                             onClick={() => handleReactivateProject(project.id)}
                                             className="btn-primary"
-                                            style={{ width: '100%', padding: '9px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                            style={{ width: '100%', padding: '8px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: '700', fontSize: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                         >
                                             <SpeedBoltIcon size={13} color="#fff" />
                                             <span>Aktifkan Kembali Galeri (30 Hari)</span>
                                         </button>
                                     )}
 
-                                    {/* Main Row: Open Gallery, WA Send & Detail */}
-                                    <button
-                                        className="btn-secondary"
-                                        style={{
-                                            width: '100%',
-                                            padding: '9px 12px',
-                                            fontSize: '12px',
-                                            fontWeight: '600',
-                                            color: '#a5b4fc',
-                                            background: 'rgba(99,102,241,0.08)',
-                                            border: '1px solid rgba(99,102,241,0.25)',
-                                            borderRadius: '8px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '6px'
-                                        }}
-                                        onClick={() => handleOpenGallery(project)}
-                                        title="Buka / Cek Tampilan Halaman Galeri Klien"
-                                    >
-                                        <GalleryViewIcon size={14} color="#a5b4fc" />
-                                        <span>Lihat Galeri Klien</span>
-                                    </button>
-
-                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                    {/* Primary Action Button (Copy Filenames if selected > 0, or Open Gallery) */}
+                                    {project.selectedPhotosCount > 0 ? (
                                         <button
-                                            className="btn-secondary"
-                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
-                                            onClick={() => handleCopyGalleryLink(project)}
-                                            title="Salin Link Halaman Galeri Klien"
+                                            className="btn-primary"
+                                            style={{ width: '100%', padding: '9px 12px', fontSize: '12px', fontWeight: '700', background: 'linear-gradient(135deg, #6366f1, #4f46e5)', boxShadow: '0 4px 12px rgba(99,102,241,0.25)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                                            onClick={() => handleCopyFilenames(project.id, 'lightroom')}
                                         >
                                             <CopyLinkIcon size={13} />
-                                            <span>Salin Link</span>
+                                            <span>Salin Nama File ({project.selectedPhotosCount} Foto)</span>
                                         </button>
+                                    ) : (
                                         <button
                                             className="btn-secondary"
-                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                                            style={{
+                                                width: '100%',
+                                                padding: '9px 12px',
+                                                fontSize: '12px',
+                                                fontWeight: '600',
+                                                color: '#a5b4fc',
+                                                background: 'rgba(99,102,241,0.08)',
+                                                border: '1px solid rgba(99,102,241,0.25)',
+                                                borderRadius: '8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: '6px'
+                                            }}
+                                            onClick={() => handleOpenGallery(project)}
+                                            title="Buka / Cek Tampilan Halaman Galeri Klien"
+                                        >
+                                            <GalleryViewIcon size={14} color="#a5b4fc" />
+                                            <span>Lihat Galeri Klien</span>
+                                        </button>
+                                    )}
+
+                                    {/* Secondary Action Row (Grid 3 Col: Open/Copy, WA, Detail) */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                                        {project.selectedPhotosCount > 0 ? (
+                                            <button
+                                                className="btn-secondary"
+                                                style={{ padding: '8px 4px', fontSize: '11.5px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '8px', minWidth: 0, whiteSpace: 'nowrap' }}
+                                                onClick={() => handleOpenGallery(project)}
+                                                title="Buka Galeri Klien"
+                                            >
+                                                <GalleryViewIcon size={12} />
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Galeri</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                className="btn-secondary"
+                                                style={{ padding: '8px 4px', fontSize: '11.5px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '8px', minWidth: 0, whiteSpace: 'nowrap' }}
+                                                onClick={() => handleCopyGalleryLink(project)}
+                                                title="Salin Link Halaman Galeri Klien"
+                                            >
+                                                <CopyLinkIcon size={12} />
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Salin Link</span>
+                                            </button>
+                                        )}
+                                        <button
+                                            className="btn-secondary"
+                                            style={{ padding: '8px 4px', fontSize: '11.5px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '8px', minWidth: 0, whiteSpace: 'nowrap' }}
                                             onClick={() => handleSendWhatsApp(project)}
                                             title={project.clientPhone ? `Kirim ke ${project.clientPhone}` : 'Kirim via WhatsApp'}
                                         >
-                                            <WhatsAppIcon size={14} color="#25d366" />
-                                            <span>Kirim WA</span>
+                                            <WhatsAppIcon size={13} color="#25d366" />
+                                            <span style={{ color: '#25d366', overflow: 'hidden', textOverflow: 'ellipsis' }}>Kirim WA</span>
                                         </button>
                                         <button
                                             className="btn-secondary"
-                                            style={{ flex: 1, padding: '9px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+                                            style={{ padding: '8px 4px', fontSize: '11.5px', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '8px', minWidth: 0, whiteSpace: 'nowrap' }}
                                             onClick={() => handleViewDetails(project)}
                                         >
-                                            <GalleryViewIcon size={13} />
-                                            <span>Detail</span>
+                                            <GalleryViewIcon size={12} />
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>Detail</span>
                                         </button>
                                     </div>
 

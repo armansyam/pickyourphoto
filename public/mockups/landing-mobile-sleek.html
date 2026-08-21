@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mockup Proposal — Ultra-Sleek & Compact Mobile Landing Page</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    :root {
+      --bg: #FDFBF7;
+      --paper: #1C1917;
+      --muted: #57534E;
+      --muted-light: #8A8580;
+      --line: rgba(197, 160, 89, 0.22);
+      --brass: #C5A059;
+      --brass-dark: #8C6D23;
+      --card-bg: #FFFFFF;
+      --serif: 'Playfair Display', Georgia, serif;
+      --sans: 'Montserrat', -apple-system, sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      background: #111115;
+      color: var(--paper);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px 10px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Phone Simulator Wrapper ── */
+    .mobile-frame {
+      width: 100%;
+      max-width: 390px;
+      background: var(--bg);
+      border-radius: 36px;
+      overflow: hidden;
+      border: 8px solid #27272A;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1);
+      position: relative;
+    }
+
+    /* Phone Speaker / Notch */
+    .notch {
+      width: 120px;
+      height: 18px;
+      background: #27272A;
+      margin: 0 auto;
+      border-bottom-left-radius: 12px;
+      border-bottom-right-radius: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    /* ── Sticky Mobile Nav ── */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      background: rgba(253, 251, 247, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-family: var(--serif);
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--brass-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .logo-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--brass);
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .lang-pill {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      background: #FFFFFF;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 3px 8px;
+      color: var(--brass-dark);
+    }
+    .btn-nav-login {
+      font-size: 11px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #C5A059, #8C6D23);
+      color: #FFFFFF;
+      padding: 5px 11px;
+      border-radius: 6px;
+      text-decoration: none;
+      box-shadow: 0 2px 6px rgba(197,160,89,0.3);
+    }
+
+    /* ── Content Container (Clean Margins) ── */
+    .content-wrap {
+      padding: 16px 14px 40px;
+    }
+
+    /* ── Hero Section (Ultra-Compact) ── */
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--brass-dark);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .hero-eyebrow::before {
+      content: "";
+      width: 14px;
+      height: 1.5px;
+      background: var(--brass);
+    }
+    .hero-title {
+      font-family: var(--serif);
+      font-size: 21px;
+      font-weight: 800;
+      line-height: 1.22;
+      letter-spacing: -0.015em;
+      color: var(--paper);
+      margin-bottom: 8px;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--brass-dark);
+      font-weight: 600;
+    }
+    .hero-lead {
+      font-size: 12.5px;
+      line-height: 1.48;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+    
+    /* Dual Full-Width Action Buttons */
+    .hero-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+    .btn-hero-primary {
+      background: linear-gradient(135deg, #C5A059, #8C6D23);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 12.5px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(197, 160, 89, 0.35);
+      border: none;
+    }
+    .btn-hero-secondary {
+      background: #FFFFFF;
+      border: 1px solid rgba(197,160,89,0.4);
+      color: var(--paper);
+      font-weight: 600;
+      font-size: 12px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+
+    .trust-badges {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--muted-light);
+      margin-bottom: 16px;
+      padding: 0 4px;
+    }
+
+    /* ── Live Interactive Micro-Gallery Simulation Card (Only 150px Height!) ── */
+    .micro-gallery-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 8px 24px rgba(197, 160, 89, 0.12);
+      margin-bottom: 24px;
+    }
+    .micro-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: var(--mono);
+      font-size: 9.5px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+    .micro-status {
+      color: #15803d;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .micro-status::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+    
+    /* 3 Micro Photo Selection Thumbnails */
+    .micro-photos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .micro-photo-item {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      background: #eee;
+      aspect-ratio: 3/4;
+    }
+    .micro-photo-item.selected {
+      border-color: var(--brass);
+      box-shadow: 0 0 0 1.5px var(--brass);
+    }
+    .micro-photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .micro-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: var(--brass-dark);
+      color: #fff;
+      font-size: 8px;
+      font-weight: 800;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .micro-fname {
+      position: absolute;
+      bottom: 2px;
+      left: 3px;
+      font-family: var(--mono);
+      font-size: 7px;
+      color: #fff;
+      background: rgba(0,0,0,0.5);
+      padding: 1px 3px;
+      border-radius: 2px;
+    }
+
+    /* Micro Card Action Footer */
+    .micro-card-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #FDFBF7;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 5px 8px;
+    }
+    .micro-counter {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--brass-dark);
+    }
+    .micro-btn-copy {
+      font-size: 9.5px;
+      font-weight: 700;
+      background: var(--brass-dark);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 3px 7px;
+      cursor: pointer;
+    }
+
+    /* ── Section Title (Sleek & Proportional) ── */
+    .sec-header {
+      margin-bottom: 12px;
+    }
+    .sec-eyebrow {
+      font-family: var(--mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      color: var(--brass-dark);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .sec-title {
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--paper);
+    }
+
+    /* ── Compact 3-Step Flow (Clean Horizontal Strip) ── */
+    .flow-strip {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 24px;
+    }
+    .flow-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .flow-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(197, 160, 89, 0.15);
+      color: var(--brass-dark);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .flow-text-wrap {
+      flex: 1;
+    }
+    .flow-head {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--paper);
+    }
+    .flow-desc {
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    /* ── Feature 2-Column Dense Grid (Zero Space Wasteland) ── */
+    .feature-micro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .feat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      box-shadow: 0 4px 12px rgba(197, 160, 89, 0.06);
+    }
+    .feat-icon {
+      font-size: 16px;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .feat-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--paper);
+      margin-bottom: 3px;
+    }
+    .feat-desc {
+      font-size: 10px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    /* ── Compact Pricing Card ── */
+    .pricing-card {
+      background: var(--card-bg);
+      border: 1.5px solid var(--brass);
+      border-radius: 12px;
+      padding: 12px 14px;
+      position: relative;
+      box-shadow: 0 8px 24px rgba(197, 160, 89, 0.15);
+      margin-bottom: 24px;
+    }
+    .pricing-badge {
+      position: absolute;
+      top: -8px;
+      right: 12px;
+      background: var(--brass-dark);
+      color: #fff;
+      font-family: var(--mono);
+      font-size: 8.5px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    .pricing-title {
+      font-family: var(--serif);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--paper);
+    }
+    .pricing-price {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--brass-dark);
+      margin: 4px 0 8px;
+    }
+    .pricing-price span {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    .pricing-list {
+      list-style: none;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    .pricing-list li::before {
+      content: "✓ ";
+      color: var(--brass-dark);
+      font-weight: 800;
+    }
+    .btn-pricing {
+      width: 100%;
+      background: linear-gradient(135deg, #C5A059, #8C6D23);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      text-align: center;
+      display: block;
+      text-decoration: none;
+    }
+
+    /* ── Compact Footer ── */
+    footer {
+      text-align: center;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      font-size: 10px;
+      color: var(--muted-light);
+    }
+  </style>
+</head>
+<body>
+
+<div class="mobile-frame">
+  <!-- Top Speaker Notch -->
+  <div class="notch"></div>
+
+  <!-- Sticky Navbar -->
+  <header>
+    <div class="logo">
+      <span class="logo-dot"></span>
+      <span>Photota</span>
+    </div>
+    <div class="nav-actions">
+      <span class="lang-pill">ID</span>
+      <a href="/login" class="btn-nav-login">Dashboard &rarr;</a>
+    </div>
+  </header>
+
+  <!-- Main Content Wrap -->
+  <div class="content-wrap">
+
+    <!-- 1. Hero Section -->
+    <div class="hero-eyebrow">Untuk Vendor &amp; Fotografer</div>
+    <h1 class="hero-title">Klien pilih foto.<br>Anda langsung buka <em>Lightroom</em>.</h1>
+    <p class="hero-lead">Klien pilih foto favorit via 1 link tanpa ribet chat WA atau Excel. Beres dalam hitungan detik.</p>
+
+    <div class="hero-buttons">
+      <a href="/trial" class="btn-hero-primary">⚡ Coba Trial Instan (Gratis) &rarr;</a>
+      <a href="/register" class="btn-hero-secondary">Daftar Akun Studio &rarr;</a>
+    </div>
+
+    <div class="trust-badges">
+      <span>✓ Google Drive Sync</span>
+      <span>✓ RAW Sorter Otomatis</span>
+      <span>✓ 6 Tema Estetika</span>
+    </div>
+
+    <!-- 2. Live Interactive Micro-Gallery Simulation Card (Only 150px Height) -->
+    <div class="micro-gallery-card">
+      <div class="micro-card-head">
+        <span>📁 project_wedding_sarah (150 Foto)</span>
+        <span class="micro-status">Aktif</span>
+      </div>
+
+      <!-- 3 Micro Photo Thumbnails -->
+      <div class="micro-photos-grid">
+        <div class="micro-photo-item selected" onclick="toggleMicro(this)">
+          <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=300&auto=format&fit=crop&q=70" alt="Sarah Bride" />
+          <span class="micro-badge">1</span>
+          <span class="micro-fname">001.jpg</span>
+        </div>
+        <div class="micro-photo-item selected" onclick="toggleMicro(this)">
+          <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=300&auto=format&fit=crop&q=70" alt="Ceremony Wide" />
+          <span class="micro-badge">2</span>
+          <span class="micro-fname">002.jpg</span>
+        </div>
+        <div class="micro-photo-item" onclick="toggleMicro(this)">
+          <img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=300&auto=format&fit=crop&q=70" alt="Couple Gown" />
+          <span class="micro-fname">003.jpg</span>
+        </div>
+      </div>
+
+      <!-- Micro Action Bar -->
+      <div class="micro-card-foot">
+        <span class="micro-counter" id="microCount">⭐ 2 Foto Terpilih</span>
+        <button class="micro-btn-copy" onclick="copyMock()">Salin Lightroom</button>
+      </div>
+    </div>
+
+    <!-- 3. Compact 3-Step Strip -->
+    <div class="sec-header">
+      <div class="sec-eyebrow">Alur Kerja 3 Detik</div>
+      <h2 class="sec-title">Cara Kerja Ringkas</h2>
+    </div>
+
+    <div class="flow-strip">
+      <div class="flow-card">
+        <div class="flow-num">1</div>
+        <div class="flow-text-wrap">
+          <div class="flow-head">Hubungkan Google Drive / Upload</div>
+          <div class="flow-desc">Foto terindeks instan tanpa penuhi kuota server</div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-num">2</div>
+        <div class="flow-text-wrap">
+          <div class="flow-head">Klien Buka Link di HP</div>
+          <div class="flow-desc">Ketuk foto favorit, tersimpan otomatis di cloud</div>
+        </div>
+      </div>
+      <div class="flow-card">
+        <div class="flow-num">3</div>
+        <div class="flow-text-wrap">
+          <div class="flow-head">Salin Nama File / RAW Sorter</div>
+          <div class="flow-desc">File CR2/ARW terpisah otomatis siap edit</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Feature Matrix (2-Column Dense Grid) -->
+    <div class="sec-header">
+      <div class="sec-eyebrow">Fitur Andalan</div>
+      <h2 class="sec-title">Didesain untuk Fotografer</h2>
+    </div>
+
+    <div class="feature-micro-grid">
+      <div class="feat-card">
+        <span class="feat-icon">☁️</span>
+        <div class="feat-title">Zero Storage</div>
+        <div class="feat-desc">Streaming langsung dari GDrive pribadi Anda.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🪄</span>
+        <div class="feat-title">RAW Sorter</div>
+        <div class="feat-desc">Sortir ribuan file RAW dalam 1 detik.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🎨</span>
+        <div class="feat-title">6 Tema Estetik</div>
+        <div class="feat-desc">Default, Darkroom, Fine Art, Polaroid.</div>
+      </div>
+      <div class="feat-card">
+        <span class="feat-icon">🔒</span>
+        <div class="feat-title">Anti Unduh Liar</div>
+        <div class="feat-desc">Blok klik kanan &amp; watermark studio.</div>
+      </div>
+    </div>
+
+    <!-- 5. Compact Pricing Card -->
+    <div class="sec-header">
+      <div class="sec-eyebrow">Investasi Terjangkau</div>
+      <h2 class="sec-title">Paket Studio Foto</h2>
+    </div>
+
+    <div class="pricing-card">
+      <span class="pricing-badge">Populer</span>
+      <div class="pricing-title">Paket Vendor Pro</div>
+      <div class="pricing-price">Rp 49.000 <span>/ bulan</span></div>
+      <ul class="pricing-list">
+        <li>Unlimited Galeri Klien Aktif</li>
+        <li>Koneksi Google Drive Langsung</li>
+        <li>Magic RAW Sorter Cepat</li>
+        <li>Custom Logo &amp; Branding Studio</li>
+      </ul>
+      <a href="/register" class="btn-pricing">Mulai Berlangganan &rarr;</a>
+    </div>
+
+    <!-- 6. Compact Footer -->
+    <footer>
+      <p>&copy; 2026 Photota • Pick Your Photo SaaS Platform.</p>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+  let count = 2;
+  function toggleMicro(el) {
+    el.classList.toggle('selected');
+    let hasBadge = el.querySelector('.micro-badge');
+    if (el.classList.contains('selected')) {
+      if (!hasBadge) {
+        const badge = document.createElement('span');
+        badge.className = 'micro-badge';
+        badge.textContent = '✓';
+        el.appendChild(badge);
+      }
+    } else {
+      if (hasBadge) hasBadge.remove();
+    }
+    const total = document.querySelectorAll('.micro-photo-item.selected').length;
+    document.getElementById('microCount').textContent = `⭐ ${total} Foto Terpilih`;
+  }
+
+  function copyMock() {
+    alert('✓ Berhasil menyalin nama file terpilih ke clipboard!');
+  }
+</script>
+
+</body>
+</html>

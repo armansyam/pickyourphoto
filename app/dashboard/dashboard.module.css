@@ -1,0 +1,130 @@
+/* dashboard.module.css
+   CSS Module khusus untuk Dashboard Vendor
+*/
+
+.warningAlert {
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    line-height: 1.4;
+    padding: 14px 16px;
+}
+
+.warningAlertDanger {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.warningAlertPending {
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    color: #fbbf24;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.headerTitle {
+    margin: 0;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.headerSub {
+    color: #a1a1aa;
+    margin: 4px 0 0;
+    font-size: 12.5px;
+}
+
+.headerActions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.actionBtn {
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.actionBtnWa {
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    background: rgba(52, 211, 153, 0.06);
+}
+
+.actionBtnUpgrade {
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    background: rgba(251, 191, 36, 0.06);
+}
+
+.actionBtnBrand {
+    color: #a1a1aa;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* ── Stats Grid ── */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.statCard {
+    border-radius: 12px;
+    padding: 12px 16px;
+}
+
+.statCardIndigo {
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.statCardEmerald {
+    background: rgba(52, 211, 153, 0.06);
+    border: 1px solid rgba(52, 211, 153, 0.15);
+}
+
+.statCardAmber {
+    background: rgba(251, 191, 36, 0.06);
+    border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.statLabel {
+    margin: 0;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.statValue {
+    margin: 4px 0 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #e4e4e7;
+}

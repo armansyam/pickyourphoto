@@ -368,7 +368,7 @@ export default function ClientGalleryPage({ params }) {
     }
 
     return (
-        <div className={`gtheme gtheme-${themeKey}`} style={{ ...vars, background: 'var(--bg)', minHeight: '100vh', paddingBottom: '150px', fontFamily: 'var(--font-body)', color: 'var(--text)' }}>
+        <div className={`gtheme gtheme-${themeKey}`} style={{ ...vars, background: 'var(--bg)', minHeight: '100vh', paddingBottom: '150px', fontFamily: 'var(--font-body)', color: 'var(--text)', colorScheme: (themeKey === 'galleryWall' || themeKey === 'editorsMark') ? 'light' : 'dark' }}>
 
             {/* Glassmorphism Lock Overlay for Expired Vendor / Addon Storage Expiry */}
             {project?.isLocked && (
@@ -869,24 +869,25 @@ export default function ClientGalleryPage({ params }) {
             </div>
 
             <style jsx>{`
-                /* ── Highly Responsive Compact Grid Layouts ── */
-                .photo-grid { padding: 0 16px 20px; }
+                /* ── Highly Responsive Full-Width Masonry Canvas ── */
+                .photo-grid { padding: 0 clamp(8px, 1.5vw, 24px) 120px; width: 100%; box-sizing: border-box; }
 
                 .grid-wall { 
                     display: grid; 
                     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
                     gap: 12px 10px; 
-                    max-width: 1400px; 
-                    margin: 0 auto; 
+                    width: 100%;
                 }
 
-                .grid-masonry { column-count: 6; column-gap: 12px; max-width: 1400px; margin: 0 auto; }
+                .grid-masonry { column-count: 7; column-gap: 12px; width: 100%; }
+                @media (min-width: 1920px) { .grid-masonry { column-count: 8; } }
+                @media (max-width: 1500px) { .grid-masonry { column-count: 6; } }
                 @media (max-width: 1200px) { .grid-masonry { column-count: 5; } }
                 @media (max-width: 900px) { .grid-masonry { column-count: 4; } }
 
                 /* 📱 MOBILE VIEW (< 640px): 3 PHOTOS PER ROW */
                 @media (max-width: 640px) {
-                    .photo-grid { padding: 0 6px 16px; }
+                    .photo-grid { padding: 0 6px 110px !important; }
                     .grid-wall { 
                         grid-template-columns: repeat(3, 1fr) !important; 
                         gap: 6px !important; 
@@ -899,7 +900,7 @@ export default function ClientGalleryPage({ params }) {
                     .grid-wall .photo-card-frame { padding: 4px !important; border-radius: 6px !important; }
                 }
 
-                .grid-scatter { display: flex; flex-wrap: wrap; gap: 16px 12px; justify-content: center; max-width: 1400px; margin: 0 auto; }
+                .grid-scatter { display: flex; flex-wrap: wrap; gap: 16px 12px; justify-content: center; width: 100%; }
 
                 .photo-card { cursor: pointer; }
                 .grid-masonry .photo-card { break-inside: avoid; margin-bottom: 12px; }
@@ -953,8 +954,8 @@ export default function ClientGalleryPage({ params }) {
                 .category-tabs-container {
                     display: flex;
                     justify-content: center;
-                    margin: 0 auto 28px auto;
-                    max-width: 900px;
+                    margin: 0 auto 24px auto;
+                    max-width: 100%;
                     padding: 0 16px;
                 }
                 .category-tabs-scroll {

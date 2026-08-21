@@ -1,0 +1,273 @@
+/* AdminTrialControl.module.css
+   CSS Module untuk komponen AdminTrialControl
+*/
+
+.wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+/* ── Header ── */
+.headerRow {
+    margin-bottom: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.headerTitle {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #f4f4f5;
+}
+
+.headerSub {
+    margin: 6px 0 0;
+    color: #a1a1aa;
+    fontSize: 14px;
+}
+
+.masterToggleBtn {
+    padding: 10px 22px;
+    border-radius: 10px;
+    border: none;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #fff;
+}
+
+.toggleActive {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.toggleInactive {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+}
+
+/* ── Stats Grid ── */
+.statsRow {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+}
+
+.statCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: 20px;
+    flex: 1;
+    min-width: 140px;
+}
+
+.statIcon {
+    font-size: 22px;
+    margin-bottom: 8px;
+}
+
+.statValue {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.statLabel {
+    font-size: 13px;
+    color: #a1a1aa;
+    margin-top: 6px;
+    font-weight: 600;
+}
+
+.statSub {
+    font-size: 11px;
+    color: #71717a;
+    margin-top: 4px;
+}
+
+/* ── Section Cards ── */
+.sectionCard {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 20px;
+}
+
+.sectionTitle {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #f4f4f5;
+}
+
+.sectionSub {
+    margin: 0 0 16px;
+    color: #71717a;
+    font-size: 13px;
+}
+
+/* ── Flash Sale Card ── */
+.flashCard {
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 20px;
+    transition: all 0.3s;
+}
+
+.flashCardActive {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.08) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.flashCardInactive {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.flashHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.flashTitle {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.modeSwitcher {
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.modeBtn {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 12px;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.simulatorBox {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+/* ── Presets Grid ── */
+.presetsGrid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.presetBtn {
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    min-width: 140px;
+}
+
+/* ── Forms ── */
+.formGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+}
+
+.inputField {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #f4f4f5;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.pillBtn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.inputHint {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #52525b;
+}
+
+.saveBtn {
+    margin-top: 20px;
+    padding: 12px 28px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3);
+    transition: all 0.2s ease;
+}
+
+.saveBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Table ── */
+.tableWrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table {
+    width: 100%;
+    min-width: 650px;
+    border-collapse: collapse;
+    font-size: 12.5px;
+}
+
+.th {
+    padding: 10px 12px;
+    text-align: left;
+    color: #71717a;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.td {
+    padding: 10px 12px;
+}

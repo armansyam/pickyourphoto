@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import styles from './AdminVendors.module.css';
+import { InquiryIcon, UsersIcon, SearchIcon } from '@/components/AdminIcons';
+import { WhatsAppIcon, SpeedBoltIcon, RefreshCwIcon, TrashIcon, CheckIcon, CloseIcon, SettingsManageIcon } from '@/components/StorageIcons';
 
 // ─── Countdown Timer component for QRIS expiry ───────────────────────────────
 function QrisCountdown({ expiresAt }) {
@@ -261,61 +264,89 @@ export default function AdminVendors({
   });
 
   return (
-    <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', minHeight: '480px', paddingBottom: '160px' }}>
+    <div className={`glass-card ${styles.wrapper}`}>
 
       {/* ── Header row: title + search ── */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
+      <div className={styles.headerRow}>
+        <div className={styles.titleBlock}>
           {vendorSubTab === 'inquiry' ? (
             <>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#fbbf24' }}>📋 Inquiry — Calon Vendor</h3>
-              <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#71717a' }}>Proses pendaftaran sebelum menjadi vendor berlangganan</p>
+              <h3 className={`${styles.sectionTitle} ${styles.titleAmber}`}>
+                <InquiryIcon size={15} color="#fbbf24" />
+                <span>Inquiry Vendor</span>
+              </h3>
+              <p className={styles.sectionSub}>Pendaftaran calon vendor studio</p>
             </>
           ) : (
             <>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700' }}>👥 Kelola Vendor</h3>
-              <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#71717a' }}>Vendor aktif berlangganan — klik kolom tabel untuk mengurutkan</p>
+              <h3 className={`${styles.sectionTitle} ${styles.titleIndigo}`}>
+                <UsersIcon size={15} color="#818cf8" />
+                <span>Daftar Vendor</span>
+              </h3>
+              <p className={styles.sectionSub}>Vendor aktif berlangganan</p>
             </>
           )}
         </div>
-        <input
-          type="text"
-          className="input-text"
-          placeholder="Cari (nama/email/WA)..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ maxWidth: '240px', height: '34px', fontSize: '13px' }}
-        />
+        <div className={styles.searchWrap}>
+          <input
+            type="text"
+            className="input-text"
+            placeholder="Cari vendor..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ width: '100%', height: '32px', fontSize: '12px', paddingLeft: '28px' }}
+          />
+          <div className={styles.searchIcon}>
+            <SearchIcon size={12} color="#71717a" />
+          </div>
+        </div>
       </div>
 
       {/* ── Inquiry Sub Tabs (hanya tampil di tab Inquiry) ── */}
       {vendorSubTab === 'inquiry' && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '14px' }}>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={() => setInquirySubTab('prospect')} style={subTabBtn(inquirySubTab === 'prospect', '#38bdf8')}>
-              📝 Prospek / Lead {countProspect > 0 && `(${countProspect})`}
+        <div className={styles.subTabBar}>
+          <div className={styles.subTabGroup}>
+            <button
+              onClick={() => setInquirySubTab('prospect')}
+              className={styles.subTabBtn}
+              style={inquirySubTab === 'prospect' ? { background: 'rgba(56,189,248,0.15)', color: '#38bdf8', borderColor: '#38bdf8' } : {}}
+            >
+              Lead {countProspect > 0 && `(${countProspect})`}
             </button>
-            <button onClick={() => setInquirySubTab('pending')} style={subTabBtn(inquirySubTab === 'pending', '#fbbf24')}>
-              ⚡ Menunggu Bayar {countPending > 0 && `(${countPending})`}
+            <button
+              onClick={() => setInquirySubTab('pending')}
+              className={styles.subTabBtn}
+              style={inquirySubTab === 'pending' ? { background: 'rgba(251,191,36,0.15)', color: '#fbbf24', borderColor: '#fbbf24' } : {}}
+            >
+              Menunggu Bayar {countPending > 0 && `(${countPending})`}
             </button>
-            <button onClick={() => setInquirySubTab('archive')} style={subTabBtn(inquirySubTab === 'archive', '#71717a')}>
-              🗃️ Arsip {countArchive > 0 && `(${countArchive})`}
+            <button
+              onClick={() => setInquirySubTab('archive')}
+              className={styles.subTabBtn}
+              style={inquirySubTab === 'archive' ? { background: 'rgba(113,113,122,0.15)', color: '#a1a1aa', borderColor: '#71717a' } : {}}
+            >
+              Arsip {countArchive > 0 && `(${countArchive})`}
             </button>
           </div>
 
-          {/* Quick Method Filter Chips for Menunggu Bayar */}
           {inquirySubTab === 'pending' && countPending > 0 && (
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '2px 6px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <span style={{ fontSize: '11px', color: '#71717a', marginRight: '4px' }}>Metode:</span>
-              <button onClick={() => setPendingFilter('all')} style={{ padding: '2px 8px', borderRadius: '10px', border: 'none', background: pendingFilter === 'all' ? '#fbbf24' : 'transparent', color: pendingFilter === 'all' ? '#000' : '#a1a1aa', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
-                Semua ({countPending})
-              </button>
-              <button onClick={() => setPendingFilter('qris')} style={{ padding: '2px 8px', borderRadius: '10px', border: 'none', background: pendingFilter === 'qris' ? '#fbbf24' : 'transparent', color: pendingFilter === 'qris' ? '#000' : '#a1a1aa', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
-                ⚡ QRIS ({countPendingQris})
-              </button>
-              <button onClick={() => setPendingFilter('manual')} style={{ padding: '2px 8px', borderRadius: '10px', border: 'none', background: pendingFilter === 'manual' ? '#818cf8' : 'transparent', color: pendingFilter === 'manual' ? '#fff' : '#a1a1aa', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>
-                📄 Manual ({countPendingManual})
-              </button>
+            <div className={styles.methodFilter}>
+              <span className={styles.methodFilterLabel}>Metode:</span>
+              <button
+                onClick={() => setPendingFilter('all')}
+                className={styles.methodChip}
+                style={{ background: pendingFilter === 'all' ? '#fbbf24' : 'transparent', color: pendingFilter === 'all' ? '#000' : '#a1a1aa' }}
+              >Semua ({countPending})</button>
+              <button
+                onClick={() => setPendingFilter('qris')}
+                className={styles.methodChip}
+                style={{ background: pendingFilter === 'qris' ? '#fbbf24' : 'transparent', color: pendingFilter === 'qris' ? '#000' : '#a1a1aa' }}
+              >QRIS ({countPendingQris})</button>
+              <button
+                onClick={() => setPendingFilter('manual')}
+                className={styles.methodChip}
+                style={{ background: pendingFilter === 'manual' ? '#818cf8' : 'transparent', color: pendingFilter === 'manual' ? '#fff' : '#a1a1aa' }}
+              >Manual ({countPendingManual})</button>
             </div>
           )}
         </div>
@@ -323,24 +354,24 @@ export default function AdminVendors({
 
       {/* ── Table ── */}
       {loading ? (
-        <p style={{ textAlign: 'center', color: '#a1a1aa', padding: '32px 0' }}>Memuat data...</p>
+        <p className={styles.loadingState}>Memuat data...</p>
       ) : sortedVendors.length === 0 ? (
-        <p style={{ textAlign: 'center', color: '#71717a', padding: '32px 0', fontSize: '14px' }}>{emptyMsg()}</p>
+        <p className={styles.emptyState}>{emptyMsg()}</p>
       ) : (
-        <div style={{ overflowX: 'auto', paddingBottom: '140px' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
             <thead>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#a1a1aa', userSelect: 'none' }}>
-                <th onClick={() => handleSort('name')} style={{ padding: '10px 14px', cursor: 'pointer', color: getHeaderColor('name') }}>Nama</th>
-                <th onClick={() => handleSort('email')} style={{ padding: '10px 14px', cursor: 'pointer', color: getHeaderColor('email') }}>Kontak</th>
-                <th onClick={() => handleSort('planName')} style={{ padding: '10px 14px', cursor: 'pointer', color: getHeaderColor('planName') }}>Paket</th>
-                <th style={{ padding: '10px 14px', color: '#a1a1aa' }}>Storage Add-On</th>
-                <th style={{ padding: '10px 14px', color: '#a1a1aa' }}>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                <th className={styles.theadTh} onClick={() => handleSort('name')} style={{ color: getHeaderColor('name') }}>Nama</th>
+                <th className={styles.theadTh} onClick={() => handleSort('email')} style={{ color: getHeaderColor('email') }}>Kontak</th>
+                <th className={styles.theadTh} onClick={() => handleSort('planName')} style={{ color: getHeaderColor('planName') }}>Paket</th>
+                <th className={styles.theadTh}>Storage Add-On</th>
+                <th className={styles.theadTh}>
                   {vendorSubTab === 'active' ? 'Status / Masa Aktif' :
                    inquirySubTab === 'prospect' ? 'Status Lead' :
                    inquirySubTab === 'pending' ? 'Status Pembayaran' : 'Status / Auto-Hapus'}
                 </th>
-                <th style={{ padding: '10px 14px', textAlign: 'right', color: '#a1a1aa' }}>Aksi</th>
+                <th className={styles.theadTh} style={{ textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>

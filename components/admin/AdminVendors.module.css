@@ -1,0 +1,378 @@
+/* AdminVendors.module.css
+   CSS Module untuk komponen AdminVendors
+*/
+
+/* ── Wrapper ── */
+.wrapper {
+    min-height: 480px;
+    padding-bottom: 160px;
+}
+
+/* ── Header row (title + search) ── */
+.headerRow {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.titleBlock {}
+
+.sectionTitle {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.titleAmber { color: #fbbf24; }
+.titleIndigo { color: #818cf8; }
+
+.sectionSub {
+    margin: 2px 0 0;
+    font-size: 11px;
+    color: #71717a;
+}
+
+/* ── Search box ── */
+.searchWrap {
+    position: relative;
+    width: 100%;
+    max-width: 240px;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 9px;
+    top: 9px;
+    pointer-events: none;
+}
+
+/* ── Sub-tab bar ── */
+.subTabBar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 10px;
+}
+
+.subTabGroup {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.subTabBtn {
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #71717a;
+}
+
+/* ── Method Filter Chips (QRIS/Manual) ── */
+.methodFilter {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.methodFilterLabel {
+    font-size: 10.5px;
+    color: #71717a;
+    margin-right: 4px;
+}
+
+.methodChip {
+    padding: 2px 8px;
+    border-radius: 8px;
+    border: none;
+    font-size: 10.5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+/* ── Responsive Table Wrapper ── */
+.tableWrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 140px;
+}
+
+.tableWrap::-webkit-scrollbar {
+    height: 3px;
+}
+.tableWrap::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+
+/* ── Table ── */
+.table {
+    width: 100%;
+    min-width: 620px;
+    border-collapse: collapse;
+    font-size: 12.5px;
+    text-align: left;
+}
+
+.theadTh {
+    padding: 8px 12px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #a1a1aa;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.theadTh:hover {
+    color: #e4e4e7;
+}
+
+.td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+}
+
+.trRow {
+    transition: background 0.12s ease;
+}
+
+.trRow:hover {
+    background: rgba(255, 255, 255, 0.025);
+}
+
+/* ── Vendor name cell ── */
+.vendorNameCell {}
+
+.vendorName {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+.vendorEmail {
+    font-size: 10.5px;
+    color: #71717a;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+}
+
+/* ── Status Badge in table ── */
+.statusBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ── Action column ── */
+.actionCell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.actionBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+.actionBtnGreen {
+    background: rgba(52, 211, 153, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.25);
+}
+
+.actionBtnGreen:hover {
+    background: rgba(52, 211, 153, 0.2);
+}
+
+.actionBtnRed {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.actionBtnRed:hover {
+    background: rgba(239, 68, 68, 0.18);
+}
+
+.actionBtnNeutral {
+    background: rgba(255, 255, 255, 0.05);
+    color: #a1a1aa;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.actionBtnNeutral:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.actionBtnMenu {
+    background: rgba(255, 255, 255, 0.06);
+    color: #a1a1aa;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    transition: all 0.15s;
+}
+
+.actionBtnMenu:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Dropdown Context Menu ── */
+.contextMenu {
+    position: fixed;
+    z-index: 9999;
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    padding: 6px;
+    min-width: 180px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: menuPopIn 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes menuPopIn {
+    from { opacity: 0; transform: scale(0.92) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.contextMenuItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: #e4e4e7;
+    transition: background 0.1s;
+    text-align: left;
+    text-decoration: none;
+}
+
+.contextMenuItem:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.contextMenuDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    margin: 4px 0;
+}
+
+.contextMenuItemDanger {
+    color: #f87171;
+}
+
+.contextMenuItemDanger:hover {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* ── Empty / Loading states ── */
+.emptyState {
+    text-align: center;
+    color: #71717a;
+    padding: 32px 0;
+    font-size: 13px;
+}
+
+.loadingState {
+    text-align: center;
+    color: #a1a1aa;
+    padding: 32px 0;
+}
+
+/* ── Modal styles (reject, sync result) ── */
+.rejectForm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rejectTextarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #fff;
+    font-size: 13px;
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.modalActions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+/* ── QRIS Proof Image ── */
+.proofImg {
+    max-width: 240px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.proofImg:hover {
+    transform: scale(1.02);
+}

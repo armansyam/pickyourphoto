@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import styles from './AdminPlans.module.css';
+import { PlansIcon, StoragePoolIcon } from '@/components/AdminIcons';
+import { SpeedBoltIcon, SettingsManageIcon, TrashIcon, CheckIcon, CloseIcon } from '@/components/StorageIcons';
 
 export default function AdminPlans({
   plans = [],
@@ -144,115 +147,90 @@ export default function AdminPlans({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div className={styles.wrapper}>
+
       {/* ── SECTION 1: PAKET BERLANGGANAN UTAMA ── */}
-      <div className="glass-card" style={{ padding: '24px', borderRadius: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className="glass-card">
+        <div className={styles.sectionHeader}>
           <div>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: '600' }}>Kelola Paket Berlangganan</h3>
-            <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa' }}>
-              Atur Paket Berbasis Fitur (Starter, Pro Studio, & Unlimited Master)
-            </p>
+            <h3 className={styles.sectionTitle}>
+              <PlansIcon size={16} color="#818cf8" />
+              <span>Paket Langganan</span>
+            </h3>
+            <p className={styles.sectionSub}>Atur tier dan batas fitur studio</p>
           </div>
           <button
             onClick={() => openPlanModal()}
             className="btn-primary"
-            style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '600' }}
+            style={{ padding: '8px 16px', fontSize: '12px', fontWeight: '600' }}
           >
-            + Tambah Paket Baru
+            + Tambah Paket
           </button>
         </div>
 
         {loadingPlans ? (
-          <p style={{ textAlign: 'center', color: '#a1a1aa', padding: '24px 0' }}>Loading packages...</p>
+          <p className={styles.loadingState}>Memuat paket...</p>
         ) : plans.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#71717a', padding: '24px 0', fontSize: '14px' }}>
+          <p className={styles.emptyState}>
             Belum ada paket berlangganan. Klik tombol di atas untuk membuat paket baru.
           </p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+          <div className={styles.plansGrid}>
             {plans.map(p => (
               <div
                 key={p.id}
-                style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: p.name.includes('Pro') ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: '16px',
-                  padding: '24px',
-                  position: 'relative',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justify: 'space-between'
-                }}
+                className={`${styles.planCard} ${p.name.includes('Pro') ? styles.planCardPro : ''}`}
               >
                 {p.name.includes('Pro') && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '-12px',
-                    right: '20px',
-                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                    color: '#fff',
-                    fontSize: '10px',
-                    fontWeight: 'bold',
-                    padding: '3px 10px',
-                    borderRadius: '10px',
-                    letterSpacing: '0.05em'
-                  }}>
-                    BEST SELLER
-                  </div>
+                  <div className={styles.bestSellerBadge}>BEST SELLER</div>
                 )}
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#ffffff' }}>{p.name}</h4>
-                    <span style={{
-                      fontSize: '10px',
-                      padding: '2px 8px',
-                      borderRadius: '10px',
-                      fontWeight: 'bold',
-                      background: p.status === 'active' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.08)',
-                      color: p.status === 'active' ? '#34d399' : '#a1a1aa'
-                    }}>
+                  <div className={styles.planHeaderRow}>
+                    <h4 className={styles.planName}>{p.name}</h4>
+                    <span className={`${styles.planStatus} ${p.status === 'active' ? styles.planStatusActive : styles.planStatusInactive}`}>
                       {p.status === 'active' ? 'Aktif' : 'Nonaktif'}
                     </span>
                   </div>
 
-                  <div style={{ fontSize: '26px', fontWeight: '800', color: '#fbbf24', margin: '12px 0 16px 0' }}>
+                  <div className={styles.planPrice}>
                     Rp {p.price ? p.price.toLocaleString('id-ID') : '0'}
-                    <span style={{ fontSize: '12px', fontWeight: 'normal', color: '#71717a' }}> / {p.activePeriodDays} hari</span>
+                    <span className={styles.planPricePeriod}> / {p.activePeriodDays} hari</span>
                   </div>
 
-                  <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '13px', color: '#e4e4e7', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <li>✓ Maksimal <strong>{p.maxProjects >= 99999 ? 'Unlimited' : p.maxProjects} Project</strong></li>
-                    <li>✓ Foto <strong>Unlimited</strong></li>
-                    <li>✓ Galeri Online & Seleksi Foto Klien</li>
+                  <ul className={styles.featureList}>
+                    <li className={styles.featureItem}>✓ Maks. <strong>{p.maxProjects >= 99999 ? 'Unlimited' : p.maxProjects} Project</strong></li>
+                    <li className={styles.featureItem}>✓ Foto <strong>Unlimited</strong></li>
+                    <li className={styles.featureItem}>✓ Galeri Online & Seleksi Foto Klien</li>
                     {p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business') ? (
-                      <li style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Bisa Menggunakan Logo Studio Sendiri</li>
+                      <li className={styles.featureItem} style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Bisa Logo Studio Sendiri</li>
                     ) : (
-                      <li style={{ color: '#71717a' }}>• Logo Platform Standard</li>
+                      <li className={styles.featureItem} style={{ color: '#71717a' }}>• Logo Platform Standard</li>
                     )}
                     {p.allowRawSelector === undefined || p.allowRawSelector === 1 || p.allowRawSelector === true ? (
-                      <li style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Fitur Auto-Sorter / Selector File RAW</li>
+                      <li className={styles.featureItem} style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Auto-Sorter File RAW</li>
                     ) : (
-                      <li style={{ color: '#71717a' }}>• Fitur RAW Selector Nonaktif</li>
+                      <li className={styles.featureItem} style={{ color: '#71717a' }}>• RAW Selector Nonaktif</li>
                     )}
                   </ul>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                <div className={styles.actionRow}>
                   <button
                     onClick={() => openPlanModal(p)}
                     className="btn-secondary"
-                    style={{ flex: 1, padding: '8px 12px', fontSize: '12px' }}
+                    style={{ flex: 1, padding: '8px 12px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                   >
-                    ✏️ Edit Paket
+                    <SettingsManageIcon size={12} color="#ffffff" />
+                    <span>Edit</span>
                   </button>
                   <button
                     onClick={() => setPlanToDelete(p)}
                     className="btn-secondary"
-                    style={{ padding: '8px 12px', fontSize: '12px', color: '#f87171' }}
+                    style={{ padding: '8px 12px', fontSize: '12px', color: '#f87171', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                   >
-                    🗑️ Hapus
+                    <TrashIcon size={12} color="#f87171" />
+                    <span>Hapus</span>
                   </button>
                 </div>
               </div>
@@ -261,128 +239,98 @@ export default function AdminPlans({
         )}
       </div>
 
-      {/* ── SECTION 2: SETTING STORAGE PLAN (COMPACT CARDS) ── */}
-      <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', border: '1px solid rgba(52,211,153,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+      {/* ── SECTION 2: SETTING STORAGE PLAN ── */}
+      <div className="glass-card" style={{ border: '1px solid rgba(52,211,153,0.2)' }}>
+        <div className={styles.sectionHeader}>
           <div>
-            <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: '700', color: '#34d399', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              ⚡ Setting Storage Plan <span style={{ fontSize: '11px', background: 'rgba(52,211,153,0.15)', color: '#34d399', padding: '2px 8px', borderRadius: '12px', fontWeight: '600' }}>Add-On Cloud</span>
+            <h3 className={styles.sectionTitle} style={{ color: '#34d399' }}>
+              <SpeedBoltIcon size={16} color="#34d399" />
+              <span>Storage Plan</span>
+              <span className="badge badge-active" style={{ fontSize: '10px' }}>Add-On Cloud</span>
             </h3>
-            <p style={{ margin: 0, fontSize: '12px', color: '#a1a1aa' }}>
-              Kelola opsi tambahan kapasitas penyimpanan server untuk vendor studio
-            </p>
+            <p className={styles.sectionSub}>Kelola kapasitas penyimpanan tambahan untuk vendor</p>
           </div>
           <button
             onClick={() => handleOpenAddonModal()}
-            style={{
-              padding: '8px 16px',
-              fontSize: '12px',
-              fontWeight: '600',
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(16,185,129,0.3)'
-            }}
+            className="btn-primary"
+            style={{ padding: '8px 16px', fontSize: '12px', background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.3)' }}
           >
             + Tambah Storage Plan
           </button>
         </div>
 
         {loadingAddon ? (
-          <p style={{ textAlign: 'center', color: '#a1a1aa', padding: '16px 0', fontSize: '13px' }}>Memuat data Storage Plan...</p>
+          <p className={styles.loadingState}>Memuat data Storage Plan...</p>
         ) : addonPlans.length === 0 ? (
-          <p style={{ textAlign: 'center', color: '#71717a', padding: '16px 0', fontSize: '13px' }}>
-            Belum ada Storage Plan. Klik tombol di atas untuk membuat paket Add-On Storage.
+          <p className={styles.emptyState}>
+            Belum ada Storage Plan. Klik tombol di atas untuk membuat Add-On Storage.
           </p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+          <div className={styles.addonGrid}>
             {addonPlans.map(addon => {
               const quotaGb = addon.quotaBytes ? (addon.quotaBytes / (1024 * 1024 * 1024)).toFixed(0) : '0';
               const isActive = addon.status === 'active';
               return (
                 <div
                   key={addon.id}
+                  className={styles.addonCard}
                   style={{
-                    background: isActive ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.01)',
-                    border: `1px solid ${isActive ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.07)'}`,
-                    borderRadius: '12px',
-                    padding: '14px 16px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '12px',
                     opacity: isActive ? 1 : 0.75,
-                    transition: 'all 0.2s ease'
+                    borderColor: isActive ? 'rgba(52,211,153,0.25)' : 'rgba(255,255,255,0.07)',
+                    background: isActive ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.01)'
                   }}
                 >
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '6px' }}>
-                      <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: isActive ? '#f4f4f5' : '#a1a1aa' }}>{addon.name}</h4>
+                      <h4 className={styles.addonName} style={{ color: isActive ? '#f4f4f5' : '#a1a1aa' }}>{addon.name}</h4>
                       <button
                         type="button"
                         onClick={() => handleToggleAddonStatus(addon)}
-                        title={isActive ? 'Klik untuk nonaktifkan paket' : 'Klik untuk mengaktifkan paket'}
+                        title={isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                        className={`badge ${isActive ? 'badge-active' : ''}`}
                         style={{
-                          fontSize: '10px',
-                          padding: '3px 8px',
-                          borderRadius: '12px',
-                          fontWeight: '700',
+                          cursor: 'pointer',
+                          border: `1px solid ${isActive ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)'}`,
                           background: isActive ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.08)',
                           color: isActive ? '#34d399' : '#a1a1aa',
-                          border: `1px solid ${isActive ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)'}`,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          transition: 'all 0.15s ease'
+                          display: 'inline-flex', alignItems: 'center', gap: '4px'
                         }}
                       >
-                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isActive ? '#34d399' : '#71717a' }}></span>
+                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: isActive ? '#34d399' : '#71717a' }} />
                         {isActive ? 'Aktif' : 'Nonaktif'}
                       </button>
                     </div>
 
-                    <div style={{ fontSize: '18px', fontWeight: '800', color: isActive ? '#34d399' : '#71717a', margin: '8px 0 2px 0' }}>
-                      {quotaGb} GB
-                      <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal', marginLeft: '4px' }}>Storage</span>
-                    </div>
-
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: isActive ? '#fbbf24' : '#a1a1aa' }}>
+                    <p className={styles.addonPrice} style={{ color: isActive ? '#34d399' : '#71717a' }}>
+                      {quotaGb} GB <span style={{ fontSize: '11px', color: '#a1a1aa', fontWeight: 'normal' }}>Storage</span>
+                    </p>
+                    <p className={styles.addonDesc} style={{ color: isActive ? '#fbbf24' : '#a1a1aa', fontWeight: '700', fontSize: '13px', margin: '0' }}>
                       Rp {Number(addon.price).toLocaleString('id-ID')}
                       <span style={{ fontSize: '10px', color: '#71717a', fontWeight: 'normal' }}> / bln</span>
-                    </div>
+                    </p>
                   </div>
 
                   <div style={{ display: 'flex', gap: '6px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                     <button
                       onClick={() => handleOpenAddonModal(addon)}
-                      style={{ flex: 1, padding: '5px 8px', fontSize: '11px', background: 'rgba(255,255,255,0.05)', color: '#e4e4e7', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', cursor: 'pointer' }}
+                      className="btn-ghost btn-ghost-neutral"
+                      style={{ flex: 1, fontSize: '11px', padding: '5px 8px', justifyContent: 'center' }}
                     >
-                      ✏️ Edit
+                      <SettingsManageIcon size={11} color="#ffffff" />
+                      <span>Edit</span>
                     </button>
                     <button
                       onClick={() => handleToggleAddonStatus(addon)}
-                      title={isActive ? 'Nonaktifkan paket ini' : 'Aktifkan paket ini'}
-                      style={{
-                        padding: '5px 8px',
-                        fontSize: '11px',
-                        background: isActive ? 'rgba(251,191,36,0.1)' : 'rgba(52,211,153,0.1)',
-                        color: isActive ? '#fbbf24' : '#34d399',
-                        border: `1px solid ${isActive ? 'rgba(251,191,36,0.2)' : 'rgba(52,211,153,0.2)'}`,
-                        borderRadius: '6px',
-                        cursor: 'pointer'
-                      }}
+                      style={{ padding: '5px 8px', fontSize: '11px', borderRadius: '6px', cursor: 'pointer', border: `1px solid ${isActive ? 'rgba(251,191,36,0.2)' : 'rgba(52,211,153,0.2)'}`, background: isActive ? 'rgba(251,191,36,0.1)' : 'rgba(52,211,153,0.1)', color: isActive ? '#fbbf24' : '#34d399' }}
                     >
                       {isActive ? 'Off' : 'On'}
                     </button>
                     <button
                       onClick={() => handleDeleteAddon(addon.id, addon.name)}
-                      title="Hapus atau Soft-Disable paket"
-                      style={{ padding: '5px 8px', fontSize: '11px', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', cursor: 'pointer' }}
+                      className="btn-ghost btn-ghost-red"
+                      style={{ padding: '5px 8px', fontSize: '11px', justifyContent: 'center' }}
                     >
-                      🗑️
+                      <TrashIcon size={11} color="#f87171" />
                     </button>
                   </div>
                 </div>
@@ -397,36 +345,34 @@ export default function AdminPlans({
         <div className="modal-overlay" onClick={() => setShowAddonModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px' }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: '700', color: '#34d399' }}>
-              {editingAddon ? '✏️ Edit Storage Plan' : '➕ Tambah Storage Plan Baru'}
+              {editingAddon ? 'Edit Storage Plan' : 'Tambah Storage Plan'}
             </h3>
 
             <form onSubmit={handleSaveAddon} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#a1a1aa', marginBottom: '4px' }}>Nama Paket Storage</label>
+              <div className="form-group">
+                <label className="form-label">Nama Paket Storage</label>
                 <input
                   type="text"
                   required
                   placeholder="Misal: Add-On Storage 100 GB"
                   value={addonForm.name}
                   onChange={e => setAddonForm({ ...addonForm, name: e.target.value })}
-                  style={{ width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a1a1aa', marginBottom: '4px' }}>Kapasitas (GB)</label>
+                <div className="form-group">
+                  <label className="form-label">Kapasitas (GB)</label>
                   <input
                     type="number"
                     required
                     min="1"
                     value={addonForm.quotaGb}
                     onChange={e => setAddonForm({ ...addonForm, quotaGb: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }}
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a1a1aa', marginBottom: '4px' }}>Harga / Bulan (Rp)</label>
+                <div className="form-group">
+                  <label className="form-label">Harga / Bulan (Rp)</label>
                   <input
                     type="number"
                     required
@@ -434,27 +380,24 @@ export default function AdminPlans({
                     step="1000"
                     value={addonForm.price}
                     onChange={e => setAddonForm({ ...addonForm, price: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a1a1aa', marginBottom: '4px' }}>Urutan Tampil</label>
+                <div className="form-group">
+                  <label className="form-label">Urutan Tampil</label>
                   <input
                     type="number"
                     value={addonForm.sortOrder}
                     onChange={e => setAddonForm({ ...addonForm, sortOrder: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }}
                   />
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#a1a1aa', marginBottom: '4px' }}>Status</label>
+                <div className="form-group">
+                  <label className="form-label">Status</label>
                   <select
                     value={addonForm.status}
                     onChange={e => setAddonForm({ ...addonForm, status: e.target.value })}
-                    style={{ width: '100%', padding: '9px 12px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', fontSize: '13px', boxSizing: 'border-box' }}
                   >
                     <option value="active" style={{ background: '#18181b', color: '#fff' }}>Aktif</option>
                     <option value="inactive" style={{ background: '#18181b', color: '#fff' }}>Nonaktif</option>
@@ -467,16 +410,18 @@ export default function AdminPlans({
                   type="button"
                   onClick={() => setShowAddonModal(false)}
                   disabled={savingAddon}
-                  style={{ padding: '8px 16px', background: 'rgba(255,255,255,0.08)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}
+                  className="btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '12px' }}
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={savingAddon}
-                  style={{ padding: '8px 18px', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+                  className="btn-primary"
+                  style={{ padding: '8px 18px', fontSize: '12px', background: 'linear-gradient(135deg, #10b981, #059669)' }}
                 >
-                  {savingAddon ? 'Menyimpan...' : '💾 Simpan Storage Plan'}
+                  {savingAddon ? 'Menyimpan...' : 'Simpan Storage Plan'}
                 </button>
               </div>
             </form>

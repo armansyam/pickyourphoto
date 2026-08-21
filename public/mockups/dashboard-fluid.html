@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mockup Proposal — Vendor Dashboard (Mobile & Fluid View)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #09090b;
+      color: #f4f4f5;
+      font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 40px;
+    }
+
+    /* ── Fluid Container System ── */
+    .dashboard-container {
+      width: 100%;
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: clamp(12px, 2.5vw, 28px);
+    }
+
+    /* ── Top App Bar ── */
+    .app-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0 16px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 18px;
+    }
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #C5A059, #8C6D23);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #000;
+      font-size: 14px;
+    }
+    .brand-title {
+      font-size: clamp(15px, 2vw, 18px);
+      font-weight: 700;
+      color: #fff;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pill-btn {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .pill-storage {
+      background: rgba(52,211,153,0.08);
+      color: #34d399;
+      border-color: rgba(52,211,153,0.25);
+    }
+    .pill-settings {
+      background: rgba(255,255,255,0.04);
+      color: #a1a1aa;
+      border-color: rgba(255,255,255,0.08);
+    }
+
+    /* ── Header Row ── */
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .page-title {
+      font-size: clamp(20px, 3vw, 26px);
+      font-weight: 800;
+      color: #fff;
+    }
+    .page-sub {
+      font-size: 12px;
+      color: #a1a1aa;
+      margin-top: 2px;
+    }
+    .btn-create {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+    }
+
+    /* ── Metrics Stats Grid (Auto-Fit Fluid) ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+      gap: 10px;
+      margin-bottom: 22px;
+    }
+    .stat-card {
+      background: rgba(18, 18, 24, 0.7);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .stat-card.stat-indigo { border-color: rgba(99,102,241,0.2); background: rgba(99,102,241,0.05); }
+    .stat-card.stat-emerald { border-color: rgba(52,211,153,0.2); background: rgba(52,211,153,0.05); }
+    .stat-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #a1a1aa;
+      margin-bottom: 4px;
+    }
+    .stat-val {
+      font-size: clamp(16px, 2.5vw, 20px);
+      font-weight: 800;
+      color: #fff;
+    }
+    .stat-sub {
+      font-size: 11px;
+      color: #71717a;
+      margin-top: 2px;
+    }
+
+    /* ── Project Cards Grid (Fluid & Anti-Overflow) ── */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+      gap: 14px;
+    }
+
+    .project-card {
+      background: rgba(18, 18, 24, 0.75);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: clamp(14px, 2vw, 18px);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .project-card:hover {
+      border-color: rgba(99,102,241,0.35);
+    }
+
+    /* Card Top */
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .badge-done { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+    .badge-draft { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+    .badge-wait { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
+    
+    .card-date {
+      font-size: 11px;
+      color: #71717a;
+    }
+
+    /* Project Title */
+    .project-name {
+      font-size: clamp(15px, 2vw, 17px);
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    /* Selection Progress Bar */
+    .progress-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 8px 10px;
+      margin-bottom: 14px;
+    }
+    .progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: #a1a1aa;
+      margin-bottom: 4px;
+    }
+    .progress-track {
+      width: 100%;
+      height: 5px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+    }
+    .fill-green { background: linear-gradient(90deg, #10b981, #059669); }
+    .fill-indigo { background: linear-gradient(90deg, #6366f1, #818cf8); }
+
+    /* Action Buttons (Ergonomic Mobile Stack) */
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+    .btn-main-action {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border: 1px solid rgba(99,102,241,0.3);
+      background: rgba(99,102,241,0.12);
+      color: #a5b4fc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+    .btn-sub-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 40px 40px;
+      gap: 6px;
+    }
+    .sub-btn {
+      padding: 8px 6px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #e4e4e7;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .sub-icon-only {
+      padding: 0;
+      color: #a1a1aa;
+    }
+    .btn-delete {
+      background: rgba(239,68,68,0.08);
+      border-color: rgba(239,68,68,0.2);
+      color: #f87171;
+    }
+  </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+
+  <!-- Top App Navigation -->
+  <header class="app-nav">
+    <div class="brand-box">
+      <div class="brand-logo">P</div>
+      <div class="brand-title">Photota Studio</div>
+    </div>
+    <div class="nav-actions">
+      <a href="#" class="pill-btn pill-storage">☁️ 50 GB Storage</a>
+      <button class="pill-btn pill-settings">⚙️ Setting</button>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div class="header-row">
+    <div>
+      <h1 class="page-title">Dashboard Proyek</h1>
+      <p class="page-sub">Kelola galeri seleksi foto klien &amp; alur kerja studio</p>
+    </div>
+    <button class="btn-create">➕ Buat Proyek Baru</button>
+  </div>
+
+  <!-- Metric Statistics Cards (Fluid) -->
+  <section class="stats-grid">
+    <div class="stat-card stat-indigo">
+      <div class="stat-label">Kuota Proyek Aktif</div>
+      <div class="stat-val">3 <span style="font-size:13px;color:#71717a;font-weight:400;">/ 20 Proyek</span></div>
+      <div class="stat-sub">Paket Pro Studio</div>
+    </div>
+    <div class="stat-card stat-emerald">
+      <div class="stat-label">Dedicated Cloud</div>
+      <div class="stat-val">12.4 GB <span style="font-size:13px;color:#71717a;font-weight:400;">/ 50 GB</span></div>
+      <div class="stat-sub">Sisa 37.6 GB Longgar</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Masa Aktif Akun</div>
+      <div class="stat-val">28 Hari</div>
+      <div class="stat-sub">Berakhir: 18 Sep 2026</div>
+    </div>
+  </section>
+
+  <!-- Project Cards Grid -->
+  <main class="projects-grid">
+
+    <!-- Card 1: Selesai -->
+    <article class="project-card">
+      <div>
+        <div class="card-top">
+          <span class="badge badge-done">✓ Selesai</span>
+          <span class="card-date">12 Agu 2026</span>
+        </div>
+        <h2 class="project-name">Pernikahan Sarah &amp; David (Grand Ballroom)</h2>
+        <div class="progress-box">
+          <div class="progress-labels">
+            <span>Pilihan Klien:</span>
+            <strong style="color:#34d399;">50 / 50 Foto</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill fill-green" style="width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-main-action" style="background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;">⚡ Salin 50 Nama File (Lightroom)</button>
+        <div class="btn-sub-row">
+          <button class="sub-btn">🖼️ Galeri</button>
+          <button class="sub-btn" style="color:#25d366;">💬 Kirim WA</button>
+          <button class="sub-btn sub-icon-only" title="Pengaturan Proyek">⚙️</button>
+          <button class="sub-btn sub-icon-only btn-delete" title="Hapus Proyek">🗑️</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 2: Draft Seleksi -->
+    <article class="project-card">
+      <div>
+        <div class="card-top">
+          <span class="badge badge-draft">🟡 Sedang Dipilih</span>
+          <span class="card-date">10 Agu 2026</span>
+        </div>
+        <h2 class="project-name">Prewedding Alita &amp; Beni (Bromo Outdoor)</h2>
+        <div class="progress-box">
+          <div class="progress-labels">
+            <span>Pilihan Klien:</span>
+            <strong style="color:#fbbf24;">24 / 40 Foto</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill fill-indigo" style="width: 60%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-main-action">👁️ Lihat Galeri Klien</button>
+        <div class="btn-sub-row">
+          <button class="sub-btn">🔗 Salin Link</button>
+          <button class="sub-btn" style="color:#25d366;">💬 Kirim WA</button>
+          <button class="sub-btn sub-icon-only">⚙️</button>
+          <button class="sub-btn sub-icon-only btn-delete">🗑️</button>
+        </div>
+      </div>
+    </article>
+
+    <!-- Card 3: Menunggu -->
+    <article class="project-card">
+      <div>
+        <div class="card-top">
+          <span class="badge badge-wait">● Menunggu Klien</span>
+          <span class="card-date">08 Agu 2026</span>
+        </div>
+        <h2 class="project-name">Family Session: Hartono Family Studio</h2>
+        <div class="progress-box">
+          <div class="progress-labels">
+            <span>Pilihan Klien:</span>
+            <strong style="color:#818cf8;">0 / 20 Foto</strong>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill fill-indigo" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-actions">
+        <button class="btn-main-action">👁️ Lihat Galeri Klien</button>
+        <div class="btn-sub-row">
+          <button class="sub-btn">🔗 Salin Link</button>
+          <button class="sub-btn" style="color:#25d366;">💬 Kirim WA</button>
+          <button class="sub-btn sub-icon-only">⚙️</button>
+          <button class="sub-btn sub-icon-only btn-delete">🗑️</button>
+        </div>
+      </div>
+    </article>
+
+  </main>
+
+</div>
+
+</body>
+</html>

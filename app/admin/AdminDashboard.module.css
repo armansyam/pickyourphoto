@@ -1,0 +1,141 @@
+/* AdminDashboard.module.css
+   CSS Module untuk header dan tab navigation Admin Dashboard
+*/
+
+.wrapper {
+    background: #09090b;
+    color: #f4f4f5;
+    min-height: 100vh;
+    width: 100%;
+    padding-bottom: 40px;
+}
+
+/* ── Header ── */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: clamp(10px, 2vw, 16px) clamp(12px, 3vw, 24px);
+    background: rgba(9, 9, 11, 0.95);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+}
+
+.brandGroup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo {
+    height: 28px;
+    width: 28px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
+.title {
+    font-size: clamp(16px, 3vw, 20px);
+    margin: 0;
+    font-weight: bold;
+    letter-spacing: -0.02em;
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.adminPill {
+    font-size: 12px;
+    color: #a1a1aa;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.adminName {
+    color: #ffffff;
+}
+
+.settingsBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.logoutBtn {
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+}
+
+/* ── Main Content Container ── */
+.mainContainer {
+    padding-top: 20px;
+}
+
+/* ── Tab Bar ── */
+.tabNavWrapper {
+    background: rgba(18, 18, 24, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 20px;
+}
+
+.tabBtn {
+    flex: 0 0 auto;
+    justify-content: center;
+    padding: 7px 11px;
+    border-radius: 7px;
+    border: none;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tabBtnActiveIndigo {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.tabBtnActiveAmber {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.tabBtnInactive {
+    background: transparent;
+    color: #a1a1aa;
+}
+
+.tabBadge {
+    border-radius: 8px;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: bold;
+}

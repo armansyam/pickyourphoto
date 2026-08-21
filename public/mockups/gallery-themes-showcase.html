@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mockup Showcase — 6 Tema Galeri Klien (Full-Width Desktop & Mobile)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Courier+Prime:wght@400;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', -apple-system, sans-serif;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* ── Top Fixed Theme Controller Bar ── */
+    .theme-controller {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(10, 10, 14, 0.94);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: #fff;
+    }
+    .controller-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #C5A059;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .theme-pill-group {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 2px 0;
+      scrollbar-width: none;
+    }
+    .theme-pill-group::-webkit-scrollbar { display: none; }
+    .theme-pill {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: #a1a1aa;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .theme-pill.active {
+      background: #6366f1;
+      color: #fff;
+      border-color: #6366f1;
+      box-shadow: 0 0 12px rgba(99,102,241,0.5);
+    }
+
+    /* ── Theme Definitions ── */
+    /* 1. Default Dark */
+    body.theme-default {
+      --bg: #09090b;
+      --surface: rgba(255,255,255,0.03);
+      --surface-solid: #18181b;
+      --text: #f4f4f5;
+      --text-muted: #a1a1aa;
+      --accent: #6366f1;
+      --accent-contrast: #ffffff;
+      --accent2: #818cf8;
+      --card-border: rgba(255,255,255,0.08);
+      --font-display: 'Montserrat', sans-serif;
+      --font-body: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* 2. Midnight Slate (Trial Dark) */
+    body.theme-midnightSlate {
+      --bg: #0f172a;
+      --surface: rgba(255,255,255,0.03);
+      --surface-solid: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-contrast: #ffffff;
+      --accent2: #818cf8;
+      --card-border: rgba(255,255,255,0.1);
+      --font-display: 'Montserrat', sans-serif;
+      --font-body: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* 3. Kontak Studio (Retro Film) */
+    body.theme-contactSheet {
+      --bg: #0b0b0f;
+      --surface: rgba(255,255,255,0.04);
+      --surface-solid: #16161b;
+      --text: #e4e4e7;
+      --text-muted: #a1a1aa;
+      --accent: #fbbf24;
+      --accent-contrast: #1a1408;
+      --accent2: #6366f1;
+      --card-border: rgba(255,255,255,0.08);
+      --font-display: 'Montserrat', sans-serif;
+      --font-body: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* 4. Galeri Putih (Clean Light / Fine Art) */
+    body.theme-galleryWall {
+      --bg: #f3f2ee;
+      --surface: #ffffff;
+      --surface-solid: #ffffff;
+      --text: #1c1c1e;
+      --text-muted: #6b6b66;
+      --accent: #2f4d3a;
+      --accent-contrast: #ffffff;
+      --accent2: #2f4d3a;
+      --card-border: rgba(0,0,0,0.1);
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* 5. Tanda Editor (Red Marker) */
+    body.theme-editorsMark {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --surface-solid: #ffffff;
+      --text: #111111;
+      --text-muted: #555555;
+      --accent: #dc2626;
+      --accent-contrast: #ffffff;
+      --accent2: #111111;
+      --card-border: #d4d4d8;
+      --font-display: 'Montserrat', sans-serif;
+      --font-body: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* 6. Polaroid Kenangan (Vintage) */
+    body.theme-polaroid {
+      --bg: #f1e9dc;
+      --surface: #fffdf8;
+      --surface-solid: #fffdf8;
+      --text: #3a2f28;
+      --text-muted: #8a7a68;
+      --accent: #b5697a;
+      --accent-contrast: #ffffff;
+      --accent2: #c99a3c;
+      --card-border: rgba(0,0,0,0.08);
+      --font-display: 'Caveat', cursive;
+      --font-body: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* ── Gallery Header ── */
+    .gallery-header {
+      text-align: center;
+      padding: clamp(24px, 4vw, 40px) 16px 20px;
+    }
+    .studio-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .gallery-title {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 4vw, 40px);
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .gallery-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    /* ── Category Filter Tabs (Horizontal Scrollable) ── */
+    .cat-tabs-container {
+      display: flex;
+      justify-content: center;
+      padding: 0 16px;
+      margin-bottom: 24px;
+    }
+    .cat-tabs-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 6px;
+      background: var(--surface);
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      scrollbar-width: none;
+    }
+    .cat-tabs-scroll::-webkit-scrollbar { display: none; }
+    .cat-tab {
+      padding: 7px 14px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .cat-tab.active {
+      background: var(--accent);
+      color: var(--accent-contrast);
+      font-weight: 700;
+    }
+    .cat-count {
+      font-size: 10px;
+      background: rgba(0,0,0,0.2);
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+
+    /* ── FULL-WIDTH FLUID MASONRY GRID (ZERO EMPTY SIDE WASTELAND) ── */
+    .photo-grid-wrap {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0 clamp(8px, 1.5vw, 24px) 130px;
+    }
+    
+    .grid-masonry {
+      column-count: 7;
+      column-gap: 12px;
+      width: 100%;
+    }
+    @media (min-width: 2000px) { .grid-masonry { column-count: 8; } }
+    @media (max-width: 1600px) { .grid-masonry { column-count: 6; } }
+    @media (max-width: 1200px) { .grid-masonry { column-count: 5; } }
+    @media (max-width: 900px) { .grid-masonry { column-count: 4; } }
+    @media (max-width: 640px) {
+      .grid-masonry {
+        column-count: 3 !important;
+        column-gap: 6px !important;
+      }
+      .photo-card { margin-bottom: 6px !important; }
+      .photo-grid-wrap { padding: 0 6px 120px !important; }
+    }
+
+    /* Photo Card (Self-Stacking / Masonry Gap Filler) */
+    .photo-card {
+      break-inside: avoid;
+      margin-bottom: 12px;
+      cursor: pointer;
+      position: relative;
+    }
+    .photo-frame {
+      position: relative;
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--surface-solid);
+      border: 1px solid var(--card-border);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .photo-card:hover .photo-frame {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    }
+    .photo-card.is-selected .photo-frame {
+      box-shadow: 0 0 0 2.5px var(--accent);
+      border-color: var(--accent);
+    }
+    .photo-frame img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+    }
+
+    /* Lightbox Preview Button */
+    .preview-btn {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.2);
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .photo-card:hover .preview-btn { opacity: 1; }
+    @media (max-width: 640px) { .preview-btn { opacity: 0.85; width: 22px; height: 22px; font-size: 11px; } }
+
+    /* ── Theme Specific Visual Signatures ── */
+    /* Contact Sheet (Retro Film Corners) */
+    .cs-corner { position: absolute; width: 12px; height: 12px; border: 2px solid var(--accent); opacity: 0; transition: opacity 0.2s; }
+    .cs-tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+    .cs-tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
+    .cs-bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
+    .cs-br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+    .photo-card:hover .cs-corner, .photo-card.is-selected .cs-corner { opacity: 1; }
+    .cs-frame-no { position: absolute; bottom: 6px; left: 6px; font-family: monospace; font-size: 9px; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.5); padding: 1px 4px; border-radius: 3px; }
+    .cs-pick-num { position: absolute; top: 6px; left: 6px; min-width: 20px; height: 20px; border-radius: 10px; background: var(--accent); color: var(--accent-contrast); font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+
+    /* Editor's Mark (Red Circle Stamp) */
+    .em-circle { position: absolute; inset: 6px; border: 3px solid var(--accent); border-radius: 48% 52% 45% 55% / 55% 45% 55% 45%; transform: rotate(-3deg); pointer-events: none; }
+    .em-badge { position: absolute; bottom: 10px; right: 8px; font-weight: 900; font-size: 10px; background: var(--accent); color: #fff; padding: 2px 6px; border-radius: 3px; transform: rotate(-10deg); }
+
+    /* Gallery Wall (Art Seal) */
+    .gw-seal { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; }
+
+    /* Default Seal */
+    .default-seal { position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+
+    /* Polaroid Pin */
+    .pl-pin { position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+
+    /* ── Floating Action Tray (Anti-Overlap) ── */
+    .action-tray {
+      position: fixed;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(94vw, 520px);
+      z-index: 900;
+    }
+    .tray-inner {
+      background: var(--surface-solid);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 10px 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+    .tray-counter {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: baseline;
+      gap: 3px;
+    }
+    .counter-curr { font-size: 17px; font-weight: 800; color: var(--accent); }
+    .tray-meta { font-size: 10.5px; color: var(--text-muted); }
+    .tray-btns { display: flex; gap: 6px; align-items: center; }
+    .tray-btn-filter {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 11.5px;
+      font-weight: 600;
+      background: var(--surface);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .tray-btn-submit {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      background: var(--accent);
+      color: var(--accent-contrast);
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body class="theme-default">
+
+<!-- Fixed Theme Switcher Toolbar -->
+<nav class="theme-controller">
+  <div class="controller-title">
+    <span>🎨 6 Template Galeri:</span>
+  </div>
+  <div class="theme-pill-group">
+    <button class="theme-pill active" onclick="setTheme('default', this)">1. Default Dark</button>
+    <button class="theme-pill" onclick="setTheme('midnightSlate', this)">2. Midnight Slate</button>
+    <button class="theme-pill" onclick="setTheme('contactSheet', this)">3. Kontak Studio</button>
+    <button class="theme-pill" onclick="setTheme('galleryWall', this)">4. Galeri Putih</button>
+    <button class="theme-pill" onclick="setTheme('editorsMark', this)">5. Tanda Editor</button>
+    <button class="theme-pill" onclick="setTheme('polaroid', this)">6. Polaroid Kenangan</button>
+  </div>
+</nav>
+
+<!-- Gallery Header -->
+<header class="gallery-header">
+  <div class="studio-badge">📸 Photota Studio • Client Gallery</div>
+  <h1 class="gallery-title" id="themeTitle">Pernikahan Sarah &amp; David</h1>
+  <p class="gallery-sub" id="themeDesc">Ketuk foto untuk memilih foto favorit yang akan diedit ke dalam album (Maksimal 50 Foto).</p>
+</header>
+
+<!-- Category Filter Tabs -->
+<div class="cat-tabs-container">
+  <div class="cat-tabs-scroll">
+    <button class="cat-tab active">Semua Foto <span class="cat-count">12</span></button>
+    <button class="cat-tab">Akad &amp; Sungkeman <span class="cat-count">4</span></button>
+    <button class="cat-tab">Resepsi Grand Ballroom <span class="cat-count">5</span></button>
+    <button class="cat-tab">Family Portrait <span class="cat-count">3</span></button>
+  </div>
+</div>
+
+<!-- FULL-WIDTH FLUID MASONRY GRID (Mixed Landscape 3:2 & Portrait 2:3 Filling All Gaps) -->
+<main class="photo-grid-wrap">
+  <div class="grid-masonry" id="galleryGrid">
+
+    <!-- Photo 1 (Portrait) - Selected -->
+    <div class="photo-card is-selected" onclick="toggleSelect(this, '001')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=600&auto=format&fit=crop&q=75" alt="Sarah Bride Portrait (2:3)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°001</span>
+        <span class="cs-pick-num sig-cs">1</span>
+        <span class="gw-seal sig-gw">✓</span>
+        <span class="default-seal sig-def">✓</span>
+        <span class="em-circle sig-em"></span><span class="em-badge sig-em">PILIH</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+    <!-- Photo 2 (Landscape) - Selected -->
+    <div class="photo-card is-selected" onclick="toggleSelect(this, '002')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&auto=format&fit=crop&q=75" alt="Ballroom Ceremony Wide (3:2)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°002</span>
+        <span class="cs-pick-num sig-cs">2</span>
+        <span class="gw-seal sig-gw">✓</span>
+        <span class="default-seal sig-def">✓</span>
+        <span class="em-circle sig-em"></span><span class="em-badge sig-em">PILIH</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+    <!-- Photo 3 (Portrait) -->
+    <div class="photo-card" onclick="toggleSelect(this, '003')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=600&auto=format&fit=crop&q=75" alt="Couple Gown Portrait (2:3)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°003</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+    <!-- Photo 4 (Landscape) - Selected -->
+    <div class="photo-card is-selected" onclick="toggleSelect(this, '004')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=600&auto=format&fit=crop&q=75" alt="Outdoor Sunset Wide (3:2)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°004</span>
+        <span class="cs-pick-num sig-cs">3</span>
+        <span class="gw-seal sig-gw">✓</span>
+        <span class="default-seal sig-def">✓</span>
+        <span class="em-circle sig-em"></span><span class="em-badge sig-em">PILIH</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+    <!-- Photo 5 (Portrait) -->
+    <div class="photo-card" onclick="toggleSelect(this, '005')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=600&auto=format&fit=crop&q=75" alt="Wedding Ring Macro (2:3)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°005</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+    <!-- Photo 6 (Portrait) - Selected -->
+    <div class="photo-card is-selected" onclick="toggleSelect(this, '006')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1606800052052-a08af7148866?w=600&auto=format&fit=crop&q=75" alt="Wedding Veil Dramatic (2:3)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°006</span>
+        <span class="cs-pick-num sig-cs">4</span>
+        <span class="gw-seal sig-gw">✓</span>
+        <span class="default-seal sig-def">✓</span>
+        <span class="em-circle sig-em"></span><span class="em-badge sig-em">PILIH</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+    <!-- Photo 7 (Landscape) -->
+    <div class="photo-card" onclick="toggleSelect(this, '007')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&auto=format&fit=crop&q=75" alt="Dinner Table Setting (3:2)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°007</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+    <!-- Photo 8 (Portrait) -->
+    <div class="photo-card" onclick="toggleSelect(this, '008')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1544077960-604201fe74bc?w=600&auto=format&fit=crop&q=75" alt="Happy Couple Candid (2:3)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°008</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+    <!-- Photo 9 (Landscape) - Selected -->
+    <div class="photo-card is-selected" onclick="toggleSelect(this, '009')">
+      <div class="photo-frame">
+        <img src="https://images.unsplash.com/photo-1532712938310-34cb3982ef74?w=600&auto=format&fit=crop&q=75" alt="First Dance Moment (3:2)" />
+        <span class="cs-corner cs-tl"></span><span class="cs-corner cs-tr"></span><span class="cs-corner cs-bl"></span><span class="cs-corner cs-br"></span>
+        <span class="cs-frame-no">N°009</span>
+        <span class="cs-pick-num sig-cs">5</span>
+        <span class="gw-seal sig-gw">✓</span>
+        <span class="default-seal sig-def">✓</span>
+        <span class="em-circle sig-em"></span><span class="em-badge sig-em">PILIH</span>
+        <span class="pl-pin sig-pl"></span>
+        <button class="preview-btn" onclick="event.stopPropagation();" title="Perbesar">⤢</button>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- Floating Action Tray (Anti-Overlap) -->
+<div class="action-tray">
+  <div class="tray-inner">
+    <div>
+      <div class="tray-counter">
+        <span class="counter-curr" id="selectedCounter">5</span>
+        <span style="color:var(--text-muted);font-size:13px;">/ 50 Foto</span>
+      </div>
+      <div class="tray-meta">✓ Draft tersimpan otomatis</div>
+    </div>
+    <div class="tray-btns">
+      <button class="tray-btn-filter" id="filterBtn" onclick="toggleFilter()">Lihat Pilihan (5)</button>
+      <button class="tray-btn-submit">✓ Kirim Pilihan &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentTheme = 'default';
+  let isFilterSelected = false;
+
+  function updateThemeSignatures(theme) {
+    document.querySelectorAll('.sig-cs').forEach(el => el.style.display = theme === 'contactSheet' ? 'flex' : 'none');
+    document.querySelectorAll('.sig-gw').forEach(el => el.style.display = theme === 'galleryWall' ? 'flex' : 'none');
+    document.querySelectorAll('.sig-def').forEach(el => el.style.display = (theme === 'default' || theme === 'midnightSlate') ? 'flex' : 'none');
+    document.querySelectorAll('.sig-em').forEach(el => el.style.display = theme === 'editorsMark' ? 'block' : 'none');
+    document.querySelectorAll('.sig-pl').forEach(el => el.style.display = theme === 'polaroid' ? 'block' : 'none');
+  }
+
+  function setTheme(themeName, btn) {
+    currentTheme = themeName;
+    document.body.className = `theme-${themeName}`;
+    document.querySelectorAll('.theme-pill').forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    updateThemeSignatures(themeName);
+  }
+
+  function toggleSelect(card, num) {
+    card.classList.toggle('is-selected');
+    const totalSelected = document.querySelectorAll('.photo-card.is-selected').length;
+    document.getElementById('selectedCounter').textContent = totalSelected;
+    document.getElementById('filterBtn').textContent = isFilterSelected ? 'Lihat Semua Foto' : `Lihat Pilihan (${totalSelected})`;
+  }
+
+  function toggleFilter() {
+    isFilterSelected = !isFilterSelected;
+    const cards = document.querySelectorAll('.photo-card');
+    cards.forEach(c => {
+      if (isFilterSelected && !c.classList.contains('is-selected')) {
+        c.style.display = 'none';
+      } else {
+        c.style.display = 'block';
+      }
+    });
+    const totalSelected = document.querySelectorAll('.photo-card.is-selected').length;
+    document.getElementById('filterBtn').textContent = isFilterSelected ? 'Lihat Semua Foto' : `Lihat Pilihan (${totalSelected})`;
+  }
+
+  // Initial Signature setup
+  updateThemeSignatures('default');
+</script>
+
+</body>
+</html>

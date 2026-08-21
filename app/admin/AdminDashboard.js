@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import styles from './AdminDashboard.module.css';
 
 import AdminOverview from '@/components/admin/AdminOverview';
 import AdminVendors from '@/components/admin/AdminVendors';
@@ -9,6 +10,17 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import AdminTrialControl from '@/components/admin/AdminTrialControl';
 import AdminStoragePool from '@/components/admin/AdminStoragePool';
 import AdminUpgradeRequests from '@/components/admin/AdminUpgradeRequests';
+import { 
+    AnalyticsIcon, 
+    InquiryIcon, 
+    UpgradeIcon, 
+    UsersIcon, 
+    PlansIcon, 
+    StoragePoolIcon, 
+    TrialIcon, 
+    SettingsIcon, 
+    LogOutIcon 
+} from '@/components/AdminIcons';
 
 export default function AdminDashboard({ adminUser }) {
     const [activeTab, setActiveTab] = useState('analytics'); // 'analytics', 'inquiry', 'vendors', 'plans', 'trial', 'settings'
@@ -629,58 +641,52 @@ export default function AdminDashboard({ adminUser }) {
     };
 
     return (
-        <div style={{ background: '#09090b', color: '#f4f4f5', minHeight: '100vh', width: '100%', paddingBottom: '40px' }}>
+        <div className={styles.wrapper}>
             {/* Header */}
-            <header className="dashboard-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <header className={`dashboard-header ${styles.header}`}>
+                <div className={styles.brandGroup}>
                     {saasLogoUrl && (
                         <img 
                             src={saasLogoUrl} 
                             alt="Logo" 
-                            style={{ height: '32px', width: '32px', objectFit: 'contain', borderRadius: '8px' }} 
+                            className={styles.logo} 
                             onError={(e) => { e.target.style.display = 'none'; }}
                         />
                     )}
-                    <h1 className="title-gradient" style={{ fontSize: '20px', margin: 0, fontWeight: 'bold' }}>
+                    <h1 className={`title-gradient ${styles.title}`}>
                         {saasName ? `${saasName} Console` : 'Owner Console'}
                     </h1>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '13px', color: '#a1a1aa' }}>
-                        Admin: <strong style={{ color: '#ffffff' }}>{adminUser?.name || 'Superadmin'}</strong>
+                <div className={styles.headerActions}>
+                    <span className={styles.adminPill}>
+                        Admin: <strong className={styles.adminName}>{adminUser?.name || 'Superadmin'}</strong>
                     </span>
                     <button
                         onClick={() => handleTabChange('settings')}
-                        className="btn-secondary"
+                        className={`btn-secondary ${styles.settingsBtn}`}
                         style={{ 
-                            padding: '6px 14px', 
-                            fontSize: '12px', 
                             background: activeTab === 'settings' ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.05)',
                             color: activeTab === 'settings' ? '#818cf8' : '#e4e4e7',
-                            borderColor: activeTab === 'settings' ? '#6366f1' : 'rgba(255,255,255,0.1)',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
+                            borderColor: activeTab === 'settings' ? '#6366f1' : 'rgba(255,255,255,0.1)'
                         }}
                     >
-                        ⚙️ Pengaturan & Profil
+                        <SettingsIcon size={14} />
+                        <span>Pengaturan</span>
                     </button>
                     <a
                         href="/api/auth/logout"
-                        className="btn-secondary"
-                        style={{ padding: '6px 14px', fontSize: '12px', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)', borderRadius: '8px' }}
+                        className={`btn-secondary ${styles.logoutBtn}`}
                     >
-                        Log Out
+                        <LogOutIcon size={13} color="#f87171" />
+                        <span>Log Out</span>
                     </a>
                 </div>
             </header>
 
-            <main className="app-container" style={{ paddingTop: '32px' }}>
+            <main className={`app-container ${styles.mainContainer}`}>
                 {activeTab === 'settings' ? (
                     <div className="fade-in-up">
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
                             <button
                                 type="button"
                                 onClick={() => handleTabChange('analytics')}
@@ -688,21 +694,21 @@ export default function AdminDashboard({ adminUser }) {
                                     background: 'rgba(99, 102, 241, 0.15)',
                                     border: '1px solid rgba(99, 102, 241, 0.3)',
                                     color: '#818cf8',
-                                    padding: '10px 18px',
-                                    borderRadius: '10px',
-                                    fontSize: '13px',
+                                    padding: '8px 14px',
+                                    borderRadius: '8px',
+                                    fontSize: '12.5px',
                                     fontWeight: 'bold',
                                     cursor: 'pointer',
-                                    display: 'flex',
+                                    display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '8px',
+                                    gap: '6px',
                                     boxShadow: '0 4px 12px rgba(99, 102, 241, 0.15)'
                                 }}
                             >
-                                ← Kembali ke Dashboard Operasional
+                                ← Dashboard Operasional
                             </button>
-                            <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                                Mode: <strong>Pengaturan Terpusat Platform</strong>
+                            <span style={{ fontSize: '11.5px', color: '#94a3b8' }}>
+                                Mode: <strong>Pengaturan Terpusat</strong>
                             </span>
                         </div>
 
@@ -766,41 +772,38 @@ export default function AdminDashboard({ adminUser }) {
                     </div>
                 ) : (
                     <>
-                        <div style={{ marginBottom: '32px' }}>
-                            <h2 style={{ fontSize: '28px', fontWeight: '800', margin: '0 0 4px 0' }}>Admin Control Panel</h2>
-                            <p style={{ color: '#a1a1aa', margin: 0, fontSize: '14px' }}>Kelola vendor, paket berlangganan & monitoring bisnis SaaS</p>
+                        <div style={{ marginBottom: '20px' }}>
+                            <h2 style={{ fontSize: 'clamp(20px, 4vw, 28px)', fontWeight: '800', margin: '0 0 4px 0', letterSpacing: '-0.02em' }}>Admin Control Panel</h2>
+                            <p style={{ color: '#a1a1aa', margin: 0, fontSize: 'clamp(12px, 2.5vw, 14px)' }}>Kelola vendor, paket berlangganan & monitoring bisnis SaaS</p>
                         </div>
 
-                        {/* Tab Navigation (Full-Width Segmented Enclosure) */}
-                        <div style={{
+                        {/* Tab Navigation (Full-Width Segmented Touch Scroll Bar) */}
+                        <div className="tab-scroll-bar" style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '4px',
-                            marginBottom: '24px',
+                            marginBottom: '20px',
                             background: 'rgba(255, 255, 255, 0.025)',
                             border: '1px solid rgba(255, 255, 255, 0.07)',
-                            borderRadius: '12px',
-                            padding: '5px',
+                            borderRadius: '10px',
+                            padding: '4px',
                             width: '100%',
+                            maxWidth: '100%',
                             boxSizing: 'border-box',
-                            overflowX: 'auto',
-                            scrollbarWidth: 'none',
-                            WebkitOverflowScrolling: 'touch'
                         }}>
                             {/* MONITOR BISNIS & ANALISIS */}
                             <button
                                 onClick={() => handleTabChange('analytics')}
                                 style={{
-                                    flex: '1 1 0',
-                                    minWidth: '130px',
+                                    flex: '0 0 auto',
                                     justifyContent: 'center',
-                                    padding: '9px 12px',
-                                    borderRadius: '8px',
+                                    padding: '7px 11px',
+                                    borderRadius: '7px',
                                     border: 'none',
                                     background: activeTab === 'analytics' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
                                     color: activeTab === 'analytics' ? '#fff' : '#a1a1aa',
                                     fontWeight: '600',
-                                    fontSize: '13px',
+                                    fontSize: '12px',
                                     cursor: 'pointer',
                                     whiteSpace: 'nowrap',
                                     display: 'inline-flex',
@@ -810,23 +813,23 @@ export default function AdminDashboard({ adminUser }) {
                                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                📊 Monitor & Analisis
+                                <AnalyticsIcon size={14} color={activeTab === 'analytics' ? '#fff' : '#818cf8'} />
+                                <span>Overview</span>
                             </button>
 
                             {/* INQUIRY — calon vendor */}
                             <button
                                 onClick={() => handleTabChange('inquiry')}
                                 style={{
-                                    flex: '1 1 0',
-                                    minWidth: '110px',
+                                    flex: '0 0 auto',
                                     justifyContent: 'center',
-                                    padding: '9px 12px',
-                                    borderRadius: '8px',
+                                    padding: '7px 11px',
+                                    borderRadius: '7px',
                                     border: 'none',
                                     background: activeTab === 'inquiry' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent',
                                     color: activeTab === 'inquiry' ? '#fff' : '#a1a1aa',
                                     fontWeight: '600',
-                                    fontSize: '13px',
+                                    fontSize: '12px',
                                     cursor: 'pointer',
                                     whiteSpace: 'nowrap',
                                     display: 'inline-flex',
@@ -836,7 +839,8 @@ export default function AdminDashboard({ adminUser }) {
                                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                📋 Inquiry
+                                <InquiryIcon size={14} color={activeTab === 'inquiry' ? '#fff' : '#fbbf24'} />
+                                <span>Inquiry</span>
                                 {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length > 0 && (
                                     <span style={{ background: '#ef4444', color: '#fff', borderRadius: '8px', padding: '1px 6px', fontSize: '10px', fontWeight: 'bold' }}>
                                         {vendors.filter(v => ['draft_plan', 'pending_payment', 'pending_manual', 'pending'].includes(v.status)).length}
@@ -848,16 +852,15 @@ export default function AdminDashboard({ adminUser }) {
                             <button
                                 onClick={() => handleTabChange('upgrades')}
                                 style={{
-                                    flex: '1 1 0',
-                                    minWidth: '135px',
+                                    flex: '0 0 auto',
                                     justifyContent: 'center',
-                                    padding: '9px 12px',
-                                    borderRadius: '8px',
+                                    padding: '7px 11px',
+                                    borderRadius: '7px',
                                     border: 'none',
                                     background: activeTab === 'upgrades' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
                                     color: activeTab === 'upgrades' ? '#fff' : '#a1a1aa',
                                     fontWeight: '600',
-                                    fontSize: '13px',
+                                    fontSize: '12px',
                                     cursor: 'pointer',
                                     whiteSpace: 'nowrap',
                                     display: 'inline-flex',
@@ -867,7 +870,8 @@ export default function AdminDashboard({ adminUser }) {
                                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                ⬆️ Upgrade & Add-On
+                                <UpgradeIcon size={14} color={activeTab === 'upgrades' ? '#fff' : '#818cf8'} />
+                                <span>Upgrade</span>
                                 {pendingUpgradeSummary.pendingCount > 0 && (
                                     <span style={{ background: '#f59e0b', color: '#000', borderRadius: '8px', padding: '1px 6px', fontSize: '10px', fontWeight: 'bold' }}>
                                         {pendingUpgradeSummary.pendingCount}
@@ -879,16 +883,15 @@ export default function AdminDashboard({ adminUser }) {
                             <button
                                 onClick={() => handleTabChange('vendors')}
                                 style={{
-                                    flex: '1 1 0',
-                                    minWidth: '130px',
+                                    flex: '0 0 auto',
                                     justifyContent: 'center',
-                                    padding: '9px 12px',
-                                    borderRadius: '8px',
+                                    padding: '7px 11px',
+                                    borderRadius: '7px',
                                     border: 'none',
                                     background: activeTab === 'vendors' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
                                     color: activeTab === 'vendors' ? '#fff' : '#a1a1aa',
                                     fontWeight: '600',
-                                    fontSize: '13px',
+                                    fontSize: '12px',
                                     cursor: 'pointer',
                                     whiteSpace: 'nowrap',
                                     display: 'inline-flex',
@@ -898,23 +901,23 @@ export default function AdminDashboard({ adminUser }) {
                                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                👥 Kelola Vendor ({vendors.filter(v => v.status === 'active').length})
+                                <UsersIcon size={14} color={activeTab === 'vendors' ? '#fff' : '#818cf8'} />
+                                <span>Vendor ({vendors.filter(v => v.status === 'active').length})</span>
                             </button>
 
                             {/* KELOLA PAKET */}
                             <button
                                 onClick={() => handleTabChange('plans')}
                                 style={{
-                                    flex: '1 1 0',
-                                    minWidth: '120px',
+                                    flex: '0 0 auto',
                                     justifyContent: 'center',
-                                    padding: '9px 12px',
-                                    borderRadius: '8px',
+                                    padding: '7px 11px',
+                                    borderRadius: '7px',
                                     border: 'none',
                                     background: activeTab === 'plans' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
                                     color: activeTab === 'plans' ? '#fff' : '#a1a1aa',
                                     fontWeight: '600',
-                                    fontSize: '13px',
+                                    fontSize: '12px',
                                     cursor: 'pointer',
                                     whiteSpace: 'nowrap',
                                     display: 'inline-flex',
@@ -924,23 +927,23 @@ export default function AdminDashboard({ adminUser }) {
                                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                📦 Kelola Paket ({plans.length})
+                                <PlansIcon size={14} color={activeTab === 'plans' ? '#fff' : '#818cf8'} />
+                                <span>Paket ({plans.length})</span>
                             </button>
 
                             {/* TRIAL CONTROL */}
                             <button
                                 onClick={() => handleTabChange('trial')}
                                 style={{
-                                    flex: '1 1 0',
-                                    minWidth: '115px',
+                                    flex: '0 0 auto',
                                     justifyContent: 'center',
-                                    padding: '9px 12px',
-                                    borderRadius: '8px',
+                                    padding: '7px 11px',
+                                    borderRadius: '7px',
                                     border: 'none',
                                     background: activeTab === 'trial' ? 'linear-gradient(135deg, #a855f7, #7c3aed)' : 'transparent',
                                     color: activeTab === 'trial' ? '#fff' : '#a1a1aa',
                                     fontWeight: '600',
-                                    fontSize: '13px',
+                                    fontSize: '12px',
                                     cursor: 'pointer',
                                     whiteSpace: 'nowrap',
                                     display: 'inline-flex',
@@ -950,23 +953,23 @@ export default function AdminDashboard({ adminUser }) {
                                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                🎯 Trial Control
+                                <TrialIcon size={14} color={activeTab === 'trial' ? '#fff' : '#c084fc'} />
+                                <span>Trial</span>
                             </button>
 
                             {/* STORAGE POOL */}
                             <button
                                 onClick={() => handleTabChange('storage-pool')}
                                 style={{
-                                    flex: '1 1 0',
-                                    minWidth: '115px',
+                                    flex: '0 0 auto',
                                     justifyContent: 'center',
-                                    padding: '9px 12px',
-                                    borderRadius: '8px',
+                                    padding: '7px 11px',
+                                    borderRadius: '7px',
                                     border: 'none',
                                     background: activeTab === 'storage-pool' ? 'linear-gradient(135deg, #059669, #047857)' : 'transparent',
                                     color: activeTab === 'storage-pool' ? '#fff' : '#a1a1aa',
                                     fontWeight: '600',
-                                    fontSize: '13px',
+                                    fontSize: '12px',
                                     cursor: 'pointer',
                                     whiteSpace: 'nowrap',
                                     display: 'inline-flex',
@@ -976,7 +979,8 @@ export default function AdminDashboard({ adminUser }) {
                                     transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
                             >
-                                💾 Storage Pool
+                                <StoragePoolIcon size={14} color={activeTab === 'storage-pool' ? '#fff' : '#34d399'} />
+                                <span>Storage</span>
                             </button>
                         </div>
 

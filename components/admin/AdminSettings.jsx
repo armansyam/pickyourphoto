@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import styles from './AdminSettings.module.css';
+import { SettingsIcon, StoragePoolIcon, MoneyIcon } from '@/components/AdminIcons';
+import { WhatsAppIcon, GoogleDriveIcon, SpeedBoltIcon, SettingsManageIcon, CheckIcon, CloseIcon, RefreshCwIcon, TrashIcon, FolderIcon } from '@/components/StorageIcons';
 
 export default function AdminSettings({
   googleClientId, setGoogleClientId,
@@ -872,104 +875,41 @@ export default function AdminSettings({
       )}
 
       {/* ── CATEGORIZED SUB-TABS NAVIGATION ── */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-        gap: '8px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        paddingBottom: '14px',
-        marginBottom: '28px'
-      }}>
+      <div className={styles.subTabsGrid}>
         <button
           type="button"
           onClick={() => setActiveSubTab('identity')}
-          style={{
-            padding: '10px 14px',
-            borderRadius: '10px',
-            fontSize: '12.5px',
-            fontWeight: '700',
-            border: '1px solid',
-            borderColor: activeSubTab === 'identity' ? '#38bdf8' : 'rgba(255,255,255,0.08)',
-            background: activeSubTab === 'identity' ? 'rgba(56, 189, 248, 0.22)' : 'rgba(255,255,255,0.03)',
-            color: activeSubTab === 'identity' ? '#ffffff' : '#94a3b8',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px'
-          }}
+          className={`${styles.subTabBtn} ${activeSubTab === 'identity' ? styles.subTabBtnActiveIdentity : styles.subTabBtnInactive}`}
         >
-          🏢 Identitas & Kontak
+          <FolderIcon size={13} color={activeSubTab === 'identity' ? '#38bdf8' : '#94a3b8'} />
+          <span>Identitas &amp; Kontak</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveSubTab('integrations')}
-          style={{
-            padding: '10px 14px',
-            borderRadius: '10px',
-            fontSize: '12.5px',
-            fontWeight: '700',
-            border: '1px solid',
-            borderColor: activeSubTab === 'integrations' ? '#818cf8' : 'rgba(255,255,255,0.08)',
-            background: activeSubTab === 'integrations' ? 'rgba(99, 102, 241, 0.22)' : 'rgba(255,255,255,0.03)',
-            color: activeSubTab === 'integrations' ? '#ffffff' : '#94a3b8',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px'
-          }}
+          className={`${styles.subTabBtn} ${activeSubTab === 'integrations' ? styles.subTabBtnActiveIntegrations : styles.subTabBtnInactive}`}
         >
-          🌐 Google & Mailer
+          <GoogleDriveIcon size={13} color={activeSubTab === 'integrations' ? '#818cf8' : '#94a3b8'} />
+          <span>Google &amp; Mailer</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveSubTab('payments')}
-          style={{
-            padding: '10px 14px',
-            borderRadius: '10px',
-            fontSize: '12.5px',
-            fontWeight: '700',
-            border: '1px solid',
-            borderColor: activeSubTab === 'payments' ? '#10b981' : 'rgba(255,255,255,0.08)',
-            background: activeSubTab === 'payments' ? 'rgba(16, 185, 129, 0.22)' : 'rgba(255,255,255,0.03)',
-            color: activeSubTab === 'payments' ? '#ffffff' : '#94a3b8',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px'
-          }}
+          className={`${styles.subTabBtn} ${activeSubTab === 'payments' ? styles.subTabBtnActivePayments : styles.subTabBtnInactive}`}
         >
-          💳 Payment Gateway
+          <MoneyIcon size={13} color={activeSubTab === 'payments' ? '#10b981' : '#94a3b8'} />
+          <span>Payment Gateway</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveSubTab('system')}
-          style={{
-            padding: '10px 14px',
-            borderRadius: '10px',
-            fontSize: '12.5px',
-            fontWeight: '700',
-            border: '1px solid',
-            borderColor: activeSubTab === 'system' ? '#f59e0b' : 'rgba(255,255,255,0.08)',
-            background: activeSubTab === 'system' ? 'rgba(245, 158, 11, 0.22)' : 'rgba(255,255,255,0.03)',
-            color: activeSubTab === 'system' ? '#ffffff' : '#94a3b8',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px'
-          }}
+          className={`${styles.subTabBtn} ${activeSubTab === 'system' ? styles.subTabBtnActiveSystem : styles.subTabBtnInactive}`}
         >
-          ⚙️ Sistem & Keamanan
+          <SettingsIcon size={13} color={activeSubTab === 'system' ? '#f59e0b' : '#94a3b8'} />
+          <span>Sistem &amp; Keamanan</span>
         </button>
       </div>
 

@@ -35,6 +35,8 @@ export default function RootLayout({ children }) {
     return (
         <html lang="en">
             <head>
+                <meta name="color-scheme" content="dark" />
+                <meta name="theme-color" content="#09090b" />
                 <link rel="icon" href={faviconUrl} />
                 <link rel="shortcut icon" href={faviconUrl} />
                 <link rel="apple-touch-icon" href={faviconUrl} />

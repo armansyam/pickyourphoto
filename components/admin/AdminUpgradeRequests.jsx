@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import styles from './AdminUpgradeRequests.module.css';
 import { 
   SparklesUpgradeIcon, SpeedBoltIcon, GalleryViewIcon, CheckCircleIcon 
 } from '@/components/StorageIcons.jsx';
@@ -26,10 +27,7 @@ function ProofCell({ transferProof, setActiveProofUrl, vendor }) {
         name: vendor?.vendorName,
         email: vendor?.vendorEmail,
       })}
-      style={{
-        padding: '3px 10px', fontSize: '11px', borderRadius: '6px', border: '1px solid rgba(129,140,248,0.4)',
-        background: 'rgba(129,140,248,0.1)', color: '#818cf8', cursor: 'pointer', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '4px'
-      }}
+      className={styles.proofBtn}
     >
       <GalleryViewIcon size={12} color="#818cf8" />
       <span>Lihat Bukti</span>
@@ -84,57 +82,54 @@ export default function AdminUpgradeRequests({
   const formatRupiah = (n) => n ? `Rp ${Number(n).toLocaleString('id-ID')}` : '–';
 
   return (
-    <div className="glass-card" style={{ padding: '24px', borderRadius: '16px', minHeight: '480px' }}>
+    <div className={`glass-card ${styles.wrapper}`}>
 
       {/* Header */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+      <div className={styles.headerBlock}>
+        <div className={styles.headerRow}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <SparklesUpgradeIcon size={18} color="#818cf8" />
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#818cf8' }}>
+            <div className={styles.titleGroup}>
+              <SparklesUpgradeIcon size={16} color="#818cf8" />
+              <h3 className={styles.title}>
                 Upgrade &amp; Add-On Requests
               </h3>
             </div>
-            <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#71717a' }}>
-              Permohonan upgrade paket / tambah storage dari vendor aktif — memerlukan konfirmasi bukti transfer
+            <p className={styles.subtitle}>
+              Permohonan upgrade paket / tambah storage dari vendor aktif — konfirmasi bukti transfer
             </p>
           </div>
           {countPending > 0 && (
-            <div style={{
-              background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)',
-              borderRadius: '12px', padding: '10px 18px', textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '22px', fontWeight: '800', color: '#fbbf24' }}>{countPending}</div>
-              <div style={{ fontSize: '11px', color: '#a1a1aa' }}>Menunggu Approval</div>
+            <div className={styles.pendingCounterBox}>
+              <div className={styles.pendingCountNum}>{countPending}</div>
+              <div className={styles.pendingCountLabel}>Menunggu Approval</div>
             </div>
           )}
         </div>
       </div>
 
       {/* Filter Chips */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '16px' }}>
-        <button onClick={() => setFilterStatus('pending')} style={chipStyle(filterStatus === 'pending', '#fbbf24')}>
+      <div className={styles.filterBar}>
+        <button onClick={() => setFilterStatus('pending')} className={styles.chipBtn} style={chipStyle(filterStatus === 'pending', '#fbbf24')}>
           Menunggu {countPending > 0 && `(${countPending})`}
         </button>
-        <button onClick={() => setFilterStatus('approved')} style={chipStyle(filterStatus === 'approved', '#10b981')}>
+        <button onClick={() => setFilterStatus('approved')} className={styles.chipBtn} style={chipStyle(filterStatus === 'approved', '#10b981')}>
           Disetujui {countApproved > 0 && `(${countApproved})`}
         </button>
-        <button onClick={() => setFilterStatus('rejected')} style={chipStyle(filterStatus === 'rejected', '#ef4444')}>
+        <button onClick={() => setFilterStatus('rejected')} className={styles.chipBtn} style={chipStyle(filterStatus === 'rejected', '#ef4444')}>
           Ditolak {countRejected > 0 && `(${countRejected})`}
         </button>
-        <button onClick={() => setFilterStatus('all')} style={chipStyle(filterStatus === 'all', '#6366f1')}>
+        <button onClick={() => setFilterStatus('all')} className={styles.chipBtn} style={chipStyle(filterStatus === 'all', '#6366f1')}>
           Semua ({upgrades.length})
         </button>
       </div>
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '48px 0', color: '#52525b' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-            <CheckCircleIcon size={32} color="#34d399" />
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>
+            <CheckCircleIcon size={28} color="#34d399" />
           </div>
-          <p style={{ margin: 0, fontSize: '14px' }}>
+          <p style={{ margin: 0, fontSize: '13px' }}>
             {filterStatus === 'pending'
               ? 'Tidak ada permintaan yang menunggu approval. Semua bersih!'
               : 'Tidak ada data untuk filter ini.'}
@@ -144,16 +139,16 @@ export default function AdminUpgradeRequests({
 
       {/* Table */}
       {filtered.length > 0 && (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#a1a1aa', userSelect: 'none' }}>
-                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '600' }}>Vendor</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '600' }}>Permintaan</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '600' }}>Harga</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '600' }}>Bukti Transfer</th>
-                <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '600' }}>Tgl. Masuk</th>
-                <th style={{ padding: '10px 14px', textAlign: 'right', fontWeight: '600' }}>Aksi</th>
+                <th className={styles.th}>Vendor</th>
+                <th className={styles.th}>Permintaan</th>
+                <th className={styles.th}>Harga</th>
+                <th className={styles.th}>Bukti Transfer</th>
+                <th className={styles.th}>Tgl. Masuk</th>
+                <th className={styles.th} style={{ textAlign: 'right' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -163,19 +158,17 @@ export default function AdminUpgradeRequests({
                 const isProcessing = processing === r.id;
 
                 return (
-                  <tr key={r.id} style={{
-                    borderBottom: '1px solid rgba(255,255,255,0.04)',
+                  <tr key={r.id} className={styles.tr} style={{
                     opacity: isProcessing ? 0.6 : 1,
-                    transition: 'opacity 0.2s',
                   }}>
                     {/* Vendor */}
-                    <td style={{ padding: '14px 14px' }}>
+                    <td className={styles.td}>
                       <strong style={{ color: '#fff', display: 'block', fontSize: '13px' }}>{r.vendorName}</strong>
                       <span style={{ fontSize: '11px', color: '#71717a' }}>{r.vendorEmail}</span>
                     </td>
 
                     {/* Request detail */}
-                    <td style={{ padding: '14px 14px' }}>
+                    <td className={styles.td}>
                       {isAddon ? (
                         <div>
                           <span style={{
@@ -200,47 +193,41 @@ export default function AdminUpgradeRequests({
                     </td>
 
                     {/* Price */}
-                    <td style={{ padding: '14px 14px' }}>
+                    <td className={styles.td}>
                       <span style={{ color: '#fbbf24', fontWeight: '700', fontSize: '13px' }}>
                         {formatRupiah(r.proratedPrice)}
                       </span>
                     </td>
 
                     {/* Proof */}
-                    <td style={{ padding: '14px 14px' }}>
+                    <td className={styles.td}>
                       <ProofCell transferProof={r.transferProof} setActiveProofUrl={setActiveProofUrl} vendor={r} />
                     </td>
 
                     {/* Date */}
-                    <td style={{ padding: '14px 14px' }}>
+                    <td className={styles.td}>
                       <span style={{ fontSize: '11px', color: '#71717a' }}>
                         {r.createdAt ? new Date(r.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–'}
                       </span>
                     </td>
 
                     {/* Actions */}
-                    <td style={{ padding: '14px 14px', textAlign: 'right' }}>
+                    <td className={styles.td} style={{ textAlign: 'right' }}>
                       {isPending ? (
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                           <button
                             onClick={() => handleAction(r.id, 'approve')}
                             disabled={isProcessing}
-                            style={{
-                              padding: '5px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '7px',
-                              border: 'none', background: 'linear-gradient(135deg, #10b981, #059669)',
-                              color: '#fff', cursor: isProcessing ? 'not-allowed' : 'pointer',
-                            }}
+                            className={styles.approveBtn}
+                            style={{ cursor: isProcessing ? 'not-allowed' : 'pointer' }}
                           >
                             {isProcessing ? '...' : '✓ Setujui'}
                           </button>
                           <button
                             onClick={() => handleAction(r.id, 'reject')}
                             disabled={isProcessing}
-                            style={{
-                              padding: '5px 12px', fontSize: '11px', fontWeight: '700', borderRadius: '7px',
-                              border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.08)',
-                              color: '#f87171', cursor: isProcessing ? 'not-allowed' : 'pointer',
-                            }}
+                            className={styles.rejectBtn}
+                            style={{ cursor: isProcessing ? 'not-allowed' : 'pointer' }}
                           >
                             ✕ Tolak
                           </button>

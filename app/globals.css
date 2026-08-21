@@ -1,5 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
 
+:root {
+    color-scheme: dark;
+}
+
+html {
+    overflow-x: hidden;
+    box-sizing: border-box;
+}
+
+*, *::before, *::after {
+    box-sizing: inherit;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -9,33 +22,36 @@ body {
     background: #09090b !important;
     color: #f4f4f5 !important;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 /* ── Typography & Layout Utilities ── */
 .app-container {
-    max-width: 1200px;
+    width: 100%;
+    max-width: 1360px;
     margin: 0 auto;
-    padding: 24px;
+    padding: clamp(12px, 2.5vw, 28px);
+    box-sizing: border-box;
 }
 
 /* ── Glass Cards ── */
 .glass-card {
-    background: rgba(18, 18, 24, 0.6);
+    background: rgba(18, 18, 24, 0.65);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 32px;
+    border-radius: clamp(12px, 2vw, 16px);
+    padding: clamp(14px, 2.5vw, 26px);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 @media (max-width: 640px) {
     .app-container {
-        padding: 12px 8px !important;
+        padding: 12px !important;
     }
     .glass-card {
-        padding: 16px 12px !important;
-        border-radius: 14px !important;
+        padding: 14px 12px !important;
+        border-radius: 12px !important;
     }
     .register-glass-card {
         padding: 12px 4px !important;
@@ -49,10 +65,22 @@ body {
         padding: 0 !important;
     }
     .plan-card-item {
-        padding: 24px 16px !important;
+        padding: 20px 14px !important;
         background: rgba(15, 23, 42, 0.95) !important;
-        border-radius: 16px !important;
+        border-radius: 14px !important;
     }
+}
+
+/* ── Tab Scroll Bar (Hide scrollbar, allow horizontal scroll) ── */
+.tab-scroll-bar {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+}
+.tab-scroll-bar::-webkit-scrollbar {
+    display: none;
 }
 
 
@@ -69,7 +97,7 @@ body {
     color: #ffffff;
     border: none;
     border-radius: 10px;
-    padding: 12px 24px;
+    padding: 10px 20px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -94,7 +122,7 @@ body {
     color: #e4e4e7;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
-    padding: 12px 24px;
+    padding: 10px 18px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -110,7 +138,7 @@ body {
     color: #ffffff;
     border: none;
     border-radius: 10px;
-    padding: 12px 24px;
+    padding: 10px 18px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -124,15 +152,15 @@ body {
 
 /* ── Inputs ── */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .form-label {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: 600;
     color: #a1a1aa;
 }
 
@@ -147,14 +175,15 @@ textarea {
     background: #0f172a !important;
     border: 1px solid #334155 !important;
     border-radius: 10px !important;
-    padding: 12px 16px !important;
-    color: #ffffff !important;
+    padding: 10px 14px !important;
+    color: #f8fafc !important;
+    font-family: inherit !important;
     font-size: 14px !important;
-    transition: all 0.2s ease !important;
+    width: 100% !important;
     box-sizing: border-box !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
-.input-text:focus,
 input:focus,
 select:focus,
 textarea:focus {
@@ -166,7 +195,7 @@ textarea:focus {
 /* ── Header ── */
 .dashboard-header {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 16px 24px;
+    padding: 14px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -177,37 +206,43 @@ textarea:focus {
 /* ── Dashboard Grid & Table ── */
 .project-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 24px;
-    margin-top: 32px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: clamp(12px, 2vw, 20px);
+    margin-top: 20px;
+}
+
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+    gap: clamp(8px, 1.5vw, 12px);
+    margin-bottom: 20px;
 }
 
 .project-card {
-    background: rgba(18, 18, 24, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
-    padding: 24px;
-    transition: all 0.3s ease;
+    background: rgba(18, 18, 24, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 14px;
+    padding: clamp(14px, 2vw, 20px);
+    transition: all 0.25s ease;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 220px;
 }
 
 .project-card:hover {
-    border-color: rgba(99, 102, 241, 0.4);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+    border-color: rgba(99, 102, 241, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
 .status-badge {
-    padding: 4px 10px;
-    border-radius: 99px;
-    font-size: 12px;
-    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     width: fit-content;
 }
 
@@ -222,6 +257,245 @@ textarea:focus {
     color: #34d399;
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
+
+/* ─────────────────────────────────────────────
+   DASHBOARD UTILITY CLASSES
+   Digunakan oleh admin & vendor dashboard
+   ───────────────────────────────────────────── */
+
+/* ── Stat / Info Cards ── */
+.stat-card {
+    border-radius: 12px;
+    padding: 12px 16px;
+}
+.stat-card-indigo {
+    background: rgba(99, 102, 241, 0.06);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+.stat-card-green {
+    background: rgba(52, 211, 153, 0.06);
+    border: 1px solid rgba(52, 211, 153, 0.15);
+}
+.stat-card-amber {
+    background: rgba(251, 191, 36, 0.06);
+    border: 1px solid rgba(251, 191, 36, 0.15);
+}
+.stat-card-blue {
+    background: rgba(56, 189, 248, 0.06);
+    border: 1px solid rgba(56, 189, 248, 0.15);
+}
+.stat-card-dark {
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── Metric Labels & Values ── */
+.metric-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+.metric-label-indigo { color: #818cf8; }
+.metric-label-green  { color: #34d399; }
+.metric-label-amber  { color: #fbbf24; }
+.metric-label-blue   { color: #38bdf8; }
+
+.metric-value {
+    font-size: 22px;
+    font-weight: 700;
+    color: #e4e4e7;
+    margin: 4px 0 0;
+}
+.metric-value-sm {
+    font-size: 18px;
+    font-weight: 700;
+    color: #e4e4e7;
+    margin: 4px 0 0;
+}
+.metric-sub {
+    font-size: 11px;
+    color: #71717a;
+    font-weight: 400;
+    margin: 2px 0 0;
+}
+
+/* ── Section Headers (dalam card/panel) ── */
+.section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.section-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+.section-title-indigo { color: #818cf8; }
+.section-title-green  { color: #10b981; }
+.section-title-blue   { color: #38bdf8; }
+.section-title-amber  { color: #fbbf24; }
+.section-title-white  { color: #ffffff; }
+
+.section-sub {
+    font-size: 11px;
+    color: #94a3b8;
+    margin: 2px 0 0;
+}
+
+/* ── Status Badges (Admin / Vendor) ── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 10.5px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.badge-active  { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.badge-pending { background: rgba(251, 191, 36, 0.15);  color: #fbbf24; }
+.badge-expired { background: rgba(239, 68, 68, 0.12);   color: #f87171; }
+.badge-info    { background: rgba(56, 189, 248, 0.15);  color: #38bdf8; }
+.badge-purple  { background: rgba(168, 85, 247, 0.15);  color: #a855f7; }
+
+/* ── Ghost Buttons (Outline Style) ── */
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.btn-ghost-indigo {
+    color: #818cf8;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+.btn-ghost-indigo:hover {
+    background: rgba(99, 102, 241, 0.15);
+}
+.btn-ghost-green {
+    color: #34d399;
+    background: rgba(52, 211, 153, 0.06);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+}
+.btn-ghost-green:hover {
+    background: rgba(52, 211, 153, 0.12);
+}
+.btn-ghost-red {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+.btn-ghost-red:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+.btn-ghost-neutral {
+    color: #a1a1aa;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.btn-ghost-neutral:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+/* ── Sub-Tab Chips ── */
+.sub-tab-chip {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.04);
+    color: #71717a;
+}
+.sub-tab-chip.active-blue   { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.3); }
+.sub-tab-chip.active-amber  { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border-color: rgba(251, 191, 36, 0.3); }
+.sub-tab-chip.active-gray   { background: rgba(113, 113, 122, 0.15); color: #a1a1aa; border-color: rgba(113, 113, 122, 0.3); }
+
+/* ── Panel Section Divider ── */
+.panel-section {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 12px;
+}
+
+/* ── Responsive Table Wrapper ── */
+.table-scroll-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.table-scroll-wrapper::-webkit-scrollbar {
+    height: 4px;
+}
+.table-scroll-wrapper::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 4px;
+}
+.table-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+}
+
+/* ── Alert Banners ── */
+.alert-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 20px;
+}
+.alert-banner-red    { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171; }
+.alert-banner-amber  { background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24; }
+
+/* ── Flex Row Helpers ── */
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.flex-start {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Fade In Animation ── */
+.fade-in-up {
+    animation: fadeInUp 0.25s ease;
+}
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 
 /* ── Modal Animations ── */
 @keyframes modalOverlayIn {

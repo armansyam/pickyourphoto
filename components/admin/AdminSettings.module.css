@@ -1,0 +1,151 @@
+/* AdminSettings.module.css
+   CSS Module untuk komponen AdminSettings
+*/
+
+.wrapper {
+    color: #ffffff;
+}
+
+/* ── Sub-Tabs Navigation ── */
+.subTabsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+    gap: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 14px;
+    margin-bottom: 24px;
+}
+
+.subTabBtn {
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.subTabBtnActiveIdentity {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.22);
+    color: #ffffff;
+}
+
+.subTabBtnActiveIntegrations {
+    border-color: #818cf8;
+    background: rgba(99, 102, 241, 0.22);
+    color: #ffffff;
+}
+
+.subTabBtnActivePayments {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.22);
+    color: #ffffff;
+}
+
+.subTabBtnActiveSystem {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.22);
+    color: #ffffff;
+}
+
+.subTabBtnInactive {
+    background: rgba(255, 255, 255, 0.03);
+    color: #94a3b8;
+}
+
+/* ── Section Cards ── */
+.sectionCard {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.sectionHeader {
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 14px;
+}
+
+.sectionTitle {
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sectionSub {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    color: #94a3b8;
+}
+
+/* ── Hero Brand Card ── */
+.heroBrandCard {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.heroLogoBox {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    overflow: hidden;
+}
+
+.heroLogoImg {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* ── Summary Cards Grid ── */
+.summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.summaryCard {
+    background: rgba(0, 0, 0, 0.25);
+    padding: 14px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.summaryLabel {
+    color: #94a3b8;
+    display: block;
+    font-size: 11.5px;
+    margin-bottom: 4px;
+}
+
+.summaryValue {
+    color: #f4f4f5;
+    font-size: 13.5px;
+    word-break: break-all;
+}
