@@ -148,45 +148,7 @@ export async function POST(request) {
       });
     }
 
-    // Step 0: Check if an unexpired active pending session already exists for this vendor & plan
-    const activeSession = db.prepare(`
-      SELECT orderId, planId, amount, paymentMethod, qrUrl, expiresAt, rawResponse
-      FROM payment_sessions 
-      WHERE vendorId = ? AND planId = ? AND status = 'pending' AND expiresAt > datetime('now', '+30 seconds')
-      ORDER BY id DESC LIMIT 1
-    `).get(vendor.id, plan.id);
-
-    if (activeSession) {
-      let token = null;
-      let redirectUrl = null;
-      let qrUrl = activeSession.qrUrl || null;
-      try {
-        const raw = JSON.parse(activeSession.rawResponse || '{}');
-        token = raw.token || null;
-        redirectUrl = raw.redirect_url || raw.paymentUrl || null;
-        if (!qrUrl && raw.actions) {
-          const qrAction = raw.actions.find(a => a.name === 'generate-qr-code');
-          if (qrAction) qrUrl = qrAction.url;
-        }
-      } catch (e) {}
-
-      return NextResponse.json({
-        success: true,
-        vendorId: vendor.id,
-        orderId: activeSession.orderId,
-        provider: activeSession.paymentMethod || 'ipaymu',
-        token,
-        redirectUrl,
-        qrUrl,
-        amount: activeSession.amount,
-        expiresAt: activeSession.expiresAt,
-        planId: activeSession.planId,
-        planName: plan.name,
-        planPrice: plan.price
-      });
-    }
-
-    // Generate unique orderId
+    // Generate unique orderId for brand new transaction
     const orderId = `ORDER-${Date.now()}-${vendor.id}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
     // Step 1: Mark any old pending sessions as 'replaced' BEFORE creating new one

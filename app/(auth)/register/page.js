@@ -346,29 +346,23 @@ export default function RegisterPage() {
                         }}
                         onCancel={async () => {
                             const orderToCancel = pendingOrder?.orderId;
-                            // Immediately switch UI to Stage 2
+                            const targetPlanId = pendingOrder?.planId || plan;
+                            
+                            // Immediately retreat 1 step back to Stage 3 (Detail Summary)
+                            if (targetPlanId) {
+                                setPlan(String(targetPlanId));
+                            }
                             setPendingOrder(null);
-                            setShowSummary(false);
-                            setPlan('');
+                            setShowSummary(true);
                             setExpiredNotice(false);
-                            setStep(2);
 
-                            // Cancel payment session and reset plan in database
+                            // Cancel payment session in database
                             if (orderToCancel) {
                                 try {
                                     await fetch('/api/payment/cancel', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ orderId: orderToCancel, email })
-                                    });
-                                } catch (e) {}
-                            }
-                            if (email) {
-                                try {
-                                    await fetch('/api/register/select-plan', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ email, planId: null })
                                     });
                                 } catch (e) {}
                             }

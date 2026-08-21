@@ -451,7 +451,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                         ) : 'Cek Pembayaran'}
                     </button>
                     <button type="button" onClick={onCancel} style={{ padding: '10px', width: '100%', borderRadius: '10px', background: 'transparent', color: '#64748b', border: '1px solid rgba(255,255,255,0.08)', fontSize: '12px', fontWeight: '500', cursor: 'pointer' }}>
-                        Batalkan & Pilih Paket Lain
+                        Batalkan Pembayaran
                     </button>
                 </div>
             </div>
