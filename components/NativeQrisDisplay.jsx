@@ -235,6 +235,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                         position: 'relative', minHeight: isDirectQr ? '320px' : '680px',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         boxSizing: 'border-box'
+                    }}>
                         {/* LOADING STATE: IN-PLACE SKELETON & SPINNER */}
                         {pendingOrder.isLoading || (!pendingOrder.qrImage && !pendingOrder.qrUrl && !pendingOrder.token) ? (
                             <div style={{ width: '100%', padding: '48px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
