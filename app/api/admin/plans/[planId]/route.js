@@ -80,17 +80,11 @@ export async function DELETE(request, { params }) {
             return NextResponse.json({ message: 'Plan not found.' }, { status: 404 });
         }
 
-        const hasVendors = db.prepare('SELECT id FROM vendors WHERE planId = ? LIMIT 1').get(planId);
-        if (hasVendors) {
-            return NextResponse.json({ 
-                message: 'Cannot delete plan. There are active vendor accounts linked to this subscription plan. Reassign them first.' 
-            }, { status: 409 });
-        }
-
+        // Hapus permanen paket langganan dari katalog penawaran
         const deleteStmt = db.prepare('DELETE FROM plans WHERE id = ?');
         deleteStmt.run(planId);
 
-        return NextResponse.json({ message: 'Subscription plan deleted successfully.' });
+        return NextResponse.json({ message: 'Paket langganan berhasil dihapus secara permanen dari katalog.' });
     } catch (error) {
         console.error('Failed to delete plan:', error);
         return NextResponse.json({ message: 'Internal server error' }, { status: 500 });

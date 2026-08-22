@@ -129,14 +129,11 @@ export default function AdminPlans({
   };
 
   const handleDeleteAddon = async (id, name) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus Storage Plan "${name}"? Jika paket ini sedang digunakan, sistem akan menonaktifkannya (Soft-Disable) demi keamanan data vendor.`)) return;
+    if (!confirm(`Apakah Anda yakin ingin menghapus paket Add-On "${name}" secara permanen dari katalog penawaran?`)) return;
     try {
       const res = await fetch(`/api/admin/addon-plans?id=${id}`, { method: 'DELETE' });
       const data = await res.json();
       if (res.ok) {
-        if (data.softDeleted) {
-          alert(data.message || 'Paket dinonaktifkan (Soft-Disable) karena sedang digunakan.');
-        }
         fetchAddonPlans();
       } else {
         alert(data.error || 'Gagal menghapus Storage Plan');

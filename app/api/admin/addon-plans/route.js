@@ -129,35 +129,13 @@ export async function DELETE(req) {
       return NextResponse.json({ success: false, error: 'Paket Add-On tidak ditemukan.' }, { status: 404 });
     }
 
-    // 1. Cek apakah ada vendor yang saat ini berlangganan paket ini
-    const activeVendors = db.prepare('SELECT COUNT(*) as count FROM vendors WHERE addonPlanId = ?').get(id);
-    
-    // 2. Cek apakah ada histori transaksi / request upgrade yang menggunakan paket ini
-    let hasTransactions = { count: 0 };
-    try {
-      hasTransactions = db.prepare('SELECT COUNT(*) as count FROM payment_transactions WHERE addonPlanId = ?').get(id) || { count: 0 };
-    } catch (e) {}
-
-    let hasRequests = { count: 0 };
-    try {
-      hasRequests = db.prepare('SELECT COUNT(*) as count FROM subscription_requests WHERE addonPlanId = ?').get(id) || { count: 0 };
-    } catch (e) {}
-
-    const totalUsage = (activeVendors?.count || 0) + (hasTransactions?.count || 0) + (hasRequests?.count || 0);
-
-    if (totalUsage > 0) {
-      // SAFE SOFT-DISABLE: Jangan hapus fisik baris di database agar tidak merusak relasi dan snapshot vendor
-      db.prepare("UPDATE addon_plans SET status = 'inactive' WHERE id = ?").run(id);
-      return NextResponse.json({
-        success: true,
-        softDeleted: true,
-        message: `Paket dinonaktifkan (Soft-Disable) karena sedang digunakan oleh ${activeVendors?.count || 0} vendor atau tercatat dalam riwayat transaksi.`
-      });
-    }
-
-    // Jika paket belum pernah digunakan sama sekali, aman untuk di-hard delete
+    // Hapus permanen paket add-on dari katalog penawaran
     db.prepare('DELETE FROM addon_plans WHERE id = ?').run(id);
-    return NextResponse.json({ success: true, message: 'Paket Add-On berhasil dihapus permanen.' });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Paket Add-On berhasil dihapus secara permanen dari katalog.' 
+    });
   } catch (error) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
