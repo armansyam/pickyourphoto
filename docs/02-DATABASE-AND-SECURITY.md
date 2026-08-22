@@ -6,10 +6,14 @@
 
 ---
 
-## 🗄️ 1. Skema Database SQLite (Aktual)
+## 🗄️ 1. Skema Database SQLite (Triad Pattern)
 
-Database disimpan di: `data/database.db`  
-Engine: `better-sqlite3` — WAL mode (`PRAGMA journal_mode = WAL;`) + foreign keys enabled + busy timeout 10 detik.
+Database dipisahkan ke dalam 3 berkas terisolasi di direktori `data/` via `better-sqlite3`:
+* `data/master.db` — Menyimpan data akun vendor, admin, paket, subdomain, dan transaksi pembayaran.
+* `data/vendor.db` — Menyimpan data proyek galeri, klien, foto, dan virtual storage folder.
+* `data/trial.db` — Menyimpan simulasi galeri instan publik (retensi 24 jam).
+
+Seluruh koneksi menggunakan mode **WAL (`PRAGMA journal_mode = WAL;`)**, memory cache 64MB, memory-mapped I/O 256MB, dan busy timeout 10 detik.
 
 ---
 
@@ -23,12 +27,12 @@ CREATE TABLE plans (
   price               REAL DEFAULT 0,         -- harga dalam Rupiah
   activePeriodDays    INTEGER DEFAULT 30,     -- durasi aktif (30 hari)
   status              TEXT DEFAULT 'active',
-  planType            TEXT DEFAULT 'limit',   -- 'limit'
-  maxStorageMB        INTEGER DEFAULT 0,      -- Zero Storage Mode
+  planType            TEXT DEFAULT 'limit',
+  maxStorageMB        INTEGER DEFAULT 0,
   projectExpireDays   INTEGER DEFAULT 0,
-  maxPhotosPerProject INTEGER DEFAULT 0,      -- 0 = Unlimited
-  allowCustomLogo     INTEGER DEFAULT 0,      -- 1 = Pro & Business
-  allowRawSelector    INTEGER DEFAULT 1,      -- 1 = Pro & Business
+  maxPhotosPerProject INTEGER DEFAULT 0,
+  allowCustomLogo     INTEGER DEFAULT 0,
+  allowRawSelector    INTEGER DEFAULT 1,
   createdAt           DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 ```
@@ -61,7 +65,7 @@ CREATE TABLE vendors (
   password                    TEXT NOT NULL,           -- bcrypt hash (10 rounds)
   name                        TEXT NOT NULL,
   role                        TEXT DEFAULT 'vendor',
-  status                      TEXT DEFAULT 'active',   -- 'active'|'pending_payment'|'pending_manual'|'expired'|'expired_draft'|'suspended'|'rejected'
+  status                      TEXT DEFAULT 'active',   -- 'active'|'draft_plan'|'pending_payment'|'pending_manual'|'expired'|'expired_draft'|'suspended'|'rejected'
   maxProjects                 INTEGER DEFAULT 5,
   planId                      INTEGER REFERENCES plans(id),
   expiresAt                   TEXT,                    -- ISO8601 string
@@ -75,17 +79,36 @@ CREATE TABLE vendors (
   usedStorageBytes            INTEGER DEFAULT 0,
   brandName                   TEXT,
   brandLogo                   TEXT,
+  subdomain                   TEXT UNIQUE,             -- Subdomain eksklusif studio (e.g. 'alana')
+  subdomain_active            INTEGER DEFAULT 0,       -- 1 = Subdomain aktif dan siap diakses publik
+  subdomain_set_at            DATETIME,
+  portfolioDriveUrl           TEXT,                    -- URL Google Drive Portofolio foto studio
   driveRootFolderId           TEXT,
   externalDriveConnected      INTEGER DEFAULT 0,
   externalDriveEmail          TEXT,
-  externalDriveRefreshToken   TEXT,
-  externalDriveFolderId       TEXT,
+  externalDriveRefreshToken   TEXT,                    -- TERENKRIPSI AES-256-CBC via crypto-vault.js
+  externalDriveFolderId       TEXT DEFAULT 'root',
   activeStorageMode           TEXT DEFAULT 'byos',
   copyDelimiter               TEXT DEFAULT ', ',
   copyIncludeExt              INTEGER DEFAULT 0,
   copySortOrder               TEXT DEFAULT 'name_asc',
   archivedAt                  DATETIME,
   createdAt                   DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+### Tabel `subdomain_history` — Riwayat Perubahan Subdomain (301 Redirect)
+
+```sql
+CREATE TABLE subdomain_history (
+  id                          INTEGER PRIMARY KEY AUTOINCREMENT,
+  vendorId                    INTEGER NOT NULL REFERENCES vendors(id),
+  oldSubdomain                TEXT NOT NULL,
+  newSubdomain                TEXT NOT NULL,
+  changedAt                   DATETIME DEFAULT CURRENT_TIMESTAMP,
+  expiresAt                   DATETIME                 -- Masa transisi redirect 90 hari
 );
 ```
 
@@ -316,3 +339,18 @@ CREATE TABLE saas_settings (
 - Soft-lock vendor kedaluwarsa dan arsip galeri terkait.
 - Hard purge pembersihan file foto dari Google Drive storage pool setelah melewati masa tenggang 30 hari.
 - Auto-delete draft registrasi gantung tanpa bukti bayar (>48 jam).
+
+### 6. Enkripsi Kunci Rahasia at-Rest (`lib/crypto-vault.js`)
+- Seluruh Google Drive OAuth Refresh Tokens (`vendors.externalDriveRefreshToken`) dienkripsi menggunakan algoritma **AES-256-CBC** dengan *Initialization Vector (IV)* acak 16-byte.
+- Kunci master diturunkan via hash SHA-256 dari variabel lingkungan `JWT_SECRET`.
+- Fungsi `getMasterKey()` memvalidasi keberadaan secret dan melempar `Error` fatal jika unset untuk mencegah enkripsi kosong (*NOOP encryption*).
+
+### 7. Keamanan SSL 2-Layer & Wildcard Subdomain
+- **Edge Layer (Cloudflare):** Mode **`Full (Strict)`** dengan sertifikat publik otomatis.
+- **Origin Layer (VPS Nginx):** Sertifikat **Cloudflare Origin CA (Validitas 15 Tahun)** mencakup domain utama `photota.my.id` dan seluruh wildcard subdomain `*.photota.my.id`.
+- Seluruh traffic dipaksa melalui enkripsi HTTPS TLS 1.3 tanpa kemungkinan serangan *Man-in-the-Middle (MitM)*.
+
+### 8. Sanitasi Subdomain & Perlindungan Routing
+- Input subdomain studio vendor disanitasi secara ketat dengan whitelist regex `^[a-z0-9-]+$` dan blacklist reserved keywords (`admin`, `api`, `dashboard`, `setup`, `login`, `register`, `superadmin`, `billing`, dll.).
+- Middleware membatasi akses tenant subdomain yang tidak aktif atau belum disetujui (`subdomain_active = 1`).
+

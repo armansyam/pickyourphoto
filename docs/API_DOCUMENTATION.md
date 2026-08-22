@@ -131,3 +131,17 @@
 | `POST` | `/api/trial/create` | Public | Membuat sesi galeri trial publik tanpa akun |
 | `GET` | `/api/trial/[slug]` | Public | Mengambil data galeri trial publik |
 | `GET` | `/api/cron/purge-expired` | Cron Secret | Hard purge pembersihan file foto vendor kedaluwarsa (>30 hari) |
+
+---
+
+### 8. Subdomain Studio & Profil Vendor (`/api/subdomain/*` & `/api/vendor/*`)
+| Method | Endpoint | Auth | Deskripsi |
+|---|---|---|---|
+| `POST` | `/api/subdomain/claim` | Vendor | Mendaftarkan subdomain eksklusif studio untuk pertama kali |
+| `PUT` | `/api/subdomain/update` | Vendor | Memperbarui nama subdomain studio (dengan validasi cooldown & Pro tier) |
+| `GET` | `/api/subdomain/check` | Public | Memeriksa ketersediaan nama subdomain dan alternatif nama |
+| `GET` | `/api/vendor/profile` | Vendor | Mengambil data profil, logo brand, preferensi copy, dan konfigurasi subdomain |
+| `PUT` | `/api/vendor/profile` | Vendor | Memperbarui nama brand studio, logo studio, nomor WhatsApp, dan link Google Drive portofolio |
+| `POST` | `/api/vendor/setup` | Vendor | Menyimpan setup wizard awal (`/setup`) & aktivasi subdomain |
+| `GET` | `/api/studio/[subdomain]/lookup` | Public | Endpoint lookup identitas studio dan portofolio foto |
+

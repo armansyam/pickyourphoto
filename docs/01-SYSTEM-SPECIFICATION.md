@@ -7,7 +7,7 @@
 
 ## 1. ARSITEKTUR DATABASE TRIAD (`lib/db.js`)
 
-Sistem menggunakan 3 file database SQLite terpisah di direktori `data/` via `better-sqlite3`:
+Sistem menggunakan 3 file database SQLite terpisah di direktori `data/` via `better-sqlite3` dengan mode **WAL (`PRAGMA journal_mode = WAL;`)** dan memory cache berkecepatan tinggi:
 
 ### A. `data/master.db` (`masterDb`)
 1. **`vendors`**:
@@ -16,69 +16,78 @@ Sistem menggunakan 3 file database SQLite terpisah di direktori `data/` via `bet
    * `password`: TEXT NOT NULL (Bcrypt hashed random string)
    * `name`: TEXT NOT NULL (Nama lengkap pemilik)
    * `role`: TEXT DEFAULT 'vendor' (`'vendor'` vs `'admin'`)
-   * `status`: TEXT DEFAULT 'active' (`'draft_plan'`, `'pending_payment'`, `'pending_manual'`, `'active'`, `'expired_draft'`, `'rejected'`, `'cancelled'`, `'expired'`)
-   * `planId`: INTEGER REFERENCES `plans(id)` (Bernilai `NULL` saat awal registrasi Google, terisi saat calon vendor memilih paket di Tahap 2)
+   * `status`: TEXT DEFAULT 'active' (`'draft_plan'`, `'pending_payment'`, `'pending_manual'`, `'active'`, `'expired_draft'`, `'rejected'`, `'cancelled'`, `'expired'`, `'suspended'`)
+   * `planId`: INTEGER REFERENCES `plans(id)`
    * `expiresAt`: TEXT (ISO timestamp masa aktif paket)
    * `whatsapp`: TEXT (Nomor WhatsApp pemilik)
-   * `paymentProof`: TEXT (Nama file bukti transfer manual di `/public/uploads/proofs/`)
+   * `paymentProof`: TEXT (Nama file bukti transfer manual)
    * `resetRequested`: INTEGER DEFAULT 0
    * `brandName`: TEXT (Nama studio/usaha fotografi vendor)
    * `brandLogo`: TEXT (Path file logo di `/uploads/logos/`)
-   * `subdomain`: TEXT (Subdomain unik studio, e.g. `'ams-studio'`)
-   * `subdomain_active`: INTEGER DEFAULT 0
+   * `subdomain`: TEXT (Subdomain eksklusif studio, e.g. `'alana'`)
+   * `subdomain_active`: INTEGER DEFAULT 0 (Status aktifasi routing subdomain)
    * `subdomain_set_at`: DATETIME
-   * `custom_domain`: TEXT
-   * `custom_domain_verified`: INTEGER DEFAULT 0
+   * `portfolioDriveUrl`: TEXT (Tautan Google Drive publik portofolio studio)
    * `city`: TEXT (Kota studio/pemilik)
    * `address`: TEXT (Alamat studio/pemilik)
    * `studio_whatsapp`: TEXT (Nomor WhatsApp kontak studio di galeri)
    * `is_setup_completed`: INTEGER DEFAULT 0 (Penanda First-Time Setup Wizard `/setup`)
    * `hasStorageAddon`: INTEGER DEFAULT 0
-   * `addonStorageQuotaBytes`: INTEGER DEFAULT 0 (Kapasitas ekstra dalam bytes)
+   * `addonStorageQuotaBytes`: INTEGER DEFAULT 0
    * `addonPlanId`: INTEGER
-   * `archivedAt`: DATETIME (Waktu pengarsipan saat pembayaran batal/expired, retensi 3 hari)
+   * `externalDriveConnected`: INTEGER DEFAULT 0 (Status integrasi BYOS Google Drive)
+   * `externalDriveEmail`: TEXT (Akun email Google Drive pribadi vendor)
+   * `externalDriveRefreshToken`: TEXT (Token OAuth tersimpan **TERENKRIPSI AES-256-CBC** via `crypto-vault.js`)
+   * `externalDriveFolderId`: TEXT DEFAULT 'root'
+   * `activeStorageMode`: TEXT DEFAULT 'byos' (`'byos'` vs `'system'`)
+   * `archivedAt`: DATETIME
    * `createdAt`: DATETIME DEFAULT CURRENT_TIMESTAMP
 
-2. **`plans`**:
+2. **`subdomain_history`**:
    * `id`: INTEGER PRIMARY KEY AUTOINCREMENT
-   * `name`: TEXT NOT NULL (e.g. `'Starter Plan'`, `'Pro Studio Plan'`, `'Elite Studio Plan'`)
+   * `vendorId`: INTEGER NOT NULL (FK `vendors.id`)
+   * `oldSubdomain`: TEXT NOT NULL (Subdomain lama)
+   * `newSubdomain`: TEXT NOT NULL (Subdomain baru)
+   * `changedAt`: DATETIME DEFAULT CURRENT_TIMESTAMP
+   * `expiresAt`: DATETIME (Masa retensi redirect 301 selama 90 hari)
+
+3. **`plans`**:
+   * `id`: INTEGER PRIMARY KEY AUTOINCREMENT
+   * `name`: TEXT NOT NULL (`'Starter'`, `'Pro Studio'`, `'Business'`)
    * `price`: REAL NOT NULL
    * `maxProjects`: INTEGER NOT NULL (Batas kuota proyek aktif, e.g. 5, 20, 50)
    * `activePeriodDays`: INTEGER NOT NULL DEFAULT 30
-   * `allowCustomLogo`: INTEGER DEFAULT 0 (Fitur logo studio kustom)
-   * `allowRawSelector`: INTEGER DEFAULT 0 (Fitur seleksi RAW)
+   * `allowCustomLogo`: INTEGER DEFAULT 0
+   * `allowRawSelector`: INTEGER DEFAULT 0
    * `status`: TEXT DEFAULT 'active'
    * `createdAt`: DATETIME DEFAULT CURRENT_TIMESTAMP
 
-3. **`addon_plans`**:
+4. **`addon_plans`**:
    * `id`: INTEGER PRIMARY KEY AUTOINCREMENT
    * `planKey`: TEXT NOT NULL UNIQUE (e.g. `'addon-10gb'`, `'addon-25gb'`, `'addon-50gb'`)
    * `name`: TEXT NOT NULL (e.g. `'Cloud Storage 25 GB'`)
-   * `quotaBytes`: INTEGER NOT NULL (e.g. `26843545600` bytes)
+   * `quotaBytes`: INTEGER NOT NULL
    * `price`: REAL NOT NULL
    * `status`: TEXT DEFAULT 'active'
    * `sortOrder`: INTEGER DEFAULT 0
    * `createdAt`: DATETIME DEFAULT CURRENT_TIMESTAMP
 
-4. **`payment_sessions`**:
+5. **`payment_sessions`**:
    * `id`: INTEGER PRIMARY KEY AUTOINCREMENT
    * `orderId`: TEXT NOT NULL UNIQUE (e.g. `'ORD-1787299016-1001'`)
    * `vendorId`: INTEGER NOT NULL (FK `vendors.id`)
    * `planId`: INTEGER NOT NULL
-   * `amount`: INTEGER NOT NULL (Total tagihan paket + addon)
+   * `amount`: INTEGER NOT NULL
    * `status`: TEXT DEFAULT 'pending' (`'pending'`, `'paid'`, `'expired'`, `'cancelled'`)
    * `paymentMethod`: TEXT DEFAULT 'qris'
    * `qrUrl`: TEXT DEFAULT ''
-   * `expiresAt`: DATETIME NOT NULL (Batas waktu 15 menit)
+   * `expiresAt`: DATETIME NOT NULL
    * `paidAt`: DATETIME
    * `rawResponse`: TEXT
    * `createdAt`: DATETIME DEFAULT CURRENT_TIMESTAMP
 
-5. **`subscription_requests`**:
-   * `id`: INTEGER PRIMARY KEY AUTOINCREMENT, `vendorId`, `planId`, `proratedPrice`, `transferProof`, `status`, `createdAt`.
-
 6. **`saas_settings`**:
-   * `key` (TEXT PK), `value` (TEXT) — Pengaturan SaaS global.
+   * `key` (TEXT PK), `value` (TEXT) — Pengaturan SaaS global (`saas_name`, `saas_tagline`, `saas_domain`, `payment_gateway`, dll.).
 
 ---
 
@@ -87,15 +96,36 @@ Sistem menggunakan 3 file database SQLite terpisah di direktori `data/` via `bet
 * **`clients`**: `id`, `email`, `projectId` (FK), `accessKey` (UNIQUE), `clientPhone`, `createdAt`.
 * **`photos`**: `id`, `projectId` (FK), `name`, `fileId`, `url`, `thumbnailUrl`, `sizeBytes`, `sortOrder`, `selected`, `createdAt`.
 * **`selections`**: `id`, `clientId` (FK), `photoId` (FK), `notes`, `createdAt`.
+* **`storage_folders`** & **`storage_files`**: Struktur virtual folder dan metadata berkas cloud storage vendor.
+* **`daily_upload_logs`** & **`upload_queue`**: Tracking transaksi upload per vendor.
 
 ---
 
-### C. `data/analytics.db` (`analyticsDb`)
-* **`traffic_logs`**, **`client_activity_logs`**, **`daily_stats`**.
+### C. `data/trial.db` (`trialDb`)
+* **`trial_galleries`**: `id`, `slug` (UNIQUE), `title`, `folderUrl`, `expiresAt`, `viewCount`, `createdAt` — Menyimpan simulasi galeri instan tanpa akun (retensi 24 jam).
 
 ---
 
-## 2. STATE MACHINE REGISTRASI & SINKRONISASI REFRESH (4 KONDISI EKSPLANATIF)
+## 2. ARSITEKTUR MULTI-TENANT SUBDOMAIN & STUDIO PORTAL
+
+### A. Dynamic Hostname Detection (`middleware.js`)
+Sistem mendeteksi subdomain secara **100% dinamis** dari header HTTP request (`x-forwarded-host` / `host`) tanpa bergantung pada konfigurasi domain hardcode di `.env`:
+* Jika request masuk dengan format `[subdomain].[domain-utama].[tld]` (contoh: `alana.photota.my.id` atau `studio.domain.com`):
+  1. `middleware.js` mengekstrak `subdomain` secara cerdas (mendukung multi-part TLD seperti `.my.id`, `.co.id`, dll.).
+  2. Request di-rewrite secara transparan di layer Next.js ke path internal `/studio/[subdomain]`.
+  3. URL di bilah alamat browser klien tetap menampilkan `https://alana.photota.my.id/`.
+
+### B. Halaman Profil Studio Eksklusif (`app/studio/[subdomain]/`)
+Halaman portal studio menyediakan representasi resmi studio fotografer:
+* **Branding & Identitas**: Menampilkan logo studio vendor, nama studio dengan lencana resmi (*Verified Official Profile*), dan tombol kontak langsung ke WhatsApp Studio (`wa.me/[nomorWA]`).
+* **Favicon Dinamis**: Tab browser otomatis menampilkan logo studio vendor yang diunggah (`vendor.brandLogo`).
+* **OpenGraph & Media Sharing**: Dilengkapi meta tag OpenGraph dan Twitter Card dengan judul `[Nama Studio] — Official Profile` dan thumbnail logo studio untuk tampilan rich preview elegan saat dibagikan ke WhatsApp dan media sosial.
+* **Streaming Portofolio Google Drive**: Menampilkan galeri portofolio foto pilihan secara live streaming langsung dari tautan Google Drive vendor (`vendor.portfolioDriveUrl`) tanpa membebani storage lokal.
+* **White-Label Footer**: Menampilkan hak cipta vendor dan kredit platform dinamis `Powered by {saas_name}` yang bersumber langsung dari tabel `saas_settings`.
+
+---
+
+## 3. STATE MACHINE REGISTRASI & SINKRONISASI REFRESH (4 KONDISI EKSPLANATIF)
 
 ```
 [Tahap 1: Google Sign-In]

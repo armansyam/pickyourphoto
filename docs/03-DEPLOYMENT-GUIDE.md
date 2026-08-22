@@ -24,16 +24,18 @@
 
 ```
 pick-your-photo/
-├── app/                   # Next.js 14 App Router (pages & 70+ API routes)
-├── components/            # React Client & Server components
-├── lib/                   # Shared utilities (db, auth, mailer, gdrive, payment-gateway, rate-limit)
-├── data/                  # 📂 DATABASE & PROOFS VOLUME (WAJIB DIPERSIST!)
-│   ├── database.db        # SQLite database produksi
-│   └── payment_proofs/    # Berkas bukti transfer pembayaran
+├── app/                   # Next.js 14 App Router (pages, dynamic studio [subdomain], 70+ API routes)
+├── components/            # React Client & Server components (Studio Portal, Dynamic Sliders, etc.)
+├── lib/                   # Shared utilities (db, auth, crypto-vault, gdrive, payment-gateway)
+├── data/                  # 📂 TRIAD DATABASE & PROOFS VOLUME (WAJIB DIPERSIST!)
+│   ├── master.db          # Akun vendor, admin, paket, subdomain, dan transaksi
+│   ├── vendor.db          # Proyek galeri foto, klien, dan virtual storage
+│   ├── trial.db           # Simulasi galeri instan publik
+│   └── payment_proofs/    # Berkas bukti transfer pembayaran manual
 ├── public/
 │   ├── branding/          # Aset brand & logo platform
 │   ├── icons/             # Ikon gateway pembayaran (QRIS, GPN)
-│   └── vendor_logos/      # Logo vendor terunggah (WAJIB DIPERSIST!)
+│   └── vendor_logos/      # Logo studio vendor (WAJIB DIPERSIST!)
 ├── .env.local             # Environment variables lokal server (JANGAN commit ke Git!)
 ├── deploy.sh              # Script deployment PM2 otomatis (One-Click Deploy)
 ├── deploy-docker.sh       # Script deployment Docker Compose
@@ -128,3 +130,50 @@ Volume `data/` dan `public/vendor_logos/` akan di-mount ke container agar data d
    - Worker Pool: `https://domain-anda.com/api/admin/auth/google/worker/callback`
 3. Masukkan `Client ID` dan `Client Secret` di Admin Panel → Settings → Google OAuth.
 4. Di Admin Panel → Hubungkan akun Master Hub & Worker Accounts.
+
+---
+
+## 🌐 8. Konfigurasi Nginx, Cloudflare SSL & Wildcard Subdomain
+
+### A. Pengaturan Cloudflare Dashboard
+1. **SSL/TLS Encryption Mode:** Set ke **`Full (Strict)`**.
+2. **Origin Server Certificate:** Buat sertifikat Origin CA 15 Tahun mencakup hostname:
+   - `photota.my.id`
+   - `*.photota.my.id`
+3. Simpan sertifikat ke server VPS:
+   - Certificate: `/etc/nginx/ssl/photota_origin.pem`
+   - Private Key: `/etc/nginx/ssl/photota_origin.key`
+
+### B. Konfigurasi Blok Nginx (Nginx UI / Virtual Host)
+```nginx
+server {
+    listen 80;
+    server_name photota.my.id *.photota.my.id;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name photota.my.id *.photota.my.id;
+
+    ssl_certificate /etc/nginx/ssl/photota_origin.pem;
+    ssl_certificate_key /etc/nginx/ssl/photota_origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+*Catatan:* Header `proxy_set_header X-Forwarded-Host $host;` sangat penting agar `middleware.js` dapat mendeteksi nama subdomain vendor secara akurat.
+
