@@ -34,13 +34,19 @@ export default function RegisterOrderSummary({
     const addonPrice = selectedAddon ? Number(selectedAddon.price || 0) : 0;
     const totalAmount = planPrice + addonPrice;
 
-    const handleSingleClickPay = (e) => {
+    const handleSingleClickPay = async (e) => {
         if (isSubmitting || loading) return;
         setIsSubmitting(true);
-        if (paymentConfig?.enableGateway) {
-            if (onPayQris) onPayQris(e, { addonPlanId: selectedAddonId, totalAmount });
-        } else {
-            if (onManualTransferSubmit) onManualTransferSubmit(e, { addonPlanId: selectedAddonId, totalAmount, proofFile });
+        try {
+            if (paymentConfig?.enableGateway) {
+                if (onPayQris) await onPayQris(e, { addonPlanId: selectedAddonId, totalAmount });
+            } else {
+                if (onManualTransferSubmit) await onManualTransferSubmit(e, { addonPlanId: selectedAddonId, totalAmount, proofFile });
+            }
+        } catch (err) {
+            console.error('[Submit Pay Error]:', err);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 

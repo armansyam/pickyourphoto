@@ -391,7 +391,86 @@ export default function RegisterPage() {
                 </div>
 
                 {/* 4-Stage Modular Lifecycle Views */}
-                {pendingOrder ? (
+                {pendingOrder?.isManual ? (
+                    /* Stage 4 (Manual): Menunggu Verifikasi Pembayaran Manual */
+                    <div className="fade-in-up" style={{
+                        background: 'linear-gradient(160deg, rgba(15, 23, 42, 0.96), rgba(10, 15, 30, 0.98))',
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        borderRadius: '20px',
+                        padding: '32px 24px',
+                        textAlign: 'center',
+                        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)'
+                    }}>
+                        <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto', fontSize: '24px' }}>
+                            ⏳
+                        </div>
+                        <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', margin: '0 0 8px 0' }}>
+                            Menunggu Verifikasi Pembayaran
+                        </h3>
+                        <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 20px 0', lineHeight: '1.5' }}>
+                            Konfirmasi transfer bank untuk paket <strong>{pendingOrder.planName}</strong> telah diterima. Tim admin akan segera memeriksa dan mengaktifkan akun Anda.
+                        </p>
+
+                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px', marginBottom: '20px', textAlign: 'left', fontSize: '12px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                <span style={{ color: '#94a3b8' }}>Akun:</span>
+                                <strong style={{ color: '#ffffff' }}>{pendingOrder.email || email}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                <span style={{ color: '#94a3b8' }}>Bank Tujuan:</span>
+                                <strong style={{ color: '#ffffff' }}>{paymentConfig.bankName}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#94a3b8' }}>No. Rekening:</span>
+                                <strong style={{ color: '#fbbf24' }}>{paymentConfig.bankAccountNumber}</strong>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setPendingOrder(null);
+                                    setShowSummary(true);
+                                }}
+                                style={{
+                                    flex: 1,
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    color: '#cbd5e1',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    borderRadius: '10px',
+                                    padding: '12px',
+                                    fontSize: '13px',
+                                    fontWeight: '600',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Ubah Pesanan
+                            </button>
+                            <a
+                                href={`https://wa.me/?text=${encodeURIComponent(`Halo Admin ${platformName}, saya sudah melakukan transfer untuk pendaftaran paket ${pendingOrder.planName} dengan email ${email}. Mohon bantuannya untuk verifikasi akun saya. Terima kasih!`)}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                    flex: 2,
+                                    background: '#25D366',
+                                    color: '#ffffff',
+                                    textDecoration: 'none',
+                                    borderRadius: '10px',
+                                    padding: '12px',
+                                    fontSize: '13px',
+                                    fontWeight: '700',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px'
+                                }}
+                            >
+                                Konfirmasi via WhatsApp
+                            </a>
+                        </div>
+                    </div>
+                ) : pendingOrder ? (
                     /* Stage 4: Native QRIS Display (Timer + Expiry Handling) */
                     <NativeQrisDisplay
                         pendingOrder={pendingOrder}

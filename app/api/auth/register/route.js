@@ -27,20 +27,20 @@ export async function POST(request) {
             email = body.email;
             whatsapp = body.whatsapp;
             password = body.password;
-            plan = body.plan;
+            plan = body.plan || body.planId;
             paymentProofFile = body.paymentProof;
             rawPaymentMethod = body.paymentMethod;
-            addonPlanId = body.addonPlanId;
+            addonPlanId = body.addonPlanId || body.selectedAddonKey;
         } else {
             const formData = await request.formData();
             name = formData.get('name');
             email = formData.get('email');
             whatsapp = formData.get('whatsapp');
             password = formData.get('password');
-            plan = formData.get('plan');
+            plan = formData.get('plan') || formData.get('planId');
             paymentProofFile = formData.get('paymentProof');
             rawPaymentMethod = formData.get('paymentMethod');
-            addonPlanId = formData.get('addonPlanId');
+            addonPlanId = formData.get('addonPlanId') || formData.get('selectedAddonKey');
         }
 
         if (!email || !plan) {
@@ -118,13 +118,9 @@ export async function POST(request) {
         const isGateway = selectedPaymentMethod === 'gateway' || selectedPaymentMethod === 'qris';
         const isManual = selectedPaymentMethod === 'manual';
 
-        if (!paymentProofFile && !isGateway) {
-            return NextResponse.json({ message: 'Bukti transfer pembayaran wajib diupload untuk paket berbayar.' }, { status: 400 });
-        }
-
         // Save payment proof file without sharp compression
         let paymentProofPath = '';
-        if (isManual && paymentProofFile && typeof paymentProofFile === 'object') {
+        if (isManual && paymentProofFile && typeof paymentProofFile === 'object' && paymentProofFile.name) {
             try {
                 const buffer = Buffer.from(await paymentProofFile.arrayBuffer());
                 const ext = path.extname(paymentProofFile.name || '.png') || '.png';
@@ -140,8 +136,10 @@ export async function POST(request) {
                 paymentProofPath = `/api/admin/proofs/${filename}`;
             } catch (err) {
                 console.error('Failed to save payment proof image:', err);
-                return NextResponse.json({ message: 'Failed to process payment proof image.' }, { status: 400 });
+                return NextResponse.json({ message: 'Gagal memproses gambar bukti transfer.' }, { status: 400 });
             }
+        } else if (isManual) {
+            paymentProofPath = 'Manual Bank Transfer (Pending Verification)';
         } else if (isGateway) {
             // Gunakan nama provider aktif secara dinamis (bukan hardcode Midtrans)
             const pgConfig = getPaymentGatewayConfig();

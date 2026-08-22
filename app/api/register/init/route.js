@@ -182,6 +182,33 @@ export async function GET(request) {
                             planPrice: targetPlan?.price || activeSession.amount
                         }
                     };
+                } else if (vendor.status === 'pending_manual') {
+                    // Vendor has submitted manual bank transfer confirmation
+                    const targetPlan = plans.find(p => p.id === vendor.planId);
+                    vendorSession = {
+                        vendorId: vendor.id,
+                        name: vendor.name,
+                        email: vendor.email,
+                        whatsapp: vendor.whatsapp || '',
+                        maskedWhatsapp: maskedPhone,
+                        status: vendor.status,
+                        planId: vendor.planId,
+                        hasPending: true,
+                        hasExpired: false,
+                        pendingOrder: {
+                            isManual: true,
+                            hasPending: true,
+                            vendorId: vendor.id,
+                            name: vendor.name,
+                            email: vendor.email,
+                            planId: vendor.planId,
+                            planName: targetPlan?.name || 'Paket Langganan',
+                            planPrice: targetPlan?.price || 0,
+                            bankName: paymentConfig.bankName,
+                            bankAccountNumber: paymentConfig.bankAccountNumber,
+                            bankAccountName: paymentConfig.bankAccountName
+                        }
+                    };
                 } else {
                     // No active pending session. Check if vendor currently has a selected plan
                     let hasExpired = false;
