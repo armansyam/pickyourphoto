@@ -10,9 +10,8 @@ const getDriveId = (photo) => {
     if (photo.googleFileId) return photo.googleFileId;
     if (photo.fileId) return photo.fileId;
     const url = photo.thumbnailPath || photo.originalPath || photo.thumbUrl || photo.origUrl || '';
-    const match = url.match(/\/d\/([^=/&?]+)/) || url.match(/\/proxy\/thumb\/([^/?]+)/);
+    const match = url.match(/\/d\/([^=/&?]+)/);
     if (match && match[1]) return match[1];
-    if (photo.id && String(photo.id).length > 15) return photo.id;
     return '';
 };
 

@@ -2501,14 +2501,34 @@ export default function DashboardPage() {
                             ) : (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
                                     {detailPhotos.map((photo, pIdx) => {
-                                        const filename = photo.originalPath.split('/').pop();
+                                        const fileId = photo.googleFileId || (photo.thumbnailPath || '').match(/\/d\/([^=&?/]+)/)?.[1] || '';
+                                        const cdnUrl = fileId ? `https://lh3.googleusercontent.com/d/${fileId}=w400` : '';
+                                        const filename = photo.category ? `${photo.category} #${pIdx + 1}` : `Photo #${pIdx + 1}`;
                                         return (
                                             <div
                                                 key={photo.id}
                                                 title={`#${pIdx + 1} - ${filename}`}
                                                 style={{ position: 'relative', borderRadius: '10px', overflow: 'hidden', border: '2px solid #6366f1', aspectRatio: '3/2', boxShadow: '0 4px 12px rgba(99,102,241,0.2)', cursor: 'pointer' }}
                                             >
-                                                <img src={photo.thumbnailPath} alt={filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                {cdnUrl ? (
+                                                    <img
+                                                        src={cdnUrl}
+                                                        alt={filename}
+                                                        referrerPolicy="no-referrer"
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                        onError={(e) => {
+                                                            const retries = parseInt(e.target.dataset.retries || '0', 10);
+                                                            if (retries < 3) {
+                                                                e.target.dataset.retries = String(retries + 1);
+                                                                setTimeout(() => { e.target.src = `${cdnUrl}&t=${Date.now()}`; }, 1200);
+                                                            } else {
+                                                                e.target.style.display = 'none';
+                                                            }
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>📷</div>
+                                                )}
                                                 <div style={{ position: 'absolute', top: '6px', right: '6px', background: '#6366f1', color: 'white', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 'bold' }}>
                                                     ✓
                                                 </div>

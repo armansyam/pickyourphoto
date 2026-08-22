@@ -238,12 +238,12 @@ async function runImportTask(projectId, folderId) {
                 SELECT child.driveFolderId FROM storage_folders child
                 JOIN Subtree parent ON child.parentFolderId = parent.fId
               )
-              SELECT sf.id, sf.fileName as name, sf.driveFileId as id, sf.fileSizeBytes as size
+              SELECT sf.driveFileId as driveId, sf.fileName as name, sf.fileSizeBytes as size
               FROM storage_files sf
               WHERE sf.parentFolderId IN (SELECT fId FROM Subtree)
             `).all(internalFolder.driveFolderId);
 
-            files = dbFiles.map(f => ({ id: f.id, name: f.name, size: f.size, category: '' }));
+            files = dbFiles.map(f => ({ id: f.driveId, name: f.name, size: f.size, category: '' }));
         }
 
         if (!files || files.length === 0) {
@@ -267,7 +267,9 @@ async function runImportTask(projectId, folderId) {
                 totalImportedBytes += sizeBytes;
                 const thumbPath = `https://lh3.googleusercontent.com/d/${file.id}=w600`;
                 const origPath = `https://lh3.googleusercontent.com/d/${file.id}=w1600`;
-                insertPhoto.run(projectId, origPath, thumbPath, origPath, sizeBytes, categoryName, file.id);
+                // originalPath stores the human-readable file name (for RAW Sorter & clipboard copy)
+                // CDN URL is always constructed at runtime from googleFileId
+                insertPhoto.run(projectId, cleanName, thumbPath, origPath, sizeBytes, categoryName, file.id);
             }
         });
 
