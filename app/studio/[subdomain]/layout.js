@@ -44,7 +44,10 @@ export default async function StudioTenantLayout({ children, params }) {
         notFound();
     }
 
-    // 1. Ambil data studio vendor aktif
+    // 1. Ambil data studio vendor aktif & identitas platform dinamis
+    const saasNameRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_name'").get();
+    const platformName = saasNameRow?.value || 'Photota';
+
     const vendor = db.prepare(`
         SELECT id, name, email, brandName, brandLogo, status, whatsapp, subdomain, subdomain_active
         FROM vendors 
@@ -229,7 +232,7 @@ export default async function StudioTenantLayout({ children, params }) {
             }}>
                 <div>&copy; {new Date().getFullYear()} {displayName}. All rights reserved.</div>
                 <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-                    Powered by <span style={{ color: '#c5a059', fontWeight: 700 }}>Pick Your Photo</span>
+                    Powered by <span style={{ color: '#c5a059', fontWeight: 700 }}>{platformName}</span>
                 </div>
             </footer>
         </div>
