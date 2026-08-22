@@ -2,14 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   LockIcon, SparklesUpgradeIcon, ClockIcon, PhotoIcon, 
   FolderIcon, WhatsAppIcon, CopyLinkIcon, AlertTriangleIcon,
   SpeedBoltIcon, CloseIcon, CheckIcon, ExternalLinkIcon
 } from '@/components/StorageIcons.jsx';
 
-export default function TrialGalleryPage({ params }) {
-  const [slug, setSlug] = useState(null);
+export default function TrialGalleryPage({ params: propsParams }) {
+  const routeParams = useParams();
+  const rawSlug = routeParams?.slug || propsParams?.slug;
+  const [slug, setSlug] = useState(rawSlug || null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -30,18 +33,34 @@ export default function TrialGalleryPage({ params }) {
   const saveTimerRef = useRef(null);
 
   useEffect(() => {
-    Promise.resolve(params).then((resolvedParams) => {
-      const targetSlug = resolvedParams?.slug;
+    const resolveAndFetch = async () => {
+      let targetSlug = rawSlug;
+      if (!targetSlug && propsParams) {
+        try {
+          const resolved = await Promise.resolve(propsParams);
+          targetSlug = resolved?.slug;
+        } catch (_) {}
+      }
+      if (!targetSlug && typeof window !== 'undefined') {
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        targetSlug = pathSegments[pathSegments.length - 1];
+      }
+
       if (targetSlug) {
         setSlug(targetSlug);
         fetchGalleryData(targetSlug);
+      } else {
+        setLoading(false);
+        setError('Slug galeri trial tidak valid');
       }
-    });
+    };
+
+    resolveAndFetch();
 
     if (typeof window !== 'undefined' && window.location.search.includes('created=true')) {
       setShowSuccessModal(true);
     }
-  }, [params]);
+  }, [rawSlug, propsParams]);
 
   // ── GALLERY PROTECTION: Disable right-click, drag, and dangerous shortcuts ──
   useEffect(() => {

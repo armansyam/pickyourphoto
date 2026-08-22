@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import RawSorterDrawer from '@/components/RawSorterDrawer';
 import { CopyLinkIcon, FolderIcon, SparklesUpgradeIcon } from '@/components/StorageIcons.jsx';
 
-export default function TrialResultPage({ params }) {
-  const [slug, setSlug] = useState(null);
+export default function TrialResultPage({ params: propsParams }) {
+  const routeParams = useParams();
+  const rawSlug = routeParams?.slug || propsParams?.slug;
+  const [slug, setSlug] = useState(rawSlug || null);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -14,13 +17,30 @@ export default function TrialResultPage({ params }) {
   const [showSorter, setShowSorter] = useState(false);
 
   useEffect(() => {
-    Promise.resolve(params).then((p) => {
-      if (p?.slug) {
-        setSlug(p.slug);
-        fetchResult(p.slug);
+    const resolveAndFetch = async () => {
+      let targetSlug = rawSlug;
+      if (!targetSlug && propsParams) {
+        try {
+          const resolved = await Promise.resolve(propsParams);
+          targetSlug = resolved?.slug;
+        } catch (_) {}
       }
-    });
-  }, [params]);
+      if (!targetSlug && typeof window !== 'undefined') {
+        const pathSegments = window.location.pathname.split('/').filter(Boolean);
+        targetSlug = pathSegments[pathSegments.length - 2]; // .../[slug]/result
+      }
+
+      if (targetSlug) {
+        setSlug(targetSlug);
+        fetchResult(targetSlug);
+      } else {
+        setLoading(false);
+        setError('Slug hasil trial tidak valid');
+      }
+    };
+
+    resolveAndFetch();
+  }, [rawSlug, propsParams]);
 
   const fetchResult = async (targetSlug) => {
     const s = targetSlug || slug;
