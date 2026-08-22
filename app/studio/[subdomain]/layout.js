@@ -22,11 +22,11 @@ export async function generateMetadata({ params }) {
         };
     }
 
-    const displayName = vendor.brandName || vendor.name || 'Studio Gallery';
+    const displayName = vendor.brandName || vendor.name || 'Studio';
     const logoUrl = vendor.brandLogo || '/favicon.ico';
     return {
-        title: `${displayName} — Galeri Seleksi Foto Klien`,
-        description: `Portal galeri dan seleksi foto online resmi ${displayName}.`,
+        title: `${displayName} — Official Profile`,
+        description: `Official profile dan portofolio resmi ${displayName}.`,
         robots: { index: false, follow: false }, // Mencegah duplikasi SEO pada link seleksi privat
         icons: {
             icon: logoUrl,
