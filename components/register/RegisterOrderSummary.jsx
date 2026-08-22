@@ -361,15 +361,10 @@ export default function RegisterOrderSummary({
                     >
                         {(loading || isSubmitting) ? (
                             <span>Memproses...</span>
-                        ) : paymentConfig?.enableGateway ? (
-                            <>
-                                <SparklesUpgradeIcon size={14} />
-                                <span>Bayar via QRIS (Rp {totalAmount.toLocaleString('id-ID')})</span>
-                            </>
                         ) : (
                             <>
                                 <SparklesUpgradeIcon size={14} />
-                                <span>Konfirmasi Transfer Bank</span>
+                                <span>Bayar</span>
                             </>
                         )}
                     </button>
