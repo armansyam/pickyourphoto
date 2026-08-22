@@ -121,7 +121,7 @@ export async function GET(request) {
         let vendorSession = null;
         if (email && email.includes('@')) {
             const vendor = db.prepare(`
-                SELECT id, name, email, whatsapp, planId, status 
+                SELECT id, name, email, whatsapp, planId, status, is_setup_completed
                 FROM vendors 
                 WHERE lower(email) = ?
             `).get(email);
@@ -129,61 +129,20 @@ export async function GET(request) {
             if (vendor) {
                 const maskedPhone = maskPhoneNumber(vendor.whatsapp);
 
-                // Check active pending session
-                const activeSession = db.prepare(`
-                    SELECT orderId, planId, amount, paymentMethod, qrUrl, expiresAt, rawResponse 
-                    FROM payment_sessions 
-                    WHERE vendorId = ? AND status = 'pending' AND expiresAt > CURRENT_TIMESTAMP 
-                    ORDER BY id DESC LIMIT 1
-                `).get(vendor.id);
-
-                if (activeSession) {
-                    let token = null;
-                    let redirectUrl = null;
-                    let qrUrl = activeSession.qrUrl || null;
-                    try {
-                        const raw = JSON.parse(activeSession.rawResponse || '{}');
-                        token = raw.token || null;
-                        redirectUrl = raw.redirect_url || raw.paymentUrl || null;
-                        if (!qrUrl && raw.actions) {
-                            const qrAction = raw.actions.find(a => a.name === 'generate-qr-code');
-                            if (qrAction) qrUrl = qrAction.url;
-                        }
-                    } catch (e) {}
-
-                    const targetPlan = plans.find(p => p.id === (activeSession.planId || vendor.planId));
-
+                // A. VENDOR SUDAH AKTIF (Disetujui Admin / Lunas) -> Redirect Langsung ke Setup/Dashboard
+                if (vendor.status === 'active') {
                     vendorSession = {
                         vendorId: vendor.id,
                         name: vendor.name,
                         email: vendor.email,
                         whatsapp: vendor.whatsapp || '',
-                        maskedWhatsapp: maskedPhone,
-                        status: vendor.status,
-                        planId: activeSession.planId || vendor.planId,
-                        hasPending: true,
-                        hasExpired: false,
-                        pendingOrder: {
-                            hasPending: true,
-                            vendorId: vendor.id,
-                            name: vendor.name,
-                            email: vendor.email,
-                            whatsapp: vendor.whatsapp || '',
-                            orderId: activeSession.orderId,
-                            provider: activeSession.paymentMethod || 'midtrans',
-                            token,
-                            redirectUrl,
-                            qrUrl,
-                            qrImage: qrUrl,
-                            amount: activeSession.amount,
-                            expiresAt: activeSession.expiresAt,
-                            planId: activeSession.planId || vendor.planId,
-                            planName: targetPlan?.name || 'Paket SaaS',
-                            planPrice: targetPlan?.price || activeSession.amount
-                        }
+                        status: 'active',
+                        is_setup_completed: vendor.is_setup_completed || 0,
+                        redirectUrl: vendor.is_setup_completed ? '/dashboard' : '/setup'
                     };
-                } else if (vendor.status === 'pending_manual') {
-                    // Vendor has submitted manual bank transfer confirmation
+                }
+                // B. VENDOR MENUNGGU VERIFIKASI TRANSFER MANUAL -> Tidak Pernah Expired
+                else if (vendor.status === 'pending_manual') {
                     const targetPlan = plans.find(p => p.id === vendor.planId);
                     vendorSession = {
                         vendorId: vendor.id,
@@ -191,7 +150,7 @@ export async function GET(request) {
                         email: vendor.email,
                         whatsapp: vendor.whatsapp || '',
                         maskedWhatsapp: maskedPhone,
-                        status: vendor.status,
+                        status: 'pending_manual',
                         planId: vendor.planId,
                         hasPending: true,
                         hasExpired: false,
@@ -209,34 +168,90 @@ export async function GET(request) {
                             bankAccountName: paymentConfig.bankAccountName
                         }
                     };
-                } else {
-                    // No active pending session. Check if vendor currently has a selected plan
-                    let hasExpired = false;
-                    let effectivePlanId = vendor.planId || null;
+                }
+                // C. VENDOR MENUNGGU PEMBAYARAN QRIS -> Cek Sesi QRIS
+                else if (vendor.status === 'pending_payment') {
+                    const activeSession = db.prepare(`
+                        SELECT orderId, planId, amount, paymentMethod, qrUrl, expiresAt, rawResponse 
+                        FROM payment_sessions 
+                        WHERE vendorId = ? AND status = 'pending' AND expiresAt > CURRENT_TIMESTAMP 
+                        ORDER BY id DESC LIMIT 1
+                    `).get(vendor.id);
 
-                    if (vendor.planId) {
-                        const lastSession = db.prepare(`
-                            SELECT orderId, planId, amount, paymentMethod, expiresAt, status
-                            FROM payment_sessions 
-                            WHERE vendorId = ? 
-                            ORDER BY id DESC LIMIT 1
-                        `).get(vendor.id);
+                    if (activeSession) {
+                        let token = null;
+                        let redirectUrl = null;
+                        let qrUrl = activeSession.qrUrl || null;
+                        try {
+                            const raw = JSON.parse(activeSession.rawResponse || '{}');
+                            token = raw.token || null;
+                            redirectUrl = raw.redirect_url || raw.paymentUrl || null;
+                            if (!qrUrl && raw.actions) {
+                                const qrAction = raw.actions.find(a => a.name === 'generate-qr-code');
+                                if (qrAction) qrUrl = qrAction.url;
+                            }
+                        } catch (e) {}
 
-                        hasExpired = Boolean(
-                            lastSession && (lastSession.status === 'expired' || (lastSession.expiresAt && new Date(lastSession.expiresAt) <= new Date()))
-                        );
+                        const targetPlan = plans.find(p => p.id === (activeSession.planId || vendor.planId));
+
+                        vendorSession = {
+                            vendorId: vendor.id,
+                            name: vendor.name,
+                            email: vendor.email,
+                            whatsapp: vendor.whatsapp || '',
+                            maskedWhatsapp: maskedPhone,
+                            status: 'pending_payment',
+                            planId: activeSession.planId || vendor.planId,
+                            hasPending: true,
+                            hasExpired: false,
+                            pendingOrder: {
+                                hasPending: true,
+                                vendorId: vendor.id,
+                                name: vendor.name,
+                                email: vendor.email,
+                                whatsapp: vendor.whatsapp || '',
+                                orderId: activeSession.orderId,
+                                provider: activeSession.paymentMethod || 'midtrans',
+                                token,
+                                redirectUrl,
+                                qrUrl,
+                                qrImage: qrUrl,
+                                amount: activeSession.amount,
+                                expiresAt: activeSession.expiresAt,
+                                planId: activeSession.planId || vendor.planId,
+                                planName: targetPlan?.name || 'Paket SaaS',
+                                planPrice: targetPlan?.price || activeSession.amount
+                            }
+                        };
+                    } else {
+                        // QRIS sudah lewat 5 menit -> Kembalikan status vendor ke draft_plan secara aman
+                        db.prepare("UPDATE vendors SET status = 'draft_plan' WHERE id = ?").run(vendor.id);
+                        vendorSession = {
+                            vendorId: vendor.id,
+                            name: vendor.name,
+                            email: vendor.email,
+                            whatsapp: vendor.whatsapp || '',
+                            maskedWhatsapp: maskedPhone,
+                            status: 'draft_plan',
+                            planId: vendor.planId,
+                            hasPending: false,
+                            hasExpired: true,
+                            pendingOrder: null
+                        };
                     }
-
+                }
+                // D. DRAFT PLAN (Tahap 2 / Tahap 3) -> Bebas dari Expired
+                else {
                     vendorSession = {
                         vendorId: vendor.id,
                         name: vendor.name,
                         email: vendor.email,
                         whatsapp: vendor.whatsapp || '',
                         maskedWhatsapp: maskedPhone,
-                        status: vendor.status,
-                        planId: effectivePlanId,
+                        status: 'draft_plan',
+                        planId: vendor.planId || null,
                         hasPending: false,
-                        hasExpired: hasExpired,
+                        hasExpired: false,
                         pendingOrder: null
                     };
                 }

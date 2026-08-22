@@ -134,6 +134,12 @@ export default function RegisterPage() {
                     // D. Restore Stage State from DB Session
                     const session = data.vendorSession;
                     if (session) {
+                        // Jika akun sudah aktif (disetujui admin / lunas), langsung arahkan ke setup/dashboard
+                        if (session.status === 'active') {
+                            window.location.href = session.is_setup_completed ? '/dashboard' : '/setup';
+                            return;
+                        }
+
                         if (session.name) setName(session.name);
                         if (session.whatsapp) setWhatsapp(session.whatsapp);
 
