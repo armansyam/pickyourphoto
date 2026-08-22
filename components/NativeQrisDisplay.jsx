@@ -52,8 +52,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                 const res = await fetch(`/api/payment/status?orderId=${pendingOrder.orderId}`);
                 const data = await res.json();
                 if (data.paid) {
-                    window.__paymentRedirectUrl = data.redirectUrl || '/dashboard';
-                    setPaidSuccess(true);
+                    window.location.href = data.redirectUrl || '/setup';
                 }
             } catch {}
         };
@@ -115,10 +114,12 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                         embedId: 'midtrans-snap-embed',
                         onSuccess: async () => {
                             try {
-                                await fetch(`/api/payment/status?orderId=${pendingOrder.orderId}`);
-                            } catch (e) {}
-                            window.__paymentRedirectUrl = '/dashboard';
-                            setPaidSuccess(true);
+                                const res = await fetch(`/api/payment/status?orderId=${pendingOrder.orderId}`);
+                                const data = await res.json();
+                                window.location.href = data?.redirectUrl || '/setup';
+                            } catch (e) {
+                                window.location.href = '/setup';
+                            }
                         },
                         onPending: () => {},
                         onError: () => {},
@@ -428,8 +429,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
                                 const res = await fetch(`/api/payment/status?orderId=${pendingOrder.orderId}`);
                                 const data = await res.json();
                                 if (data.paid) {
-                                    window.__paymentRedirectUrl = data.redirectUrl || '/dashboard';
-                                    setPaidSuccess(true);
+                                    window.location.href = data.redirectUrl || '/setup';
                                 } else {
                                     setStatusNotice({ type: 'warning', text: 'Pembayaran belum terdeteksi' });
                                 }

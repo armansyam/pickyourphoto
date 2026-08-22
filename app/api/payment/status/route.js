@@ -270,12 +270,13 @@ export async function GET(request) {
 
         // Generate token dan set cookie HANYA jika belum login (status baru aktif)
         // Mencegah JWT cookie direset setiap polling 3 detik
+        const targetRedirectUrl = vendor.is_setup_completed ? '/dashboard' : '/setup';
         const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
         const response = NextResponse.json({
           paid: true,
           status: 'paid',
-          redirectUrl: '/dashboard',
-          message: 'Pembayaran lunas. Mengarahkan ke Dashboard...'
+          redirectUrl: targetRedirectUrl,
+          message: vendor.is_setup_completed ? 'Pembayaran lunas. Mengarahkan ke Dashboard...' : 'Pembayaran lunas. Mengarahkan ke Setup Profil Studio...'
         });
 
         if (!vendorAlreadyActive) {

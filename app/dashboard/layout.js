@@ -25,13 +25,18 @@ export default function DashboardLayout({ children }) {
     }
 
     // Direct first-time active vendor to Onboarding Setup Wizard
+    let shouldRedirectToSetup = false;
     if (vendor && vendor.role !== 'admin') {
         try {
             const checkSetup = db.prepare('SELECT is_setup_completed, status FROM vendors WHERE id = ?').get(vendor.id);
             if (checkSetup && checkSetup.status === 'active' && !checkSetup.is_setup_completed) {
-                redirect('/setup');
+                shouldRedirectToSetup = true;
             }
         } catch (_) {}
+    }
+
+    if (shouldRedirectToSetup) {
+        redirect('/setup');
     }
 
     let brandName = 'Pick Your Photo';

@@ -1191,7 +1191,7 @@ export default function DashboardPage() {
                 <div className={`dashboard-header-actions ${styles.headerActions}`}>
                     {adminWhatsapp && (
                         <a
-                            href={`https://wa.me/${normalizeWhatsappNumber(adminWhatsapp)}?text=${encodeURIComponent('Halo Admin, saya vendor ' + (vendorDetails?.name || '') + '. Saya ingin bertanya mengenai layanan ' + (systemSettings?.saas_name || 'platform') + '.')}`}
+                            href={`https://wa.me/${normalizeWhatsappNumber(adminWhatsapp)}?text=${encodeURIComponent('Halo Admin, saya vendor ' + (vendorDetails?.name || '') + '. Saya ingin bertanya mengenai layanan platform.')}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Hubungi Admin via WhatsApp"
