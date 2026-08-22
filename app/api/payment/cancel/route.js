@@ -17,55 +17,64 @@ export async function POST(request) {
     const body = await request.json();
     const { orderId, vendorId, email } = body;
 
-    if (!orderId) {
-      return NextResponse.json({ message: 'orderId wajib diisi.' }, { status: 400 });
+    if (!orderId && !email && !vendorId) {
+      return NextResponse.json({ message: 'orderId atau email wajib diisi.' }, { status: 400 });
     }
 
-    // Find the payment session
-    const session = db.prepare('SELECT * FROM payment_sessions WHERE orderId = ?').get(orderId);
-    if (!session) {
-      return NextResponse.json({ message: 'Sesi pembayaran tidak ditemukan.' }, { status: 404 });
-    }
+    let targetVendorId = null;
 
-    // Allow logged-in admin/vendor OR matching candidate vendor email
-    let isAuthorized = false;
-    if (currentUser && (currentUser.role === 'admin' || session.vendorId === currentUser.id)) {
-      isAuthorized = true;
-    } else if (email) {
-      const v = db.prepare('SELECT id FROM vendors WHERE email = ?').get(email.toLowerCase().trim());
-      if (v && v.id === session.vendorId) {
-        isAuthorized = true;
+    if (orderId) {
+      // Find the payment session
+      const session = db.prepare('SELECT * FROM payment_sessions WHERE orderId = ?').get(orderId);
+      if (session) {
+        targetVendorId = session.vendorId;
+        // Allow logged-in admin/vendor OR matching candidate vendor email
+        let isAuthorized = false;
+        if (currentUser && (currentUser.role === 'admin' || session.vendorId === currentUser.id)) {
+          isAuthorized = true;
+        } else if (email) {
+          const v = db.prepare('SELECT id FROM vendors WHERE email = ?').get(email.toLowerCase().trim());
+          if (v && v.id === session.vendorId) {
+            isAuthorized = true;
+          }
+        }
+
+        if (!isAuthorized) {
+          return NextResponse.json({ message: 'Forbidden.' }, { status: 403 });
+        }
+
+        // Cancel the payment session and transaction atomically
+        db.prepare("UPDATE payment_sessions SET status = 'cancelled' WHERE orderId = ?").run(orderId);
+        try {
+          db.prepare("UPDATE payment_transactions SET status = 'cancelled' WHERE orderId = ?").run(orderId);
+        } catch (e) {}
       }
     }
 
-    if (!isAuthorized) {
-      return NextResponse.json({ message: 'Forbidden.' }, { status: 403 });
+    if (!targetVendorId && email) {
+      const v = db.prepare('SELECT id FROM vendors WHERE email = ?').get(email.toLowerCase().trim());
+      if (v) {
+        targetVendorId = v.id;
+        // Also cancel any open pending sessions for this vendor
+        try {
+          db.prepare("UPDATE payment_sessions SET status = 'cancelled' WHERE vendorId = ? AND status = 'pending'").run(v.id);
+          db.prepare("UPDATE payment_transactions SET status = 'cancelled' WHERE vendorId = ? AND status = 'pending'").run(v.id);
+        } catch (e) {}
+      }
     }
 
-    if (session.status !== 'pending') {
-      return NextResponse.json(
-        { message: `Sesi tidak bisa dibatalkan. Status saat ini: ${session.status}` },
-        { status: 400 }
-      );
+    if (!targetVendorId && vendorId) {
+      targetVendorId = Number(vendorId);
     }
 
-    const now = new Date().toISOString();
-
-    // Cancel the payment session and transaction atomically
-    db.prepare(
-      "UPDATE payment_sessions SET status = 'cancelled' WHERE orderId = ?"
-    ).run(orderId);
-
-    try {
-      db.prepare(
-        "UPDATE payment_transactions SET status = 'cancelled' WHERE orderId = ?"
-      ).run(orderId);
-    } catch (e) {}
+    if (!targetVendorId) {
+      return NextResponse.json({ message: 'Akun vendor tidak ditemukan.' }, { status: 404 });
+    }
 
     // Return vendor status to draft_plan
     db.prepare(
       "UPDATE vendors SET status = 'draft_plan' WHERE id = ? AND status != 'active'"
-    ).run(session.vendorId);
+    ).run(targetVendorId);
 
     console.log(`[Payment Cancel] Session ${orderId} (vendorId: ${session.vendorId}) cancelled.`);
 

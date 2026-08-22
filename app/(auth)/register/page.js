@@ -462,7 +462,7 @@ export default function RegisterPage() {
                                     cursor: 'pointer'
                                 }}
                             >
-                                Ubah Pesanan
+                                Batalkan Pembayaran
                             </button>
                             <a
                                 href={`https://wa.me/?text=${encodeURIComponent(`Halo Admin ${platformName}, saya sudah melakukan transfer untuk pendaftaran paket ${pendingOrder.planName} dengan email ${email}. Mohon bantuannya untuk verifikasi akun saya. Terima kasih!`)}`}
