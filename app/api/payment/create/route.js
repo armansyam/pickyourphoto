@@ -151,7 +151,13 @@ export async function POST(request) {
     // Generate unique orderId for brand new transaction
     const orderId = `ORDER-${Date.now()}-${vendor.id}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
 
-    // Step 1: Mark any old pending sessions as 'replaced' BEFORE creating new one
+    // Dynamic QRIS expiration time strictly from Admin SaaS settings
+    const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 5;
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000).toISOString();
+
+    // ── ATOMIC STEP 1 (DETIK KE-0): KUNCI STATUS DATABASE SEBELUM PANGGIL GATEWAY ──
+    // 1. Mark any old pending sessions as 'replaced'
     try {
       db.prepare(`
         UPDATE payment_sessions 
@@ -161,6 +167,49 @@ export async function POST(request) {
     } catch (e) {
       console.warn('[Payment Create] Failed to replace old expired sessions for vendor', vendor.id, ':', e.message);
     }
+
+    // 2. Lock vendor status to 'pending_payment' IMMEDIATELY
+    if (vendor.status === 'active') {
+      db.prepare(`
+        UPDATE vendors 
+        SET pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
+        WHERE id = ?
+      `).run(addonPlanId || null, addonQuotaBytes, vendor.id);
+    } else {
+      db.prepare(`
+        UPDATE vendors 
+        SET status = 'pending_payment', archivedAt = NULL, planId = ?, pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
+        WHERE id = ?
+      `).run(plan.id, addonPlanId || null, addonQuotaBytes, vendor.id);
+    }
+
+    // 3. Insert placeholder payment_session IMMEDIATELY (so refresh during load stays in Stage 4)
+    db.prepare(`
+      INSERT INTO payment_sessions (orderId, vendorId, planId, addonPlanId, amount, status, paymentMethod, qrUrl, expiresAt, rawResponse)
+      VALUES (?, ?, ?, ?, ?, 'pending', ?, '', ?, '{}')
+    `).run(
+      orderId,
+      vendor.id,
+      plan.id,
+      addonPlanId || null,
+      totalAmount,
+      config.provider,
+      expiresAt
+    );
+
+    // 4. Insert placeholder payment_transaction IMMEDIATELY
+    db.prepare(`
+      INSERT INTO payment_transactions (orderId, vendorId, planId, addonPlanId, addonQuotaBytes, amount, provider, status, paymentUrl, rawResponse)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', '', '{}')
+    `).run(
+      orderId,
+      vendor.id,
+      plan.id,
+      addonPlanId || null,
+      addonQuotaBytes,
+      totalAmount,
+      config.provider
+    );
 
     // Determine dynamic request origin, prioritizing public domain/tunnel from saas_settings
     const host = request.headers.get('host') || 'localhost:3000';
@@ -175,7 +224,7 @@ export async function POST(request) {
       }
     }
 
-    // Step 2: Create new payment via gateway
+    // ── STEP 2: PANGGIL PAYMENT GATEWAY UNTUK GENERATE QRIS BARU ──
     const paymentResult = await createPayment({
       orderId,
       amount: totalAmount,
@@ -189,58 +238,20 @@ export async function POST(request) {
       cancelUrl: `${origin}/register`,
     });
 
-    // Dynamic QRIS expiration time strictly from Admin SaaS settings
-    const expiryMinutes = config.qrisExpirationMinutes && config.qrisExpirationMinutes > 0 ? config.qrisExpirationMinutes : 5;
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + expiryMinutes * 60 * 1000).toISOString();
-
-    // Save payment transaction log in DB
-    db.prepare(`
-      INSERT INTO payment_transactions (orderId, vendorId, planId, addonPlanId, addonQuotaBytes, amount, provider, status, paymentUrl, rawResponse)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
-    `).run(
-      orderId,
-      vendor.id,
-      plan.id,
-      addonPlanId || null,
-      addonQuotaBytes,
-      totalAmount,
-      config.provider,
-      paymentResult.redirectUrl || '',
-      JSON.stringify(paymentResult.raw || {})
-    );
-
-    // Save payment session in DB
     const qrUrl = paymentResult.qrUrl || paymentResult.redirectUrl || '';
-    db.prepare(`
-      INSERT INTO payment_sessions (orderId, vendorId, planId, addonPlanId, amount, status, paymentMethod, qrUrl, expiresAt, rawResponse)
-      VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, ?, ?)
-    `).run(
-      orderId,
-      vendor.id,
-      plan.id,
-      addonPlanId || null,
-      totalAmount,
-      config.provider,
-      qrUrl,
-      expiresAt,
-      JSON.stringify(paymentResult.raw || {})
-    );
 
-    // Step 4: Update vendor pendingAddon details. If new signup, set pending_payment. If active vendor, keep active!
-    if (vendor.status === 'active') {
-      db.prepare(`
-        UPDATE vendors 
-        SET pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
-        WHERE id = ?
-      `).run(addonPlanId || null, addonQuotaBytes, vendor.id);
-    } else {
-      db.prepare(`
-        UPDATE vendors 
-        SET status = 'pending_payment', archivedAt = NULL, planId = ?, pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?
-        WHERE id = ?
-      `).run(plan.id, addonPlanId || null, addonQuotaBytes, vendor.id);
-    }
+    // ── STEP 3: UPDATE PLACEHOLDER SESI DENGAN QRURL & RAW RESPONSE DARI GATEWAY ──
+    db.prepare(`
+      UPDATE payment_sessions 
+      SET qrUrl = ?, rawResponse = ? 
+      WHERE orderId = ?
+    `).run(qrUrl, JSON.stringify(paymentResult.raw || {}), orderId);
+
+    db.prepare(`
+      UPDATE payment_transactions 
+      SET paymentUrl = ?, rawResponse = ? 
+      WHERE orderId = ?
+    `).run(paymentResult.redirectUrl || '', JSON.stringify(paymentResult.raw || {}), orderId);
 
     // Trigger Pending QRIS Instructions Email in background
     try {
