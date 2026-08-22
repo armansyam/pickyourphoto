@@ -10,15 +10,23 @@ const RESERVED_SUBDOMAINS = [
 ];
 
 export function middleware(req) {
-    const host = req.headers.get('host') || '';
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
     const hostname = host.replace(/:\d+$/, '').toLowerCase(); // buang port :3000 / :80
 
-    // 1. Ekstrak subdomain
+    // 1. Ekstrak subdomain secara dinamis
     let subdomain = '';
-    if (hostname.endsWith(`.${ROOT_DOMAIN.toLowerCase()}`)) {
+    if (ROOT_DOMAIN && hostname.endsWith(`.${ROOT_DOMAIN}`)) {
         subdomain = hostname.slice(0, -(ROOT_DOMAIN.length + 1));
     } else if (hostname.endsWith('.localhost')) {
         subdomain = hostname.slice(0, -('.localhost'.length));
+    } else if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) && hostname !== 'localhost') {
+        const parts = hostname.split('.');
+        const twoPartTlds = ['my.id', 'co.id', 'ac.id', 'go.id', 'or.id', 'web.id', 'sch.id', 'biz.id', 'co.uk', 'com.au', 'com.sg'];
+        const isTwoPart = twoPartTlds.some(t => hostname.endsWith('.' + t));
+        const rootCount = isTwoPart ? 3 : 2;
+        if (parts.length > rootCount) {
+            subdomain = parts.slice(0, parts.length - rootCount).join('.');
+        }
     }
 
     // 2. Jika merupakan root domain utama, IP langsung, atau reserved subdomain → teruskan normal
