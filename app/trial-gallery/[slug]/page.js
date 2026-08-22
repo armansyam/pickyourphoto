@@ -789,8 +789,8 @@ export default function TrialGalleryPage({ params: propsParams }) {
 
                 return unlockedPhotos.map((file, idx) => {
                   const fileName = file.name || file.filename || `Photo_${idx + 1}.jpg`;
-                  const thumbSrc = file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w400` : (file.thumbUrl || file.url || `/api/proxy/thumb/${file.id}?sz=w400`);
-                  const origSrc = file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w1200` : (file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`);
+                  const thumbSrc = `https://lh3.googleusercontent.com/d/${file.id}=w400`;
+                  const origSrc = `https://lh3.googleusercontent.com/d/${file.id}=w1200`;
                   const isSelected = selectedPhotos.includes(fileName);
                   return (
                     <div
@@ -810,9 +810,12 @@ export default function TrialGalleryPage({ params: propsParams }) {
                         src={thumbSrc} alt="" loading="lazy"
                         referrerPolicy="no-referrer"
                         onError={(e) => {
-                          if (!e.target.dataset.fallback && file.id) {
-                            e.target.dataset.fallback = '1';
-                            e.target.src = `/api/proxy/thumb/${file.id}?sz=w400`;
+                          const retries = parseInt(e.target.dataset.retries || '0', 10);
+                          if (retries < 3) {
+                            e.target.dataset.retries = String(retries + 1);
+                            setTimeout(() => {
+                              e.target.src = `https://lh3.googleusercontent.com/d/${file.id}=w400&t=${Date.now()}`;
+                            }, 1200);
                           }
                         }}
                         onContextMenu={e => e.preventDefault()}
@@ -892,13 +895,16 @@ export default function TrialGalleryPage({ params: propsParams }) {
                     {bgTiles.map((file, idx) => (
                       <div key={idx} style={{ borderRadius: '8px', overflow: 'hidden', background: '#0f172a', aspectRatio: '4/3' }}>
                         <img
-                          src={file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w400` : (file.thumbUrl || `/api/proxy/thumb/${file.id}?sz=w400`)}
+                          src={`https://lh3.googleusercontent.com/d/${file.id}=w400`}
                           alt="" loading="lazy"
                           referrerPolicy="no-referrer"
                           onError={(e) => {
-                            if (!e.target.dataset.fallback && file.id) {
-                              e.target.dataset.fallback = '1';
-                              e.target.src = `/api/proxy/thumb/${file.id}?sz=w400`;
+                            const retries = parseInt(e.target.dataset.retries || '0', 10);
+                            if (retries < 3) {
+                              e.target.dataset.retries = String(retries + 1);
+                              setTimeout(() => {
+                                e.target.src = `https://lh3.googleusercontent.com/d/${file.id}=w400&t=${Date.now()}`;
+                              }, 1200);
                             }
                           }}
                           onContextMenu={e => e.preventDefault()}
@@ -1213,13 +1219,16 @@ export default function TrialGalleryPage({ params: propsParams }) {
             {/* GAMBAR FULL SIZE WITH WATERMARK */}
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: '16px' }}>
               <img
-                src={activePhoto.origSrc || (activePhoto.id ? `https://lh3.googleusercontent.com/d/${activePhoto.id}=w1200` : activePhoto.thumbUrl)}
+                src={`https://lh3.googleusercontent.com/d/${activePhoto.id}=w1200`}
                 alt=""
                 referrerPolicy="no-referrer"
                 onError={(e) => {
-                  if (!e.target.dataset.fallback && activePhoto.id) {
-                    e.target.dataset.fallback = '1';
-                    e.target.src = `/api/proxy/thumb/${activePhoto.id}?sz=w1200`;
+                  const retries = parseInt(e.target.dataset.retries || '0', 10);
+                  if (retries < 3) {
+                    e.target.dataset.retries = String(retries + 1);
+                    setTimeout(() => {
+                      e.target.src = `https://lh3.googleusercontent.com/d/${activePhoto.id}=w1200&t=${Date.now()}`;
+                    }, 1200);
                   }
                 }}
                 onContextMenu={(e) => e.preventDefault()}

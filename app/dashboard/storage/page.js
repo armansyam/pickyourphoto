@@ -3090,9 +3090,12 @@ export default function VendorStorageManagerPage() {
                             referrerPolicy="no-referrer"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => {
-                              if (!e.target.dataset.fallback && file.driveFileId) {
-                                e.target.dataset.fallback = '1';
-                                e.target.src = `/api/proxy/thumb/${file.driveFileId}/${encodeURIComponent(file.name)}?sz=w400`;
+                              const retries = parseInt(e.target.dataset.retries || '0', 10);
+                              if (retries < 3) {
+                                e.target.dataset.retries = String(retries + 1);
+                                setTimeout(() => {
+                                  e.target.src = `https://lh3.googleusercontent.com/d/${file.driveFileId}=w400&t=${Date.now()}`;
+                                }, 1200);
                               } else {
                                 e.target.style.display = 'none';
                               }
@@ -3258,9 +3261,12 @@ export default function VendorStorageManagerPage() {
                   alt={cleanName}
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    if (!e.target.dataset.fallback && currentFile.driveFileId) {
-                      e.target.dataset.fallback = '1';
-                      e.target.src = `/api/proxy/thumb/${currentFile.driveFileId}/${encodeURIComponent(cleanName)}?sz=w1600`;
+                    const retries = parseInt(e.target.dataset.retries || '0', 10);
+                    if (retries < 3) {
+                      e.target.dataset.retries = String(retries + 1);
+                      setTimeout(() => {
+                        e.target.src = `https://lh3.googleusercontent.com/d/${currentFile.driveFileId}=w1600&t=${Date.now()}`;
+                      }, 1200);
                     }
                   }}
                   style={{
