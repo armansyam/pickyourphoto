@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { formatWhatsappNumber } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,8 +26,8 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: 'Email tidak valid.' }, { status: 400 });
     }
 
-    // Clean phone number (digits only or with standard prefix)
-    whatsapp = whatsapp.replace(/[^0-9+]/g, '');
+    // Standardize phone number format
+    whatsapp = formatWhatsappNumber(whatsapp);
 
     const vendor = db.prepare("SELECT id, status FROM vendors WHERE email = ? AND status IN ('draft_plan', 'pending_payment', 'expired_draft')").get(email);
     if (!vendor) {

@@ -75,6 +75,7 @@ export default function AdminSettings({
   const [isEditingSystem, setIsEditingSystem] = useState(false);
   const [savingSection, setSavingSection] = useState(''); // 'identity' | 'google' | 'smtp' | 'bank' | 'gateway' | 'system' | 'password'
 
+  // ── 1. IDENTITY & PROFILE STATE ──
   const [savedIdentityState, setSavedIdentityState] = useState({
     saasName,
     saasDomain,
@@ -103,6 +104,15 @@ export default function AdminSettings({
     }
   }, [saasName, saasDomain, saasTagline, saasDescription, contactEmail, contactWhatsapp, operationalHours, companyAddress]);
 
+  const isIdentityDirty = 
+    (saasName || '').trim() !== (savedIdentityState.saasName || '').trim() ||
+    (saasTagline || '').trim() !== (savedIdentityState.saasTagline || '').trim() ||
+    (saasDescription || '').trim() !== (savedIdentityState.saasDescription || '').trim() ||
+    (contactEmail || '').trim() !== (savedIdentityState.contactEmail || '').trim() ||
+    (contactWhatsapp || '').trim() !== (savedIdentityState.contactWhatsapp || '').trim() ||
+    (operationalHours || '').trim() !== (savedIdentityState.operationalHours || '').trim() ||
+    (companyAddress || '').trim() !== (savedIdentityState.companyAddress || '').trim();
+
   const handleCancelIdentity = () => {
     setSaasName(savedIdentityState.saasName);
     setSaasDomain(savedIdentityState.saasDomain);
@@ -115,6 +125,109 @@ export default function AdminSettings({
     setIsEditingIdentity(false);
   };
 
+  // ── 2. GOOGLE OAUTH STATE ──
+  const [savedGoogleState, setSavedGoogleState] = useState({
+    googleClientId,
+    googleClientSecret,
+    maxUploadConcurrencyThreads
+  });
+  const googleStateInitialized = React.useRef(false);
+  React.useEffect(() => {
+    if (!googleStateInitialized.current && (googleClientId !== undefined || googleClientSecret !== undefined)) {
+      setSavedGoogleState({
+        googleClientId,
+        googleClientSecret,
+        maxUploadConcurrencyThreads
+      });
+      googleStateInitialized.current = true;
+    }
+  }, [googleClientId, googleClientSecret, maxUploadConcurrencyThreads]);
+
+  const isGoogleDirty =
+    (googleClientId || '').trim() !== (savedGoogleState.googleClientId || '').trim() ||
+    (googleClientSecret || '').trim() !== (savedGoogleState.googleClientSecret || '').trim() ||
+    Number(maxUploadConcurrencyThreads || 4) !== Number(savedGoogleState.maxUploadConcurrencyThreads || 4);
+
+  const handleCancelGoogle = () => {
+    if (setGoogleClientId) setGoogleClientId(savedGoogleState.googleClientId);
+    if (setGoogleClientSecret) setGoogleClientSecret(savedGoogleState.googleClientSecret);
+    if (setMaxUploadConcurrencyThreads) setMaxUploadConcurrencyThreads(savedGoogleState.maxUploadConcurrencyThreads || 4);
+    setIsEditingGoogleCredentials(false);
+  };
+
+  // ── 3. SMTP EMAIL STATE ──
+  const [savedSmtpState, setSavedSmtpState] = useState({
+    smtpEnable,
+    smtpHost,
+    smtpPort,
+    smtpEmail,
+    smtpPassword,
+    smtpFromName
+  });
+  const smtpStateInitialized = React.useRef(false);
+  React.useEffect(() => {
+    if (!smtpStateInitialized.current && (smtpEmail !== undefined || smtpHost !== undefined)) {
+      setSavedSmtpState({
+        smtpEnable,
+        smtpHost,
+        smtpPort,
+        smtpEmail,
+        smtpPassword,
+        smtpFromName
+      });
+      smtpStateInitialized.current = true;
+    }
+  }, [smtpEnable, smtpHost, smtpPort, smtpEmail, smtpPassword, smtpFromName]);
+
+  const isSmtpDirty =
+    Boolean(smtpEnable) !== Boolean(savedSmtpState.smtpEnable) ||
+    (smtpHost || '').trim() !== (savedSmtpState.smtpHost || '').trim() ||
+    Number(smtpPort || 465) !== Number(savedSmtpState.smtpPort || 465) ||
+    (smtpEmail || '').trim() !== (savedSmtpState.smtpEmail || '').trim() ||
+    (smtpPassword || '').trim() !== (savedSmtpState.smtpPassword || '').trim() ||
+    (smtpFromName || '').trim() !== (savedSmtpState.smtpFromName || '').trim();
+
+  const handleCancelSmtp = () => {
+    if (setSmtpEnable) setSmtpEnable(savedSmtpState.smtpEnable);
+    if (setSmtpHost) setSmtpHost(savedSmtpState.smtpHost);
+    if (setSmtpPort) setSmtpPort(savedSmtpState.smtpPort);
+    if (setSmtpEmail) setSmtpEmail(savedSmtpState.smtpEmail);
+    if (setSmtpPassword) setSmtpPassword(savedSmtpState.smtpPassword);
+    if (setSmtpFromName) setSmtpFromName(savedSmtpState.smtpFromName);
+    setIsEditingSmtp(false);
+  };
+
+  // ── 4. BANK ACCOUNT STATE ──
+  const [savedBankState, setSavedBankState] = useState({
+    bankName,
+    bankAccountNumber,
+    bankAccountName
+  });
+  const bankStateInitialized = React.useRef(false);
+  React.useEffect(() => {
+    if (!bankStateInitialized.current && (bankName !== undefined || bankAccountNumber !== undefined)) {
+      setSavedBankState({
+        bankName,
+        bankAccountNumber,
+        bankAccountName
+      });
+      bankStateInitialized.current = true;
+    }
+  }, [bankName, bankAccountNumber, bankAccountName]);
+
+  const isBankDirty =
+    (bankName || '').trim() !== (savedBankState.bankName || '').trim() ||
+    (bankAccountNumber || '').trim() !== (savedBankState.bankAccountNumber || '').trim() ||
+    (bankAccountName || '').trim() !== (savedBankState.bankAccountName || '').trim();
+
+  const handleCancelBank = () => {
+    if (setBankName) setBankName(savedBankState.bankName);
+    if (setBankAccountNumber) setBankAccountNumber(savedBankState.bankAccountNumber);
+    if (setBankAccountName) setBankAccountName(savedBankState.bankAccountName);
+    setIsEditingBankDetails(false);
+  };
+
+  // ── 5. SYSTEM & QUOTA STATE ──
   const [savedSystemState, setSavedSystemState] = useState({
     sysEnableReg,
     sysEnableTrial,
@@ -163,6 +276,7 @@ export default function AdminSettings({
     setIsEditingSystem(false);
   };
 
+  // ── 6. PAYMENT GATEWAY STATE ──
   const [savedGatewayState, setSavedGatewayState] = useState({
     enablePaymentGateway,
     paymentGatewayMode,
@@ -207,6 +321,18 @@ export default function AdminSettings({
     setPaymentGatewayServerKey(savedGatewayState.paymentGatewayServerKey);
     if (setQrisExpirationMinutes) setQrisExpirationMinutes(savedGatewayState.qrisExpirationMinutes || 15);
     setIsEditingPaymentGateway(false);
+  };
+
+  // ── 7. AUTO-COLLAPSE & RESET ON TAB SWITCHING ──
+  const switchTab = (newTab) => {
+    if (newTab === activeSubTab) return;
+    handleCancelIdentity();
+    handleCancelGoogle();
+    handleCancelSmtp();
+    handleCancelBank();
+    handleCancelGateway();
+    handleCancelSystem();
+    setActiveSubTab(newTab);
   };
 
   const handleSaveIdentity = async () => {
@@ -307,6 +433,7 @@ export default function AdminSettings({
   };
 
   const handleSaveGoogle = async () => {
+    if (!isGoogleDirty) return;
     setSavingSection('google');
     try {
       const res = await fetch('/api/admin/settings', {
@@ -323,7 +450,13 @@ export default function AdminSettings({
       const data = await res.json();
       if (res.ok) {
         if (addToast) addToast('Kredensial Google OAuth 2.0 berhasil disimpan!', 'success');
+        setSavedGoogleState({
+          googleClientId,
+          googleClientSecret,
+          maxUploadConcurrencyThreads
+        });
         setIsEditingGoogleCredentials(false);
+        if (fetchSystemSettings) fetchSystemSettings();
       } else {
         if (addToast) addToast(data.message || 'Gagal menyimpan kredensial Google.', 'error');
       }
@@ -335,6 +468,7 @@ export default function AdminSettings({
   };
 
   const handleSaveSmtp = async () => {
+    if (!isSmtpDirty) return;
     setSavingSection('smtp');
     try {
       const res = await fetch('/api/admin/settings', {
@@ -354,7 +488,16 @@ export default function AdminSettings({
       const data = await res.json();
       if (res.ok) {
         if (addToast) addToast('Kredensial Server Email SMTP berhasil disimpan!', 'success');
+        setSavedSmtpState({
+          smtpEnable,
+          smtpHost,
+          smtpPort,
+          smtpEmail,
+          smtpPassword,
+          smtpFromName
+        });
         setIsEditingSmtp(false);
+        if (fetchSystemSettings) fetchSystemSettings();
       } else {
         if (addToast) addToast(data.message || 'Gagal menyimpan pengaturan SMTP.', 'error');
       }
@@ -366,6 +509,7 @@ export default function AdminSettings({
   };
 
   const handleSaveBank = async () => {
+    if (!isBankDirty) return;
     setSavingSection('bank');
     try {
       const res = await fetch('/api/admin/settings', {
@@ -382,7 +526,13 @@ export default function AdminSettings({
       const data = await res.json();
       if (res.ok) {
         if (addToast) addToast('Tujuan Rekening Bank Manual berhasil disimpan!', 'success');
+        setSavedBankState({
+          bankName,
+          bankAccountNumber,
+          bankAccountName
+        });
         setIsEditingBankDetails(false);
+        if (fetchSystemSettings) fetchSystemSettings();
       } else {
         if (addToast) addToast(data.message || 'Gagal menyimpan rekening bank.', 'error');
       }
@@ -918,7 +1068,7 @@ export default function AdminSettings({
       <div className={styles.subTabsGrid}>
         <button
           type="button"
-          onClick={() => setActiveSubTab('identity')}
+          onClick={() => switchTab('identity')}
           className={`${styles.subTabBtn} ${activeSubTab === 'identity' ? styles.subTabBtnActiveIdentity : styles.subTabBtnInactive}`}
         >
           <FolderIcon size={13} color={activeSubTab === 'identity' ? '#38bdf8' : '#94a3b8'} />
@@ -927,7 +1077,7 @@ export default function AdminSettings({
 
         <button
           type="button"
-          onClick={() => setActiveSubTab('integrations')}
+          onClick={() => switchTab('integrations')}
           className={`${styles.subTabBtn} ${activeSubTab === 'integrations' ? styles.subTabBtnActiveIntegrations : styles.subTabBtnInactive}`}
         >
           <GoogleDriveIcon size={13} color={activeSubTab === 'integrations' ? '#818cf8' : '#94a3b8'} />
@@ -936,7 +1086,7 @@ export default function AdminSettings({
 
         <button
           type="button"
-          onClick={() => setActiveSubTab('payments')}
+          onClick={() => switchTab('payments')}
           className={`${styles.subTabBtn} ${activeSubTab === 'payments' ? styles.subTabBtnActivePayments : styles.subTabBtnInactive}`}
         >
           <MoneyIcon size={13} color={activeSubTab === 'payments' ? '#10b981' : '#94a3b8'} />
@@ -945,7 +1095,7 @@ export default function AdminSettings({
 
         <button
           type="button"
-          onClick={() => setActiveSubTab('system')}
+          onClick={() => switchTab('system')}
           className={`${styles.subTabBtn} ${activeSubTab === 'system' ? styles.subTabBtnActiveSystem : styles.subTabBtnInactive}`}
         >
           <SettingsIcon size={13} color={activeSubTab === 'system' ? '#f59e0b' : '#94a3b8'} />
@@ -1002,8 +1152,8 @@ export default function AdminSettings({
                         <h3 style={{ margin: 0, fontSize: '20px', color: '#ffffff', fontWeight: '800' }}>
                           {saasName || 'Pick Your Photo'}
                         </h3>
-                        <span style={{ fontSize: '13px', color: '#94a3b8' }}>
-                          {saasDomain ? saasDomain : 'Domain belum diatur'}
+                        <span style={{ fontSize: '13px', color: '#38bdf8', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                          {typeof window !== 'undefined' && window.location.host ? window.location.host : (saasDomain || 'localhost:3000')}
                         </span>
                       </div>
                     </div>
@@ -1022,130 +1172,126 @@ export default function AdminSettings({
                     </div>
 
                     <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>📱 WhatsApp Resmi CS:</span>
-                      <strong style={{ color: '#34d399', fontSize: '13.5px' }}>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>📱 Nomor WhatsApp CS / Helpdesk:</span>
+                      <strong style={{ color: '#f4f4f5', fontSize: '13.5px' }}>
                         {contactWhatsapp || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
                       </strong>
                     </div>
 
                     <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>⏰ Jam Operasional Respon:</span>
+                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>⏰ Jam Operasional:</span>
                       <strong style={{ color: '#f4f4f5', fontSize: '13.5px' }}>
                         {operationalHours || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
                       </strong>
                     </div>
+                  </div>
 
-                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', gridColumn: '1 / -1' }}>
-                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>✨ Slogan Singkat Platform (Tagline):</span>
-                      <strong style={{ color: '#fbbf24', fontSize: '13.5px' }}>
-                        {saasTagline || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
-                      </strong>
-                    </div>
-
-                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', gridColumn: '1 / -1' }}>
-                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>🔗 Deskripsi Pratinjau Share Link (WhatsApp &amp; Medsos Open Graph):</span>
-                      <p style={{ color: '#e4e4e7', fontSize: '13px', margin: 0, lineHeight: '1.5' }}>
-                        {saasDescription || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur (menggunakan ringkasan default platform)</span>}
-                      </p>
-                    </div>
-
-                    <div style={{ background: 'rgba(0,0,0,0.25)', padding: '14px 16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', gridColumn: '1 / -1' }}>
-                      <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>📍 Alamat Kantor / Domisili Legal Perusahaan:</span>
-                      <strong style={{ color: '#f4f4f5', fontSize: '13.5px' }}>
-                        {companyAddress || <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diatur</span>}
-                      </strong>
+                  {/* Tagline & Description Display */}
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '14px' }}>
+                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>✨ Slogan Platform (Tagline):</span>
+                    <div style={{ color: '#e2e8f0', fontSize: '13px', fontStyle: saasTagline ? 'normal' : 'italic' }}>
+                      {saasTagline || 'Belum diatur'}
                     </div>
                   </div>
 
-                  {/* Bottom Action Bar */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)', marginBottom: '14px' }}>
+                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>🔗 Deskripsi Pratinjau Share Link (OG Description):</span>
+                    <div style={{ color: '#e2e8f0', fontSize: '13px', lineHeight: '1.5', fontStyle: saasDescription ? 'normal' : 'italic' }}>
+                      {saasDescription || 'Belum diatur'}
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'rgba(0,0,0,0.25)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                    <span style={{ color: '#94a3b8', display: 'block', fontSize: '11.5px', marginBottom: '4px' }}>📍 Alamat Kantor / Domisili Legal:</span>
+                    <div style={{ color: '#e2e8f0', fontSize: '13px', fontStyle: companyAddress ? 'normal' : 'italic' }}>
+                      {companyAddress || 'Belum diatur'}
+                    </div>
+                  </div>
+
+                  {/* Edit Action Bar */}
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                     <button
                       type="button"
                       onClick={() => setIsEditingIdentity(true)}
+                      className="btn-secondary"
                       style={{
-                        background: 'rgba(56, 189, 248, 0.15)',
-                        border: '1px solid rgba(56, 189, 248, 0.3)',
-                        color: '#38bdf8',
                         padding: '9px 20px',
-                        borderRadius: '8px',
                         fontSize: '12.5px',
-                        fontWeight: '700',
-                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
-                        transition: 'all 0.2s ease',
+                        borderRadius: '8px',
+                        cursor: 'pointer'
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.25)'; e.currentTarget.style.color = '#fff'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)'; e.currentTarget.style.color = '#38bdf8'; }}
                     >
-                      <span>✏️</span>
-                      <span>Edit Identitas &amp; Logo</span>
+                      ✏️ Edit Identitas Platform
                     </button>
                   </div>
                 </div>
               ) : (
-                /* ── MODE 2: ACTIVE EDITABLE FORM MODE ── */
+                /* ── MODE 2: EDITING FORM (INPUT FIELDS) ── */
                 <div>
-                  {/* Logo & Favicon Management Card (With Upload & Reset Buttons) */}
-                  <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(56, 189, 248, 0.25)', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        {/* Live Preview Box */}
+                  {/* Logo Upload Section */}
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                         <div style={{
-                          width: '64px',
-                          height: '64px',
-                          borderRadius: '12px',
+                          width: '52px',
+                          height: '52px',
+                          borderRadius: '10px',
                           background: 'rgba(255,255,255,0.06)',
-                          border: '1px solid rgba(255,255,255,0.12)',
+                          border: '1px solid rgba(255,255,255,0.1)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          padding: '6px',
+                          padding: '4px',
                           overflow: 'hidden'
                         }}>
                           <img
                             src={saasLogoUrl || '/logo.png'}
-                            alt="Logo Platform"
+                            alt="Preview Logo"
                             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                             onError={(e) => { e.target.src = '/logo.png'; }}
                           />
                         </div>
                         <div>
-                          <h5 style={{ margin: '0 0 4px', fontSize: '14px', color: '#ffffff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', display: 'block', marginBottom: '2px' }}>
                             🖼️ Logo &amp; Favicon Platform
-                          </h5>
-                          <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', lineHeight: '1.4' }}>
+                          </label>
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
                             Logo ini digunakan sebagai favicon tab browser dan identitas utama pada seluruh halaman publik.
-                          </p>
+                          </span>
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <label
+                          htmlFor="upload-saas-logo-input"
                           style={{
-                            background: 'linear-gradient(135deg, #38bdf8, #0284c7)',
-                            color: '#000000',
-                            padding: '8px 16px',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: uploadingLogo ? 'not-allowed' : 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '6px',
-                            boxShadow: '0 4px 12px rgba(56, 189, 248, 0.25)'
+                            background: uploadingLogo ? 'rgba(56,189,248,0.1)' : 'linear-gradient(135deg, #0284c7, #0369a1)',
+                            color: '#ffffff',
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                            fontWeight: '600',
+                            cursor: uploadingLogo ? 'not-allowed' : 'pointer',
+                            boxShadow: '0 2px 8px rgba(2,132,199,0.3)',
+                            transition: 'all 0.2s ease'
                           }}
                         >
-                          {uploadingLogo ? '⏳ Mengunggah...' : '📤 Unggah Logo Baru'}
-                          <input
-                            type="file"
-                            accept=".png,.jpg,.jpeg,.svg,.ico,.webp"
-                            onChange={handleUploadLogo}
-                            disabled={uploadingLogo}
-                            style={{ display: 'none' }}
-                          />
+                          {uploadingLogo ? '⏳ Mengunggah...' : '📥 Unggah Logo Baru'}
                         </label>
+                        <input
+                          id="upload-saas-logo-input"
+                          type="file"
+                          accept="image/png, image/jpeg, image/webp, image/svg+xml, image/x-icon"
+                          onChange={handleUploadLogo}
+                          disabled={uploadingLogo}
+                          style={{ display: 'none' }}
+                        />
 
                         {saasLogoUrl && saasLogoUrl !== '/logo.png' && (
                           <button
@@ -1163,7 +1309,7 @@ export default function AdminSettings({
                               cursor: 'pointer'
                             }}
                           >
-                            🗑️ Reset Default
+                            🗑️ Reset
                           </button>
                         )}
                       </div>
@@ -1185,15 +1331,26 @@ export default function AdminSettings({
                     </div>
 
                     <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>🌐 Nama Domain / URL Resmi Platform</label>
-                      <input
-                        type="text"
-                        className="input-text"
-                        placeholder="Contoh: photota.my.id atau https://photota.my.id"
-                        value={saasDomain}
-                        onChange={e => setSaasDomain(e.target.value)}
-                        disabled={savingSection === 'identity'}
-                      />
+                      <label className="form-label" style={{ fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>🌐 URL Host Platform (Otomatis)</span>
+                        <span style={{ fontSize: '10.5px', color: '#34d399', background: 'rgba(52, 211, 153, 0.12)', padding: '2px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+                          ⚡ Auto-Detect
+                        </span>
+                      </label>
+                      <div style={{
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        background: 'rgba(0, 0, 0, 0.35)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        color: '#38bdf8',
+                        fontFamily: 'monospace',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}>
+                        {typeof window !== 'undefined' && window.location.host ? window.location.host : 'localhost:3000'}
+                      </div>
                     </div>
 
                     <div className="form-group" style={{ margin: 0 }}>
@@ -1295,20 +1452,21 @@ export default function AdminSettings({
                     <button
                       type="button"
                       onClick={handleSaveIdentity}
-                      disabled={savingSection === 'identity'}
+                      disabled={!isIdentityDirty || savingSection === 'identity'}
                       style={{
                         padding: '9px 22px',
-                        background: 'linear-gradient(135deg, #10b981, #059669)',
-                        border: 'none',
+                        background: isIdentityDirty ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255, 255, 255, 0.04)',
+                        border: isIdentityDirty ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                         borderRadius: '8px',
-                        color: '#ffffff',
+                        color: isIdentityDirty ? '#ffffff' : '#71717a',
                         fontSize: '12.5px',
                         fontWeight: '700',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
+                        cursor: isIdentityDirty && savingSection !== 'identity' ? 'pointer' : 'not-allowed',
+                        boxShadow: isIdentityDirty ? '0 2px 8px rgba(16,185,129,0.3)' : 'none',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px'
+                        gap: '6px',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       {savingSection === 'identity' ? '⏳ Menyimpan...' : '💾 Simpan Perubahan'}
@@ -1448,30 +1606,29 @@ export default function AdminSettings({
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    {googleClientId && googleClientSecret && (
-                      <button 
-                        type="button" 
-                        onClick={() => setIsEditingGoogleCredentials(false)} 
-                        className="btn-secondary" 
-                        style={{ padding: '8px 16px', fontSize: '12px' }}
-                      >
-                        Batal
-                      </button>
-                    )}
                     <button 
                       type="button" 
-                      disabled={savingSection === 'google'} 
+                      onClick={handleCancelGoogle} 
+                      className="btn-secondary" 
+                      style={{ padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
+                    >
+                      Batal
+                    </button>
+                    <button 
+                      type="button" 
+                      disabled={!isGoogleDirty || savingSection === 'google'} 
                       onClick={handleSaveGoogle}
                       style={{ 
-                        background: 'linear-gradient(135deg, #10b981, #059669)', 
-                        color: '#ffffff', 
-                        border: 'none', 
+                        background: isGoogleDirty ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.04)', 
+                        color: isGoogleDirty ? '#ffffff' : '#71717a', 
+                        border: isGoogleDirty ? 'none' : '1px solid rgba(255,255,255,0.08)', 
                         padding: '8px 20px', 
                         borderRadius: '8px', 
                         fontSize: '12px', 
                         fontWeight: 'bold', 
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                        cursor: isGoogleDirty && savingSection !== 'google' ? 'pointer' : 'not-allowed',
+                        boxShadow: isGoogleDirty ? '0 2px 10px rgba(16, 185, 129, 0.3)' : 'none',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       {savingSection === 'google' ? '⏳ Menyimpan...' : '💾 Simpan Kredensial Google'}
@@ -1491,102 +1648,75 @@ export default function AdminSettings({
               </span>
             </div>
 
-            {(!smtpEnable || !smtpEmail || !smtpPassword) && !isEditingSmtp && (
-              <div style={{ background: 'rgba(251, 191, 36, 0.12)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', fontSize: '13px', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '18px' }}>⚠️</span>
-                <div>
-                  <strong>Server SMTP Email Belum Dikonfigurasi!</strong>
-                  <div style={{ fontSize: '11px', color: '#d4d4d8', marginTop: '2px' }}>
-                    Email notifikasi persetujuan vendor dan peringatan tenggang storage akan ditangguhkan sampai SMTP dikonfigurasi.
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
               {!isEditingSmtp && smtpEmail && smtpPassword ? (
                 <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
                     <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Email Pengirim (Sender):</span>
-                      <strong style={{ color: '#38bdf8', fontFamily: 'monospace' }}>{smtpEmail}</strong>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Server Host &amp; Port:</span>
+                      <strong style={{ color: '#38bdf8' }}>{smtpHost || 'smtp.gmail.com'} : {smtpPort || '465'}</strong>
                     </div>
                     <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Server Host & Port:</span>
-                      <strong style={{ color: '#ffffff' }}>{smtpHost}:{smtpPort} (SSL)</strong>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nama Pengirim (Sender):</span>
+                      <strong style={{ color: '#ffffff' }}>{smtpFromName || 'Pick Your Photo'}</strong>
                     </div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                     <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nama Pengirim (From Name):</span>
-                      <strong style={{ color: '#ffffff' }}>{smtpFromName || 'Pick Your Photo'}</strong>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Akun Email Pengirim:</span>
+                      <strong style={{ color: '#34d399' }}>{smtpEmail}</strong>
                     </div>
                     <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>App Password Gmail:</span>
-                      <strong style={{ color: '#34d399', letterSpacing: '2px' }}>••••••••••••••••</strong>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Status Modul:</span>
+                      <strong style={{ color: smtpEnable ? '#34d399' : '#f87171' }}>{smtpEnable ? '🟢 Aktif' : '🔴 Nonaktif'}</strong>
                     </div>
                   </div>
 
-                  <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      disabled={testEmailStatus.loading || !smtpEmail || !smtpPassword}
-                      onClick={async () => {
-                        setTestEmailStatus({ loading: true, success: '', error: '' });
-                        try {
-                          const res = await fetch('/api/admin/smtp/test', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ targetEmail: smtpEmail, smtpEmail, smtpPassword, smtpHost, smtpPort, smtpFromName })
-                          });
-                          const data = await res.json();
-                          if (res.ok && data.success) {
-                            if (addToast) addToast(data.message || 'Email uji coba BERHASIL dikirim!', 'success');
-                          } else {
-                            if (addToast) addToast(data.message || 'Gagal mengirim email uji coba.', 'error');
-                          }
-                        } catch (err) {
-                          if (addToast) addToast(err.message, 'error');
-                        } finally {
-                          setTestEmailStatus({ loading: false, success: '', error: '' });
-                        }
-                      }}
-                      style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      {testEmailStatus.loading ? '⏳ Menguji...' : '📧 Tes Kirim Email'}
-                    </button>
-
+                  <div style={{ paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                     <button 
                       type="button" 
                       onClick={() => setIsEditingSmtp(true)} 
                       className="btn-secondary" 
-                      style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
+                      style={{ padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
                     >
-                      ✏️ Edit Kredensial SMTP
+                      ✏️ Ubah Kredensial SMTP
                     </button>
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <input 
+                      type="checkbox" 
+                      id="enable_smtp" 
+                      checked={!!smtpEnable} 
+                      onChange={e => setSmtpEnable(e.target.checked)} 
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }} 
+                    />
+                    <label htmlFor="enable_smtp" style={{ cursor: 'pointer', fontSize: '14px', fontWeight: 'bold', color: smtpEnable ? '#34d399' : '#94a3b8' }}>
+                      Aktifkan Pengiriman Email Notifikasi Otomatis (SMTP)
+                    </label>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
                     <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>SMTP Host</label>
-                      <input type="text" className="input-text" value={smtpHost} onChange={e => setSmtpHost(e.target.value)} />
+                      <label className="form-label" style={{ fontSize: '12px' }}>SMTP Host Server</label>
+                      <input type="text" className="input-text" placeholder="smtp.gmail.com" value={smtpHost} onChange={e => setSmtpHost(e.target.value)} />
                     </div>
                     <div className="form-group" style={{ margin: 0 }}>
                       <label className="form-label" style={{ fontSize: '12px' }}>SMTP Port</label>
-                      <input type="number" className="input-text" value={smtpPort} onChange={e => setSmtpPort(parseInt(e.target.value) || 465)} />
+                      <input type="number" className="input-text" placeholder="465" value={smtpPort} onChange={e => setSmtpPort(e.target.value)} />
                     </div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>Email Pengirim (Sender Email)</label>
-                      <input type="email" className="input-text" value={smtpEmail} onChange={e => setSmtpEmail(e.target.value)} />
+                      <label className="form-label" style={{ fontSize: '12px' }}>Email Akun Pengirim</label>
+                      <input type="email" className="input-text" placeholder="contoh@gmail.com" value={smtpEmail} onChange={e => setSmtpEmail(e.target.value)} />
                     </div>
                     <div className="form-group" style={{ margin: 0 }}>
-                      <label className="form-label" style={{ fontSize: '12px' }}>Password / App Password</label>
+                      <label className="form-label" style={{ fontSize: '12px' }}>App Password (16 Digit)</label>
                       <input type="password" className="input-text" value={smtpPassword} onChange={e => setSmtpPassword(e.target.value)} />
                     </div>
                   </div>
@@ -1625,31 +1755,30 @@ export default function AdminSettings({
                       {testEmailStatus.loading ? '⏳ Menguji...' : '📧 Tes Kirim Email'}
                     </button>
 
-                    {smtpEmail && smtpPassword && (
-                      <button 
-                        type="button" 
-                        onClick={() => setIsEditingSmtp(false)} 
-                        className="btn-secondary" 
-                        style={{ padding: '8px 16px', fontSize: '12px' }}
-                      >
-                        Batal
-                      </button>
-                    )}
+                    <button 
+                      type="button" 
+                      onClick={handleCancelSmtp} 
+                      className="btn-secondary" 
+                      style={{ padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
+                    >
+                      Batal
+                    </button>
 
                     <button 
                       type="button" 
-                      disabled={savingSection === 'smtp'} 
+                      disabled={!isSmtpDirty || savingSection === 'smtp'} 
                       onClick={handleSaveSmtp}
                       style={{ 
-                        background: 'linear-gradient(135deg, #10b981, #059669)', 
-                        color: '#ffffff', 
-                        border: 'none', 
+                        background: isSmtpDirty ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.04)', 
+                        color: isSmtpDirty ? '#ffffff' : '#71717a', 
+                        border: isSmtpDirty ? 'none' : '1px solid rgba(255,255,255,0.08)', 
                         padding: '8px 20px', 
                         borderRadius: '8px', 
                         fontSize: '12px', 
                         fontWeight: 'bold', 
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                        cursor: isSmtpDirty && savingSection !== 'smtp' ? 'pointer' : 'not-allowed',
+                        boxShadow: isSmtpDirty ? '0 2px 10px rgba(16, 185, 129, 0.3)' : 'none',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       {savingSection === 'smtp' ? '⏳ Menyimpan...' : '💾 Simpan Pengaturan SMTP'}
@@ -1726,30 +1855,29 @@ export default function AdminSettings({
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                    {bankName && bankAccountNumber && (
-                      <button 
-                        type="button" 
-                        onClick={() => setIsEditingBankDetails(false)} 
-                        className="btn-secondary" 
-                        style={{ padding: '8px 16px', fontSize: '12px' }}
-                      >
-                        Batal
-                      </button>
-                    )}
                     <button 
                       type="button" 
-                      disabled={savingSection === 'bank'} 
+                      onClick={handleCancelBank} 
+                      className="btn-secondary" 
+                      style={{ padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
+                    >
+                      Batal
+                    </button>
+                    <button 
+                      type="button" 
+                      disabled={!isBankDirty || savingSection === 'bank'} 
                       onClick={handleSaveBank}
                       style={{ 
-                        background: 'linear-gradient(135deg, #10b981, #059669)', 
-                        color: '#ffffff', 
-                        border: 'none', 
+                        background: isBankDirty ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.04)', 
+                        color: isBankDirty ? '#ffffff' : '#71717a', 
+                        border: isBankDirty ? 'none' : '1px solid rgba(255,255,255,0.08)', 
                         padding: '8px 20px', 
                         borderRadius: '8px', 
                         fontSize: '12px', 
                         fontWeight: 'bold', 
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 10px rgba(16, 185, 129, 0.3)'
+                        cursor: isBankDirty && savingSection !== 'bank' ? 'pointer' : 'not-allowed',
+                        boxShadow: isBankDirty ? '0 2px 10px rgba(16, 185, 129, 0.3)' : 'none',
+                        transition: 'all 0.2s ease'
                       }}
                     >
                       {savingSection === 'bank' ? '⏳ Menyimpan...' : '💾 Simpan Rekening Bank'}
@@ -1775,99 +1903,129 @@ export default function AdminSettings({
             </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
-              {!isEditingPaymentGateway && enablePaymentGateway && paymentGatewayClientKey && paymentGatewayServerKey ? (
-                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Mode Lingkungan:</span>
-                      <strong style={{ color: paymentGatewayMode === 'live' ? '#34d399' : '#fbbf24' }}>
-                        {paymentGatewayMode === 'live' ? '🟢 Live Production' : '🟡 Sandbox (Uji Coba)'}
-                      </strong>
+              {!isEditingPaymentGateway ? (
+                enablePaymentGateway ? (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Mode Lingkungan:</span>
+                        <strong style={{ color: paymentGatewayMode === 'live' ? '#34d399' : '#fbbf24' }}>
+                          {paymentGatewayMode === 'live' ? '🟢 Live Production' : '🟡 Sandbox (Uji Coba)'}
+                        </strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Provider Aktif:</span>
+                        <strong style={{ color: '#38bdf8', textTransform: 'uppercase' }}>{paymentGatewayProvider}</strong>
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Provider Aktif:</span>
-                      <strong style={{ color: '#38bdf8', textTransform: 'uppercase' }}>{paymentGatewayProvider}</strong>
-                    </div>
-                  </div>
 
-                  {paymentGatewayMode === 'sandbox' && sandboxTunnelUrl && (
-                    <div style={{ background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.25)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '11.5px' }}>
-                      <span style={{ color: '#fbbf24', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>🌐 URL Tunnel Webhook Sandbox:</span>
-                      <code style={{ color: '#38bdf8', fontFamily: 'monospace', wordBreak: 'break-all' }}>{sandboxTunnelUrl}</code>
-                    </div>
-                  )}
+                    {paymentGatewayMode === 'sandbox' && sandboxTunnelUrl && (
+                      <div style={{ background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.25)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '11.5px' }}>
+                        <span style={{ color: '#fbbf24', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>🌐 URL Tunnel Webhook Sandbox:</span>
+                        <code style={{ color: '#38bdf8', fontFamily: 'monospace', wordBreak: 'break-all' }}>{sandboxTunnelUrl}</code>
+                      </div>
+                    )}
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
-                        {paymentGatewayProvider === 'ipaymu' ? 'VA Merchant:' : 'Client / Public Key:'}
-                      </span>
-                      <strong style={{ color: '#ffffff', fontFamily: 'monospace' }}>{paymentGatewayClientKey.substring(0, 16)}...</strong>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
+                          {paymentGatewayProvider === 'ipaymu' ? 'VA Merchant:' : 'Client / Public Key:'}
+                        </span>
+                        <strong style={{ color: '#ffffff', fontFamily: 'monospace' }}>
+                          {paymentGatewayClientKey ? `${paymentGatewayClientKey.substring(0, 16)}...` : <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diisi</span>}
+                        </strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Server / Secret Key:</span>
+                        <strong style={{ color: '#34d399', letterSpacing: '2px' }}>
+                          {paymentGatewayServerKey ? '••••••••••••••••' : <span style={{ color: '#71717a', fontStyle: 'italic' }}>Belum diisi</span>}
+                        </strong>
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Server / Secret Key:</span>
-                      <strong style={{ color: '#34d399', letterSpacing: '2px' }}>••••••••••••••••</strong>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Batas Expired QRIS:</span>
+                        <strong style={{ color: '#fbbf24' }}>{qrisExpirationMinutes || 15} Menit</strong>
+                      </div>
                     </div>
-                  </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Batas Expired QRIS:</span>
-                      <strong style={{ color: '#fbbf24' }}>{qrisExpirationMinutes || 15} Menit</strong>
+                    {/* WEBHOOK URL INFO */}
+                    <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '10px 14px', borderRadius: '8px', fontSize: '11px', marginBottom: '16px' }}>
+                      <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback:</div>
+                      <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
+                        {paymentGatewayMode === 'sandbox' && sandboxTunnelUrl ? (
+                          `${sandboxTunnelUrl.replace(/\/+$/, '')}/api/payment/notification`
+                        ) : (
+                          typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'
+                        )}
+                      </code>
                     </div>
-                  </div>
 
-                  {/* WEBHOOK URL INFO */}
-                  <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '10px 14px', borderRadius: '8px', fontSize: '11px', marginBottom: '16px' }}>
-                    <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback:</div>
-                    <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
-                      {paymentGatewayMode === 'sandbox' && sandboxTunnelUrl ? (
-                        `${sandboxTunnelUrl.replace(/\/+$/, '')}/api/payment/notification`
-                      ) : (
-                        typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'
-                      )}
-                    </code>
-                  </div>
-
-                  <div style={{ paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      disabled={paymentTestStatus.loading || !paymentGatewayServerKey}
-                      onClick={async () => {
-                        setPaymentTestStatus({ loading: true, success: '', error: '' });
-                        try {
-                          const res = await fetch('/api/admin/payment/test', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: paymentGatewayMode === 'live' })
-                          });
-                          const data = await res.json();
-                          if (res.ok && data.success) {
-                            if (addToast) addToast(data.message || 'Koneksi Payment Gateway BERHASIL!', 'success');
-                          } else {
-                            if (addToast) addToast(data.message || 'Tes koneksi gagal.', 'error');
+                    <div style={{ paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        disabled={paymentTestStatus.loading || !paymentGatewayServerKey}
+                        onClick={async () => {
+                          setPaymentTestStatus({ loading: true, success: '', error: '' });
+                          try {
+                            const res = await fetch('/api/admin/payment/test', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: paymentGatewayMode === 'live' })
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                              if (addToast) addToast(data.message || 'Koneksi Payment Gateway BERHASIL!', 'success');
+                            } else {
+                              if (addToast) addToast(data.message || 'Tes koneksi gagal.', 'error');
+                            }
+                          } catch (err) {
+                            if (addToast) addToast(err.message, 'error');
+                          } finally {
+                            setPaymentTestStatus({ loading: false, success: '', error: '' });
                           }
-                        } catch (err) {
-                          if (addToast) addToast(err.message, 'error');
-                        } finally {
-                          setPaymentTestStatus({ loading: false, success: '', error: '' });
-                        }
-                      }}
-                      style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes Payment Gateway'}
-                    </button>
+                        }}
+                        style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {paymentTestStatus.loading ? '⏳ Memeriksa...' : '🔍 Tes Payment Gateway'}
+                      </button>
 
-                    <button 
-                      type="button" 
-                      onClick={() => setIsEditingPaymentGateway(true)} 
-                      className="btn-secondary" 
-                      style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
-                    >
-                      ✏️ Edit Kredensial Gateway
-                    </button>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingPaymentGateway(true)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        ✏️ Edit Kredensial Gateway
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '24px' }}>🔴</span>
+                      <div>
+                        <strong style={{ color: '#f87171', fontSize: '13.5px', display: 'block', marginBottom: '2px' }}>
+                          Automatic Payment Gateway Sedang Nonaktif
+                        </strong>
+                        <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                          Sistem registrasi vendor saat ini dialihkan menggunakan metode verifikasi transfer manual ke rekening bank di atas.
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingPaymentGateway(true)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        ⚙️ Konfigurasi / Aktifkan Gateway
+                      </button>
+                    </div>
+                  </div>
+                )
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
