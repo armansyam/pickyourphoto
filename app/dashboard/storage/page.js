@@ -3060,7 +3060,7 @@ export default function VendorStorageManagerPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
                   {galleryModalFiles.map((file, idx) => {
                     const isImg = file.mimeType?.startsWith('image/') || file.name?.match(/\.(jpg|jpeg|png|webp|gif)$/i);
-                    const thumbUrl = `/api/proxy/thumb/${file.driveFileId}/${encodeURIComponent(file.name)}?sz=w400`;
+                    const thumbUrl = file.driveFileId ? `https://lh3.googleusercontent.com/d/${file.driveFileId}=w400` : `/api/proxy/thumb/${file.driveFileId}/${encodeURIComponent(file.name)}?sz=w400`;
                     return (
                       <div
                         key={file.id}
@@ -3087,8 +3087,16 @@ export default function VendorStorageManagerPage() {
                             alt={file.name}
                             loading="lazy"
                             decoding="async"
+                            referrerPolicy="no-referrer"
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            onError={(e) => { e.target.style.display = 'none'; }}
+                            onError={(e) => {
+                              if (!e.target.dataset.fallback && file.driveFileId) {
+                                e.target.dataset.fallback = '1';
+                                e.target.src = `/api/proxy/thumb/${file.driveFileId}/${encodeURIComponent(file.name)}?sz=w400`;
+                              } else {
+                                e.target.style.display = 'none';
+                              }
+                            }}
                           />
                         ) : (
                           <div style={{ textAlign: 'center', color: '#a1a1aa', padding: '10px' }}>
@@ -3116,7 +3124,7 @@ export default function VendorStorageManagerPage() {
         const currentFile = previewSourceFiles[activePreviewIndex];
         const cleanName = currentFile.fileName || currentFile.name || '';
         const isImg = currentFile.mimeType?.startsWith('image/') || cleanName?.match(/\.(jpg|jpeg|png|webp|gif)$/i);
-        const fullUrl = isImg && currentFile.driveFileId ? `/api/proxy/thumb/${currentFile.driveFileId}/${encodeURIComponent(cleanName)}?sz=w1600` : null;
+        const fullUrl = isImg && currentFile.driveFileId ? `https://lh3.googleusercontent.com/d/${currentFile.driveFileId}=w1600` : (isImg && currentFile.driveFileId ? `/api/proxy/thumb/${currentFile.driveFileId}/${encodeURIComponent(cleanName)}?sz=w1600` : null);
 
         return (
           <div
@@ -3248,6 +3256,13 @@ export default function VendorStorageManagerPage() {
                 <img
                   src={fullUrl}
                   alt={cleanName}
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    if (!e.target.dataset.fallback && currentFile.driveFileId) {
+                      e.target.dataset.fallback = '1';
+                      e.target.src = `/api/proxy/thumb/${currentFile.driveFileId}/${encodeURIComponent(cleanName)}?sz=w1600`;
+                    }
+                  }}
                   style={{
                     maxWidth: '85vw',
                     maxHeight: '82vh',

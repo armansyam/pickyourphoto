@@ -319,7 +319,7 @@ export default function StorageGalleryStandalonePage() {
               {displayFiles.map((file, idx) => {
                 const cleanFileName = file.name ? file.name.split('/').pop() : (file.name || '');
                 const isImg = file.mimeType?.startsWith('image/') || cleanFileName?.match(/\.(jpg|jpeg|png|webp|gif)$/i);
-                const thumbUrl = `/api/proxy/thumb/${file.driveFileId}/${encodeURIComponent(cleanFileName)}?sz=w600`;
+                const thumbUrl = file.driveFileId ? `https://lh3.googleusercontent.com/d/${file.driveFileId}=w600` : `/api/proxy/thumb/${file.driveFileId}/${encodeURIComponent(cleanFileName)}?sz=w600`;
 
                 return (
                   <div
@@ -345,8 +345,16 @@ export default function StorageGalleryStandalonePage() {
                           alt={cleanFileName}
                           loading="lazy"
                           decoding="async"
+                          referrerPolicy="no-referrer"
                           style={{ width: '100%', height: 'auto', display: 'block' }}
-                          onError={(e) => { e.target.style.display = 'none'; }}
+                          onError={(e) => {
+                            if (!e.target.dataset.fallback && file.driveFileId) {
+                              e.target.dataset.fallback = '1';
+                              e.target.src = `/api/proxy/thumb/${file.driveFileId}/${encodeURIComponent(cleanFileName)}?sz=w600`;
+                            } else {
+                              e.target.style.display = 'none';
+                            }
+                          }}
                         />
                         {/* GRADIEN HALUS BAGIAN BAWAH KARTU AGAR TAMPIL DINAMIS (TANPA TEKS NAMA FILE) */}
                         <div style={{ position: 'absolute', bottom: 0, inset: 'auto 0 0 0', height: '35%', background: 'linear-gradient(to top, rgba(0,0,0,0.45), transparent)', pointerEvents: 'none' }} />
@@ -397,7 +405,7 @@ export default function StorageGalleryStandalonePage() {
       {activeLightboxIndex !== null && displayFiles[activeLightboxIndex] && (() => {
         const currentFile = displayFiles[activeLightboxIndex];
         const cleanName = currentFile.name ? currentFile.name.split('/').pop() : (currentFile.name || '');
-        const fullUrl = `/api/proxy/thumb/${currentFile.driveFileId}/${encodeURIComponent(cleanName)}?sz=w1600`;
+        const fullUrl = currentFile.driveFileId ? `https://lh3.googleusercontent.com/d/${currentFile.driveFileId}=w1600` : `/api/proxy/thumb/${currentFile.driveFileId}/${encodeURIComponent(cleanName)}?sz=w1600`;
 
         return (
           <div
@@ -517,6 +525,13 @@ export default function StorageGalleryStandalonePage() {
               <img
                 src={fullUrl}
                 alt={cleanName || 'Preview'}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  if (!e.target.dataset.fallback && currentFile.driveFileId) {
+                    e.target.dataset.fallback = '1';
+                    e.target.src = `/api/proxy/thumb/${currentFile.driveFileId}/${encodeURIComponent(cleanName)}?sz=w1600`;
+                  }
+                }}
                 style={{
                   maxWidth: '85vw',
                   maxHeight: '82vh',
