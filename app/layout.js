@@ -4,7 +4,7 @@ import db from '@/lib/db';
 
 export async function generateMetadata() {
     let faviconUrl = '/favicon.ico';
-    let brandName = 'Pick Your Photo';
+    let brandName = 'Photota';
     try {
         const rows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('saas_favicon_url', 'saas_logo_url', 'saas_name')").all() || [];
         const map = {};
@@ -26,20 +26,11 @@ export async function generateMetadata() {
 }
 
 export default function RootLayout({ children }) {
-    let faviconUrl = '/favicon.png';
-    try {
-        const row = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_favicon_url' OR key = 'saas_logo_url' LIMIT 1").get();
-        if (row && row.value) faviconUrl = row.value;
-    } catch (_) {}
-
     return (
         <html lang="en">
             <head>
                 <meta name="color-scheme" content="dark" />
                 <meta name="theme-color" content="#09090b" />
-                <link rel="icon" href={faviconUrl} />
-                <link rel="shortcut icon" href={faviconUrl} />
-                <link rel="apple-touch-icon" href={faviconUrl} />
             </head>
             <body>
                 {children}
