@@ -18,7 +18,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
   const [error, setError] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [activePhoto, setActivePhoto] = useState(null); // Lightbox modal
-  const [timeLeft, setTimeLeft] = useState(null);
+  const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0, totalSec: null });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -195,7 +195,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
   }, [activePhoto, data?.photos]);
 
   const toggleSelectPhoto = (filename) => {
-    if (data?.isExpired || (timeLeft !== null && timeLeft.totalSec <= 0) || submitted) return;
+    if (data?.isExpired || (timeLeft?.totalSec !== null && timeLeft?.totalSec <= 0) || submitted) return;
 
     // Tandai bahwa perubahan ini dari user (bukan dari server load)
     userModifiedRef.current = true;
@@ -320,7 +320,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
     );
   }
 
-  const isExpired = Boolean(data?.isExpired) || (data?.expiresAt && timeLeft !== null && timeLeft.totalSec <= 0);
+  const isExpired = Boolean(data?.isExpired) || (data?.expiresAt && timeLeft?.totalSec !== null && timeLeft?.totalSec <= 0);
 
   if (isExpired) {
     return (
@@ -480,7 +480,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
           {isExpired ? (
             <span>WAKTU TRIAL HABIS — Galeri Telah Kedaluwarsa</span>
           ) : (
-            <span>Sisa Waktu Trial: <strong>{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}</strong></span>
+            <span>Sisa Waktu Trial: <strong>{String(timeLeft?.minutes || 0).padStart(2, '0')}:{String(timeLeft?.seconds || 0).padStart(2, '0')}</strong></span>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
