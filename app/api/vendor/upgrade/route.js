@@ -144,16 +144,21 @@ export async function POST(request) {
 
         const addonPlanId = formData.get('addonPlanId');
         let addonQuotaBytes = 0;
-        if (addonPlanId === 'addon-10gb') addonQuotaBytes = 10 * 1024 * 1024 * 1024;
-        else if (addonPlanId === 'addon-25gb') addonQuotaBytes = 25 * 1024 * 1024 * 1024;
-        else if (addonPlanId === 'addon-50gb') addonQuotaBytes = 50 * 1024 * 1024 * 1024;
+        let validAddonKey = null;
+        if (addonPlanId) {
+            const addonRow = db.prepare("SELECT id, planKey, quotaBytes, status FROM addon_plans WHERE (id = ? OR planKey = ?) AND status = 'active'").get(addonPlanId, addonPlanId);
+            if (addonRow) {
+                addonQuotaBytes = addonRow.quotaBytes;
+                validAddonKey = addonRow.planKey || String(addonRow.id);
+            }
+        }
 
-        if (addonPlanId && addonQuotaBytes > 0) {
+        if (validAddonKey && addonQuotaBytes > 0) {
             db.prepare(`
                 UPDATE vendors 
                 SET pendingAddonPlanId = ?, pendingAddonQuotaBytes = ?, paymentProof = ? 
                 WHERE id = ?
-            `).run(addonPlanId, addonQuotaBytes, webPath, vendor.id);
+            `).run(validAddonKey, addonQuotaBytes, webPath, vendor.id);
         } else {
             db.prepare('UPDATE vendors SET paymentProof = ? WHERE id = ?').run(webPath, vendor.id);
         }

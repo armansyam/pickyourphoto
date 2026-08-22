@@ -49,7 +49,11 @@ export async function POST(request) {
         // Notify Admin / Vendor by Email
         try {
             const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(vendor.planId);
-            const addonName = vendor.pendingAddonPlanId ? (vendor.pendingAddonPlanId === 'addon-10gb' ? 'Drive 10 GB' : vendor.pendingAddonPlanId === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
+            let addonName = null;
+            if (vendor.pendingAddonPlanId) {
+                const addonRow = db.prepare('SELECT name FROM addon_plans WHERE id = ? OR planKey = ?').get(vendor.pendingAddonPlanId, vendor.pendingAddonPlanId);
+                addonName = addonRow ? addonRow.name : null;
+            }
             sendPendingManualTransferReceivedEmail(vendor, plan || { name: 'Paket Langganan', price: 0 }, addonName).catch(() => {});
         } catch (mailErr) {
             console.warn('[Upload Proof Email Error]:', mailErr.message);

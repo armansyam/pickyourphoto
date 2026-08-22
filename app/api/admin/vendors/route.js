@@ -73,11 +73,8 @@ export async function GET() {
                                           let addonPlanIdToStore = tx.addonPlanId || vendorObj?.pendingAddonPlanId || 'custom';
 
                                           if (!targetQuotaBytes && addonPlanIdToStore) {
-                                            const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(addonPlanIdToStore);
+                                            const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ? OR planKey = ?').get(addonPlanIdToStore, addonPlanIdToStore);
                                             if (addonPlan) targetQuotaBytes = addonPlan.quotaBytes;
-                                            else if (addonPlanIdToStore === 'addon-10gb') targetQuotaBytes = 10 * 1024 * 1024 * 1024;
-                                            else if (addonPlanIdToStore === 'addon-25gb') targetQuotaBytes = 25 * 1024 * 1024 * 1024;
-                                            else if (addonPlanIdToStore === 'addon-50gb') targetQuotaBytes = 50 * 1024 * 1024 * 1024;
                                           }
 
                                           db.prepare(`
@@ -119,9 +116,10 @@ export async function GET() {
                                             const addonKey = tx.addonPlanId || vendorObj?.pendingAddonPlanId;
                                             let quotaBytes = tx.addonQuotaBytes || vendorObj?.pendingAddonQuotaBytes || 0;
                                             if (!quotaBytes && addonKey) {
-                                              if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
-                                              else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
-                                              else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+                                              const addonPlan = db.prepare('SELECT quotaBytes FROM addon_plans WHERE id = ? OR planKey = ?').get(addonKey, addonKey);
+                                              if (addonPlan && addonPlan.quotaBytes) {
+                                                quotaBytes = addonPlan.quotaBytes;
+                                              }
                                             }
                                             if (quotaBytes > 0) {
                                               syncAddonKey = addonKey;

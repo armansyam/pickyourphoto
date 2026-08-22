@@ -156,13 +156,11 @@ export async function GET(request) {
           let planName = 'Add-On Storage';
 
           if (!targetQuotaBytes && addonPlanIdToStore) {
-            const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ?').get(addonPlanIdToStore);
+            const addonPlan = db.prepare('SELECT * FROM addon_plans WHERE id = ? OR planKey = ?').get(addonPlanIdToStore, addonPlanIdToStore);
             if (addonPlan) {
               targetQuotaBytes = addonPlan.quotaBytes;
               planName = addonPlan.name;
-            } else if (addonPlanIdToStore === 'addon-10gb') targetQuotaBytes = 10 * 1024 * 1024 * 1024;
-            else if (addonPlanIdToStore === 'addon-25gb') targetQuotaBytes = 25 * 1024 * 1024 * 1024;
-            else if (addonPlanIdToStore === 'addon-50gb') targetQuotaBytes = 50 * 1024 * 1024 * 1024;
+            }
           }
 
           db.prepare(`
@@ -216,9 +214,7 @@ export async function GET(request) {
               const addonPlan = db.prepare('SELECT quotaBytes FROM addon_plans WHERE id = ? OR planKey = ?').get(addonKey, addonKey);
               if (addonPlan && addonPlan.quotaBytes) {
                 quotaBytes = addonPlan.quotaBytes;
-              } else if (addonKey === 'addon-10gb') quotaBytes = 10 * 1024 * 1024 * 1024;
-              else if (addonKey === 'addon-25gb') quotaBytes = 25 * 1024 * 1024 * 1024;
-              else if (addonKey === 'addon-50gb') quotaBytes = 50 * 1024 * 1024 * 1024;
+              }
             }
             if (quotaBytes > 0) {
               newAddonPlanId = addonKey;

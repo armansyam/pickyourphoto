@@ -1368,7 +1368,7 @@ export default function AdminDashboard({ adminUser }) {
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                                                         <span style={{ color: '#a1a1aa' }}>• Storage Add-On:</span>
                                                         <strong style={{ color: '#38bdf8' }}>
-                                                            {activeProofUrl.addonPlanId === 'addon-10gb' ? 'Drive 10 GB Extra (+10 GB)' : activeProofUrl.addonPlanId === 'addon-25gb' ? 'Drive 25 GB Extra (+25 GB)' : 'Drive 50 GB Extra (+50 GB)'}
+                                                            {activeProofUrl.addonPlanName || (activeProofUrl.addonQuotaBytes ? `+${Math.round(activeProofUrl.addonQuotaBytes / (1024 * 1024 * 1024))} GB Storage` : activeProofUrl.addonPlanId)}
                                                         </strong>
                                                     </div>
                                                 )}

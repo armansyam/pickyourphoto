@@ -50,19 +50,20 @@ export async function POST(request) {
 
         // Determine Add-On Storage Quota Bytes if addonPlanId is provided (only if active)
         let addonQuotaBytes = 0;
-        let selectedAddonKey = addonPlanId || null;
-        if (selectedAddonKey) {
-            const addonRow = db.prepare('SELECT id, quotaBytes, status FROM addon_plans WHERE planKey = ? OR id = ?').get(selectedAddonKey, selectedAddonKey);
+        let selectedAddonKey = null;
+        let selectedAddonName = null;
+        if (addonPlanId) {
+            const addonRow = db.prepare('SELECT id, planKey, name, quotaBytes, status FROM addon_plans WHERE planKey = ? OR id = ?').get(addonPlanId, addonPlanId);
             if (addonRow) {
                 if (addonRow.status === 'active') {
                     addonQuotaBytes = addonRow.quotaBytes;
+                    selectedAddonKey = addonRow.planKey || String(addonRow.id);
+                    selectedAddonName = addonRow.name;
                 } else {
                     return NextResponse.json({ message: 'Paket Add-On Storage yang dipilih sedang dinonaktifkan.' }, { status: 400 });
                 }
             } else {
-                if (selectedAddonKey === 'addon-10gb') addonQuotaBytes = 10 * 1024 * 1024 * 1024;
-                else if (selectedAddonKey === 'addon-25gb') addonQuotaBytes = 25 * 1024 * 1024 * 1024;
-                else if (selectedAddonKey === 'addon-50gb') addonQuotaBytes = 50 * 1024 * 1024 * 1024;
+                return NextResponse.json({ message: 'Paket Add-On Storage yang dipilih tidak ditemukan.' }, { status: 400 });
             }
         }
 
@@ -172,7 +173,7 @@ export async function POST(request) {
             // Trigger Manual Transfer Pending Email if not gateway
             if (!isGateway) {
                 const mailer = await import('@/lib/mailer.js');
-                const addonName = selectedAddonKey ? (selectedAddonKey === 'addon-10gb' ? 'Drive 10 GB' : selectedAddonKey === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
+                const addonName = selectedAddonName || null;
                 if (paymentProofPath) {
                     mailer.sendPendingManualTransferReceivedEmail({ name: vendorName, email }, planDetails, addonName).catch(() => {});
                 } else {
@@ -199,7 +200,7 @@ export async function POST(request) {
         // Trigger Manual Transfer Pending Email if not gateway
         if (!isGateway) {
             const mailer = await import('@/lib/mailer.js');
-            const addonName = selectedAddonKey ? (selectedAddonKey === 'addon-10gb' ? 'Drive 10 GB' : selectedAddonKey === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
+            const addonName = selectedAddonName || null;
             if (paymentProofPath) {
                 mailer.sendPendingManualTransferReceivedEmail({ name: name || email.split('@')[0], email }, planDetails, addonName).catch(() => {});
             } else {

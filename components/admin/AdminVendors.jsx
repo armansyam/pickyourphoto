@@ -458,7 +458,7 @@ export default function AdminVendors({
                             style={{ cursor: 'pointer', color: '#38bdf8', background: 'rgba(56,189,248,0.15)', border: '1px dashed #38bdf8', padding: '2px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', display: 'inline-block' }}
                             title="Klik untuk meninjau & mengonfirmasi upgrade storage"
                           >
-                            ➔ Add-On: +{pendingStorageGb || (v.pendingAddonPlanId === 'addon-10gb' ? 10 : v.pendingAddonPlanId === 'addon-25gb' ? 25 : 50)} GB
+                            ➔ Add-On: {pendingStorageGb > 0 ? `+${pendingStorageGb} GB` : (v.pendingAddonPlanId || 'Storage Extra')}
                           </span>
                         </div>
                       )}

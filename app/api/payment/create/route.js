@@ -84,30 +84,20 @@ export async function POST(request) {
     let addonAmount = 0;
     let addonQuotaBytes = 0;
     let addonName = '';
+    let validatedAddonKey = null;
     if (addonPlanId) {
-      const addonRow = db.prepare("SELECT name, price, quotaBytes, status FROM addon_plans WHERE planKey = ? OR id = ?").get(addonPlanId, addonPlanId);
+      const addonRow = db.prepare("SELECT id, planKey, name, price, quotaBytes, status FROM addon_plans WHERE planKey = ? OR id = ?").get(addonPlanId, addonPlanId);
       if (addonRow) {
         if (addonRow.status === 'active') {
           addonAmount = addonRow.price;
           addonQuotaBytes = addonRow.quotaBytes;
           addonName = addonRow.name;
+          validatedAddonKey = addonRow.planKey || String(addonRow.id);
         } else {
           return NextResponse.json({ message: 'Paket Add-On Storage yang dipilih sedang dinonaktifkan.' }, { status: 400 });
         }
       } else {
-        if (addonPlanId === 'addon-10gb') {
-          addonAmount = 29000;
-          addonQuotaBytes = 10 * 1024 * 1024 * 1024;
-          addonName = 'Add-On Storage 10 GB';
-        } else if (addonPlanId === 'addon-25gb') {
-          addonAmount = 49000;
-          addonQuotaBytes = 25 * 1024 * 1024 * 1024;
-          addonName = 'Add-On Storage 25 GB';
-        } else if (addonPlanId === 'addon-50gb') {
-          addonAmount = 89000;
-          addonQuotaBytes = 50 * 1024 * 1024 * 1024;
-          addonName = 'Add-On Storage 50 GB';
-        }
+        return NextResponse.json({ message: 'Paket Add-On Storage yang dipilih tidak ditemukan.' }, { status: 400 });
       }
     }
 
@@ -268,7 +258,7 @@ export async function POST(request) {
     // Trigger Pending QRIS Instructions Email in background
     try {
       const mailer = await import('@/lib/mailer.js');
-      const addonNameEmail = addonPlanId ? (addonPlanId === 'addon-10gb' ? 'Drive 10 GB' : addonPlanId === 'addon-25gb' ? 'Drive 25 GB' : 'Drive 50 GB') : null;
+      const addonNameEmail = addonName || null;
       mailer.sendPendingQrisEmail(vendor, plan, orderId, totalAmount, addonNameEmail).catch((mailErr) => {
         console.warn('[Payment Create] QRIS email failed for order', orderId, ':', mailErr.message);
       });
