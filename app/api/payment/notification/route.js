@@ -20,7 +20,12 @@ export async function POST(request) {
     try {
       payload = JSON.parse(rawBody);
     } catch (e) {
-      payload = {};
+      try {
+        const params = new URLSearchParams(rawBody);
+        payload = Object.fromEntries(params.entries());
+      } catch (_) {
+        payload = {};
+      }
     }
 
     const headers = {};

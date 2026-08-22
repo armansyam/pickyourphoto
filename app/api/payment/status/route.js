@@ -44,8 +44,8 @@ export async function GET(request) {
       return NextResponse.json({ paid: false, message: 'Transaksi pembayaran tidak ditemukan.' });
     }
 
-    // If unauthenticated, verify vendorId matches the transaction owner
-    if (!authUser && String(transaction.vendorId) !== String(vendorId)) {
+    // If unauthenticated AND vendorId is explicitly provided, verify it matches
+    if (!authUser && vendorId && String(transaction.vendorId) !== String(vendorId)) {
       return NextResponse.json({ paid: false, message: 'Akses ditolak.' }, { status: 403 });
     }
 

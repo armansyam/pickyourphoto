@@ -76,7 +76,7 @@ export async function POST(request) {
       "UPDATE vendors SET status = 'draft_plan' WHERE id = ? AND status != 'active'"
     ).run(targetVendorId);
 
-    console.log(`[Payment Cancel] Session ${orderId} (vendorId: ${session.vendorId}) cancelled.`);
+    console.log(`[Payment Cancel] Session ${orderId || 'N/A'} (vendorId: ${targetVendorId}) cancelled.`);
 
     return NextResponse.json({
       success: true,
