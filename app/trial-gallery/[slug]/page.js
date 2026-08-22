@@ -125,42 +125,27 @@ export default function TrialGalleryPage({ params: propsParams }) {
     }
   };
 
-  // Timer Countdown
+  // Pure lightweight countdown: server provides remainingSeconds
   useEffect(() => {
-    if (!data?.expiresAt) return;
-
-    const parseDateUTC = (dateStr) => {
-      if (!dateStr) return 0;
-      const s = String(dateStr).trim();
-      const iso = s.includes('T') ? (s.endsWith('Z') ? s : s + 'Z') : (s.replace(' ', 'T') + 'Z');
-      return new Date(iso).getTime();
-    };
-
-    const updateTimer = () => {
-      const now = new Date().getTime();
-      const expiry = parseDateUTC(data.expiresAt);
-      const diff = Math.max(0, Math.floor((expiry - now) / 1000));
-
-      const minutes = Math.floor(diff / 60);
-      const seconds = diff % 60;
-
-      setTimeLeft({ minutes, seconds, totalSec: diff });
-      return diff;
-    };
-
-    // Hitung langsung saat pertama kali render (tanpa tunggu 1 detik)
-    const initialDiff = updateTimer();
-    if (initialDiff <= 0) return;
+    if (timeLeft.totalSec === null || timeLeft.totalSec <= 0) return;
 
     const interval = setInterval(() => {
-      const remaining = updateTimer();
-      if (remaining <= 0) {
-        clearInterval(interval);
-      }
+      setTimeLeft(prev => {
+        if (!prev || prev.totalSec === null || prev.totalSec <= 1) {
+          clearInterval(interval);
+          return { minutes: 0, seconds: 0, totalSec: 0 };
+        }
+        const nextSec = prev.totalSec - 1;
+        return {
+          minutes: Math.floor(nextSec / 60),
+          seconds: nextSec % 60,
+          totalSec: nextSec
+        };
+      });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [data?.expiresAt]);
+  }, [timeLeft.totalSec]);
 
   const [touchStart, setTouchStart] = useState(0);
 
