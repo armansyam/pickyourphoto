@@ -29,6 +29,10 @@ export default function RegisterPage() {
     const [pendingOrder, setPendingOrder] = useState(null);
     const [showSummary, setShowSummary] = useState(false);
     const [expiredNotice, setExpiredNotice] = useState(false);
+    
+    const [addonPlans, setAddonPlans] = useState([]);
+    const [selectedAddonId, setSelectedAddonId] = useState(null);
+    const [paymentConfig, setPaymentConfig] = useState({ enableGateway: true, provider: 'ipaymu', bankName: 'BCA', bankAccountNumber: '', bankAccountName: '' });
 
     // 1. Check existing logged in session
     useEffect(() => {
@@ -102,13 +106,17 @@ export default function RegisterPage() {
                         reason_closed: data.reasonClosed || null
                     });
 
-                    // B. SaaS Settings & Plans
+                    // B. SaaS Settings, Plans & Add-ons
                     setSettings({
                         saas_name: data.platformName,
                         saas_logo_url: data.logoUrl,
                         logo_url: data.logoUrl
                     });
                     setPlans(data.plans || []);
+                    setAddonPlans(data.addonPlans || []);
+                    if (data.paymentConfig) {
+                        setPaymentConfig(data.paymentConfig);
+                    }
                     if (data.flashPromo) {
                         setFlashPromoInfo(data.flashPromo);
                     }
@@ -208,7 +216,7 @@ export default function RegisterPage() {
     };
 
     // Forward transition: Detail Summary -> QRIS Payment (Instant Optimistic Transition to Stage 4)
-    const handlePayQris = async (e) => {
+    const handlePayQris = async (e, customParams = {}) => {
         if (e) e.preventDefault();
         setError('');
 
@@ -217,6 +225,11 @@ export default function RegisterPage() {
             setError('Paket yang dipilih tidak valid.');
             return;
         }
+
+        const targetAddonId = customParams.addonPlanId !== undefined ? customParams.addonPlanId : selectedAddonId;
+        const chosenAddon = addonPlans.find(a => a.id === targetAddonId);
+        const addonPrice = chosenAddon ? Number(chosenAddon.price || 0) : 0;
+        const finalAmount = Number(selectedPlan.discountedPrice || selectedPlan.price || 0) + addonPrice;
 
         // 1. Immediately switch to Stage 4 (0ms delay) with in-place skeleton loading
         setShowSummary(false);
@@ -229,7 +242,8 @@ export default function RegisterPage() {
             planId: selectedPlan.id,
             planName: selectedPlan.name,
             planPrice: selectedPlan.price,
-            amount: selectedPlan.price
+            addonPlanId: targetAddonId,
+            amount: finalAmount
         });
 
         // 2. Fetch gateway in background
@@ -240,7 +254,8 @@ export default function RegisterPage() {
                 body: JSON.stringify({ 
                     email,
                     vendorEmail: email,
-                    planId: selectedPlan.id
+                    planId: selectedPlan.id,
+                    addonPlanId: targetAddonId
                 })
             });
             const payData = await payRes.json();
@@ -259,7 +274,7 @@ export default function RegisterPage() {
                     redirectUrl: payData.redirectUrl,
                     qrUrl: payData.qrUrl || payData.redirectUrl,
                     qrImage: payData.qrUrl || payData.redirectUrl,
-                    amount: payData.amount || selectedPlan.price,
+                    amount: payData.amount || finalAmount,
                     expiresAt: payData.expiresAt,
                     planId: selectedPlan.id,
                     planName: selectedPlan.name,
@@ -277,6 +292,52 @@ export default function RegisterPage() {
             setError('Koneksi ke sistem pembayaran gagal. Silakan coba beberapa saat lagi.');
             setPendingOrder(null);
             setShowSummary(true);
+        }
+    };
+
+    // Manual Bank Transfer Submission Handler (when gateway is disabled)
+    const handleManualTransferSubmit = async (e, customParams = {}) => {
+        if (e) e.preventDefault();
+        setError('');
+
+        const selectedPlan = plans.find(p => p.id === parseInt(plan));
+        if (!selectedPlan) {
+            setError('Paket yang dipilih tidak valid.');
+            return;
+        }
+
+        const targetAddonId = customParams.addonPlanId !== undefined ? customParams.addonPlanId : selectedAddonId;
+
+        try {
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('planId', selectedPlan.id);
+            if (targetAddonId) formData.append('selectedAddonKey', targetAddonId);
+            if (customParams.proofFile) formData.append('paymentProof', customParams.proofFile);
+
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                // Switch to manual pending view
+                setPendingOrder({
+                    isManual: true,
+                    name: name || 'Vendor',
+                    email: email,
+                    planName: selectedPlan.name,
+                    bankName: paymentConfig.bankName,
+                    bankAccountNumber: paymentConfig.bankAccountNumber,
+                    bankAccountName: paymentConfig.bankAccountName
+                });
+                setShowSummary(false);
+            } else {
+                setError(data.message || 'Gagal mengirim konfirmasi transfer bank.');
+            }
+        } catch (err) {
+            setError('Gagal mengirim konfirmasi. Silakan coba lagi.');
         }
     };
 
@@ -376,9 +437,14 @@ export default function RegisterPage() {
                         whatsapp={whatsapp}
                         onWhatsappSaved={(newWa) => setWhatsapp(newWa)}
                         selectedPlan={selectedPlanObj}
+                        addonPlans={addonPlans}
+                        selectedAddonId={selectedAddonId}
+                        onSelectAddon={(id) => setSelectedAddonId(id)}
+                        paymentConfig={paymentConfig}
                         expiredNotice={expiredNotice}
                         onResetPlan={handleResetPlan}
                         onPayQris={handlePayQris}
+                        onManualTransferSubmit={handleManualTransferSubmit}
                         loading={loading}
                         error={error}
                     />

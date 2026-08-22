@@ -94,6 +94,29 @@ export async function GET(request) {
             };
         });
 
+        // 3b. Fetch Active Addon Storage Plans dynamically
+        let addonPlans = [];
+        try {
+            addonPlans = db.prepare(`
+                SELECT id, planKey, name, quotaBytes, price, sortOrder 
+                FROM addon_plans 
+                WHERE status = 'active' 
+                ORDER BY sortOrder ASC, price ASC
+            `).all() || [];
+        } catch (addonErr) {
+            console.warn('[Register Init] addon_plans lookup warning:', addonErr.message);
+        }
+
+        // 3c. Payment Configuration (Gateway vs Manual Bank Transfer)
+        const isGatewayEnabled = String(saasMap.enable_payment_gateway) === '1' || saasMap.enable_payment_gateway === 1 || saasMap.enable_payment_gateway === true;
+        const paymentConfig = {
+            enableGateway: isGatewayEnabled,
+            provider: saasMap.payment_gateway_provider || 'ipaymu',
+            bankName: saasMap.bank_name || 'BCA (Bank Central Asia)',
+            bankAccountNumber: saasMap.bank_account_number || '',
+            bankAccountName: saasMap.bank_account_name || ''
+        };
+
         // 4. Vendor Session & Active Payment Check (if email provided)
         let vendorSession = null;
         if (email && email.includes('@')) {
@@ -200,6 +223,8 @@ export async function GET(request) {
             logoUrl,
             flashPromo,
             plans,
+            addonPlans,
+            paymentConfig,
             vendorSession
         });
 
