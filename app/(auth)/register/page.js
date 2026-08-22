@@ -34,6 +34,12 @@ export default function RegisterPage() {
     const [selectedAddonId, setSelectedAddonId] = useState(null);
     const [paymentConfig, setPaymentConfig] = useState({ enableGateway: true, provider: 'ipaymu', bankName: 'BCA', bankAccountNumber: '', bankAccountName: '' });
 
+    const [uploadingProof, setUploadingProof] = useState(false);
+    const [proofUploaded, setProofUploaded] = useState(false);
+    const [selectedProofFile, setSelectedProofFile] = useState(null);
+    const [proofPreviewUrl, setProofPreviewUrl] = useState('');
+    const [proofUploadMsg, setProofUploadMsg] = useState('');
+
     // 1. Check existing logged in session
     useEffect(() => {
         const checkExistingSession = async () => {
@@ -344,6 +350,37 @@ export default function RegisterPage() {
         }
     };
 
+    const handleUploadProof = async (e) => {
+        if (e) e.preventDefault();
+        if (!selectedProofFile) {
+            setError('Silakan pilih foto bukti transfer terlebih dahulu.');
+            return;
+        }
+        setUploadingProof(true);
+        setError('');
+        try {
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('paymentProof', selectedProofFile);
+
+            const res = await fetch('/api/register/upload-proof', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setProofUploaded(true);
+                setProofUploadMsg('Bukti transfer berhasil diunggah. Admin sedang memverifikasi pembayaran Anda.');
+            } else {
+                setError(data.message || 'Gagal mengunggah bukti transfer.');
+            }
+        } catch (err) {
+            setError('Koneksi gagal saat mengunggah bukti transfer.');
+        } finally {
+            setUploadingProof(false);
+        }
+    };
+
     if (checkingStatus) {
         return (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#09090b', color: '#ffffff' }}>
@@ -414,7 +451,8 @@ export default function RegisterPage() {
                             Konfirmasi transfer bank untuk paket <strong>{pendingOrder.planName}</strong> telah diterima. Tim admin akan segera memeriksa dan mengaktifkan akun Anda.
                         </p>
 
-                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px', marginBottom: '20px', textAlign: 'left', fontSize: '12px' }}>
+                        {/* Rincian Rekening & Tagihan */}
+                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '14px', marginBottom: '16px', textAlign: 'left', fontSize: '12px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                 <span style={{ color: '#94a3b8' }}>Akun:</span>
                                 <strong style={{ color: '#ffffff' }}>{pendingOrder.email || email}</strong>
@@ -423,12 +461,103 @@ export default function RegisterPage() {
                                 <span style={{ color: '#94a3b8' }}>Bank Tujuan:</span>
                                 <strong style={{ color: '#ffffff' }}>{paymentConfig.bankName}</strong>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
                                 <span style={{ color: '#94a3b8' }}>No. Rekening:</span>
-                                <strong style={{ color: '#fbbf24' }}>{paymentConfig.bankAccountNumber}</strong>
+                                <strong style={{ color: '#fbbf24', letterSpacing: '0.04em' }}>{paymentConfig.bankAccountNumber}</strong>
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#94a3b8' }}>Atas Nama:</span>
+                                <strong style={{ color: '#ffffff' }}>{paymentConfig.bankAccountName || 'PT Pick Your Photo'}</strong>
                             </div>
                         </div>
 
+                        {/* Form Upload Bukti Transfer */}
+                        <div style={{
+                            background: 'rgba(56, 189, 248, 0.04)',
+                            border: '1px dashed rgba(56, 189, 248, 0.3)',
+                            borderRadius: '14px',
+                            padding: '16px',
+                            marginBottom: '20px',
+                            textAlign: 'center'
+                        }}>
+                            <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.04em' }}>
+                                📁 Unggah Bukti Pembayaran
+                            </div>
+
+                            {proofUploaded ? (
+                                <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '10px', padding: '12px', color: '#34d399', fontSize: '12px', fontWeight: '600' }}>
+                                    ✅ Bukti transfer berhasil diunggah! Tim admin sedang memverifikasi pembayaran Anda.
+                                </div>
+                            ) : (
+                                <div>
+                                    <input 
+                                        type="file" 
+                                        id="proof_upload_input"
+                                        accept="image/png,image/jpeg,image/jpg,.pdf" 
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setSelectedProofFile(file);
+                                                if (file.type.startsWith('image/')) {
+                                                    setProofPreviewUrl(URL.createObjectURL(file));
+                                                }
+                                            }
+                                        }}
+                                    />
+                                    <label 
+                                        htmlFor="proof_upload_input"
+                                        style={{
+                                            display: 'block',
+                                            padding: '14px',
+                                            borderRadius: '10px',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                            color: '#cbd5e1',
+                                            marginBottom: selectedProofFile ? '12px' : '0',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        {selectedProofFile ? (
+                                            <span style={{ color: '#38bdf8', fontWeight: '600' }}>
+                                                📄 {selectedProofFile.name} ({(selectedProofFile.size / 1024).toFixed(1)} KB)
+                                            </span>
+                                        ) : (
+                                            <span>Klik di sini untuk memilih foto struk / bukti transfer (JPG / PNG)</span>
+                                        )}
+                                    </label>
+
+                                    {proofPreviewUrl && (
+                                        <div style={{ margin: '10px 0' }}>
+                                            <img src={proofPreviewUrl} alt="Preview Bukti" style={{ maxHeight: '120px', maxWidth: '100%', borderRadius: '8px', objectFit: 'contain', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                        </div>
+                                    )}
+
+                                    {selectedProofFile && (
+                                        <button
+                                            type="button"
+                                            onClick={handleUploadProof}
+                                            disabled={uploadingProof}
+                                            className="btn-primary"
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px 16px',
+                                                fontSize: '13px',
+                                                fontWeight: '700',
+                                                cursor: uploadingProof ? 'not-allowed' : 'pointer',
+                                                opacity: uploadingProof ? 0.6 : 1
+                                            }}
+                                        >
+                                            {uploadingProof ? 'Mengunggah Bukti...' : 'Kirim Bukti Pembayaran'}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Tombol Aksi Bawah */}
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <button
                                 type="button"
