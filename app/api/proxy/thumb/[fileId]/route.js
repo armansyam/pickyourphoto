@@ -27,7 +27,7 @@ export async function GET(request, { params }) {
         'Referer': 'https://drive.google.com/',
         'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
       },
-      next: { revalidate: 86400 }
+      cache: 'no-store'
     });
 
     if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) {

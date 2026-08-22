@@ -155,7 +155,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
     const prevIdx = (currentIdx - 1 + data.photos.length) % data.photos.length;
     const file = data.photos[prevIdx];
     const fileName = file.name || file.filename || `Photo_${prevIdx + 1}.jpg`;
-    const origSrc = file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`;
+    const origSrc = file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w1200` : (file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`);
     setActivePhoto({ ...file, fileName, origSrc, index: prevIdx });
   };
 
@@ -166,7 +166,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
     const nextIdx = (currentIdx + 1) % data.photos.length;
     const file = data.photos[nextIdx];
     const fileName = file.name || file.filename || `Photo_${nextIdx + 1}.jpg`;
-    const origSrc = file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`;
+    const origSrc = file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w1200` : (file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`);
     setActivePhoto({ ...file, fileName, origSrc, index: nextIdx });
   };
 
@@ -789,8 +789,8 @@ export default function TrialGalleryPage({ params: propsParams }) {
 
                 return unlockedPhotos.map((file, idx) => {
                   const fileName = file.name || file.filename || `Photo_${idx + 1}.jpg`;
-                  const thumbSrc = file.thumbUrl || file.url || `/api/proxy/thumb/${file.id}?sz=w400`;
-                  const origSrc = file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`;
+                  const thumbSrc = file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w400` : (file.thumbUrl || file.url || `/api/proxy/thumb/${file.id}?sz=w400`);
+                  const origSrc = file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w1200` : (file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`);
                   const isSelected = selectedPhotos.includes(fileName);
                   return (
                     <div
@@ -808,6 +808,13 @@ export default function TrialGalleryPage({ params: propsParams }) {
                     >
                       <img
                         src={thumbSrc} alt="" loading="lazy"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          if (!e.target.dataset.fallback && file.id) {
+                            e.target.dataset.fallback = '1';
+                            e.target.src = `/api/proxy/thumb/${file.id}?sz=w400`;
+                          }
+                        }}
                         onContextMenu={e => e.preventDefault()}
                         onDragStart={e => e.preventDefault()}
                         style={{ width: '100%', height: 'auto', display: 'block', userSelect: 'none', WebkitUserSelect: 'none', pointerEvents: 'none' }}
@@ -885,8 +892,15 @@ export default function TrialGalleryPage({ params: propsParams }) {
                     {bgTiles.map((file, idx) => (
                       <div key={idx} style={{ borderRadius: '8px', overflow: 'hidden', background: '#0f172a', aspectRatio: '4/3' }}>
                         <img
-                          src={file.thumbUrl || `/api/proxy/thumb/${file.id}?sz=w400`}
+                          src={file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w400` : (file.thumbUrl || `/api/proxy/thumb/${file.id}?sz=w400`)}
                           alt="" loading="lazy"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            if (!e.target.dataset.fallback && file.id) {
+                              e.target.dataset.fallback = '1';
+                              e.target.src = `/api/proxy/thumb/${file.id}?sz=w400`;
+                            }
+                          }}
                           onContextMenu={e => e.preventDefault()}
                           onDragStart={e => e.preventDefault()}
                           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
@@ -1199,8 +1213,15 @@ export default function TrialGalleryPage({ params: propsParams }) {
             {/* GAMBAR FULL SIZE WITH WATERMARK */}
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: '16px' }}>
               <img
-                src={activePhoto.origSrc || activePhoto.thumbUrl}
+                src={activePhoto.origSrc || (activePhoto.id ? `https://lh3.googleusercontent.com/d/${activePhoto.id}=w1200` : activePhoto.thumbUrl)}
                 alt=""
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  if (!e.target.dataset.fallback && activePhoto.id) {
+                    e.target.dataset.fallback = '1';
+                    e.target.src = `/api/proxy/thumb/${activePhoto.id}?sz=w1200`;
+                  }
+                }}
                 onContextMenu={(e) => e.preventDefault()}
                 onDragStart={(e) => e.preventDefault()}
                 style={{ maxWidth: '100%', maxHeight: '74vh', borderRadius: '16px', objectFit: 'contain', boxShadow: '0 25px 60px rgba(0,0,0,0.9)', border: '1px solid rgba(255,255,255,0.1)', userSelect: 'none', WebkitUserSelect: 'none', pointerEvents: 'none' }}
