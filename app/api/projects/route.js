@@ -256,7 +256,7 @@ async function runImportTask(projectId, folderId) {
             return;
         }
 
-        const insertPhoto = db.prepare('INSERT INTO photos (projectId, originalPath, thumbnailPath, watermarkedPath, fileSizeBytes, category) VALUES (?, ?, ?, ?, ?, ?)');
+        const insertPhoto = db.prepare('INSERT INTO photos (projectId, originalPath, thumbnailPath, watermarkedPath, fileSizeBytes, category, googleFileId) VALUES (?, ?, ?, ?, ?, ?, ?)');
 
         let totalImportedBytes = 0;
         const insertMany = db.transaction((photosList) => {
@@ -267,7 +267,7 @@ async function runImportTask(projectId, folderId) {
                 totalImportedBytes += sizeBytes;
                 const thumbPath = `https://lh3.googleusercontent.com/d/${file.id}=w600`;
                 const origPath = `https://lh3.googleusercontent.com/d/${file.id}=w1600`;
-                insertPhoto.run(projectId, origPath, thumbPath, origPath, sizeBytes, categoryName);
+                insertPhoto.run(projectId, origPath, thumbPath, origPath, sizeBytes, categoryName, file.id);
             }
         });
 

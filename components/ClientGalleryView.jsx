@@ -4,6 +4,18 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { LockIcon, WhatsAppIcon, AlertTriangleIcon } from '@/components/StorageIcons.jsx';
 
+const getDriveId = (photo) => {
+    if (!photo) return '';
+    if (photo.driveFileId) return photo.driveFileId;
+    if (photo.googleFileId) return photo.googleFileId;
+    if (photo.fileId) return photo.fileId;
+    const url = photo.thumbnailPath || photo.originalPath || photo.thumbUrl || photo.origUrl || '';
+    const match = url.match(/\/d\/([^=/&?]+)/) || url.match(/\/proxy\/thumb\/([^/?]+)/);
+    if (match && match[1]) return match[1];
+    if (photo.id && String(photo.id).length > 15) return photo.id;
+    return '';
+};
+
 /**
  * 4 gallery themes a vendor can pick for their client gallery.
  */
@@ -537,7 +549,8 @@ export default function ClientGalleryPage({ params }) {
                                         const pickNumber = isSelected ? getPickNumber(photo.id) : null;
                                         const num = ((originalIndex >= 0 ? originalIndex : index) + 1).toString().padStart(3, '0');
 
-                                        const thumbSrc = `https://lh3.googleusercontent.com/d/${photo.driveFileId}=w600`;
+                                        const fileId = getDriveId(photo);
+                                        const thumbSrc = `https://lh3.googleusercontent.com/d/${fileId}=w600`;
 
                                         return (
                                             <div key={photo.id} className={`photo-card ${isSelected ? 'is-selected' : ''}`} onClick={() => handleToggleSelect(photo.id)}>
@@ -553,7 +566,7 @@ export default function ClientGalleryPage({ params }) {
                                                             if (retries < 3) {
                                                                 e.target.dataset.retries = String(retries + 1);
                                                                 setTimeout(() => {
-                                                                    e.target.src = `https://lh3.googleusercontent.com/d/${photo.driveFileId}=w600&t=${Date.now()}`;
+                                                                    e.target.src = `https://lh3.googleusercontent.com/d/${fileId}=w600&t=${Date.now()}`;
                                                                 }, 1200);
                                                             }
                                                         }}
@@ -663,10 +676,12 @@ export default function ClientGalleryPage({ params }) {
 
                             {selectedPhotosList.length > 0 && (
                                 <div className="filmstrip">
-                                    {selectedPhotosList.map((p, i) => (
+                                    {selectedPhotosList.map((p, i) => {
+                                        const pFileId = getDriveId(p);
+                                        return (
                                         <div key={p.id} className="filmstrip-thumb">
                                             <img
-                                                src={`https://lh3.googleusercontent.com/d/${p.driveFileId}=w200`}
+                                                src={`https://lh3.googleusercontent.com/d/${pFileId}=w200`}
                                                 alt={`Pilihan ${i + 1}`}
                                                 referrerPolicy="no-referrer"
                                                 onError={(e) => {
@@ -674,7 +689,7 @@ export default function ClientGalleryPage({ params }) {
                                                     if (retries < 3) {
                                                         e.target.dataset.retries = String(retries + 1);
                                                         setTimeout(() => {
-                                                            e.target.src = `https://lh3.googleusercontent.com/d/${p.driveFileId}=w200&t=${Date.now()}`;
+                                                            e.target.src = `https://lh3.googleusercontent.com/d/${pFileId}=w200&t=${Date.now()}`;
                                                         }, 1200);
                                                     }
                                                 }}
@@ -684,7 +699,7 @@ export default function ClientGalleryPage({ params }) {
                                                 <button className="filmstrip-remove" onClick={() => handleToggleSelect(p.id)} aria-label="Batal pilih">&times;</button>
                                             )}
                                         </div>
-                                    ))}
+                                    );})}
                                 </div>
                             )}
                         </div>
@@ -760,21 +775,26 @@ export default function ClientGalleryPage({ params }) {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', position: 'relative' }}>
                         <button onClick={handlePrevImage} className="lightbox-nav lightbox-nav-left">&#10094;</button>
                         <div style={{ position: 'relative', display: 'inline-flex', overflow: 'hidden', borderRadius: '12px' }} onClick={e => e.stopPropagation()}>
-                            <img
-                                src={`https://lh3.googleusercontent.com/d/${photos[activeLightboxIndex].driveFileId}=w1600`}
-                                alt="Preview"
-                                referrerPolicy="no-referrer"
-                                onError={(e) => {
-                                    const retries = parseInt(e.target.dataset.retries || '0', 10);
-                                    if (retries < 3) {
-                                        e.target.dataset.retries = String(retries + 1);
-                                        setTimeout(() => {
-                                            e.target.src = `https://lh3.googleusercontent.com/d/${photos[activeLightboxIndex].driveFileId}=w1600&t=${Date.now()}`;
-                                        }, 1200);
-                                    }
-                                }}
-                                style={{ maxHeight: '74vh', maxWidth: '85vw', objectFit: 'contain', userSelect: 'none', display: 'block' }}
-                            />
+                            {(() => {
+                                const activeFileId = getDriveId(photos[activeLightboxIndex]);
+                                return (
+                                    <img
+                                        src={`https://lh3.googleusercontent.com/d/${activeFileId}=w1600`}
+                                        alt="Preview"
+                                        referrerPolicy="no-referrer"
+                                        onError={(e) => {
+                                            const retries = parseInt(e.target.dataset.retries || '0', 10);
+                                            if (retries < 3) {
+                                                e.target.dataset.retries = String(retries + 1);
+                                                setTimeout(() => {
+                                                    e.target.src = `https://lh3.googleusercontent.com/d/${activeFileId}=w1600&t=${Date.now()}`;
+                                                }, 1200);
+                                            }
+                                        }}
+                                        style={{ maxHeight: '74vh', maxWidth: '85vw', objectFit: 'contain', userSelect: 'none', display: 'block' }}
+                                    />
+                                );
+                            })()}
                             
                             {/* SLEEK SMOOTH BLACK GRADIENT BRANDING OVERLAY (100% DEAD CENTER VERTICAL STACK) */}
                             <div style={{
@@ -812,10 +832,12 @@ export default function ClientGalleryPage({ params }) {
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)', zIndex: 10 }} onClick={e => e.stopPropagation()}>
                         {photos.length > 1 && (
                             <div className="lightbox-filmstrip">
-                                {photos.map((p, i) => (
+                                {photos.map((p, i) => {
+                                    const pFileId = getDriveId(p);
+                                    return (
                                     <button key={p.id} className={`lightbox-filmstrip-thumb ${i === activeLightboxIndex ? 'is-active' : ''} ${selectedIds.has(p.id) ? 'is-selected' : ''}`} onClick={() => setActiveLightboxIndex(i)}>
                                         <img
-                                            src={`https://lh3.googleusercontent.com/d/${p.driveFileId}=w200`}
+                                            src={`https://lh3.googleusercontent.com/d/${pFileId}=w200`}
                                             alt={`Frame ${i + 1}`}
                                             referrerPolicy="no-referrer"
                                             onError={(e) => {
@@ -823,13 +845,13 @@ export default function ClientGalleryPage({ params }) {
                                                 if (retries < 3) {
                                                     e.target.dataset.retries = String(retries + 1);
                                                     setTimeout(() => {
-                                                        e.target.src = `https://lh3.googleusercontent.com/d/${p.driveFileId}=w200&t=${Date.now()}`;
+                                                        e.target.src = `https://lh3.googleusercontent.com/d/${pFileId}=w200&t=${Date.now()}`;
                                                     }, 1200);
                                                 }
                                             }}
                                         />
                                     </button>
-                                ))}
+                                );})}
                             </div>
                         )}
                         <button className="btn-primary-t" style={{ background: selectedIds.has(photos[activeLightboxIndex].id) ? 'var(--danger)' : 'var(--accent2)', color: selectedIds.has(photos[activeLightboxIndex].id) ? '#fff' : 'var(--accent-contrast)' }}
@@ -851,10 +873,12 @@ export default function ClientGalleryPage({ params }) {
                             </p>
                         </div>
                         <div className="confirm-thumb-grid">
-                            {selectedPhotosList.map((p, i) => (
+                            {selectedPhotosList.map((p, i) => {
+                                const pFileId = getDriveId(p);
+                                return (
                                 <div key={p.id} className="confirm-thumb">
                                     <img
-                                        src={`https://lh3.googleusercontent.com/d/${p.driveFileId}=w200`}
+                                        src={`https://lh3.googleusercontent.com/d/${pFileId}=w200`}
                                         alt="Thumbnail"
                                         referrerPolicy="no-referrer"
                                         onError={(e) => {
@@ -862,7 +886,7 @@ export default function ClientGalleryPage({ params }) {
                                             if (retries < 3) {
                                                 e.target.dataset.retries = String(retries + 1);
                                                 setTimeout(() => {
-                                                    e.target.src = `https://lh3.googleusercontent.com/d/${p.driveFileId}=w200&t=${Date.now()}`;
+                                                    e.target.src = `https://lh3.googleusercontent.com/d/${pFileId}=w200&t=${Date.now()}`;
                                                 }, 1200);
                                             }
                                         }}
@@ -870,7 +894,7 @@ export default function ClientGalleryPage({ params }) {
                                     <span className="confirm-thumb-index">{i + 1}</span>
                                     <button className="confirm-thumb-remove" onClick={(e) => { e.stopPropagation(); handleToggleSelect(p.id); }}>&times;</button>
                                 </div>
-                            ))}
+                            );})}
                         </div>
                         <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
                             <button className="btn-secondary-t" style={{ flex: 1 }} onClick={() => setShowConfirmModal(false)}>← Kembali Memilih</button>
@@ -887,10 +911,12 @@ export default function ClientGalleryPage({ params }) {
                     <div className="modal-content-t" style={{ maxWidth: '520px', width: '90%' }}>
                         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', margin: '0 0 16px 0', textAlign: 'center' }}>Foto yang Sudah Dikirim</h3>
                         <div className="confirm-thumb-grid">
-                            {selectedPhotosList.map((p, i) => (
+                            {selectedPhotosList.map((p, i) => {
+                                const pFileId = getDriveId(p);
+                                return (
                                 <div key={p.id} className="confirm-thumb">
                                     <img
-                                        src={`https://lh3.googleusercontent.com/d/${p.driveFileId}=w200`}
+                                        src={`https://lh3.googleusercontent.com/d/${pFileId}=w200`}
                                         alt="Thumbnail"
                                         referrerPolicy="no-referrer"
                                         onError={(e) => {
@@ -898,14 +924,14 @@ export default function ClientGalleryPage({ params }) {
                                             if (retries < 3) {
                                                 e.target.dataset.retries = String(retries + 1);
                                                 setTimeout(() => {
-                                                    e.target.src = `https://lh3.googleusercontent.com/d/${p.driveFileId}=w200&t=${Date.now()}`;
+                                                    e.target.src = `https://lh3.googleusercontent.com/d/${pFileId}=w200&t=${Date.now()}`;
                                                 }, 1200);
                                             }
                                         }}
                                     />
                                     <span className="confirm-thumb-index">{i + 1}</span>
                                 </div>
-                            ))}
+                            );})}
                         </div>
                         <button className="btn-secondary-t" style={{ width: '100%', marginTop: '24px' }} onClick={() => setShowSubmittedPreview(false)}>Tutup</button>
                     </div>
