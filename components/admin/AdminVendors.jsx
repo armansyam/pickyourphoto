@@ -385,6 +385,7 @@ export default function AdminVendors({
                 const hasPendingPlanUpgrade = !!(v.pendingPlanName && v.pendingPlanName !== v.planName);
                 const hasPendingStorageAddon = !!(pendingStorageGb > 0 || (v.pendingAddonPlanId && v.pendingAddonPlanId !== v.addonPlanId));
                 const hasPendingUpgrade = hasPendingPlanUpgrade || hasPendingStorageAddon || !!(v.pendingTransferProof && v.status === 'active');
+                const hasValidProof = Boolean(v.paymentProof && (v.paymentProof.startsWith('/api/admin/proofs') || v.paymentProof.startsWith('http') || v.paymentProof.includes('.')));
 
                 return (
                   <tr key={v.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -519,9 +520,17 @@ export default function AdminVendors({
                               <div><QrisCountdown expiresAt={v.qrisExpiresAt || v.paymentExpiresAt} /></div>
                             </>
                           ) : (
-                            <span style={{ color: '#818cf8', background: 'rgba(129,140,248,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                              Transfer Manual
-                            </span>
+                            <div>
+                              {hasValidProof ? (
+                                <span style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.15)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>📁</span> Menunggu Verifikasi Bukti
+                                </span>
+                              ) : (
+                                <span style={{ color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>⏳</span> Belum Upload Bukti
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
@@ -578,22 +587,24 @@ export default function AdminVendors({
                               </>
                             ) : (
                               <>
-                                {v.paymentProof && (
-                                  <button
-                                    onClick={() => setActiveProofUrl({ url: v.paymentProof, status: v.status, name: v.name, email: v.email })}
-                                    className="btn-secondary"
-                                    style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px' }}
-                                  >
-                                    👁 Bukti
-                                  </button>
-                                )}
-                                <button
-                                  onClick={() => setVendorToApprove(v)}
-                                  className="btn-primary"
-                                  style={{ padding: '4px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '6px' }}
-                                >
-                                  ✓ Setujui
-                                </button>
+                                {hasValidProof ? (
+                                  <>
+                                    <button
+                                      onClick={() => setActiveProofUrl({ url: v.paymentProof, status: v.status, name: v.name, email: v.email })}
+                                      className="btn-secondary"
+                                      style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '6px', color: '#38bdf8', borderColor: 'rgba(56,189,248,0.3)' }}
+                                    >
+                                      👁 Bukti
+                                    </button>
+                                    <button
+                                      onClick={() => setVendorToApprove(v)}
+                                      className="btn-primary"
+                                      style={{ padding: '4px 10px', fontSize: '11px', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', borderRadius: '6px' }}
+                                    >
+                                      ✓ Setujui
+                                    </button>
+                                  </>
+                                ) : null}
                                 <button
                                   onClick={() => { setRejectModal(v); setRejectReason(''); }}
                                   className="btn-secondary"
