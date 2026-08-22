@@ -198,7 +198,8 @@ export default function AdminPlans({
                   <ul className={styles.featureList}>
                     <li className={styles.featureItem}>✓ Maks. <strong>{p.maxProjects >= 99999 ? 'Unlimited' : p.maxProjects} Project</strong></li>
                     <li className={styles.featureItem}>✓ Foto <strong>Unlimited</strong></li>
-                    <li className={styles.featureItem}>✓ Galeri Online & Seleksi Foto Klien</li>
+                    <li className={styles.featureItem}>✓ Galeri Online &amp; Seleksi Foto Klien</li>
+                    <li className={styles.featureItem} style={{ color: '#c5a059', fontWeight: 'bold' }}>✓ Subdomain Studio Eksklusif</li>
                     {p.allowCustomLogo === 1 || p.allowCustomLogo === true || p.name.includes('Pro') || p.name.includes('Business') ? (
                       <li className={styles.featureItem} style={{ color: '#818cf8', fontWeight: 'bold' }}>✓ Bisa Logo Studio Sendiri</li>
                     ) : (

@@ -42,44 +42,7 @@ export async function GET(request) {
         html = html.replace(/<title>Pick Your Photo.*?<\/title>/, `<title>${brandName} — ${brandTagline}</title>`);
         html = html.replace(/&copy; 2026 Pick Your Photo\./g, `&copy; 2026 ${brandName}.`);
 
-        // 2. Inject Dynamic Plans
-        const plans = db.prepare("SELECT * FROM plans WHERE status = 'active' ORDER BY price ASC").all();
-        if (plans && plans.length > 0) {
-            const dynamicTierHtml = plans.map(plan => {
-                const isFeatured = plan.name.includes('Pro');
-                const logoText = (plan.allowCustomLogo === 1 || plan.allowCustomLogo === true || plan.name.includes('Pro') || plan.name.includes('Business'))
-                    ? '<li style="color: #8C6D23; font-weight: bold;">✓ Bisa Menggunakan Logo Studio Sendiri</li>'
-                    : '<li style="color: var(--muted-dark);">• Logo Platform Standard</li>';
-                    
-                const rawText = (plan.allowRawSelector === 1 || plan.allowRawSelector === true)
-                    ? '<li style="color: #8C6D23; font-weight: bold;">✓ Fitur Auto-Sorter / Selector File RAW</li>'
-                    : '<li style="color: var(--muted-dark);">• Fitur RAW Selector Nonaktif</li>';
 
-                return `
-      <div class="tier ${isFeatured ? 'featured' : ''}">
-        ${isFeatured ? '<span class="tier-badge">PALING DIPILIH</span>' : ''}
-        <div class="tier-name">${plan.name}</div>
-        <div style="font-size: 22px; font-weight: 850; color: ${isFeatured ? '#8C6D23' : 'var(--brass-dark)'}; margin-bottom: 4px;">
-            Rp ${Number(plan.price).toLocaleString('id-ID')} <span style="font-size: 11px; font-weight: normal; color: var(--muted);">/ ${plan.activePeriodDays || 30} hari</span>
-        </div>
-        <div class="tier-note">${plan.name.includes('Starter') ? 'Cocok untuk fotografer pemula / freelance' : plan.name.includes('Pro') ? 'Untuk fotografer profesional & tim studio' : 'Untuk studio besar & vendor volume tinggi'}</div>
-        <ul>
-          <li>✓ Maksimal ${plan.maxProjects} Project Aktif</li>
-          <li>✓ Unlimited Foto per Galeri</li>
-          <li>✓ Galeri Online &amp; Seleksi Foto Klien</li>
-          ${logoText}
-          ${rawText}
-        </ul>
-
-      </div>`;
-            }).join('');
-
-            // Replace landingTierGrid content dynamically
-            html = html.replace(
-                /<div class="tier-grid reveal" id="landingTierGrid">[\s\S]*?<\/div>\s*<\/section>/,
-                `<div class="tier-grid reveal" id="landingTierGrid">${dynamicTierHtml}</div>\n  </section>`
-            );
-        }
 
         // 3. Inject dynamic Add-On Cloud Storage plans
         const addonPlans = db.prepare("SELECT * FROM addon_plans WHERE status = 'active' ORDER BY sortOrder ASC, price ASC").all();

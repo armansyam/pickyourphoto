@@ -187,15 +187,11 @@ export default function ClientGalleryPage({ params }) {
     const theme = THEMES[themeKey] || THEMES.default || THEMES.contactSheet;
 
     const fetchGallery = async () => {
-        if (!clientKey) {
-            setError('Access key is missing. Please use the link provided by your photographer.');
-            setLoading(false);
-            return;
-        }
         try {
-            const res = await fetch(`/api/projects/${projectId}?key=${clientKey}`);
+            const keyQuery = clientKey ? `?key=${encodeURIComponent(clientKey)}` : '';
+            const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}${keyQuery}`);
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || 'Failed to load gallery.');
+            if (!res.ok) throw new Error(data.message || 'Gagal memuat galeri foto.');
 
             setProject(data.project);
             setBranding(data.vendorBranding || null);
@@ -243,14 +239,15 @@ export default function ClientGalleryPage({ params }) {
             isInitialMount.current = false;
             return;
         }
-        if (submitted || !clientKey || project?.isProjectExpired) return;
+        if (submitted || project?.isProjectExpired) return;
 
         setDraftStatus('saving');
         if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
 
         draftTimerRef.current = setTimeout(async () => {
             try {
-                const res = await fetch(`/api/projects/${projectId}/select?key=${clientKey}`, {
+                const keyQuery = clientKey ? `?key=${encodeURIComponent(clientKey)}` : '';
+                const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/select${keyQuery}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
@@ -309,7 +306,8 @@ export default function ClientGalleryPage({ params }) {
         if (draftTimerRef.current) clearTimeout(draftTimerRef.current);
 
         try {
-            const res = await fetch(`/api/projects/${projectId}/select?key=${clientKey}`, {
+            const keyQuery = clientKey ? `?key=${encodeURIComponent(clientKey)}` : '';
+            const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/select${keyQuery}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 

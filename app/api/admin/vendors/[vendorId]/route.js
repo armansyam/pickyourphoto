@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getAuthVendor } from '@/lib/auth';
+import { decryptSecret } from '@/lib/crypto-vault';
 import db from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import fs from 'fs';
@@ -151,7 +152,8 @@ export async function DELETE(request, { params }) {
                 if (clientId && clientSecret) {
                     const { google } = await import('googleapis');
                     const oauth = new google.auth.OAuth2(clientId, clientSecret);
-                    oauth.setCredentials({ refresh_token: vendorOAuth.externalDriveRefreshToken });
+                    const rawToken = decryptSecret(vendorOAuth.externalDriveRefreshToken);
+                    oauth.setCredentials({ refresh_token: rawToken });
                     await oauth.revokeCredentials();
                     console.log(`[Delete Vendor] Berhasil revoke OAuth token BYOS vendor ID ${vendorId}.`);
                 }

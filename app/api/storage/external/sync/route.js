@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import db from '@/lib/db';
 import { getAuthVendor } from '@/lib/auth';
+import { decryptSecret } from '@/lib/crypto-vault';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,8 @@ export async function POST(req) {
     }
 
     const vendorOAuth2Client = new google.auth.OAuth2(clientId, clientSecret);
-    vendorOAuth2Client.setCredentials({ refresh_token: vendor.externalDriveRefreshToken });
+    const rawToken = decryptSecret(vendor.externalDriveRefreshToken);
+    vendorOAuth2Client.setCredentials({ refresh_token: rawToken });
     const vendorDrive = google.drive({ version: 'v3', auth: vendorOAuth2Client });
 
     // Sync Rekursif dari Root ('root') sampai seluruh sub-folder & file (maks 10 level kedalaman)

@@ -18,7 +18,13 @@ export default function AdminStoragePool({ googleClientId, googleClientSecret, g
     const [loading, setLoading] = useState(true);
     const [masterIndex, setMasterIndex] = useState(null);
     const [workers, setWorkers] = useState([]);
-    const [stats, setStats] = useState({ totalWorkers: 0, totalCapacityBytes: 0, totalUsedBytes: 0 });
+    const [stats, setStats] = useState({ 
+        totalWorkers: 0, 
+        totalCapacityBytes: 0, 
+        totalUsedBytes: 0,
+        totalRentedQuotaBytes: 0,
+        activeRentersCount: 0
+    });
     const [maxConcurrency, setMaxConcurrency] = useState(4);
     const [savingConcurrency, setSavingConcurrency] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
@@ -59,7 +65,9 @@ export default function AdminStoragePool({ googleClientId, googleClientSecret, g
                 setStats({
                     totalWorkers: data.totalWorkers || 0,
                     totalCapacityBytes: data.totalPoolCapacityBytes || 0,
-                    totalUsedBytes: data.totalPoolUsedBytes || 0
+                    totalUsedBytes: data.totalPoolUsedBytes || 0,
+                    totalRentedQuotaBytes: data.totalRentedQuotaBytes || 0,
+                    activeRentersCount: data.activeRentersCount || 0
                 });
 
                 if (shouldSync) {
@@ -606,7 +614,14 @@ export default function AdminStoragePool({ googleClientId, googleClientSecret, g
                         <strong className={styles.statValue} style={{ color: '#10b981' }}>{formatGB(stats.totalCapacityBytes)} GB</strong>
                     </div>
                     <div className={styles.statCard}>
-                        <span className={styles.statLabel}>Penyimpanan Terpakai</span>
+                        <span className={styles.statLabel}>Kapasitas Disewa Berjalan</span>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                            <strong className={styles.statValue} style={{ color: '#fbbf24' }}>{formatGB(stats.totalRentedQuotaBytes)} GB</strong>
+                            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>({stats.activeRentersCount} Vendor)</span>
+                        </div>
+                    </div>
+                    <div className={styles.statCard}>
+                        <span className={styles.statLabel}>Penyimpanan Terpakai Fisik</span>
                         <strong className={styles.statValue} style={{ color: '#38bdf8' }}>{formatGB(stats.totalUsedBytes)} GB</strong>
                     </div>
                 </div>

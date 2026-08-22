@@ -1034,6 +1034,10 @@ export default function VendorStorageManagerPage() {
   };
 
   const handleOpenAddonModal = async () => {
+    if (!addonPlans || addonPlans.length === 0) {
+      showToast('Layanan Add-On Storage saat ini sedang tidak dibuka oleh administrator.', 'warning');
+      return;
+    }
     try {
       setActionLoading(true);
       const res = await fetch('/api/payment/addon/pending');
@@ -1102,7 +1106,18 @@ export default function VendorStorageManagerPage() {
     return Math.max(10000, Math.round((price / 30) * daysRemaining));
   };
 
-  const hasAddon = vendorData?.hasStorageAddon || quotaBytes > 0;
+  const hasByos = Boolean(byosState.connected);
+  const hasAddon = Boolean(vendorData?.hasStorageAddon || quotaBytes > 0 || (vendorData?.addonStorageQuotaBytes > 0));
+  const hasBoth = hasByos && hasAddon;
+  const hasNeither = !hasByos && !hasAddon;
+
+  useEffect(() => {
+    if (hasByos && !hasAddon && activeStorageMode !== 'byos') {
+      setActiveStorageMode('byos');
+    } else if (!hasByos && hasAddon && activeStorageMode !== 'system') {
+      setActiveStorageMode('system');
+    }
+  }, [hasByos, hasAddon]);
 
   return (
     <div style={{ minHeight: '100vh', background: '#09090b', color: '#f4f4f5', padding: '24px', fontFamily: "'Inter', sans-serif" }}>
@@ -1138,185 +1153,219 @@ export default function VendorStorageManagerPage() {
             </Link>
             <h1 style={{ margin: '4px 0 2px 0', fontSize: '24px', fontWeight: '800', background: 'linear-gradient(135deg, #818cf8, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <FolderIcon size={24} color="#818cf8" />
-              <span>Cloud Storage Manager</span>
+              <span>
+                {hasNeither 
+                  ? 'Cloud Storage Studio' 
+                  : (hasBoth 
+                      ? 'Cloud Storage Manager' 
+                      : (hasByos ? 'Google Drive Pribadi' : 'Dedicated Cloud Storage'))}
+              </span>
             </h1>
             <p style={{ margin: 0, fontSize: '12px', color: '#a1a1aa' }}>
-              Kelola kapasitas penyimpanan cloud dedicated studio, buat folder, & unggah berkas media.
+              {hasNeither 
+                ? 'Pilih sumber penyimpanan berkas media dan folder foto studio Anda.' 
+                : (hasByos && !hasAddon 
+                    ? 'Kelola berkas & folder foto studio langsung dari Google Drive pribadi Anda.' 
+                    : (hasAddon && !hasByos 
+                        ? 'Kelola berkas & folder foto pada Dedicated Cloud Storage berkecepatan tinggi.' 
+                        : 'Kelola penyimpanan Google Drive dan Dedicated Cloud Storage studio Anda.'))}
             </p>
+          </div>
+
+          {/* Compact Mini Actions in Header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {hasByos && !hasAddon && (
+              <button
+                type="button"
+                onClick={handleOpenAddonModal}
+                style={{
+                  padding: '7px 14px',
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  border: '1px solid rgba(99, 102, 241, 0.25)',
+                  borderRadius: '8px',
+                  color: '#a5b4fc',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Sewa kuota dedicated cloud storage tambahan"
+              >
+                <SparklesUpgradeIcon size={13} color="#818cf8" />
+                <span>+ Sewa Storage Tambahan</span>
+              </button>
+            )}
+
+            {!hasByos && hasAddon && (
+              <button
+                type="button"
+                onClick={handleConnectByosDrive}
+                style={{
+                  padding: '7px 14px',
+                  background: 'rgba(16, 185, 129, 0.1)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  borderRadius: '8px',
+                  color: '#6ee7b7',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+                title="Hubungkan Google Drive pribadi studio Anda"
+              >
+                <GoogleDriveIcon size={14} />
+                <span>+ Hubungkan Google Drive</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* 🗂️ 2-TAB NAVIGATION BAR: GOOGLE DRIVE PRIBADI (BYOS) vs DEDICATED STORAGE SAAS */}
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          background: 'rgba(15, 23, 42, 0.6)',
-          padding: '4px',
-          borderRadius: '14px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
-        }}>
-          <button
-            type="button"
-            onClick={() => handleSwitchTab('byos')}
-            style={{
-              flex: 1,
-              padding: '12px 18px',
-              borderRadius: '12px',
-              fontSize: '13px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              border: activeStorageMode === 'byos' ? '1px solid rgba(52,211,153,0.4)' : 'none',
-              background: activeStorageMode === 'byos' ? 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(5,150,105,0.15) 100%)' : 'transparent',
-              color: activeStorageMode === 'byos' ? '#34d399' : '#9ca3af',
-              boxShadow: activeStorageMode === 'byos' ? '0 2px 10px rgba(16,185,129,0.2)' : 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <GoogleDriveIcon size={18} />
-            <span>Google Drive Pribadi (BYOS)</span>
-            {byosState.connected ? (
+        {/* 🗂️ 2-TAB NAVIGATION BAR: HANYA DITAMPILKAN JIKA KEDUANYA AKTIF (hasBoth) */}
+        {hasBoth && (
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            background: 'rgba(15, 23, 42, 0.6)',
+            padding: '4px',
+            borderRadius: '14px',
+            border: '1px solid rgba(255, 255, 255, 0.08)'
+          }}>
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('byos')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                border: activeStorageMode === 'byos' ? '1px solid rgba(52,211,153,0.4)' : 'none',
+                background: activeStorageMode === 'byos' ? 'linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(5,150,105,0.15) 100%)' : 'transparent',
+                color: activeStorageMode === 'byos' ? '#34d399' : '#9ca3af',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <GoogleDriveIcon size={16} />
+              <span>Google Drive Pribadi</span>
               <span style={{ fontSize: '10px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '2px 8px', borderRadius: '10px', fontWeight: '800', border: '1px solid rgba(52,211,153,0.3)' }}>
                 ✓ {byosState.email || 'Terhubung'}
               </span>
-            ) : (
-              <span style={{ fontSize: '10px', background: 'rgba(255,255,255,0.06)', color: '#a1a1aa', padding: '2px 8px', borderRadius: '10px' }}>
-                Belum Terhubung
-              </span>
-            )}
-          </button>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleSwitchTab('system')}
-            style={{
-              flex: 1,
-              padding: '12px 18px',
-              borderRadius: '12px',
-              fontSize: '13px',
-              fontWeight: '700',
-              cursor: 'pointer',
-              border: activeStorageMode === 'system' ? '1px solid rgba(99,102,241,0.5)' : 'none',
-              background: activeStorageMode === 'system' ? 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(79,70,229,0.15) 100%)' : 'transparent',
-              color: activeStorageMode === 'system' ? '#818cf8' : '#9ca3af',
-              boxShadow: activeStorageMode === 'system' ? '0 2px 10px rgba(99,102,241,0.2)' : 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <CloudServerIcon size={18} color={activeStorageMode === 'system' ? '#818cf8' : '#9ca3af'} />
-            <span>Dedicated Cloud Storage</span>
-            <span style={{ fontSize: '10px', background: hasAddon ? 'rgba(99,102,241,0.2)' : 'rgba(251,191,36,0.15)', color: hasAddon ? '#818cf8' : '#fbbf24', padding: '2px 8px', borderRadius: '10px', fontWeight: '800', border: hasAddon ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(251,191,36,0.3)' }}>
-              {hasAddon ? `${vendorQuotaGb} GB Aktif` : 'Sewa Tambahan'}
-            </span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleSwitchTab('system')}
+              style={{
+                flex: 1,
+                padding: '10px 16px',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                border: activeStorageMode === 'system' ? '1px solid rgba(99,102,241,0.5)' : 'none',
+                background: activeStorageMode === 'system' ? 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(79,70,229,0.15) 100%)' : 'transparent',
+                color: activeStorageMode === 'system' ? '#818cf8' : '#9ca3af',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <CloudServerIcon size={16} color={activeStorageMode === 'system' ? '#818cf8' : '#9ca3af'} />
+              <span>Dedicated Cloud Storage</span>
+              <span style={{ fontSize: '10px', background: 'rgba(99,102,241,0.2)', color: '#818cf8', padding: '2px 8px', borderRadius: '10px', fontWeight: '800', border: '1px solid rgba(99,102,241,0.3)' }}>
+                {vendorQuotaGb} GB Aktif
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* LOADING STATE */}
         {loading && (
           <div style={{ padding: '60px 0', textAlign: 'center', color: '#a1a1aa', fontSize: '14px' }}>
-            Memuat data Cloud Storage Manager...
+            Memuat data Cloud Storage...
           </div>
         )}
 
-        {/* TAB 1: GOOGLE DRIVE PRIBADI (BYOS) */}
-        {!loading && activeStorageMode === 'byos' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {byosState.connected ? (
-              <div style={{
-                background: 'rgba(52,211,153,0.06)',
-                border: '1px solid rgba(52,211,153,0.4)',
-                borderRadius: '14px',
-                padding: '16px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '12px'
-              }}>
-                <div style={{ flex: 1, minWidth: '240px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '3px 8px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.4)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <CloudConnectedIcon size={12} color="#34d399" /> GOOGLE DRIVE TERHUBUNG
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>{byosState.email}</span>
-                  </div>
-                  {byosState.quota && (
-                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#a1a1aa' }}>
-                      Kapasitas Drive: <strong style={{ color: '#34d399' }}>{formatBytes(byosState.quota.usedBytes)}</strong> / {byosState.quota.limitBytes > 0 ? formatBytes(byosState.quota.limitBytes) : 'Unlimited'} Terpakai
-                      {byosState.quota.freeBytes !== null && (
-                        <span style={{ marginLeft: '10px', color: '#fbbf24' }}>
-                          (Sisa {formatBytes(byosState.quota.freeBytes)} Kosong)
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
+        {/* KONDISI AWAL (hasNeither): TIDAK ADA TAB, TAMPILKAN OPSI PENYIMPANAN */}
+        {hasNeither && !loading && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', margin: '20px 0' }}>
+            <div style={{ textAlign: 'center', maxWidth: '640px', margin: '0 auto 10px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff', marginBottom: '8px' }}>
+                Pilih Sumber Penyimpanan Studio Anda
+              </h2>
+              <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.6' }}>
+                {addonPlans && addonPlans.length > 0
+                  ? 'Gunakan Google Drive pribadi studio Anda secara gratis, atau sewa Dedicated Cloud Storage berspesifikasi tinggi dari platform. Anda juga dapat mengaktifkan keduanya secara fleksibel.'
+                  : 'Hubungkan akun Google Drive studio foto Anda untuk mulai menyimpan, mengunggah, dan menyinkronkan seluruh galeri foto klien secara terpusat.'}
+              </p>
+            </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button
-                    onClick={handleSyncByosFolders}
-                    style={{ padding: '8px 16px', background: 'rgba(56,189,248,0.15)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.35)', borderRadius: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
-                    title="Tarik & Tampilkan Folder dari Root Google Drive Anda ke Konsol Ini"
-                  >
-                    <SyncIcon size={14} color="#38bdf8" />
-                    <span>Sync GDrive</span>
-                    {hasByosUpdates && (
-                      <span style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '800' }}>
-                        Ada Update Baru
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={handleDisconnectByosDrive}
-                    style={{ padding: '8px 14px', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    <DisconnectIcon size={14} color="#f87171" />
-                    <span>Putus Akses</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: (addonPlans && addonPlans.length > 0) ? 'repeat(auto-fit, minmax(320px, 1fr))' : 'minmax(320px, 560px)', justifyContent: 'center', gap: '16px' }}>
+              {/* OPSI 1: GOOGLE DRIVE PRIBADI (BYOS) */}
               <div style={{
-                background: 'rgba(52,211,153,0.06)',
-                border: '1px solid rgba(52,211,153,0.3)',
-                borderRadius: '16px',
+                background: 'linear-gradient(160deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.03))',
+                border: '1.5px solid rgba(16, 185, 129, 0.3)',
+                borderRadius: '20px',
                 padding: '28px 24px',
-                textAlign: 'center',
                 display: 'flex',
                 flexDirection: 'column',
-                alignItems: 'center',
-                gap: '14px'
+                justifyContent: 'space-between',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
               }}>
-                <GoogleDriveIcon size={44} />
                 <div>
-                  <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>
-                    Hubungkan Google Drive Studio Anda (BYOS)
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                      <GoogleDriveIcon size={28} />
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#34d399', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '4px 10px', borderRadius: '99px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Gratis / Akun Pribadi
+                    </span>
+                  </div>
+
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', marginBottom: '8px' }}>
+                    Google Drive Pribadi (BYOS)
                   </h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa', maxWidth: '500px', lineHeight: '1.5' }}>
-                    Gunakan penyimpanan Google Drive pribadi studio foto Anda sendiri secara gratis tanpa memotong kuota platform.
+                  <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', marginBottom: '20px' }}>
+                    Hubungkan akun Google Drive / Google Workspace studio foto Anda sendiri. Foto tersimpan langsung di Google Drive Anda tanpa memotong kuota platform.
                   </p>
+
+                  <ul style={{ paddingLeft: '18px', margin: '0 0 24px 0', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.8' }}>
+                    <li>Kapasitas mengikuti kuota Google Drive Anda</li>
+                    <li>Sinkronisasi folder foto otomatis & cepat</li>
+                    <li>Kontrol 100% atas kepemilikan berkas foto</li>
+                  </ul>
                 </div>
+
                 <button
+                  type="button"
                   onClick={handleConnectByosDrive}
                   style={{
-                    padding: '10px 22px',
+                    width: '100%',
+                    padding: '13px',
                     background: 'linear-gradient(135deg, #10b981, #059669)',
                     color: '#ffffff',
                     border: 'none',
-                    borderRadius: '10px',
+                    borderRadius: '12px',
                     fontSize: '13px',
                     fontWeight: '700',
                     cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
-                    display: 'flex',
+                    boxShadow: '0 4px 16px rgba(16, 185, 129, 0.35)',
+                    display: 'inline-flex',
                     alignItems: 'center',
+                    justifyContent: 'center',
                     gap: '8px'
                   }}
                 >
@@ -1324,121 +1373,198 @@ export default function VendorStorageManagerPage() {
                   <span>Hubungkan Google Drive Sekarang</span>
                 </button>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* TAB 2: DEDICATED CLOUD STORAGE SAAS */}
-        {!loading && activeStorageMode === 'system' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {hasAddon ? (
-              <div style={{
-                background: 'rgba(99,102,241,0.08)',
-                border: '1px solid rgba(99,102,241,0.4)',
-                borderRadius: '14px',
-                padding: '16px 20px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '10px' }}>
+              {/* OPSI 2: SEWA DEDICATED CLOUD STORAGE (ADD-ON) - Hanya jika ada paket aktif */}
+              {addonPlans && addonPlans.length > 0 && (
+                <div style={{
+                  background: 'linear-gradient(160deg, rgba(99, 102, 241, 0.08), rgba(79, 70, 229, 0.03))',
+                  border: '1.5px solid rgba(99, 102, 241, 0.3)',
+                  borderRadius: '20px',
+                  padding: '28px 24px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+                }}>
                   <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.4)', padding: '2px 8px', borderRadius: '10px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <CloudServerIcon size={12} color="#818cf8" /> DEDICATED CLOUD STORAGE
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+                      <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'rgba(99, 102, 241, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
+                        <CloudServerIcon size={28} color="#818cf8" />
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: '800', color: '#818cf8', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '4px 10px', borderRadius: '99px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        High-Speed Cloud Add-On
                       </span>
                     </div>
-                    <div style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff', marginTop: '4px' }}>
-                      {formatBytes(usedBytes)} <span style={{ fontSize: '13px', color: '#71717a', fontWeight: '400' }}>/ {formatBytes(quotaBytes)}</span>
-                      <span style={{ fontSize: '12px', color: usagePercent >= 90 ? '#f87171' : usagePercent >= 70 ? '#fbbf24' : '#34d399', marginLeft: '8px', fontWeight: '700' }}>
-                        ({usagePercent}% Terpakai)
-                      </span>
-                    </div>
+
+                    <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#ffffff', marginBottom: '8px' }}>
+                      Sewa Dedicated Cloud Storage
+                    </h3>
+                    <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', marginBottom: '20px' }}>
+                      Sewa ruang penyimpanan cloud dedicated berspesifikasi tinggi tanpa perlu menghubungkan akun Google. Langsung aktif dan siap pakai.
+                    </p>
+
+                    <ul style={{ paddingLeft: '18px', margin: '0 0 24px 0', fontSize: '12px', color: '#cbd5e1', lineHeight: '1.8' }}>
+                      <li>Upload berkecepatan tinggi dengan Turbo Multi-threading</li>
+                      <li>Pilihan paket fleksibel (10 GB, 25 GB, 50 GB, dll.)</li>
+                      <li>Dedicated CDN & viewer teroptimasi</li>
+                    </ul>
                   </div>
 
-                  {addonPlans && addonPlans.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <button
-                        type="button"
-                        onClick={handleOpenAddonModal}
-                        style={{
-                          padding: '8px 16px',
-                          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: '10px',
-                          fontSize: '12px',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 10px rgba(99,102,241,0.3)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px'
-                        }}
-                      >
-                        <SparklesUpgradeIcon size={14} color="#ffffff" />
-                        <span>Upgrade Kuota Storage</span>
-                      </button>
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    onClick={handleOpenAddonModal}
+                    style={{
+                      width: '100%',
+                      padding: '13px',
+                      background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '12px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 16px rgba(99, 102, 241, 0.35)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <SparklesUpgradeIcon size={16} color="#ffffff" />
+                    <span>Lihat Pilihan Paket Add-On</span>
+                  </button>
                 </div>
-
-                {/* Progress Bar */}
-                <div style={{ width: '100%', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', height: '6px', overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%',
-                    borderRadius: '8px',
-                    width: `${usagePercent}%`,
-                    background: usagePercent >= 90 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : 'linear-gradient(90deg, #6366f1, #34d399)',
-                    transition: 'all 0.4s ease'
-                  }} />
-                </div>
-              </div>
-            ) : (addonPlans && addonPlans.length > 0) ? (
-              <div style={{
-                background: 'rgba(99,102,241,0.06)',
-                border: '1px solid rgba(99,102,241,0.3)',
-                borderRadius: '16px',
-                padding: '28px 24px',
-                textAlign: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '14px'
-              }}>
-                <CloudServerIcon size={44} color="#818cf8" />
-                <div>
-                  <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: '800', color: '#ffffff' }}>
-                    Dedicated Cloud Storage Belum Aktif
-                  </h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: '#a1a1aa', maxWidth: '500px', lineHeight: '1.5' }}>
-                    Sewa ruang penyimpanan super cepat berbasis cloud storage tanpa perlu menghubungkan akun Google pribadi Anda.
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleOpenAddonModal()}
-                  style={{
-                    padding: '10px 22px',
-                    background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <SparklesUpgradeIcon size={16} color="#ffffff" />
-                  <span>Beli Paket Add-On Storage Sekarang</span>
-                </button>
-              </div>
-            ) : null}
+              )}
+            </div>
           </div>
         )}
 
-        {/* DASHBOARD CLOUD STORAGE EXPLORER */}
-        {!loading && (
+        {/* INFO BAR: GOOGLE DRIVE PRIBADI (Hanya jika mode byos dan terhubung) */}
+        {!loading && !hasNeither && activeStorageMode === 'byos' && hasByos && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{
+              background: 'rgba(52,211,153,0.06)',
+              border: '1px solid rgba(52,211,153,0.4)',
+              borderRadius: '14px',
+              padding: '16px 20px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ flex: 1, minWidth: '240px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(52,211,153,0.2)', color: '#34d399', padding: '3px 8px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.4)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <CloudConnectedIcon size={12} color="#34d399" /> GOOGLE DRIVE TERHUBUNG
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#a1a1aa', fontFamily: 'monospace' }}>{byosState.email}</span>
+                </div>
+                {byosState.quota && (
+                  <div style={{ marginTop: '6px', fontSize: '12px', color: '#a1a1aa' }}>
+                    Kapasitas Drive: <strong style={{ color: '#34d399' }}>{formatBytes(byosState.quota.usedBytes)}</strong> / {byosState.quota.limitBytes > 0 ? formatBytes(byosState.quota.limitBytes) : 'Unlimited'} Terpakai
+                    {byosState.quota.freeBytes !== null && (
+                      <span style={{ marginLeft: '10px', color: '#fbbf24' }}>
+                        (Sisa {formatBytes(byosState.quota.freeBytes)} Kosong)
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={handleSyncByosFolders}
+                  style={{ padding: '8px 16px', background: 'rgba(56,189,248,0.15)', color: '#38bdf8', border: '1px solid rgba(56,189,248,0.35)', borderRadius: '10px', fontSize: '12px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                  title="Tarik & Tampilkan Folder dari Root Google Drive Anda ke Konsol Ini"
+                >
+                  <SyncIcon size={14} color="#38bdf8" />
+                  <span>Sync GDrive</span>
+                  {hasByosUpdates && (
+                    <span style={{ background: 'rgba(239,68,68,0.2)', color: '#f87171', border: '1px solid rgba(239,68,68,0.4)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: '800' }}>
+                      Ada Update Baru
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={handleDisconnectByosDrive}
+                  style={{ padding: '8px 14px', background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '10px', fontSize: '12px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <DisconnectIcon size={14} color="#f87171" />
+                  <span>Putus Akses</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* INFO BAR: DEDICATED CLOUD STORAGE (Hanya jika mode system dan memiliki addon) */}
+        {!loading && !hasNeither && activeStorageMode === 'system' && hasAddon && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{
+              background: 'rgba(99,102,241,0.08)',
+              border: '1px solid rgba(99,102,241,0.4)',
+              borderRadius: '14px',
+              padding: '16px 20px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '10px' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(99,102,241,0.2)', color: '#818cf8', border: '1px solid rgba(99,102,241,0.4)', padding: '2px 8px', borderRadius: '10px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <CloudServerIcon size={12} color="#818cf8" /> DEDICATED CLOUD STORAGE
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: '800', color: '#ffffff', marginTop: '4px' }}>
+                    {formatBytes(usedBytes)} <span style={{ fontSize: '13px', color: '#71717a', fontWeight: '400' }}>/ {formatBytes(quotaBytes)}</span>
+                    <span style={{ fontSize: '12px', color: usagePercent >= 90 ? '#f87171' : usagePercent >= 70 ? '#fbbf24' : '#34d399', marginLeft: '8px', fontWeight: '700' }}>
+                      ({usagePercent}% Terpakai)
+                    </span>
+                  </div>
+                </div>
+
+                {addonPlans && addonPlans.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={handleOpenAddonModal}
+                      style={{
+                        padding: '8px 16px',
+                        background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 10px rgba(99,102,241,0.3)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <SparklesUpgradeIcon size={14} color="#ffffff" />
+                      <span>Upgrade Kuota Storage</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Progress Bar */}
+              <div style={{ width: '100%', background: 'rgba(255,255,255,0.06)', borderRadius: '8px', height: '6px', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%',
+                  borderRadius: '8px',
+                  width: `${usagePercent}%`,
+                  background: usagePercent >= 90 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : 'linear-gradient(90deg, #6366f1, #34d399)',
+                  transition: 'all 0.4s ease'
+                }} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* DASHBOARD CLOUD STORAGE EXPLORER: HANYA TAMPIL JIKA SETIDAKNYA ADA 1 STORAGE YANG AKTIF */}
+        {!loading && !hasNeither && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
             {/* Breadcrumb Navigation Bar with Back Button */}
@@ -2446,7 +2572,7 @@ export default function VendorStorageManagerPage() {
       )}
 
       {/* Modal 3: Add-On Subscription */}
-      {showAddonModal && (
+      {showAddonModal && addonPlans && addonPlans.length > 0 && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }} onClick={() => setShowAddonModal(false)}>
           <div style={{ background: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', maxWidth: '640px', width: '100%', padding: '28px', position: 'relative', boxShadow: '0 20px 50px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowAddonModal(false)} style={{ position: 'absolute', top: '18px', right: '18px', background: 'transparent', border: 'none', color: '#a1a1aa', fontSize: '18px', cursor: 'pointer' }}>✕</button>

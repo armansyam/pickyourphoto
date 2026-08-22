@@ -88,6 +88,7 @@ export async function GET() {
                 subdomain: vendor.subdomain || '',
                 subdomain_active: vendor.subdomain_active === 1 || vendor.subdomain_active === true ? 1 : 0,
                 subdomain_set_at: vendor.subdomain_set_at || null,
+                portfolioDriveUrl: vendor.portfolioDriveUrl || '',
                 upgradeRequest: pendingRequest || null
             }
         });

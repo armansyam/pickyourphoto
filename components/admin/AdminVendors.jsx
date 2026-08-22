@@ -65,6 +65,7 @@ export default function AdminVendors({
   onRegenerateQris,
   onCancelQris,
   refetchVendors,
+  settings = {},
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [_inquirySubTab, _setInquirySubTab] = useState('qris');

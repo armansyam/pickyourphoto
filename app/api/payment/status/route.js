@@ -50,7 +50,8 @@ export async function GET(request) {
     }
 
     const config = getPaymentGatewayConfig();
-    let isSettled = transaction.status === 'paid';
+    const wasPaidBefore = (transaction.status === 'paid');
+    let isSettled = wasPaidBefore;
 
     // If transaction is not paid yet, check live status from API directly (Midtrans or IPaymu)
     if (!isSettled && config.enabled && config.provider === 'ipaymu') {
@@ -142,13 +143,13 @@ export async function GET(request) {
       }
     }
 
-    // Always ensure vendor record is updated and email sent if transaction is settled (or marked paid)
-    // GUARD: Hanya update vendor dan kirim email jika status belum 'active'
-    // (mencegah expiresAt bertambah setiap polling frontend tiap 3 detik)
+    // Update vendor record and trigger confirmation email HANYA pada transisi pertama pembayaran lunas (!wasPaidBefore)
+    // atau jika vendor belum berstatus 'active' (mencegah penambahan hari berulang saat polling tiap 3 detik)
     if (isSettled) {
       const vendor = db.prepare('SELECT * FROM vendors WHERE id = ?').get(transaction.vendorId);
-      const vendorAlreadyActive = vendor && vendor.status === 'active' && transaction.transactionType !== 'addon';
-      if (vendor) {
+      const isFirstSettlement = !wasPaidBefore || (vendor && vendor.status !== 'active');
+      
+      if (vendor && isFirstSettlement) {
         if (transaction.transactionType === 'addon') {
           // Pure Add-On storage purchase
           let targetQuotaBytes = transaction.addonQuotaBytes || vendor.pendingAddonQuotaBytes || 0;
@@ -187,9 +188,7 @@ export async function GET(request) {
             console.error('[Payment Status Add-On Email Error]:', mailErr);
           }
         } else {
-          // Standard Main Plan (or Main Plan + Bundled Add-On)
-          // GUARD: Jika vendor sudah active dan ini bukan upgrade plan — lewati update expiresAt
-          // untuk mencegah expiresAt terus bertambah setiap kali frontend polling
+          // Standard Main Plan (New signup, Upgrade, or Renewal)
           const plan = db.prepare('SELECT * FROM plans WHERE id = ?').get(transaction.planId);
           const nowForExp = new Date();
           let expDate = nowForExp;
@@ -222,10 +221,8 @@ export async function GET(request) {
             }
           }
 
-          // [MED-03 FIX] Atomic UPDATE — hanya berhasil jika vendor belum active atau ada upgrade plan.
-          // Mencegah race condition double-activation antara webhook dan frontend polling.
-          // SQLite single-writer guarantee: hanya satu dari dua concurrent request yang lolos (changes > 0).
-          const updateResult = db.prepare(`
+          // Atomic UPDATE vendor status, masa aktif, dan kuota
+          db.prepare(`
               UPDATE vendors 
               SET status = 'active', 
                   planId = ?, 
@@ -237,7 +234,6 @@ export async function GET(request) {
                   pendingAddonPlanId = NULL, 
                   pendingAddonQuotaBytes = 0
               WHERE id = ?
-                AND (status != 'active' OR planId != ?)
             `).run(
               plan ? plan.id : transaction.planId, 
               expiresAt, 
@@ -245,31 +241,27 @@ export async function GET(request) {
               newAddonStorageQuotaBytes > 0 ? 1 : vendor.hasStorageAddon, 
               newAddonPlanId, 
               newAddonStorageQuotaBytes, 
-              vendor.id,
-              plan ? plan.id : transaction.planId  // cek isUpgrade (planId berbeda)
+              vendor.id
             );
 
-          // Kirim email konfirmasi HANYA jika update berhasil (changes > 0 = first concurrent winner)
-          if (updateResult.changes > 0) {
-            const updatedVendorObj = { ...vendor, status: 'active', expiresAt };
-            if (isUpgrade) {
-              sendVendorUpgradeConfirmationEmail(updatedVendorObj, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(err => {
-                console.error('[Payment Status Email Error]:', err);
-              });
-            } else if (isRenewal) {
-              sendVendorRenewalConfirmationEmail(updatedVendorObj, plan, expiresAt, 'QRIS').catch(err => {
-                console.error('[Payment Status Email Error]:', err);
-              });
-            } else {
-              sendVendorApprovalEmail(updatedVendorObj, plan, transaction.orderId, 'QRIS').catch(err => {
-                console.error('[Payment Status Email Error]:', err);
-              });
-            }
+          const updatedVendorObj = { ...vendor, status: 'active', expiresAt };
+          if (isUpgrade) {
+            sendVendorUpgradeConfirmationEmail(updatedVendorObj, oldPlanRow?.name || 'Paket Sebelumnya', plan, expiresAt, 'QRIS').catch(err => {
+              console.error('[Payment Status Email Error]:', err);
+            });
+          } else if (isRenewal) {
+            sendVendorRenewalConfirmationEmail(updatedVendorObj, plan, expiresAt, 'QRIS').catch(err => {
+              console.error('[Payment Status Email Error]:', err);
+            });
+          } else {
+            sendVendorApprovalEmail(updatedVendorObj, plan, transaction.orderId, 'QRIS').catch(err => {
+              console.error('[Payment Status Email Error]:', err);
+            });
           }
         }
+      }
 
-        // Generate token dan set cookie HANYA jika belum login (status baru aktif)
-        // Mencegah JWT cookie direset setiap polling 3 detik
+      if (vendor) {
         const targetRedirectUrl = vendor.is_setup_completed ? '/dashboard' : '/setup';
         const token = generateToken({ id: vendor.id, name: vendor.name, email: vendor.email, role: vendor.role });
         const response = NextResponse.json({
@@ -279,8 +271,7 @@ export async function GET(request) {
           message: vendor.is_setup_completed ? 'Pembayaran lunas. Mengarahkan ke Dashboard...' : 'Pembayaran lunas. Mengarahkan ke Setup Profil Studio...'
         });
 
-        if (!vendorAlreadyActive) {
-          // Set cookie hanya untuk first-time activation
+        if (!wasPaidBefore && vendor.status !== 'active') {
           response.cookies.set('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',

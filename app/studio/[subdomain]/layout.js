@@ -83,7 +83,13 @@ export default async function StudioTenantLayout({ children, params }) {
                     padding: '36px 24px',
                     boxShadow: '0 20px 40px rgba(0,0,0,0.5)'
                 }}>
-                    <div style={{ fontSize: '48px', marginBottom: '12px' }}>🏢</div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', borderRadius: '16px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', marginBottom: '16px', color: '#ef4444' }}>
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
                     <h1 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px 0', color: '#ffffff' }}>
                         Studio Belum Terdaftar
                     </h1>
@@ -103,7 +109,7 @@ export default async function StudioTenantLayout({ children, params }) {
                             textDecoration: 'none'
                         }}
                     >
-                        Kembali ke Beranda Utama &rarr;
+                        Kembali ke Beranda Utama
                     </a>
                 </div>
             </div>
@@ -119,8 +125,8 @@ export default async function StudioTenantLayout({ children, params }) {
                 minHeight: '100vh',
                 display: 'flex',
                 flexDirection: 'column',
-                background: '#09090b',
-                color: '#f4f4f5',
+                background: '#fafaf9',
+                color: '#0f172a',
                 fontFamily: 'system-ui, -apple-system, sans-serif'
             }}
         >
@@ -129,20 +135,20 @@ export default async function StudioTenantLayout({ children, params }) {
                 position: 'sticky',
                 top: 0,
                 zIndex: 100,
-                backdropFilter: 'blur(12px)',
-                background: 'rgba(9, 9, 11, 0.85)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                backdropFilter: 'blur(16px)',
+                background: 'rgba(255, 255, 255, 0.85)',
+                borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
                 padding: '12px 24px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {vendor.brandLogo ? (
                         <img 
                             src={vendor.brandLogo} 
                             alt={displayName} 
-                            style={{ height: '32px', maxWidth: '120px', objectFit: 'contain', borderRadius: '4px' }} 
+                            style={{ height: '32px', maxWidth: '140px', objectFit: 'contain' }} 
                         />
                     ) : (
                         <div style={{
@@ -161,11 +167,15 @@ export default async function StudioTenantLayout({ children, params }) {
                         </div>
                     )}
                     <div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.2px' }}>
-                            {displayName}
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <span>{displayName}</span>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, display: 'inline-block' }} title="Verified Official">
+                                <path d="M10.52 2.4a2.2 2.2 0 0 1 2.96 0l.85.77c.4.37.93.58 1.47.6l1.15.04a2.2 2.2 0 0 1 2.1 2.1l.04 1.15c.02.54.23 1.07.6 1.47l.77.85a2.2 2.2 0 0 1 0 2.96l-.77.85c-.37.4-.58.93-.6 1.47l-.04 1.15a2.2 2.2 0 0 1-2.1 2.1l-1.15.04c-.54.02-1.07.23-1.47.6l-.85.77a2.2 2.2 0 0 1-2.96 0l-.85-.77c-.4-.37-.93-.58-1.47-.6l-1.15-.04a2.2 2.2 0 0 1-2.1-2.1l-.04-1.15c-.02-.54-.23-1.07-.6-1.47l-.77-.85a2.2 2.2 0 0 1 0-2.96l.77-.85c.37-.4.58-.93.6-1.47l.04-1.15a2.2 2.2 0 0 1 2.1-2.1l1.15-.04c.54-.02 1.07-.23 1.47-.6l.85-.77z" fill="#0095f6"/>
+                                <path d="M9 12l2 2 4-4" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
                         </div>
-                        <div style={{ fontSize: '11px', color: '#a1a1aa' }}>
-                            Official Client Gallery
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>
+                            Official Profil
                         </div>
                     </div>
                 </div>
@@ -178,18 +188,22 @@ export default async function StudioTenantLayout({ children, params }) {
                         style={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            gap: '6px',
+                            gap: '7px',
                             fontSize: '12px',
-                            color: '#34d399',
-                            background: 'rgba(52, 211, 153, 0.1)',
-                            padding: '6px 12px',
+                            color: '#059669',
+                            background: 'rgba(16, 185, 129, 0.08)',
+                            padding: '6px 14px',
                             borderRadius: '20px',
                             textDecoration: 'none',
                             fontWeight: 600,
-                            border: '1px solid rgba(52, 211, 153, 0.2)'
+                            border: '1px solid rgba(16, 185, 129, 0.2)',
+                            transition: 'all 0.2s ease'
                         }}
                     >
-                        💬 Hubungi Studio
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                        </svg>
+                        <span>WhatsApp Studio</span>
                     </a>
                 )}
             </header>
@@ -201,15 +215,15 @@ export default async function StudioTenantLayout({ children, params }) {
 
             {/* Studio Branded Minimal Footer */}
             <footer style={{
-                borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                borderTop: '1px solid rgba(0, 0, 0, 0.06)',
                 padding: '20px 24px',
                 textAlign: 'center',
                 fontSize: '12px',
-                color: '#71717a',
-                background: '#09090b'
+                color: '#64748b',
+                background: '#ffffff'
             }}>
                 <div>&copy; {new Date().getFullYear()} {displayName}. All rights reserved.</div>
-                <div style={{ fontSize: '11px', color: '#52525b', marginTop: '4px' }}>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
                     Powered by <span style={{ color: '#c5a059', fontWeight: 700 }}>Pick Your Photo</span>
                 </div>
             </footer>

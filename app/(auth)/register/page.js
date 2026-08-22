@@ -190,6 +190,31 @@ export default function RegisterPage() {
         };
     }, []);
 
+    // 4. Auto-transition immediately when Admin approves / confirms payment without manual refresh
+    useEffect(() => {
+        if (!email) return;
+
+        let isActive = true;
+        const checkApprovalStatus = async () => {
+            try {
+                const res = await fetch(`/api/register/init?email=${encodeURIComponent(email)}`, { cache: 'no-store' });
+                if (res.ok && isActive) {
+                    const data = await res.json();
+                    if (data?.vendorSession?.status === 'active') {
+                        // Admin telah menyetujui akun -> Langsung alihkan ke setup/dashboard secara instan
+                        window.location.href = data.vendorSession.is_setup_completed ? '/dashboard' : '/setup';
+                    }
+                }
+            } catch {}
+        };
+
+        const pollTimer = setInterval(checkApprovalStatus, 2500);
+        return () => {
+            isActive = false;
+            clearInterval(pollTimer);
+        };
+    }, [email]);
+
     // Backward transition: Ubah Paket (Step 3 -> Step 2)
     const handleResetPlan = async () => {
         setShowSummary(false);

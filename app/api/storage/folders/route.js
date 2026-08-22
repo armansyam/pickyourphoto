@@ -168,7 +168,7 @@ export async function DELETE(req) {
         db.prepare(`DELETE FROM storage_files WHERE parentFolderId IN (${placeholders}) AND vendorId = ?`).run(...targetFolderIds, session.id);
         db.prepare(`DELETE FROM storage_folders WHERE driveFolderId IN (${placeholders}) AND vendorId = ?`).run(...targetFolderIds, session.id);
         
-        const remainingBytesRow = db.prepare('SELECT COALESCE(SUM(fileSizeBytes), 0) as totalBytes FROM storage_files WHERE vendorId = ?').get(session.id);
+        const remainingBytesRow = db.prepare('SELECT COALESCE(SUM(fileSizeBytes), 0) as totalBytes FROM storage_files WHERE vendorId = ? AND (isExternalDrive IS NULL OR isExternalDrive = 0)').get(session.id);
         const remainingBytes = remainingBytesRow ? remainingBytesRow.totalBytes : 0;
         db.prepare('UPDATE vendors SET usedStorageBytes = ? WHERE id = ?').run(remainingBytes, session.id);
       });

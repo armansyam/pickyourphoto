@@ -160,6 +160,7 @@ export default function RegisterPlanSelector({
                                     <div>✓ <strong>{p.maxProjects} Project Aktif</strong></div>
                                     <div>✓ Foto <strong>Unlimited</strong> / project</div>
                                     <div>✓ Galeri Online &amp; Seleksi Foto</div>
+                                    <div style={{ color: '#c5a059', fontWeight: 'bold' }}>✓ Subdomain Studio Eksklusif</div>
                                     {p.allowCustomLogo === 1 || p.allowCustomLogo === true || isPopular ? (
                                         <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Custom Logo Studio</div>
                                     ) : (

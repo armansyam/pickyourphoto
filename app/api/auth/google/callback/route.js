@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { generateToken, setAuthCookie } from '@/lib/auth';
+import { encryptSecret } from '@/lib/crypto-vault';
 import bcrypt from 'bcryptjs';
 import { getRequestOrigin } from '@/lib/url';
 
@@ -80,6 +81,7 @@ export async function GET(request) {
             }
 
             if (vendorId) {
+                const encryptedToken = refreshToken ? encryptSecret(refreshToken) : null;
                 db.prepare(`
                     UPDATE vendors 
                     SET externalDriveConnected = 1,
@@ -87,7 +89,7 @@ export async function GET(request) {
                         externalDriveRefreshToken = COALESCE(?, externalDriveRefreshToken),
                         externalDriveFolderId = 'root'
                     WHERE id = ?
-                `).run(email, refreshToken || null, vendorId);
+                `).run(email, encryptedToken, vendorId);
                 console.log('[BYOS Connected Success]: Vendor ID', vendorId, 'connected GDrive:', email);
                 return NextResponse.redirect(new URL('/dashboard/storage?success=byos_connected', origin));
             } else {

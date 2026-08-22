@@ -43,6 +43,14 @@ export async function GET(request) {
         const parentFolderId = parentFolderIdRow ? parentFolderIdRow.value : 'root';
         const vendorTemplate = vendorTemplateRow ? vendorTemplateRow.value : '📁 [STORAGE DEDICATED] {vendor_name} ({vendor_email})';
 
+        const rentedStorageRow = db.prepare(`
+            SELECT 
+                COUNT(*) as activeRentersCount,
+                COALESCE(SUM(addonStorageQuotaBytes), 0) as totalRentedQuotaBytes
+            FROM vendors 
+            WHERE status = 'active' AND hasStorageAddon = 1 AND addonStorageQuotaBytes > 0
+        `).get() || { activeRentersCount: 0, totalRentedQuotaBytes: 0 };
+
         return NextResponse.json({
             success: true,
             masterIndex,
@@ -59,6 +67,8 @@ export async function GET(request) {
             totalWorkers: workers.length,
             totalPoolCapacityBytes: workers.reduce((acc, curr) => acc + (curr.totalLimitBytes || 0), 0),
             totalPoolUsedBytes: workers.reduce((acc, curr) => acc + (curr.usedStorageBytes || 0), 0),
+            totalRentedQuotaBytes: rentedStorageRow.totalRentedQuotaBytes,
+            activeRentersCount: rentedStorageRow.activeRentersCount,
             syncSummary
         });
     } catch (error) {

@@ -20,6 +20,8 @@ export default function SetupWizardPage() {
     const [sameAsOwnerWa, setSameAsOwnerWa] = useState(true);
     const [subdomain, setSubdomain] = useState('');
     const [rootDomain, setRootDomain] = useState('');
+    const [saasName, setSaasName] = useState('Photota');
+    const [saasLogoUrl, setSaasLogoUrl] = useState('');
 
     // Subdomain Validation State
     const [subdomainChecking, setSubdomainChecking] = useState(false);
@@ -56,6 +58,9 @@ export default function SetupWizardPage() {
                     setStudioWhatsapp(v.studio_whatsapp || v.whatsapp || '');
                     setLogoPreview(v.brandLogo || '');
                     
+                    if (data.saasName) setSaasName(data.saasName);
+                    if (data.saasLogoUrl) setSaasLogoUrl(data.saasLogoUrl);
+
                     if (v.subdomain) {
                         setSubdomain(v.subdomain);
                     } else if (v.name || v.brandName) {
@@ -205,18 +210,29 @@ export default function SetupWizardPage() {
         <div style={{ minHeight: '100vh', background: '#090d16', color: '#f4f4f5', padding: '40px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ width: '100%', maxWidth: '640px' }}>
                 
-                {/* Header Title */}
+                {/* Header Title & Branding */}
                 <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', marginBottom: '16px' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
-                    </div>
+                    {saasLogoUrl ? (
+                        <div style={{ marginBottom: '16px' }}>
+                            <img 
+                                src={saasLogoUrl} 
+                                alt={saasName} 
+                                style={{ height: '42px', maxWidth: '200px', objectFit: 'contain' }} 
+                            />
+                        </div>
+                    ) : (
+                        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.25)', marginBottom: '16px' }}>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                                <circle cx="12" cy="13" r="4" />
+                            </svg>
+                        </div>
+                    )}
                     <h1 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.02em' }}>
                         Pengaturan Awal Profil Studio
                     </h1>
                     <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8', lineHeight: '1.5' }}>
-                        Lengkapi informasi biodata pemilik dan identitas studio Anda sebelum memulai.
+                        Lengkapi informasi biodata pemilik dan identitas studio Anda di <strong style={{ color: '#ffffff' }}>{saasName}</strong> sebelum memulai.
                     </p>
                 </div>
 

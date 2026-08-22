@@ -2,10 +2,20 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getAuthVendor } from '@/lib/auth';
 import { createPayment, getPaymentGatewayConfig } from '@/lib/payment-gateway';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import fs from 'fs';
 import path from 'path';
 
 export async function POST(req) {
+  const clientIp = getClientIp(req);
+  const rateCheck = checkRateLimit(`addon_payment_create_ip_${clientIp}`, 10, 60);
+  if (!rateCheck.success) {
+    return NextResponse.json({
+      success: false,
+      error: `Terlalu banyak permintaan pembayaran. Silakan coba kembali dalam ${rateCheck.resetSeconds} detik.`
+    }, { status: 429 });
+  }
+
   const session = getAuthVendor();
   if (!session) {
     return NextResponse.json({ success: false, error: 'Otentikasi dibutuhkan. Harap login kembali.' }, { status: 401 });
@@ -150,9 +160,9 @@ export async function POST(req) {
       const orderId = `ADDON-${vendor.id}-${addonPlan.id}-${Date.now()}`;
 
       // Determine dynamic request origin (localhost, custom staging domain, or production domain)
-      const host = request.headers.get('host') || 'localhost:3000';
-      const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
-      const origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
+      const host = req.headers.get('host') || 'localhost:3000';
+      const proto = req.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
+      const origin = req.headers.get('origin') || req.nextUrl?.origin || `${proto}://${host}`;
 
       const paymentResult = await createPayment({
         orderId,

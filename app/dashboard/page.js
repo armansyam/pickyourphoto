@@ -8,7 +8,7 @@ import {
     CopyLinkIcon, FolderIcon, UploadCloudIcon, PaletteThemeIcon, PlusIcon, LockIcon, 
     InfoLightIcon, AlertCircleIcon, AlertTriangleIcon, SpeedBoltIcon, RefreshCwIcon, 
     ClockIcon, TrashIcon, SparklesUpgradeIcon, CheckCircleIcon, WhatsAppIcon, 
-    SettingsManageIcon, GalleryViewIcon, PhotoIcon, GridIcon, ListIcon 
+    SettingsManageIcon, GalleryViewIcon, PhotoIcon, GridIcon, ListIcon, SearchIcon 
 } from '@/components/StorageIcons.jsx';
 
 // Live countdown component — ticks every second
@@ -141,14 +141,16 @@ export default function DashboardPage() {
     const [brandLogoPreview, setBrandLogoPreview] = useState('');
     const [copyDelimiter, setCopyDelimiter] = useState(', ');
     const [copyIncludeExt, setCopyIncludeExt] = useState(0);
+    const [copySortOrder, setCopySortOrder] = useState('name_asc');
     const [savingBranding, setSavingBranding] = useState(false);
 
-    // Subdomain Studio states
+    // Subdomain Studio & Portfolio states
     const [subdomainInput, setSubdomainInput] = useState('');
     const [subdomainStatus, setSubdomainStatus] = useState('idle'); // 'idle' | 'checking' | 'available' | 'taken' | 'invalid'
     const [subdomainMsg, setSubdomainMsg] = useState('');
     const [subdomainSuggestions, setSubdomainSuggestions] = useState([]);
     const [savingSubdomain, setSavingSubdomain] = useState(false);
+    const [portfolioDriveUrl, setPortfolioDriveUrl] = useState('');
 
     // Upgrade plan & WA admin states
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -260,6 +262,7 @@ export default function DashboardPage() {
                 if (cached.vendor.copyDelimiter !== undefined) setCopyDelimiter(cached.vendor.copyDelimiter);
                 if (cached.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(cached.vendor.copyIncludeExt);
                 if (cached.vendor.copySortOrder !== undefined) setCopySortOrder(cached.vendor.copySortOrder);
+                setPortfolioDriveUrl(cached.vendor.portfolioDriveUrl || '');
             }
             setLoading(false);
         }
@@ -280,6 +283,7 @@ export default function DashboardPage() {
                     if (data.vendor.copyDelimiter !== undefined) setCopyDelimiter(data.vendor.copyDelimiter);
                     if (data.vendor.copyIncludeExt !== undefined) setCopyIncludeExt(data.vendor.copyIncludeExt);
                     if (data.vendor.copySortOrder !== undefined) setCopySortOrder(data.vendor.copySortOrder);
+                    setPortfolioDriveUrl(data.vendor.portfolioDriveUrl || '');
                 }
             } else {
                 console.warn('fetchProjects: response not ok', res.status);
@@ -842,20 +846,25 @@ export default function DashboardPage() {
     };
 
     // ── Helper Generator Link Galeri Klien (Subdomain Tenant vs Root Origin) ──
-    const getClientGalleryLink = (projectId, accessKey) => {
-        const keyParam = accessKey ? `?key=${accessKey}` : '';
+    const getClientGalleryLink = (projectOrId, accessKey, optionalSlug) => {
+        let identifier = projectOrId;
+        if (typeof projectOrId === 'object' && projectOrId !== null) {
+            identifier = projectOrId.slug || projectOrId.id;
+        } else if (optionalSlug) {
+            identifier = optionalSlug;
+        }
         const rootDomain = typeof window !== 'undefined' && window.location.host ? window.location.host : (process.env.NEXT_PUBLIC_ROOT_DOMAIN || '');
         if (vendorDetails?.subdomain && (vendorDetails?.subdomain_active === 1 || vendorDetails?.subdomain_active === true)) {
             if (typeof window !== 'undefined') {
                 const host = window.location.hostname;
                 if (host.includes('localhost') || host.includes('127.0.0.1')) {
-                    return `${window.location.protocol}//${vendorDetails.subdomain}.localhost:${window.location.port || '3000'}/gallery/${projectId}${keyParam}`;
+                    return `${window.location.protocol}//${vendorDetails.subdomain}.localhost:${window.location.port || '3000'}/gallery/${identifier}`;
                 }
             }
-            return `https://${vendorDetails.subdomain}.${rootDomain}/gallery/${projectId}${keyParam}`;
+            return `https://${vendorDetails.subdomain}.${rootDomain}/gallery/${identifier}`;
         }
         const origin = typeof window !== 'undefined' ? window.location.origin : (rootDomain ? `https://${rootDomain}` : '');
-        return `${origin}/gallery/${projectId}${keyParam}`;
+        return `${origin}/gallery/${identifier}`;
     };
 
     // Subdomain Availability Checker
@@ -929,7 +938,7 @@ export default function DashboardPage() {
     };
 
     const handleCopyGalleryLink = (project) => {
-        const link = getClientGalleryLink(project.id, project.clientAccessKey);
+        const link = getClientGalleryLink(project);
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(link).then(() => {
                 addToast('Link galeri klien berhasil disalin ke clipboard!', 'success');
@@ -941,8 +950,8 @@ export default function DashboardPage() {
         }
     };
 
-    const handleCopyLink = (projectId, accessKey) => {
-        const link = getClientGalleryLink(projectId, accessKey);
+    const handleCopyLink = (projectId, accessKey, slug) => {
+        const link = getClientGalleryLink(projectId, accessKey, slug);
         if (navigator.clipboard && window.isSecureContext) {
             navigator.clipboard.writeText(link)
                 .then(() => addToast('Link klien berhasil disalin!', 'success'))
@@ -957,12 +966,12 @@ export default function DashboardPage() {
             addToast('Data project tidak ditemukan.', 'warning');
             return;
         }
-        const link = getClientGalleryLink(project.id, project.clientAccessKey);
+        const link = getClientGalleryLink(project);
         window.open(link, '_blank');
     };
 
     const handleSendWhatsApp = (project) => {
-        const link = getClientGalleryLink(project.id, project.clientAccessKey);
+        const link = getClientGalleryLink(project);
         let rawPhone = (project.clientPhone || '').replace(/\D/g, '');
         if (rawPhone.startsWith('0')) {
             rawPhone = '62' + rawPhone.slice(1);
@@ -1030,6 +1039,7 @@ export default function DashboardPage() {
             fd.append('copyDelimiter', copyDelimiter);
             fd.append('copyIncludeExt', copyIncludeExt.toString());
             fd.append('copySortOrder', copySortOrder);
+            fd.append('portfolioDriveUrl', portfolioDriveUrl);
             if (brandLogoFile) {
                 fd.append('logo', brandLogoFile);
             }
@@ -1394,10 +1404,21 @@ export default function DashboardPage() {
                         )}
 
                         {/* ── UNIFIED ULTRA-MINIMALIST CONTROL BAR ── */}
-                        <div className="dashboard-control-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                        <div className="dashboard-control-bar" style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '24px',
+                            gap: '14px',
+                            background: 'rgba(24, 24, 28, 0.4)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            borderRadius: '14px',
+                            padding: '10px 14px',
+                            backdropFilter: 'blur(10px)'
+                        }}>
 
                             {/* Left: Sleek Segmented Pill Tabs */}
-                            <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', gap: '4px' }}>
+                            <div className="dashboard-tabs-group" style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', gap: '4px', flexShrink: 0 }}>
                                 <button
                                     onClick={() => setActiveTab('ongoing')}
                                     style={{
@@ -1407,7 +1428,7 @@ export default function DashboardPage() {
                                         background: activeTab === 'ongoing' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'transparent',
                                         color: activeTab === 'ongoing' ? '#ffffff' : '#a1a1aa',
                                         border: 'none',
-                                        borderRadius: '8px',
+                                        borderRadius: '7px',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         display: 'flex',
@@ -1431,7 +1452,7 @@ export default function DashboardPage() {
                                         background: activeTab === 'completed' ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent',
                                         color: activeTab === 'completed' ? '#ffffff' : '#a1a1aa',
                                         border: 'none',
-                                        borderRadius: '8px',
+                                        borderRadius: '7px',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s ease',
                                         display: 'flex',
@@ -1456,7 +1477,7 @@ export default function DashboardPage() {
                                             background: activeTab === 'failed' ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'transparent',
                                             color: activeTab === 'failed' ? '#ffffff' : '#a1a1aa',
                                             border: 'none',
-                                            borderRadius: '8px',
+                                            borderRadius: '7px',
                                             cursor: 'pointer',
                                             transition: 'all 0.2s ease',
                                             display: 'flex',
@@ -1473,29 +1494,34 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Right Controls: Search, Sort, View Mode & Create Button */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <div className="dashboard-actions-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: '1', justifyContent: 'flex-end' }}>
                                 {/* Search Box */}
-                                <div style={{ position: 'relative', width: '180px' }}>
+                                <div className="dashboard-search-wrapper" style={{ position: 'relative', width: '260px', maxWidth: '100%' }}>
+                                    <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#71717a', display: 'flex', alignItems: 'center' }}>
+                                        <SearchIcon size={14} color="#71717a" />
+                                    </div>
                                     <input
                                         type="text"
-                                        placeholder="Cari project..."
+                                        placeholder="Cari project atau klien..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         style={{
                                             width: '100%',
-                                            padding: '7px 24px 7px 10px',
-                                            fontSize: '12px',
-                                            background: 'rgba(255,255,255,0.03)',
+                                            height: '36px',
+                                            padding: '0 28px 0 32px',
+                                            fontSize: '12.5px',
+                                            background: 'rgba(255,255,255,0.04)',
                                             border: '1px solid rgba(255,255,255,0.08)',
                                             borderRadius: '8px',
                                             color: '#f4f4f5',
-                                            outline: 'none'
+                                            outline: 'none',
+                                            transition: 'all 0.2s ease'
                                         }}
                                     />
                                     {searchQuery && (
                                         <button
                                             onClick={() => setSearchQuery('')}
-                                            style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', fontSize: '11px' }}
+                                            style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#d4d4d8', cursor: 'pointer', fontSize: '10px', borderRadius: '50%', width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                         >
                                             ✕
                                         </button>
@@ -1503,39 +1529,43 @@ export default function DashboardPage() {
                                 </div>
 
                                 {/* Sort Dropdown */}
-                                <select
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
-                                    style={{
-                                        padding: '7px 12px',
-                                        fontSize: '12px',
-                                        background: 'rgba(255,255,255,0.03)',
-                                        border: '1px solid rgba(255,255,255,0.08)',
-                                        borderRadius: '8px',
-                                        color: '#e4e4e7',
-                                        cursor: 'pointer',
-                                        outline: 'none'
-                                    }}
-                                >
-                                    <option value="newest">Terbaru</option>
-                                    <option value="oldest">Terlama</option>
-                                    <option value="name_asc">Nama A-Z</option>
-                                    <option value="name_desc">Nama Z-A</option>
-                                    <option value="progress_desc">Seleksi Terbanyak</option>
-                                    <option value="progress_asc">Menunggu Seleksi</option>
-                                </select>
+                                <div className="dashboard-sort-wrapper">
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        style={{
+                                            height: '36px',
+                                            padding: '0 10px',
+                                            fontSize: '12px',
+                                            background: 'rgba(255,255,255,0.04)',
+                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            borderRadius: '8px',
+                                            color: '#e4e4e7',
+                                            cursor: 'pointer',
+                                            outline: 'none'
+                                        }}
+                                    >
+                                        <option value="newest">Terbaru</option>
+                                        <option value="oldest">Terlama</option>
+                                        <option value="name_asc">Nama A-Z</option>
+                                        <option value="name_desc">Nama Z-A</option>
+                                        <option value="progress_desc">Seleksi Terbanyak</option>
+                                        <option value="progress_asc">Menunggu Seleksi</option>
+                                    </select>
+                                </div>
 
                                 {/* View Mode Toggle */}
-                                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', padding: '2px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                <div className="dashboard-view-toggle" style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: '8px', padding: '2px', border: '1px solid rgba(255,255,255,0.08)', height: '36px', alignItems: 'center' }}>
                                     <button
                                         onClick={() => setViewMode('grid')}
-                                        title="Grid View"
+                                        title="Tampilan Grid"
                                         style={{
-                                            padding: '5px 8px',
+                                            height: '100%',
+                                            padding: '0 8px',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            background: viewMode === 'grid' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                            background: viewMode === 'grid' ? 'rgba(255,255,255,0.12)' : 'transparent',
                                             color: viewMode === 'grid' ? '#ffffff' : '#a1a1aa',
                                             border: 'none',
                                             borderRadius: '6px',
@@ -1546,13 +1576,14 @@ export default function DashboardPage() {
                                     </button>
                                     <button
                                         onClick={() => setViewMode('list')}
-                                        title="List View"
+                                        title="Tampilan List"
                                         style={{
-                                            padding: '5px 8px',
+                                            height: '100%',
+                                            padding: '0 8px',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            background: viewMode === 'list' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                                            background: viewMode === 'list' ? 'rgba(255,255,255,0.12)' : 'transparent',
                                             color: viewMode === 'list' ? '#ffffff' : '#a1a1aa',
                                             border: 'none',
                                             borderRadius: '6px',
@@ -1576,19 +1607,22 @@ export default function DashboardPage() {
                                         }
                                         setShowCreateModal(true);
                                     }}
-                                    className="btn-primary"
+                                    className="btn-primary dashboard-create-btn"
                                     style={{
-                                        padding: '7px 14px',
+                                        height: '36px',
+                                        padding: '0 14px',
                                         fontSize: '12px',
-                                        fontWeight: '600',
-                                        background: vendorDetails?.isExpired ? '#4b5563' : isProjectLimitReached ? 'rgba(239,68,68,0.15)' : '',
-                                        color: vendorDetails?.isExpired ? '#9ca3af' : isProjectLimitReached ? '#f87171' : '',
-                                        border: isProjectLimitReached ? '1px solid rgba(239,68,68,0.4)' : '',
+                                        fontWeight: '700',
+                                        background: vendorDetails?.isExpired ? '#4b5563' : isProjectLimitReached ? 'rgba(239,68,68,0.15)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                                        color: vendorDetails?.isExpired ? '#9ca3af' : isProjectLimitReached ? '#f87171' : '#ffffff',
+                                        border: isProjectLimitReached ? '1px solid rgba(239,68,68,0.4)' : 'none',
                                         cursor: vendorDetails?.isExpired ? 'not-allowed' : 'pointer',
                                         borderRadius: '8px',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '6px'
+                                        gap: '6px',
+                                        whiteSpace: 'nowrap',
+                                        boxShadow: (!vendorDetails?.isExpired && !isProjectLimitReached) ? '0 2px 10px rgba(99,102,241,0.25)' : 'none'
                                     }}
                                 >
                                     {isProjectLimitReached ? (
@@ -1598,7 +1632,7 @@ export default function DashboardPage() {
                                         </>
                                     ) : (
                                         <>
-                                            <PlusIcon size={13} />
+                                            <PlusIcon size={13} color="#ffffff" />
                                             <span>Buat Project</span>
                                         </>
                                     )}
@@ -2777,37 +2811,7 @@ export default function DashboardPage() {
                                 </p>
                             </div>
 
-                            <div className="form-group" style={{ marginBottom: '14px' }}>
-                                <label className="form-label" style={{ fontSize: '12px', marginBottom: '6px' }}>
-                                    Logo Studio <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}>(PNG, JPG, WebP)</span>
-                                </label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                                setBrandLogoFile(file);
-                                                setBrandLogoPreview(URL.createObjectURL(file));
-                                            }
-                                        }}
-                                        disabled={savingBranding}
-                                        style={{ color: '#a1a1aa', fontSize: '12px', padding: '4px 0', flex: 1 }}
-                                    />
-                                    {brandLogoPreview && (
-                                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center' }}>
-                                            <img
-                                                src={brandLogoPreview}
-                                                alt="Preview Logo"
-                                                style={{ height: '32px', maxWidth: '90px', objectFit: 'contain' }}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* ── SUBDOMAIN STUDIO EKSKLUSIF SECTION ── */}
+                            {/* ── SUBDOMAIN STUDIO EKSKLUSIF SECTION (DI ATAS LOGO) ── */}
                             <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                                     <label className="form-label" style={{ fontSize: '12px', color: '#c5a059', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2916,6 +2920,68 @@ export default function DashboardPage() {
                                 )}
                             </div>
 
+                            {/* ── LOGO STUDIO SECTION ── */}
+                            <div className="form-group" style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', marginBottom: '14px' }}>
+                                <label className="form-label" style={{ fontSize: '12px', marginBottom: '6px' }}>
+                                    Logo Studio <span style={{ fontSize: '11px', color: '#71717a', fontWeight: 'normal' }}>(PNG, JPG, WebP)</span>
+                                </label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                setBrandLogoFile(file);
+                                                setBrandLogoPreview(URL.createObjectURL(file));
+                                            }
+                                        }}
+                                        disabled={savingBranding}
+                                        style={{ color: '#a1a1aa', fontSize: '12px', padding: '4px 0', flex: 1 }}
+                                    />
+                                    {brandLogoPreview && (
+                                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center' }}>
+                                            <img
+                                                src={brandLogoPreview}
+                                                alt="Preview Logo"
+                                                style={{ height: '32px', maxWidth: '90px', objectFit: 'contain' }}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* ── FOLDER PORTOFOLIO GOOGLE DRIVE ── */}
+                            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                    <label className="form-label" style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                                            <polyline points="21 15 16 10 5 21"/>
+                                        </svg>
+                                        <span>Portofolio Google Drive</span>
+                                    </label>
+                                    {portfolioDriveUrl && (
+                                        <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: '12px', fontWeight: 700, border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                                            TERHUBUNG
+                                        </span>
+                                    )}
+                                </div>
+                                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 8px 0', lineHeight: 1.4 }}>
+                                    Tautkan folder Google Drive untuk menampilkan foto karya studio di halaman profil.
+                                </p>
+                                <input
+                                    type="url"
+                                    className="input-text"
+                                    placeholder="https://drive.google.com/drive/folders/..."
+                                    value={portfolioDriveUrl}
+                                    onChange={(e) => setPortfolioDriveUrl(e.target.value)}
+                                    disabled={savingBranding}
+                                    style={{ padding: '8px 12px', fontSize: '12.5px', fontFamily: 'monospace' }}
+                                />
+                            </div>
+
                             {/* ── PREFERENSI SALIN NAMA FILE SECTION (MINIMALIST) ── */}
                             <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
                                 <label className="form-label" style={{ fontSize: '12px', color: '#818cf8', fontWeight: 'bold', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -3005,7 +3071,7 @@ export default function DashboardPage() {
                     setTransferProofFile(null);
                     setUpgradeError('');
                 }}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: selectedUpgradePlan ? '560px' : '780px' }}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: selectedUpgradePlan ? '560px' : '960px', padding: '28px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                             <SparklesUpgradeIcon size={20} color="#fbbf24" />
                             <h2 style={{ margin: 0, fontSize: '22px' }}>Upgrade Plan</h2>
@@ -3017,7 +3083,7 @@ export default function DashboardPage() {
                                     Pilih paket berlangganan studio Anda. Sisa nilai paket lama Anda akan otomatis memotong harga paket baru secara proporsional (*tukar-tambah hemat*).
                                 </p>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: availablePlans.length > 2 ? 'repeat(auto-fit, minmax(220px, 1fr))' : 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: availablePlans.length > 2 ? 'repeat(auto-fit, minmax(260px, 1fr))' : 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
                                     {availablePlans.filter(plan => plan.price > 0 || vendorDetails?.planId === plan.id).map(plan => {
                                         const isCurrentPlan = vendorDetails?.planId === plan.id;
                                         const { discount, total } = getProrationDetails(plan);
@@ -3030,11 +3096,11 @@ export default function DashboardPage() {
                                                 background: isCurrentPlan ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
                                                 border: `1.5px solid ${isCurrentPlan ? '#6366f1' : 'rgba(255,255,255,0.08)'}`,
                                                 borderRadius: '16px',
-                                                padding: '22px 20px',
+                                                padding: '24px 20px',
                                                 position: 'relative',
                                                 display: 'flex',
                                                 flexDirection: 'column',
-                                                justify: 'space-between',
+                                                justifyContent: 'space-between',
                                                 boxShadow: isCurrentPlan ? '0 4px 20px rgba(99,102,241,0.2)' : 'none',
                                                 transition: 'all 0.2s ease'
                                             }}>
@@ -3068,28 +3134,40 @@ export default function DashboardPage() {
                                                         </div>
                                                     )}
 
-                                                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 20px 0', fontSize: '12px', color: '#a1a1aa', lineHeight: '2.2' }}>
+                                                    <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 22px 0', fontSize: '12.5px', color: '#cbd5e1', lineHeight: '2.0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <FolderIcon size={13} color="#818cf8" /> Maksimal <strong style={{ color: '#f4f4f5' }}>{plan.maxProjects >= 99999 ? 'Unlimited' : plan.maxProjects} project</strong>
+                                                            <FolderIcon size={14} color="#818cf8" />
+                                                            <span>Maks. <strong style={{ color: '#ffffff' }}>{plan.maxProjects >= 99999 ? 'Unlimited' : plan.maxProjects} Project</strong></span>
                                                         </li>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <PhotoIcon size={13} color="#34d399" /> Foto <strong style={{ color: '#34d399' }}>Unlimited</strong> / project
+                                                            <PhotoIcon size={14} color="#34d399" />
+                                                            <span>Foto <strong style={{ color: '#34d399' }}>Unlimited</strong></span>
                                                         </li>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <ClockIcon size={13} color="#fbbf24" /> Masa Aktif Akun: <strong style={{ color: '#f4f4f5' }}>{plan.activePeriodDays || 30} hari</strong>
+                                                            <ClockIcon size={14} color="#fbbf24" />
+                                                            <span>Masa Aktif <strong style={{ color: '#ffffff' }}>{plan.activePeriodDays || 30} Hari</strong></span>
                                                         </li>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <PaletteThemeIcon size={13} color="#818cf8" /> Logo Studio Sendiri: {plan.allowCustomLogo === 1 || plan.allowCustomLogo === true || plan.name.includes('Pro') || plan.name.includes('Business') ? (
-                                                                <strong style={{ color: '#34d399' }}>Bisa Logo Sendiri</strong>
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c5a059" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                                                                <circle cx="12" cy="12" r="10"/>
+                                                                <line x1="2" y1="12" x2="22" y2="12"/>
+                                                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                                                            </svg>
+                                                            <span style={{ color: '#fbbf24', fontWeight: 600 }}>Subdomain Studio Eksklusif</span>
+                                                        </li>
+                                                        <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <PaletteThemeIcon size={14} color={plan.allowCustomLogo === 1 || plan.allowCustomLogo === true || plan.name.includes('Pro') || plan.name.includes('Business') ? "#818cf8" : "#71717a"} />
+                                                            {plan.allowCustomLogo === 1 || plan.allowCustomLogo === true || plan.name.includes('Pro') || plan.name.includes('Business') ? (
+                                                                <span style={{ color: '#818cf8', fontWeight: 600 }}>Bisa Logo Studio Sendiri</span>
                                                             ) : (
-                                                                <strong style={{ color: '#71717a' }}>Logo Platform Standard</strong>
+                                                                <span style={{ color: '#71717a' }}>Logo Platform Standard</span>
                                                             )}
                                                         </li>
                                                         <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                             {plan.allowRawSelector === undefined || plan.allowRawSelector === 1 || plan.allowRawSelector === true ? (
-                                                                <><SpeedBoltIcon size={13} color="#34d399" /> Fitur RAW Selector: <strong style={{ color: '#34d399' }}>Aktif</strong></>
+                                                                <><SpeedBoltIcon size={14} color="#34d399" /><span style={{ color: '#34d399', fontWeight: 600 }}>Auto-Sorter File RAW</span></>
                                                             ) : (
-                                                                <><LockIcon size={13} color="#71717a" /> Fitur RAW Selector: <strong style={{ color: '#71717a' }}>Nonaktif (Upgrade Pro)</strong></>
+                                                                <><LockIcon size={14} color="#71717a" /><span style={{ color: '#71717a' }}>RAW Selector Nonaktif</span></>
                                                             )}
                                                         </li>
                                                     </ul>
@@ -3601,7 +3679,44 @@ export default function DashboardPage() {
                         width: 0%;
                     }
                 }
-                @media (max-width: 640px) {
+                /* ── DESKTOP DISPLAY RULES (min-width: 1024px) ── */
+                @media (min-width: 1024px) {
+                    .dashboard-control-bar {
+                        flex-wrap: nowrap !important;
+                        gap: 16px !important;
+                    }
+                    .dashboard-search-wrapper {
+                        width: 280px !important;
+                    }
+                    .project-grid {
+                        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+                        gap: 22px !important;
+                    }
+                }
+
+                /* ── TABLET DISPLAY RULES (768px - 1023px) ── */
+                @media (max-width: 1023px) and (min-width: 768px) {
+                    .dashboard-control-bar {
+                        flex-wrap: wrap !important;
+                    }
+                    .dashboard-tabs-group {
+                        flex-shrink: 0 !important;
+                    }
+                    .dashboard-actions-group {
+                        flex: 1 1 auto !important;
+                        justify-content: flex-end !important;
+                    }
+                    .dashboard-search-wrapper {
+                        width: 220px !important;
+                    }
+                    .project-grid {
+                        grid-template-columns: repeat(2, 1fr) !important;
+                        gap: 16px !important;
+                    }
+                }
+
+                /* ── MOBILE DISPLAY RULES (max-width: 767px) ── */
+                @media (max-width: 767px) {
                     .dashboard-header-row {
                         flex-direction: column !important;
                         align-items: stretch !important;
@@ -3617,22 +3732,56 @@ export default function DashboardPage() {
                         justify-content: center !important;
                     }
                     .dashboard-stats-grid {
-                        grid-template-columns: 1fr 1fr !important;
-                        gap: 8px !important;
-                    }
-                    .dashboard-stats-grid > div:last-child {
-                        grid-column: span 2 !important;
-                    }
-                    .dashboard-stats-grid > div {
-                        padding: 10px 12px !important;
+                        grid-template-columns: 1fr !important;
+                        gap: 10px !important;
                     }
                     .dashboard-control-bar {
                         flex-direction: column !important;
                         align-items: stretch !important;
-                        gap: 10px !important;
+                        gap: 12px !important;
+                        padding: 12px !important;
                     }
-                    .dashboard-control-bar > div {
+                    .dashboard-tabs-group {
                         width: 100% !important;
+                        display: flex !important;
+                        overflow-x: auto !important;
+                        justify-content: flex-start !important;
+                        gap: 4px !important;
+                    }
+                    .dashboard-tabs-group > button {
+                        flex: 1 !important;
+                        white-space: nowrap !important;
+                        justify-content: center !important;
+                        padding: 8px 10px !important;
+                    }
+                    .dashboard-actions-group {
+                        width: 100% !important;
+                        display: grid !important;
+                        grid-template-columns: 1fr 1fr !important;
+                        gap: 8px !important;
+                    }
+                    .dashboard-search-wrapper {
+                        grid-column: span 2 !important;
+                        width: 100% !important;
+                    }
+                    .dashboard-sort-wrapper {
+                        grid-column: span 1 !important;
+                        width: 100% !important;
+                    }
+                    .dashboard-sort-wrapper select {
+                        width: 100% !important;
+                    }
+                    .dashboard-view-toggle {
+                        display: none !important;
+                    }
+                    .dashboard-create-btn {
+                        grid-column: span 1 !important;
+                        width: 100% !important;
+                        justify-content: center !important;
+                    }
+                    .project-grid {
+                        grid-template-columns: 1fr !important;
+                        gap: 14px !important;
                     }
                 }
             `}</style>

@@ -14,8 +14,17 @@ export async function GET(request, { params }) {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
+        if (!projectId) {
+            return NextResponse.json({ message: 'Project ID atau Slug wajib diisi.' }, { status: 400 });
+        }
+
+        const cleanIdOrSlug = decodeURIComponent(String(projectId).trim());
+        const isNumeric = /^\d+$/.test(cleanIdOrSlug);
+
         // Validate project ownership
-        const project = db.prepare('SELECT id, name, vendorId FROM projects WHERE id = ? AND vendorId = ?').get(projectId, vendor.id);
+        const project = isNumeric
+            ? db.prepare('SELECT id, name, vendorId FROM projects WHERE id = ? AND vendorId = ?').get(parseInt(cleanIdOrSlug, 10), vendor.id)
+            : db.prepare('SELECT id, name, vendorId FROM projects WHERE slug = ? AND vendorId = ?').get(cleanIdOrSlug, vendor.id);
 
         if (!project) {
             return NextResponse.json({ message: 'Project not found or unauthorized.' }, { status: 404 });
@@ -30,7 +39,7 @@ export async function GET(request, { params }) {
             INNER JOIN clients c ON s.clientId = c.id
             WHERE c.projectId = ?
             ORDER BY p.originalPath ASC
-        `).all(projectId);
+        `).all(project.id);
 
         // Extract clean file name from originalPath (strip query params and decode URI)
         const fileNames = selectedPhotos.map(row => {

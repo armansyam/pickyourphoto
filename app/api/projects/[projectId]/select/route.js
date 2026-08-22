@@ -7,10 +7,21 @@ export async function POST(request, { params }) {
         const resolvedParams = await params;
         const projectId = resolvedParams?.projectId || params?.projectId;
 
-        // Validate projectId is a valid integer — prevents SQLi crashes from URL fuzzing
-        if (!projectId || !/^\d+$/.test(String(projectId))) {
-            return NextResponse.json({ message: 'ID proyek tidak valid.' }, { status: 400 });
+        if (!projectId) {
+            return NextResponse.json({ message: 'ID atau Slug proyek tidak valid.' }, { status: 400 });
         }
+
+        const cleanIdOrSlug = decodeURIComponent(String(projectId).trim());
+        const isNumeric = /^\d+$/.test(cleanIdOrSlug);
+        const project = isNumeric
+            ? db.prepare('SELECT id, vendorId, maxSelection, status, expiresAt FROM projects WHERE id = ?').get(parseInt(cleanIdOrSlug, 10))
+            : db.prepare('SELECT id, vendorId, maxSelection, status, expiresAt FROM projects WHERE slug = ?').get(cleanIdOrSlug);
+
+        if (!project) {
+            return NextResponse.json({ message: 'Proyek tidak ditemukan.' }, { status: 404 });
+        }
+
+        const realProjectId = project.id;
 
         // Safe JSON parse — guard against empty or malformed body (SyntaxError → 400 not 500)
         let body = {};
@@ -21,10 +32,6 @@ export async function POST(request, { params }) {
         const { searchParams } = new URL(request.url);
         const clientKey = searchParams.get('key');
 
-        if (!clientKey) {
-            return NextResponse.json({ message: 'Missing client access key.' }, { status: 400 });
-        }
-
         if (!Array.isArray(photoIds)) {
             return NextResponse.json({ message: 'Selected photos must be an array of IDs.' }, { status: 400 });
         }
@@ -34,12 +41,17 @@ export async function POST(request, { params }) {
             return NextResponse.json({ message: 'Silakan pilih minimal 1 foto sebelum mengirim pilihan final Anda.' }, { status: 400 });
         }
 
-        // 1. Authorize Client
-        const getClient = db.prepare('SELECT id FROM clients WHERE projectId = ? AND accessKey = ?');
-        const client = getClient.get(projectId, clientKey);
+        // 1. Authorize Client (by key or project default client)
+        let client = null;
+        if (clientKey) {
+            client = db.prepare('SELECT id FROM clients WHERE projectId = ? AND accessKey = ?').get(realProjectId, clientKey);
+        }
+        if (!client) {
+            client = db.prepare('SELECT id FROM clients WHERE projectId = ? ORDER BY id ASC LIMIT 1').get(realProjectId);
+        }
 
         if (!client) {
-            return NextResponse.json({ message: 'Invalid access key or unauthorized.' }, { status: 401 });
+            return NextResponse.json({ message: 'Akses galeri klien tidak valid.' }, { status: 401 });
         }
 
         const clientId = client.id;
@@ -50,7 +62,7 @@ export async function POST(request, { params }) {
           FROM projects p 
           JOIN vendors v ON p.vendorId = v.id 
           WHERE p.id = ?
-        `).get(projectId);
+        `).get(realProjectId);
 
         if (!projectWithVendor) {
           return NextResponse.json({ message: 'Proyek tidak ditemukan.' }, { status: 404 });
@@ -97,7 +109,7 @@ export async function POST(request, { params }) {
 
         // 3. Validate that all submitted photoIds belong to the project
         const getProjectPhotoIds = db.prepare('SELECT id FROM photos WHERE projectId = ?');
-        const validPhotos = getProjectPhotoIds.all(projectId);
+        const validPhotos = getProjectPhotoIds.all(realProjectId);
         const validPhotoIdsSet = new Set(validPhotos.map(p => p.id));
 
         for (const id of uniquePhotoIds) {
@@ -121,7 +133,7 @@ export async function POST(request, { params }) {
 
         // 5. Update status proyek: Hanya kunci menjadi 'completed' jika aksi adalah 'submit'
         if (action === 'submit') {
-            db.prepare("UPDATE projects SET status = 'completed' WHERE id = ?").run(projectId);
+            db.prepare("UPDATE projects SET status = 'completed' WHERE id = ?").run(realProjectId);
         }
 
         return NextResponse.json({

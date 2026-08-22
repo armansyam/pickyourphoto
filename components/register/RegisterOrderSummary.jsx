@@ -142,6 +142,7 @@ export default function RegisterOrderSummary({
                         <div>✓ Maksimal <strong>{selectedPlan.maxProjects} Project Aktif</strong></div>
                         <div>✓ Foto <strong>Unlimited</strong> / project</div>
                         <div>✓ <strong>Galeri Online &amp; Seleksi Foto Klien</strong></div>
+                        <div style={{ color: '#c5a059', fontWeight: 'bold' }}>✓ Subdomain Studio Eksklusif &amp; Profil</div>
                         {selectedPlan.allowCustomLogo === 1 || selectedPlan.allowCustomLogo === true || selectedPlan.name?.includes('Pro') || selectedPlan.name?.includes('Business') ? (
                             <div style={{ color: '#34d399', fontWeight: 'bold' }}>✓ Bisa Menggunakan Logo Studio Sendiri</div>
                         ) : (

@@ -13,44 +13,43 @@ export async function GET(request, { params }) {
         const clientKey = searchParams.get('key');
 
         if (!projectId) {
-            return NextResponse.json({ message: 'Project ID wajib diisi.' }, { status: 400 });
+            return NextResponse.json({ message: 'Project ID atau Slug wajib diisi.' }, { status: 400 });
         }
 
-        // Validate projectId is a pure integer — prevent SQLi crash from URL fuzzing (e.g. "1 UNION SELECT...")
-        if (!/^\d+$/.test(String(projectId).trim())) {
-            return NextResponse.json({ message: 'Project ID tidak valid.' }, { status: 400 });
+        const cleanIdOrSlug = decodeURIComponent(String(projectId).trim());
+        const isNumeric = /^\d+$/.test(cleanIdOrSlug);
+        const project = isNumeric
+            ? db.prepare('SELECT * FROM projects WHERE id = ?').get(parseInt(cleanIdOrSlug, 10))
+            : db.prepare('SELECT * FROM projects WHERE slug = ?').get(cleanIdOrSlug);
+
+        if (!project) {
+            return NextResponse.json({ message: 'Project tidak ditemukan.' }, { status: 404 });
         }
 
+        const realProjectId = project.id;
         const vendor = getAuthVendor();
         let isAuthorized = false;
         let isClient = false;
         let clientId = null;
 
-        // 1. Authorize Vendor
-        const getProject = db.prepare('SELECT * FROM projects WHERE id = ?');
-        const project = getProject.get(projectId);
-
-        if (!project) {
-            return NextResponse.json({ message: 'Project not found.' }, { status: 404 });
-        }
-
+        // 1. Authorize Vendor (Pemilik Proyek)
         if (vendor && project.vendorId === vendor.id) {
             isAuthorized = true;
-        }
-
-        // 2. Authorize Client (via Sharing Key)
-        if (clientKey) {
-            const getClient = db.prepare('SELECT id FROM clients WHERE projectId = ? AND accessKey = ?');
-            const client = getClient.get(projectId, clientKey);
-            if (client) {
-                isAuthorized = true;
-                isClient = true;
-                clientId = client.id;
+            isClient = false;
+        } else {
+            // 2. Authorize Client (Public Clean Link / Key)
+            isAuthorized = true;
+            isClient = true;
+            
+            let client = null;
+            if (clientKey) {
+                client = db.prepare('SELECT id, accessKey FROM clients WHERE projectId = ? AND accessKey = ?').get(realProjectId, clientKey);
             }
-        }
-
-        if (!isAuthorized) {
-            return NextResponse.json({ message: 'Unauthorized access.' }, { status: 401 });
+            if (!client) {
+                // Ambil client utama dari proyek ini (untuk clean slug URL tanpa ?key=)
+                client = db.prepare('SELECT id, accessKey FROM clients WHERE projectId = ? ORDER BY id ASC LIMIT 1').get(realProjectId);
+            }
+            clientId = client ? client.id : null;
         }
 
         // 3. Check Photographer subscription expiry and project status
@@ -70,7 +69,7 @@ export async function GET(request, { params }) {
 
         // Get Client Details (e.g., sharing key, email)
         const getClientInfo = db.prepare('SELECT email, accessKey FROM clients WHERE projectId = ?');
-        const clientInfo = getClientInfo.get(projectId) || {};
+        const clientInfo = getClientInfo.get(realProjectId) || {};
 
         // Fetch photos for the project, indicating which are selected
         let photos;
@@ -84,7 +83,7 @@ export async function GET(request, { params }) {
                 WHERE p.projectId = ?
                 ORDER BY p.id ASC
             `);
-            photos = getPhotos.all(clientId, projectId);
+            photos = getPhotos.all(clientId, realProjectId);
         } else {
             // Vendor view: show all photos, and mark if selected by the project's client
             const getPhotos = db.prepare(`
@@ -95,7 +94,7 @@ export async function GET(request, { params }) {
                 WHERE p.projectId = ?
                 ORDER BY p.id ASC
             `);
-            photos = getPhotos.all(projectId, projectId);
+            photos = getPhotos.all(realProjectId, realProjectId);
         }
 
         // Get Vendor Branding Info
@@ -104,7 +103,7 @@ export async function GET(request, { params }) {
         
         let filesDeleted = project.filesDeleted || 0;
         if (isProjectExpired && filesDeleted === 0) {
-            db.prepare('UPDATE projects SET filesDeleted = 1 WHERE id = ?').run(projectId);
+            db.prepare('UPDATE projects SET filesDeleted = 1 WHERE id = ?').run(realProjectId);
             filesDeleted = 1;
         }
 

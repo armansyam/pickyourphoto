@@ -15,7 +15,7 @@ export async function GET() {
             return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
         }
 
-        const freshVendor = db.prepare('SELECT id, name, email, whatsapp, brandName, brandLogo, copyDelimiter, copyIncludeExt, copySortOrder, subdomain, subdomain_active, subdomain_set_at FROM vendors WHERE id = ?').get(vendor.id);
+        const freshVendor = db.prepare('SELECT id, name, email, whatsapp, brandName, brandLogo, copyDelimiter, copyIncludeExt, copySortOrder, subdomain, subdomain_active, subdomain_set_at, portfolioDriveUrl FROM vendors WHERE id = ?').get(vendor.id);
         return NextResponse.json(freshVendor);
     } catch (error) {
         console.error('Failed to get vendor profile:', error);
@@ -38,6 +38,7 @@ export async function PUT(request) {
         const copyDelimiter = formData.get('copyDelimiter')?.toString() || ', ';
         const copyIncludeExt = parseInt(formData.get('copyIncludeExt')?.toString() || '0') || 0;
         const copySortOrder = formData.get('copySortOrder')?.toString() || 'name_asc';
+        const portfolioDriveUrl = formData.get('portfolioDriveUrl')?.toString()?.trim() || null;
         const logoFile = formData.get('logo'); // File object or null
 
         if (!name) {
@@ -93,11 +94,11 @@ export async function PUT(request) {
 
         // Update database
         if (brandLogoPath) {
-            db.prepare('UPDATE vendors SET name = ?, brandName = ?, whatsapp = ?, brandLogo = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ? WHERE id = ?')
-              .run(name, brandName || null, cleanWhatsapp || null, brandLogoPath, copyDelimiter, copyIncludeExt, copySortOrder, vendor.id);
+            db.prepare('UPDATE vendors SET name = ?, brandName = ?, whatsapp = ?, brandLogo = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ?, portfolioDriveUrl = ? WHERE id = ?')
+              .run(name, brandName || null, cleanWhatsapp || null, brandLogoPath, copyDelimiter, copyIncludeExt, copySortOrder, portfolioDriveUrl, vendor.id);
         } else {
-            db.prepare('UPDATE vendors SET name = ?, brandName = ?, whatsapp = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ? WHERE id = ?')
-              .run(name, brandName || null, cleanWhatsapp || null, copyDelimiter, copyIncludeExt, copySortOrder, vendor.id);
+            db.prepare('UPDATE vendors SET name = ?, brandName = ?, whatsapp = ?, copyDelimiter = ?, copyIncludeExt = ?, copySortOrder = ?, portfolioDriveUrl = ? WHERE id = ?')
+              .run(name, brandName || null, cleanWhatsapp || null, copyDelimiter, copyIncludeExt, copySortOrder, portfolioDriveUrl, vendor.id);
         }
 
         // Get updated details

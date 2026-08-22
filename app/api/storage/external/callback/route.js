@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import db from '@/lib/db';
+import { encryptSecret } from '@/lib/crypto-vault';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,8 +66,9 @@ export async function GET(req) {
 
     // Langsung gunakan Root Index Google Drive Vendor ('root')
     const externalFolderId = 'root';
+    const encryptedToken = encryptSecret(refreshToken);
 
-    // Simpan ke DB
+    // Simpan ke DB dalam bentuk terenkripsi
     db.prepare(`
       UPDATE vendors 
       SET externalDriveConnected = 1,
@@ -74,7 +76,7 @@ export async function GET(req) {
           externalDriveRefreshToken = ?,
           externalDriveFolderId = ?
       WHERE id = ?
-    `).run(googleEmail, refreshToken, externalFolderId, vendorId);
+    `).run(googleEmail, encryptedToken, externalFolderId, vendorId);
 
     console.log(`[BYOS Integration] Vendor ID ${vendorId} successfully connected external GDrive (${googleEmail}).`);
 

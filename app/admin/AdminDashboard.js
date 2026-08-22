@@ -1050,6 +1050,7 @@ export default function AdminDashboard({ adminUser }) {
                                 onCancelQris={handleCancelQris}
                                 onRegenerateQris={handleRegenerateQris}
                                 refetchVendors={fetchData}
+                                settings={{ saas_name: saasName }}
                             />
                         )}
 
@@ -1077,6 +1078,7 @@ export default function AdminDashboard({ adminUser }) {
                                 setActiveProofUrl={setActiveProofUrl}
                                 handleToggleVendorStatus={handleToggleVendorStatus}
                                 refetchVendors={fetchData}
+                                settings={{ saas_name: saasName }}
                             />
                         )}
 

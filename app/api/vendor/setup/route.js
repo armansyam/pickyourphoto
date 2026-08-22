@@ -28,6 +28,12 @@ export async function GET(request) {
 
         const rootDomain = getRootDomain(request);
 
+        const saasRows = db.prepare("SELECT key, value FROM saas_settings WHERE key IN ('saas_name', 'saas_logo_url', 'logo_url')").all() || [];
+        const saasMap = {};
+        saasRows.forEach(r => { saasMap[r.key] = r.value; });
+        const saasName = saasMap.saas_name || 'Photota';
+        const saasLogoUrl = saasMap.saas_logo_url || saasMap.logo_url || '';
+
         return NextResponse.json({
             success: true,
             vendor: {
@@ -43,6 +49,8 @@ export async function GET(request) {
                 subdomain: vendor.subdomain || '',
                 is_setup_completed: Boolean(vendor.is_setup_completed)
             },
+            saasName,
+            saasLogoUrl,
             rootDomain
         });
     } catch (error) {

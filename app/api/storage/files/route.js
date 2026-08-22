@@ -222,7 +222,9 @@ export async function POST(req) {
     }
 
     const bytes = parseInt(fileSizeBytes, 10) || 0;
-    const isExternal = Boolean(body.isExternalDrive || vendor.externalDriveConnected);
+    const isExternal = body.isExternalDrive !== undefined 
+      ? Boolean(body.isExternalDrive) 
+      : (body.storageMode === 'byos' || (!vendor.hasStorageAddon && Boolean(vendor.externalDriveConnected)));
 
     // Simpan berkas file ke storage_files
     db.prepare(`
