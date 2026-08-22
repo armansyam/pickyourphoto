@@ -6,7 +6,8 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
     const rootDomain = getRootDomain();
-    const slug = (params?.subdomain || '').toLowerCase();
+    const resolvedParams = await params;
+    const slug = (resolvedParams?.subdomain || '').toLowerCase();
     
     const vendor = db.prepare(`
         SELECT name, brandName, brandLogo FROM vendors 
@@ -21,19 +22,23 @@ export async function generateMetadata({ params }) {
     }
 
     const displayName = vendor.brandName || vendor.name || 'Studio Gallery';
+    const logoUrl = vendor.brandLogo || '/favicon.ico';
     return {
         title: `${displayName} — Galeri Seleksi Foto Klien`,
         description: `Portal galeri dan seleksi foto online resmi ${displayName}.`,
         robots: { index: false, follow: false }, // Mencegah duplikasi SEO pada link seleksi privat
         icons: {
-            icon: vendor.brandLogo || '/favicon.ico'
+            icon: logoUrl,
+            shortcut: logoUrl,
+            apple: logoUrl
         }
     };
 }
 
 export default async function StudioTenantLayout({ children, params }) {
     const rootDomain = getRootDomain();
-    const slug = (params?.subdomain || '').toLowerCase();
+    const resolvedParams = await params;
+    const slug = (resolvedParams?.subdomain || '').toLowerCase();
 
     if (!slug) {
         notFound();
