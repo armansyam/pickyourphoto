@@ -18,8 +18,6 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
     const [isExpired, setIsExpired] = useState(false);
     const [checkingStatus, setCheckingStatus] = useState(false);
     const [statusNotice, setStatusNotice] = useState(null);
-    const [paidSuccess, setPaidSuccess] = useState(false);
-    const [redirectCountdown, setRedirectCountdown] = useState(5);
     const snapEmbedDone = useRef(false);
 
     // Live countdown timer
@@ -45,7 +43,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
 
     // Auto polling every 3 seconds
     useEffect(() => {
-        if (!pendingOrder?.orderId || isExpired || paidSuccess) return;
+        if (!pendingOrder?.orderId || isExpired) return;
 
         const check = async () => {
             try {
@@ -60,7 +58,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
         check();
         const poll = setInterval(check, 3000);
         return () => clearInterval(poll);
-    }, [pendingOrder?.orderId, isExpired, paidSuccess]);
+    }, [pendingOrder?.orderId, isExpired]);
 
     // Dynamically load Midtrans snap.js script — ONLY for Midtrans provider
     useEffect(() => {
@@ -96,7 +94,7 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
 
     // Snap embed — ONLY for Midtrans (other providers use iframe redirect instead)
     useEffect(() => {
-        if (!isMidtrans || !pendingOrder?.token || snapEmbedDone.current || paidSuccess) return;
+        if (!isMidtrans || !pendingOrder?.token || snapEmbedDone.current) return;
 
         let isMounted = true;
         const tryEmbed = () => {
@@ -137,65 +135,12 @@ export default function NativeQrisDisplay({ pendingOrder, onCancel, platformName
         return () => {
             isMounted = false;
         };
-    }, [isMidtrans, pendingOrder?.token, paidSuccess]);
-
-    const triggerRedirectToDashboard = async () => {
-        try {
-            await fetch(`/api/payment/status?orderId=${pendingOrder.orderId}`);
-        } catch (e) {}
-        window.location.href = window.__paymentRedirectUrl || '/dashboard';
-    };
-
-    // Redirect countdown after success
-    useEffect(() => {
-        if (!paidSuccess) return;
-        setRedirectCountdown(5);
-        const t = setInterval(() => {
-            setRedirectCountdown(p => {
-                if (p <= 1) { 
-                    clearInterval(t); 
-                    triggerRedirectToDashboard();
-                    return 0; 
-                }
-                return p - 1;
-            });
-        }, 1000);
-        return () => clearInterval(t);
-    }, [paidSuccess]);
+    }, [isMidtrans, pendingOrder?.token]);
 
     const isUrgent = timeLeft && timeLeft < '05:00' && !isExpired;
 
     return (
         <>
-            {/* ===== SUCCESS OVERLAY ===== */}
-            {paidSuccess && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(2,6,23,0.85)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.3s ease' }}>
-                    <div style={{ background: 'linear-gradient(145deg,#0d1f17,#0a2e1c)', border: '1.5px solid #22c55e', borderRadius: '24px', padding: '40px 32px', textAlign: 'center', maxWidth: '360px', width: '90%', boxShadow: '0 0 60px rgba(34,197,94,0.25),0 24px 48px rgba(0,0,0,0.6)', animation: 'scaleIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275)' }}>
-                        <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'linear-gradient(135deg,#16a34a,#22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 18px', boxShadow: '0 0 28px rgba(34,197,94,0.4)' }}>
-                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                        </div>
-                        <h3 style={{ margin: '0 0 6px', fontSize: '20px', fontWeight: '800', color: '#4ade80' }}>Pembayaran Telah Diterima</h3>
-                        <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#cbd5e1' }}>Akun <strong style={{ color: '#fff' }}>{pendingOrder.email}</strong> telah aktif.</p>
-                        <p style={{ margin: '0 0 24px', fontSize: '12px', color: '#64748b' }}>Paket <strong style={{ color: '#818cf8' }}>{pendingOrder.planName}</strong> telah berjalan.</p>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px' }}>
-                            <span style={{ fontSize: '12px', color: '#94a3b8' }}>Mengarahkan dalam</span>
-                            <span style={{ fontSize: '22px', fontWeight: '900', color: '#fbbf24' }}>{redirectCountdown}</span>
-                            <span style={{ fontSize: '12px', color: '#94a3b8' }}>detik</span>
-                        </div>
-                        <div style={{ background: 'rgba(255,255,255,0.08)', borderRadius: '99px', height: '3px', marginBottom: '16px', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', width: `${(redirectCountdown / 5) * 100}%`, background: 'linear-gradient(90deg,#16a34a,#4ade80)', borderRadius: '99px', transition: 'width 0.9s linear' }}></div>
-                        </div>
-                        <button onClick={triggerRedirectToDashboard} style={{ width: '100%', padding: '11px', background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                            <SparklesUpgradeIcon size={14} color="#fff" />
-                            <span>Lanjutkan ke Sistem</span>
-                        </button>
-                    </div>
-                </div>
-            )}
-
-
             {/* ===== MAIN QRIS CARD ===== */}
             <div className="fade-in-up" style={{ background: 'linear-gradient(160deg,rgba(15,23,42,0.98),rgba(10,17,35,0.99))', border: `1.5px solid ${isUrgent ? 'rgba(239,68,68,0.6)' : isExpired ? 'rgba(239,68,68,0.5)' : 'rgba(129,140,248,0.5)'}`, borderRadius: '22px', overflow: 'hidden', marginBottom: '24px', boxShadow: `0 20px 60px ${isUrgent ? 'rgba(239,68,68,0.2)' : 'rgba(99,102,241,0.2)'}`, transition: 'border-color 0.5s,box-shadow 0.5s' }}>
 
