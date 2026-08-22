@@ -211,16 +211,28 @@ export async function POST(request) {
       config.provider
     );
 
-    // Determine dynamic request origin, prioritizing public domain/tunnel from saas_settings
+    // Determine dynamic request origin & webhook notifyUrl based on Mode (Sandbox vs Live)
     const host = request.headers.get('host') || 'localhost:3000';
     const proto = request.headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https');
     let origin = request.headers.get('origin') || request.nextUrl.origin || `${proto}://${host}`;
 
-    const saasDomainRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_domain'").get();
-    if (saasDomainRow?.value && saasDomainRow.value.trim()) {
-      const cleanDomain = saasDomainRow.value.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
-      if (!cleanDomain.includes('localhost') && !cleanDomain.includes('127.0.0.1')) {
-        origin = `https://${cleanDomain}`;
+    const gatewayModeRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'gateway_mode'").get();
+    const gatewayMode = gatewayModeRow?.value || 'sandbox';
+
+    const tunnelRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'sandbox_tunnel_url'").get();
+    const sandboxTunnel = tunnelRow?.value ? tunnelRow.value.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '') : '';
+
+    let notifyOrigin = origin;
+
+    if (gatewayMode === 'sandbox' && sandboxTunnel && !sandboxTunnel.includes('localhost')) {
+      notifyOrigin = `https://${sandboxTunnel}`;
+    } else {
+      const saasDomainRow = db.prepare("SELECT value FROM saas_settings WHERE key = 'saas_domain'").get();
+      if (saasDomainRow?.value && saasDomainRow.value.trim()) {
+        const cleanDomain = saasDomainRow.value.trim().replace(/^https?:\/\//, '').replace(/\/+$/, '');
+        if (!cleanDomain.includes('localhost') && !cleanDomain.includes('127.0.0.1')) {
+          notifyOrigin = `https://${cleanDomain}`;
+        }
       }
     }
 
@@ -233,7 +245,7 @@ export async function POST(request) {
       vendorPhone: vendor.whatsapp,
       planName: addonName ? `${plan.name} + ${addonName}` : plan.name,
       baseUrl: origin,
-      notifyUrl: `${origin}/api/payment/notification`,
+      notifyUrl: `${notifyOrigin}/api/payment/notification`,
       returnUrl: `${origin}/dashboard`,
       cancelUrl: `${origin}/register`,
     });

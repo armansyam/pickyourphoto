@@ -28,6 +28,8 @@ export default function AdminSettings({
   contactEmail, setContactEmail,
   contactWhatsapp, setContactWhatsapp,
   enablePaymentGateway = false, setEnablePaymentGateway,
+  paymentGatewayMode = 'sandbox', setPaymentGatewayMode,
+  sandboxTunnelUrl = '', setSandboxTunnelUrl,
   paymentGatewayProvider = 'midtrans', setPaymentGatewayProvider,
   paymentGatewayClientKey = '', setPaymentGatewayClientKey,
   paymentGatewayServerKey = '', setPaymentGatewayServerKey,
@@ -163,6 +165,8 @@ export default function AdminSettings({
 
   const [savedGatewayState, setSavedGatewayState] = useState({
     enablePaymentGateway,
+    paymentGatewayMode,
+    sandboxTunnelUrl,
     paymentGatewayProvider,
     paymentGatewayClientKey,
     paymentGatewayServerKey,
@@ -174,6 +178,8 @@ export default function AdminSettings({
     if (!gatewayStateInitialized.current && (paymentGatewayProvider !== undefined || paymentGatewayClientKey !== undefined || enablePaymentGateway !== undefined)) {
       setSavedGatewayState({
         enablePaymentGateway,
+        paymentGatewayMode,
+        sandboxTunnelUrl,
         paymentGatewayProvider,
         paymentGatewayClientKey,
         paymentGatewayServerKey,
@@ -181,10 +187,12 @@ export default function AdminSettings({
       });
       gatewayStateInitialized.current = true;
     }
-  }, [enablePaymentGateway, paymentGatewayProvider, paymentGatewayClientKey, paymentGatewayServerKey, qrisExpirationMinutes]);
+  }, [enablePaymentGateway, paymentGatewayMode, sandboxTunnelUrl, paymentGatewayProvider, paymentGatewayClientKey, paymentGatewayServerKey, qrisExpirationMinutes]);
 
   const isGatewayDirty = 
     Boolean(enablePaymentGateway) !== Boolean(savedGatewayState.enablePaymentGateway) ||
+    (paymentGatewayMode || 'sandbox') !== (savedGatewayState.paymentGatewayMode || 'sandbox') ||
+    (sandboxTunnelUrl || '').trim() !== (savedGatewayState.sandboxTunnelUrl || '').trim() ||
     (paymentGatewayProvider || 'midtrans') !== (savedGatewayState.paymentGatewayProvider || 'midtrans') ||
     (paymentGatewayClientKey || '').trim() !== (savedGatewayState.paymentGatewayClientKey || '').trim() ||
     (paymentGatewayServerKey || '').trim() !== (savedGatewayState.paymentGatewayServerKey || '').trim() ||
@@ -192,10 +200,12 @@ export default function AdminSettings({
 
   const handleCancelGateway = () => {
     setEnablePaymentGateway(savedGatewayState.enablePaymentGateway);
+    if (setPaymentGatewayMode) setPaymentGatewayMode(savedGatewayState.paymentGatewayMode || 'sandbox');
+    if (setSandboxTunnelUrl) setSandboxTunnelUrl(savedGatewayState.sandboxTunnelUrl || '');
     setPaymentGatewayProvider(savedGatewayState.paymentGatewayProvider);
     setPaymentGatewayClientKey(savedGatewayState.paymentGatewayClientKey);
     setPaymentGatewayServerKey(savedGatewayState.paymentGatewayServerKey);
-    setQrisExpirationMinutes(savedGatewayState.qrisExpirationMinutes);
+    if (setQrisExpirationMinutes) setQrisExpirationMinutes(savedGatewayState.qrisExpirationMinutes || 15);
     setIsEditingPaymentGateway(false);
   };
 
@@ -393,6 +403,8 @@ export default function AdminSettings({
         body: JSON.stringify({
           saasSettings: {
             enable_payment_gateway: enablePaymentGateway ? '1' : '0',
+            gateway_mode: paymentGatewayMode || 'sandbox',
+            sandbox_tunnel_url: sandboxTunnelUrl || '',
             payment_gateway_provider: paymentGatewayProvider,
             payment_gateway_client_key: paymentGatewayClientKey,
             payment_gateway_server_key: paymentGatewayServerKey,
@@ -405,6 +417,8 @@ export default function AdminSettings({
         if (addToast) addToast('Konfigurasi Payment Gateway & QRIS berhasil disimpan!', 'success');
         setSavedGatewayState({
           enablePaymentGateway,
+          paymentGatewayMode,
+          sandboxTunnelUrl,
           paymentGatewayProvider,
           paymentGatewayClientKey,
           paymentGatewayServerKey,
@@ -1746,13 +1760,18 @@ export default function AdminSettings({
             </div>
 
             {/* AUTOMATIC PAYMENT GATEWAY MODULE */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '8px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
               <h4 style={{ margin: 0, fontSize: '15px', color: '#818cf8', fontWeight: 'bold' }}>
                 💳 Automatic Payment Gateway (Midtrans, Xendit, Tripay, Duitku, IPaymu)
               </h4>
-              <span style={{ fontSize: '11px', background: enablePaymentGateway ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: enablePaymentGateway ? '#34d399' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
-                {enablePaymentGateway ? '🟢 GATEWAY AKTIF' : '🔴 NONAKTIF'}
-              </span>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', background: paymentGatewayMode === 'live' ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: paymentGatewayMode === 'live' ? '#34d399' : '#fbbf24', border: paymentGatewayMode === 'live' ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(251,191,36,0.3)', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  {paymentGatewayMode === 'live' ? '🟢 LIVE PRODUCTION' : '🟡 SANDBOX TESTING'}
+                </span>
+                <span style={{ fontSize: '11px', background: enablePaymentGateway ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', color: enablePaymentGateway ? '#34d399' : '#f87171', padding: '4px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  {enablePaymentGateway ? '🟢 GATEWAY AKTIF' : '🔴 NONAKTIF'}
+                </span>
+              </div>
             </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px' }}>
@@ -1760,18 +1779,29 @@ export default function AdminSettings({
                 <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
                     <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Mode Lingkungan:</span>
+                      <strong style={{ color: paymentGatewayMode === 'live' ? '#34d399' : '#fbbf24' }}>
+                        {paymentGatewayMode === 'live' ? '🟢 Live Production' : '🟡 Sandbox (Uji Coba)'}
+                      </strong>
+                    </div>
+                    <div>
                       <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Provider Aktif:</span>
                       <strong style={{ color: '#38bdf8', textTransform: 'uppercase' }}>{paymentGatewayProvider}</strong>
                     </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Batas Expired QRIS:</span>
-                      <strong style={{ color: '#fbbf24' }}>{qrisExpirationMinutes || 15} Menit</strong>
-                    </div>
                   </div>
+
+                  {paymentGatewayMode === 'sandbox' && sandboxTunnelUrl && (
+                    <div style={{ background: 'rgba(251, 191, 36, 0.08)', border: '1px solid rgba(251, 191, 36, 0.25)', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '11.5px' }}>
+                      <span style={{ color: '#fbbf24', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>🌐 URL Tunnel Webhook Sandbox:</span>
+                      <code style={{ color: '#38bdf8', fontFamily: 'monospace', wordBreak: 'break-all' }}>{sandboxTunnelUrl}</code>
+                    </div>
+                  )}
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                     <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Client / Public Key:</span>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>
+                        {paymentGatewayProvider === 'ipaymu' ? 'VA Merchant:' : 'Client / Public Key:'}
+                      </span>
                       <strong style={{ color: '#ffffff', fontFamily: 'monospace' }}>{paymentGatewayClientKey.substring(0, 16)}...</strong>
                     </div>
                     <div>
@@ -1780,11 +1810,22 @@ export default function AdminSettings({
                     </div>
                   </div>
 
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div>
+                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Batas Expired QRIS:</span>
+                      <strong style={{ color: '#fbbf24' }}>{qrisExpirationMinutes || 15} Menit</strong>
+                    </div>
+                  </div>
+
                   {/* WEBHOOK URL INFO */}
                   <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '10px 14px', borderRadius: '8px', fontSize: '11px', marginBottom: '16px' }}>
                     <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback:</div>
                     <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
-                      {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'}
+                      {paymentGatewayMode === 'sandbox' && sandboxTunnelUrl ? (
+                        `${sandboxTunnelUrl.replace(/\/+$/, '')}/api/payment/notification`
+                      ) : (
+                        typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'
+                      )}
                     </code>
                   </div>
 
@@ -1798,7 +1839,7 @@ export default function AdminSettings({
                           const res = await fetch('/api/admin/payment/test', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: false })
+                            body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: paymentGatewayMode === 'live' })
                           });
                           const data = await res.json();
                           if (res.ok && data.success) {
@@ -1841,6 +1882,81 @@ export default function AdminSettings({
                       Aktifkan Pembayaran Otomatis Payment Gateway
                     </label>
                   </div>
+
+                  {/* ENVIRONMENT MODE SELECTOR (SANDBOX VS LIVE) */}
+                  <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '14px', margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '12px', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px', display: 'block' }}>
+                      ⚙️ Mode Lingkungan Payment Gateway
+                    </label>
+                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentGatewayMode && setPaymentGatewayMode('sandbox')}
+                        style={{
+                          flex: 1,
+                          minWidth: '160px',
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          border: (paymentGatewayMode === 'sandbox' || !paymentGatewayMode) ? '2px solid #fbbf24' : '1px solid rgba(255,255,255,0.1)',
+                          background: (paymentGatewayMode === 'sandbox' || !paymentGatewayMode) ? 'rgba(251, 191, 36, 0.15)' : 'rgba(0,0,0,0.3)',
+                          color: (paymentGatewayMode === 'sandbox' || !paymentGatewayMode) ? '#fbbf24' : '#94a3b8',
+                          fontWeight: 'bold',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <span>🟡 Mode Sandbox (Testing)</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaymentGatewayMode && setPaymentGatewayMode('live')}
+                        style={{
+                          flex: 1,
+                          minWidth: '160px',
+                          padding: '10px 14px',
+                          borderRadius: '8px',
+                          border: paymentGatewayMode === 'live' ? '2px solid #34d399' : '1px solid rgba(255,255,255,0.1)',
+                          background: paymentGatewayMode === 'live' ? 'rgba(52, 211, 153, 0.15)' : 'rgba(0,0,0,0.3)',
+                          color: paymentGatewayMode === 'live' ? '#34d399' : '#94a3b8',
+                          fontWeight: 'bold',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <span>🟢 Mode Live (Produksi Asli)</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* TUNNEL URL FOR SANDBOX */}
+                  {(paymentGatewayMode === 'sandbox' || !paymentGatewayMode) && (
+                    <div style={{ background: 'rgba(251, 191, 36, 0.05)', border: '1px solid rgba(251, 191, 36, 0.25)', borderRadius: '10px', padding: '14px', margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '12px', color: '#fbbf24', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>🌐 URL Tunnel Webhook Sandbox (Cloudflare Tunnel / Ngrok)</span>
+                      </label>
+                      <input
+                        type="text"
+                        className="input-text"
+                        placeholder="Contoh: https://jets-feelings-responsibilities-clinton.trycloudflare.com"
+                        value={sandboxTunnelUrl}
+                        onChange={e => setSandboxTunnelUrl && setSandboxTunnelUrl(e.target.value)}
+                        style={{ background: 'rgba(0,0,0,0.4)', color: '#38bdf8', fontFamily: 'monospace', fontWeight: 'bold', marginTop: '6px' }}
+                      />
+                      <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#cbd5e1', lineHeight: '1.4' }}>
+                        💡 Saat Mode Sandbox aktif, link tunnel ini otomatis dikirimkan ke IPaymu sebagai URL Webhook (<code>notifyUrl</code>) agar callback pembayaran dapat diterima di laptop lokal Anda.
+                      </p>
+                    </div>
+                  )}
 
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label" style={{ fontSize: '12px' }}>Pilih Provider Payment Gateway</label>
@@ -1911,7 +2027,11 @@ export default function AdminSettings({
                   <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', padding: '12px 14px', borderRadius: '8px', fontSize: '12px' }}>
                     <div style={{ color: '#818cf8', fontWeight: 'bold', marginBottom: '4px' }}>🔗 URL Notification / Webhook Callback:</div>
                     <code style={{ background: 'rgba(0,0,0,0.4)', padding: '4px 8px', borderRadius: '4px', color: '#34d399', wordBreak: 'break-all', display: 'block' }}>
-                      {typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'}
+                      {(paymentGatewayMode === 'sandbox' || !paymentGatewayMode) && sandboxTunnelUrl ? (
+                        `${sandboxTunnelUrl.replace(/\/+$/, '')}/api/payment/notification`
+                      ) : (
+                        typeof window !== 'undefined' ? `${window.location.origin}/api/payment/notification` : '/api/payment/notification'
+                      )}
                     </code>
                   </div>
 
@@ -1925,7 +2045,7 @@ export default function AdminSettings({
                           const res = await fetch('/api/admin/payment/test', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: false })
+                            body: JSON.stringify({ provider: paymentGatewayProvider, clientKey: paymentGatewayClientKey, serverKey: paymentGatewayServerKey, isProduction: paymentGatewayMode === 'live' })
                           });
                           const data = await res.json();
                           if (res.ok && data.success) {

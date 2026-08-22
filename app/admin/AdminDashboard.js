@@ -99,6 +99,8 @@ export default function AdminDashboard({ adminUser }) {
 
     // Payment Gateway Toggle States
     const [enablePaymentGateway, setEnablePaymentGateway] = useState(false);
+    const [paymentGatewayMode, setPaymentGatewayMode] = useState('sandbox');
+    const [sandboxTunnelUrl, setSandboxTunnelUrl] = useState('');
     const [paymentGatewayProvider, setPaymentGatewayProvider] = useState('midtrans');
     const [paymentGatewayClientKey, setPaymentGatewayClientKey] = useState('');
     const [paymentGatewayServerKey, setPaymentGatewayServerKey] = useState('');
@@ -269,6 +271,8 @@ export default function AdminDashboard({ adminUser }) {
 
 
                     if (data.saasSettings.enable_payment_gateway) setEnablePaymentGateway(data.saasSettings.enable_payment_gateway === '1' || data.saasSettings.enable_payment_gateway === 'true');
+                    if (data.saasSettings.gateway_mode) setPaymentGatewayMode(data.saasSettings.gateway_mode);
+                    if (data.saasSettings.sandbox_tunnel_url) setSandboxTunnelUrl(data.saasSettings.sandbox_tunnel_url);
                     if (data.saasSettings.payment_gateway_provider) setPaymentGatewayProvider(data.saasSettings.payment_gateway_provider);
                     if (data.saasSettings.payment_gateway_client_key) setPaymentGatewayClientKey(data.saasSettings.payment_gateway_client_key);
                     if (data.saasSettings.payment_gateway_server_key) setPaymentGatewayServerKey(data.saasSettings.payment_gateway_server_key);
@@ -759,6 +763,8 @@ export default function AdminDashboard({ adminUser }) {
                             companyAddress={companyAddress} setCompanyAddress={setCompanyAddress}
                             operationalHours={operationalHours} setOperationalHours={setOperationalHours}
                             enablePaymentGateway={enablePaymentGateway} setEnablePaymentGateway={setEnablePaymentGateway}
+                            paymentGatewayMode={paymentGatewayMode} setPaymentGatewayMode={setPaymentGatewayMode}
+                            sandboxTunnelUrl={sandboxTunnelUrl} setSandboxTunnelUrl={setSandboxTunnelUrl}
                             paymentGatewayProvider={paymentGatewayProvider} setPaymentGatewayProvider={setPaymentGatewayProvider}
                             paymentGatewayClientKey={paymentGatewayClientKey} setPaymentGatewayClientKey={setPaymentGatewayClientKey}
                             paymentGatewayServerKey={paymentGatewayServerKey} setPaymentGatewayServerKey={setPaymentGatewayServerKey}
