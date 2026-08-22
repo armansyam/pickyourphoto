@@ -87,9 +87,9 @@ export default function AdminSettings({
     companyAddress
   });
 
-  const identityStateInitialized = React.useRef(false);
+  // Always keep savedIdentityState in sync with props when not actively editing
   React.useEffect(() => {
-    if (!identityStateInitialized.current && (saasName || saasDomain || contactEmail)) {
+    if (!isEditingIdentity) {
       setSavedIdentityState({
         saasName,
         saasDomain,
@@ -100,9 +100,8 @@ export default function AdminSettings({
         operationalHours,
         companyAddress
       });
-      identityStateInitialized.current = true;
     }
-  }, [saasName, saasDomain, saasTagline, saasDescription, contactEmail, contactWhatsapp, operationalHours, companyAddress]);
+  }, [isEditingIdentity, saasName, saasDomain, saasTagline, saasDescription, contactEmail, contactWhatsapp, operationalHours, companyAddress]);
 
   const isIdentityDirty = 
     (saasName || '').trim() !== (savedIdentityState.saasName || '').trim() ||
@@ -131,17 +130,16 @@ export default function AdminSettings({
     googleClientSecret,
     maxUploadConcurrencyThreads
   });
-  const googleStateInitialized = React.useRef(false);
+
   React.useEffect(() => {
-    if (!googleStateInitialized.current && (googleClientId !== undefined || googleClientSecret !== undefined)) {
+    if (!isEditingGoogleCredentials) {
       setSavedGoogleState({
         googleClientId,
         googleClientSecret,
         maxUploadConcurrencyThreads
       });
-      googleStateInitialized.current = true;
     }
-  }, [googleClientId, googleClientSecret, maxUploadConcurrencyThreads]);
+  }, [isEditingGoogleCredentials, googleClientId, googleClientSecret, maxUploadConcurrencyThreads]);
 
   const isGoogleDirty =
     (googleClientId || '').trim() !== (savedGoogleState.googleClientId || '').trim() ||
@@ -164,9 +162,9 @@ export default function AdminSettings({
     smtpPassword,
     smtpFromName
   });
-  const smtpStateInitialized = React.useRef(false);
+
   React.useEffect(() => {
-    if (!smtpStateInitialized.current && (smtpEmail !== undefined || smtpHost !== undefined)) {
+    if (!isEditingSmtp) {
       setSavedSmtpState({
         smtpEnable,
         smtpHost,
@@ -175,9 +173,8 @@ export default function AdminSettings({
         smtpPassword,
         smtpFromName
       });
-      smtpStateInitialized.current = true;
     }
-  }, [smtpEnable, smtpHost, smtpPort, smtpEmail, smtpPassword, smtpFromName]);
+  }, [isEditingSmtp, smtpEnable, smtpHost, smtpPort, smtpEmail, smtpPassword, smtpFromName]);
 
   const isSmtpDirty =
     Boolean(smtpEnable) !== Boolean(savedSmtpState.smtpEnable) ||
@@ -203,17 +200,16 @@ export default function AdminSettings({
     bankAccountNumber,
     bankAccountName
   });
-  const bankStateInitialized = React.useRef(false);
+
   React.useEffect(() => {
-    if (!bankStateInitialized.current && (bankName !== undefined || bankAccountNumber !== undefined)) {
+    if (!isEditingBankDetails) {
       setSavedBankState({
         bankName,
         bankAccountNumber,
         bankAccountName
       });
-      bankStateInitialized.current = true;
     }
-  }, [bankName, bankAccountNumber, bankAccountName]);
+  }, [isEditingBankDetails, bankName, bankAccountNumber, bankAccountName]);
 
   const isBankDirty =
     (bankName || '').trim() !== (savedBankState.bankName || '').trim() ||
@@ -241,9 +237,8 @@ export default function AdminSettings({
     gracePeriodDays
   });
 
-  const systemStateInitialized = React.useRef(false);
   React.useEffect(() => {
-    if (!systemStateInitialized.current && (sysEnableReg !== undefined || sysMaxQuota !== undefined)) {
+    if (!isEditingSystem) {
       setSavedSystemState({
         sysEnableReg,
         sysEnableTrial,
@@ -256,9 +251,8 @@ export default function AdminSettings({
         workerStorageWarningThresholdGb,
         gracePeriodDays
       });
-      systemStateInitialized.current = true;
     }
-  }, [sysEnableReg, sysMaxQuota, customStoragePricePerGb, workerStorageWarningThresholdGb, gracePeriodDays]);
+  }, [isEditingSystem, sysEnableReg, sysEnableTrial, sysMaxQuota, sysTrialExpirationMinutes, trialMaxPhotos, trialMaxSelection, trialPreviewPhotos, customStoragePricePerGb, workerStorageWarningThresholdGb, gracePeriodDays]);
 
   const isSystemDirty = 
     Boolean(sysEnableReg) !== Boolean(savedSystemState.sysEnableReg) ||
@@ -287,9 +281,8 @@ export default function AdminSettings({
     qrisExpirationMinutes
   });
 
-  const gatewayStateInitialized = React.useRef(false);
   React.useEffect(() => {
-    if (!gatewayStateInitialized.current && (paymentGatewayProvider !== undefined || paymentGatewayClientKey !== undefined || enablePaymentGateway !== undefined)) {
+    if (!isEditingPaymentGateway) {
       setSavedGatewayState({
         enablePaymentGateway,
         paymentGatewayMode,
@@ -299,9 +292,8 @@ export default function AdminSettings({
         paymentGatewayServerKey,
         qrisExpirationMinutes
       });
-      gatewayStateInitialized.current = true;
     }
-  }, [enablePaymentGateway, paymentGatewayMode, sandboxTunnelUrl, paymentGatewayProvider, paymentGatewayClientKey, paymentGatewayServerKey, qrisExpirationMinutes]);
+  }, [isEditingPaymentGateway, enablePaymentGateway, paymentGatewayMode, sandboxTunnelUrl, paymentGatewayProvider, paymentGatewayClientKey, paymentGatewayServerKey, qrisExpirationMinutes]);
 
   const isGatewayDirty = 
     Boolean(enablePaymentGateway) !== Boolean(savedGatewayState.enablePaymentGateway) ||
@@ -326,12 +318,18 @@ export default function AdminSettings({
   // ── 7. AUTO-COLLAPSE & RESET ON TAB SWITCHING ──
   const switchTab = (newTab) => {
     if (newTab === activeSubTab) return;
-    handleCancelIdentity();
-    handleCancelGoogle();
-    handleCancelSmtp();
-    handleCancelBank();
-    handleCancelGateway();
-    handleCancelSystem();
+    if (isEditingIdentity) handleCancelIdentity();
+    if (isEditingGoogleCredentials) handleCancelGoogle();
+    if (isEditingSmtp) handleCancelSmtp();
+    if (isEditingBankDetails) handleCancelBank();
+    if (isEditingPaymentGateway) handleCancelGateway();
+    if (isEditingSystem) handleCancelSystem();
+    setIsEditingIdentity(false);
+    setIsEditingGoogleCredentials(false);
+    setIsEditingSmtp(false);
+    setIsEditingBankDetails(false);
+    setIsEditingPaymentGateway(false);
+    setIsEditingSystem(false);
     setActiveSubTab(newTab);
   };
 
@@ -1490,81 +1488,97 @@ export default function AdminSettings({
             </h4>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>Kredensial Master Google OAuth 2.0</span>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#94a3b8' }}>Digunakan untuk Google Sign-in Vendor & sinkronisasi Google Drive Studio.</p>
-                </div>
-                <span style={{ fontSize: '11px', background: googleRefreshToken ? 'rgba(16,185,129,0.15)' : 'rgba(251,191,36,0.15)', color: googleRefreshToken ? '#34d399' : '#fbbf24', padding: '4px 12px', borderRadius: '12px', fontWeight: 'bold' }}>
-                  {googleRefreshToken ? '🟢 OAuth Active' : '⚠️ Belum Terhubung'}
-                </span>
-              </div>
-
-              {!isEditingGoogleCredentials && googleClientId && googleClientSecret ? (
-                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Google Client ID:</span>
-                      <strong style={{ color: '#ffffff', wordBreak: 'break-all', fontFamily: 'monospace' }}>{googleClientId.substring(0, 24)}...</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Client Secret:</span>
-                      <strong style={{ color: '#34d399', letterSpacing: '2px' }}>••••••••••••••••</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Max Parallel Worker Threads:</span>
-                      <strong style={{ color: '#818cf8' }}>{maxUploadConcurrencyThreads || 4} Thread Simultan</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Status Sinkronisasi:</span>
-                      <strong style={{ color: '#34d399' }}>Terkoneksi Google Cloud API</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
-                    <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '10px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+              {!isEditingGoogleCredentials ? (
+                googleClientId && googleClientSecret ? (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
                       <div>
-                        <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', fontWeight: '700' }}>
-                          Akun Master Terhubung
-                        </span>
-                        <strong style={{ color: googleMasterAccountEmail ? '#38bdf8' : '#fbbf24', fontSize: '13px' }}>
-                          {googleMasterAccountEmail || 'Belum Terhubung'}
-                        </strong>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Google Client ID:</span>
+                        <strong style={{ color: '#ffffff', wordBreak: 'break-all', fontFamily: 'monospace' }}>{googleClientId.substring(0, 24)}...</strong>
                       </div>
-                      <a 
-                        href="/api/admin/auth/google" 
-                        style={{ 
-                          fontSize: '11px', 
-                          color: '#ffffff', 
-                          background: 'linear-gradient(135deg, #0284c7, #0369a1)', 
-                          padding: '6px 14px', 
-                          borderRadius: '8px', 
-                          textDecoration: 'none', 
-                          fontWeight: '700',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          boxShadow: '0 2px 10px rgba(2, 132, 199, 0.35)',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        🔄 Ganti Akun ➔
-                      </a>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Client Secret:</span>
+                        <strong style={{ color: '#34d399', letterSpacing: '2px' }}>••••••••••••••••</strong>
+                      </div>
                     </div>
 
-                    <button 
-                      type="button" 
-                      onClick={() => setIsEditingGoogleCredentials(true)} 
-                      className="btn-secondary" 
-                      style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
-                    >
-                      ✏️ Edit Kredensial Google
-                    </button>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Max Parallel Worker Threads:</span>
+                        <strong style={{ color: '#818cf8' }}>{maxUploadConcurrencyThreads || 4} Thread Simultan</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Status Sinkronisasi:</span>
+                        <strong style={{ color: '#34d399' }}>Terkoneksi Google Cloud API</strong>
+                      </div>
+                    </div>
+
+                    <div style={{ paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                      <div style={{ background: 'rgba(56, 189, 248, 0.06)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '10px', padding: '8px 14px', display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                        <div>
+                          <span style={{ color: '#94a3b8', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', fontWeight: '700' }}>
+                            Akun Master Terhubung
+                          </span>
+                          <strong style={{ color: googleMasterAccountEmail ? '#38bdf8' : '#fbbf24', fontSize: '13px' }}>
+                            {googleMasterAccountEmail || 'Belum Terhubung'}
+                          </strong>
+                        </div>
+                        <a 
+                          href="/api/admin/auth/google" 
+                          style={{ 
+                            fontSize: '11px', 
+                            color: '#ffffff', 
+                            background: 'linear-gradient(135deg, #0284c7, #0369a1)', 
+                            padding: '6px 14px', 
+                            borderRadius: '8px', 
+                            textDecoration: 'none', 
+                            fontWeight: '700',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 2px 10px rgba(2, 132, 199, 0.35)',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          🔄 Ganti Akun ➔
+                        </a>
+                      </div>
+
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingGoogleCredentials(true)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        ✏️ Edit Kredensial Google
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '24px' }}>⚠️</span>
+                      <div>
+                        <strong style={{ color: '#fbbf24', fontSize: '13.5px', display: 'block', marginBottom: '2px' }}>
+                          Kredensial Master Google OAuth 2.0 Belum Dikonfigurasi
+                        </strong>
+                        <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                          Kredensial ini diperlukan untuk integrasi Google Sign-in dan sinkronisasi Google Drive Master Studio.
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingGoogleCredentials(true)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        ⚙️ Konfigurasi Kredensial Google
+                      </button>
+                    </div>
+                  </div>
+                )
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div className="form-group" style={{ margin: 0 }}>
@@ -1649,41 +1663,67 @@ export default function AdminSettings({
             </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
-              {!isEditingSmtp && smtpEmail && smtpPassword ? (
-                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Server Host &amp; Port:</span>
-                      <strong style={{ color: '#38bdf8' }}>{smtpHost || 'smtp.gmail.com'} : {smtpPort || '465'}</strong>
+              {!isEditingSmtp ? (
+                smtpEmail && smtpPassword ? (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Server Host &amp; Port:</span>
+                        <strong style={{ color: '#38bdf8' }}>{smtpHost || 'smtp.gmail.com'} : {smtpPort || '465'}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nama Pengirim (Sender):</span>
+                        <strong style={{ color: '#ffffff' }}>{smtpFromName || 'Pick Your Photo'}</strong>
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nama Pengirim (Sender):</span>
-                      <strong style={{ color: '#ffffff' }}>{smtpFromName || 'Pick Your Photo'}</strong>
-                    </div>
-                  </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Akun Email Pengirim:</span>
-                      <strong style={{ color: '#34d399' }}>{smtpEmail}</strong>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Akun Email Pengirim:</span>
+                        <strong style={{ color: '#34d399' }}>{smtpEmail}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Status Modul:</span>
+                        <strong style={{ color: smtpEnable ? '#34d399' : '#f87171' }}>{smtpEnable ? '🟢 Aktif' : '🔴 Nonaktif'}</strong>
+                      </div>
                     </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Status Modul:</span>
-                      <strong style={{ color: smtpEnable ? '#34d399' : '#f87171' }}>{smtpEnable ? '🟢 Aktif' : '🔴 Nonaktif'}</strong>
-                    </div>
-                  </div>
 
-                  <div style={{ paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                    <button 
-                      type="button" 
-                      onClick={() => setIsEditingSmtp(true)} 
-                      className="btn-secondary" 
-                      style={{ padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
-                    >
-                      ✏️ Ubah Kredensial SMTP
-                    </button>
+                    <div style={{ paddingTop: '14px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingSmtp(true)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
+                      >
+                        ✏️ Ubah Kredensial SMTP
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '24px' }}>⚠️</span>
+                      <div>
+                        <strong style={{ color: '#fbbf24', fontSize: '13.5px', display: 'block', marginBottom: '2px' }}>
+                          Server Email Notifikasi (SMTP) Belum Dikonfigurasi
+                        </strong>
+                        <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                          Email notifikasi persetujuan vendor dan peringatan tenggang storage akan ditangguhkan sampai SMTP dikonfigurasi.
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingSmtp(true)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        ⚙️ Konfigurasi Server SMTP
+                      </button>
+                    </div>
+                  </div>
+                )
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1808,35 +1848,61 @@ export default function AdminSettings({
             </div>
 
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
-              {!isEditingBankDetails && bankName && bankAccountNumber ? (
-                <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '14px' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nama Bank:</span>
-                      <strong style={{ color: '#ffffff' }}>{bankName}</strong>
-                    </div>
-                    <div>
-                      <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nomor Rekening:</span>
-                      <strong style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px' }}>{bankAccountNumber}</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                    <div>
-                      <span style={{ color: '#94a3b8', fontSize: '11px', display: 'block' }}>Atas Nama Rekening:</span>
-                      <strong style={{ color: '#ffffff', fontSize: '13px' }}>{bankAccountName || 'PT Pick Your Photo'}</strong>
+              {!isEditingBankDetails ? (
+                bankName && bankAccountNumber ? (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '12px', marginBottom: '14px' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nama Bank:</span>
+                        <strong style={{ color: '#ffffff' }}>{bankName}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Nomor Rekening:</span>
+                        <strong style={{ color: '#38bdf8', fontFamily: 'monospace', fontSize: '14px' }}>{bankAccountNumber}</strong>
+                      </div>
                     </div>
 
-                    <button 
-                      type="button" 
-                      onClick={() => setIsEditingBankDetails(true)} 
-                      className="btn-secondary" 
-                      style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px' }}
-                    >
-                      ✏️ Ubah Rekening Bank
-                    </button>
+                    <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                      <div>
+                        <span style={{ color: '#94a3b8', fontSize: '11px', display: 'block' }}>Atas Nama Rekening:</span>
+                        <strong style={{ color: '#ffffff', fontSize: '13px' }}>{bankAccountName || 'PT Pick Your Photo'}</strong>
+                      </div>
+
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingBankDetails(true)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        ✏️ Ubah Rekening Bank
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '24px' }}>⚠️</span>
+                      <div>
+                        <strong style={{ color: '#fbbf24', fontSize: '13.5px', display: 'block', marginBottom: '2px' }}>
+                          Tujuan Rekening Bank Manual Belum Diisi
+                        </strong>
+                        <span style={{ color: '#94a3b8', fontSize: '12px' }}>
+                          Nomor rekening ini akan ditampilkan kepada calon vendor saat melakukan pembayaran transfer manual.
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'flex-end' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsEditingBankDetails(true)} 
+                        className="btn-secondary" 
+                        style={{ padding: '8px 16px', fontSize: '12px', borderRadius: '8px', cursor: 'pointer' }}
+                      >
+                        ⚙️ Isi Rekening Bank
+                      </button>
+                    </div>
+                  </div>
+                )
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
