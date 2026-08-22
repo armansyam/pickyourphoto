@@ -1108,9 +1108,24 @@
         const title = document.getElementById('trialTitle').value;
         const maxSelection = document.getElementById('trialMaxSelect').value;
 
+        if (!folderUrl || !folderUrl.trim()) {
+          errBox.textContent = 'Masukkan link folder Google Drive publik terlebih dahulu.';
+          errBox.style.display = 'block';
+          return;
+        }
+
         errBox.style.display = 'none';
-        btn.disabled = true;
-        btn.innerHTML = '⏳ Memindai Folder Drive...';
+
+        // 1. LANGSUNG TRANSISI KE KARTU HASIL (INSTAN 0 DETIK)
+        document.getElementById('resClientUrlText').textContent = '⏳ Menghubungkan Google Drive...';
+        document.getElementById('resResultUrlText').textContent = '⏳ Menyiapkan link hasil...';
+        const openBtn = document.getElementById('openGalleryBtn');
+        const openFullBtn = document.getElementById('openFullResultBtn');
+        openBtn.style.pointerEvents = 'none';
+        openBtn.style.opacity = '0.7';
+        openBtn.innerHTML = '⏳ Menyiapkan Galeri...';
+
+        transitionCard(trialForm, trialResultCard);
 
         try {
           const res = await fetch('/api/trial/create', {
@@ -1142,8 +1157,13 @@
 
           document.getElementById('resClientUrlText').textContent = clientUrl;
           document.getElementById('resResultUrlText').textContent = resultUrl;
-          document.getElementById('openGalleryBtn').href = clientUrl;
-          document.getElementById('openFullResultBtn').href = resultUrl;
+          
+          openBtn.href = clientUrl;
+          openBtn.style.pointerEvents = 'auto';
+          openBtn.style.opacity = '1';
+          openBtn.innerHTML = 'Buka &amp; Tes Galeri Seleksi &rarr;';
+
+          if (openFullBtn) openFullBtn.href = resultUrl;
 
           // Wire copy buttons
           document.getElementById('copyClientUrlBtn').onclick = function() {
@@ -1155,15 +1175,12 @@
             alert('Link Hasil Seleksi berhasil disalin!');
           };
 
-          // Switch UI from form to result card cleanly inside trial box
-          transitionCard(trialForm, trialResultCard);
-
         } catch (err) {
+          alert('Gagal membuat galeri: ' + err.message);
+          transitionCard(trialResultCard, trialForm);
           errBox.textContent = err.message;
           errBox.style.display = 'block';
           if (formWrapper) formWrapper.style.maxHeight = 'none';
-          btn.disabled = false;
-          btn.innerHTML = dynamicSubmitBtnText;
         }
       });
 

@@ -143,9 +143,16 @@ export default function TrialWidget() {
     }
 
     try {
-      setLoading(true);
       setError('');
-      setResult(null);
+      // 1. INSTAN 0 DETIK: Langsung tampilkan Result Card
+      setResult({
+        isPreparing: true,
+        slug: '',
+        clientUrl: '#',
+        resultUrl: '#'
+      });
+      setShowForm(false);
+      setViewMode('links');
 
       const res = await fetch('/api/trial/create', {
         method: 'POST',
@@ -173,14 +180,15 @@ export default function TrialWidget() {
 
       setResult({
         ...json,
+        isPreparing: false,
         clientUrl,
         resultUrl,
         photoCount: json.totalPhotos || 0
       });
     } catch (err) {
+      setResult(null);
+      setShowForm(true);
       setError(err.message);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -456,12 +464,24 @@ export default function TrialWidget() {
 
           <div style={{ display: 'flex', gap: '12px' }}>
             <a
-              href={result.clientUrl}
-              target="_blank"
+              href={result.isPreparing ? '#' : result.clientUrl}
+              target={result.isPreparing ? '_self' : '_blank'}
               rel="noreferrer"
-              style={{ flex: 1, background: 'linear-gradient(135deg, #6366f1, #818cf8)', color: '#fff', textAlign: 'center', padding: '14px', borderRadius: '10px', fontWeight: 'bold', textDecoration: 'none', fontSize: '14px' }}
+              style={{
+                flex: 1,
+                background: result.isPreparing ? 'rgba(99, 102, 241, 0.4)' : 'linear-gradient(135deg, #6366f1, #818cf8)',
+                color: '#fff',
+                textAlign: 'center',
+                padding: '14px',
+                borderRadius: '10px',
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                fontSize: '14px',
+                pointerEvents: result.isPreparing ? 'none' : 'auto',
+                cursor: result.isPreparing ? 'wait' : 'pointer'
+              }}
             >
-              📱 Buka &amp; Tes Galeri Seleksi &rarr;
+              {result.isPreparing ? '⏳ Menyiapkan Galeri Seleksi...' : '📱 Buka &amp; Tes Galeri Seleksi →'}
             </a>
             <button
               onClick={() => { setResult(null); setFolderUrl(''); setShowForm(false); setViewMode('links'); }}
