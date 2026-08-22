@@ -24,14 +24,35 @@ export async function generateMetadata({ params }) {
 
     const displayName = vendor.brandName || vendor.name || 'Studio';
     const logoUrl = vendor.brandLogo || '/favicon.ico';
+    const title = `${displayName} — Official Profile`;
+    const description = `Official profile dan portofolio resmi ${displayName}.`;
+
     return {
-        title: `${displayName} — Official Profile`,
-        description: `Official profile dan portofolio resmi ${displayName}.`,
-        robots: { index: false, follow: false }, // Mencegah duplikasi SEO pada link seleksi privat
+        title,
+        description,
+        robots: { index: false, follow: false },
         icons: {
             icon: logoUrl,
             shortcut: logoUrl,
             apple: logoUrl
+        },
+        openGraph: {
+            title,
+            description,
+            type: 'website',
+            siteName: displayName,
+            images: [
+                {
+                    url: logoUrl,
+                    alt: displayName,
+                }
+            ]
+        },
+        twitter: {
+            card: 'summary',
+            title,
+            description,
+            images: [logoUrl]
         }
     };
 }
