@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { getAuthVendor } from '@/lib/auth';
-import { getWorkerDriveClient, createVendorRootFolder, setDriveFilePublic } from '@/lib/google-master-drive';
+import { getWorkerDriveClient, createVendorRootFolder } from '@/lib/google-master-drive';
 import { Readable } from 'stream';
 
 export const dynamic = 'force-dynamic';
@@ -100,9 +100,6 @@ export async function POST(req) {
       });
 
       const driveFileId = driveRes.data.id;
-
-      // Set public reader (non-blocking)
-      setDriveFilePublic(vendorDrive, driveFileId).catch(() => {});
 
       // Registrasikan ke database storage_files dengan isExternalDrive = 1 (tanpa memotong kuota SaaS)
       db.prepare(`
@@ -213,9 +210,6 @@ export async function POST(req) {
     });
 
     const driveFileId = driveRes.data.id;
-
-    // 6. AUTO SET HAK AKSES PUBLIK (Non-blocking background execution agar respons upload instan)
-    setDriveFilePublic(workerDrive, driveFileId).catch(() => {});
 
     // Update usedStorageBytes & status pada Akun Worker di Database
     if (workerAccount) {
