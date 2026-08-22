@@ -11,13 +11,18 @@ export async function generateMetadata({ params }) {
     
     const vendor = db.prepare(`
         SELECT name, brandName, brandLogo FROM vendors 
-        WHERE LOWER(subdomain) = ? AND subdomain_active = 1
+        WHERE LOWER(subdomain) = ? AND subdomain_active = 1 AND status = 'approved' AND archivedAt IS NULL
     `).get(slug);
 
     if (!vendor) {
         return {
             title: `Studio Tidak Ditemukan — ${rootDomain}`,
-            robots: { index: false, follow: false }
+            robots: { index: false, follow: false },
+            icons: {
+                icon: '/favicon.ico',
+                shortcut: '/favicon.ico',
+                apple: '/favicon.ico'
+            }
         };
     }
 
@@ -51,7 +56,7 @@ export default async function StudioTenantLayout({ children, params }) {
     const vendor = db.prepare(`
         SELECT id, name, email, brandName, brandLogo, status, whatsapp, subdomain, subdomain_active
         FROM vendors 
-        WHERE LOWER(subdomain) = ? AND subdomain_active = 1
+        WHERE LOWER(subdomain) = ? AND subdomain_active = 1 AND status = 'approved' AND archivedAt IS NULL
     `).get(slug);
 
     // 2. Jika tidak ditemukan, cek apakah ini subdomain lama yang pernah diubah (301 Redirect)

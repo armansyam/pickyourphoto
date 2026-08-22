@@ -14,7 +14,7 @@ export default async function StudioLandingPage({ params }) {
     const vendor = db.prepare(`
         SELECT id, name, brandName, brandLogo, email, whatsapp, city, address, portfolioDriveUrl 
         FROM vendors 
-        WHERE LOWER(subdomain) = ? AND subdomain_active = 1
+        WHERE LOWER(subdomain) = ? AND subdomain_active = 1 AND status = 'approved' AND archivedAt IS NULL
     `).get(slug);
 
     if (!vendor) {
