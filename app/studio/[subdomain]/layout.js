@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({ params }) {
     const rootDomain = getRootDomain();
     const resolvedParams = await params;
-    const slug = (resolvedParams?.subdomain || '').toLowerCase();
+    const rawSlug = (resolvedParams?.subdomain || params?.subdomain || '').toLowerCase().trim();
+    const slug = rawSlug.replace(/[^a-z0-9-]/g, '');
     
     const vendor = db.prepare(`
         SELECT name, brandName, brandLogo FROM vendors 
@@ -38,7 +39,8 @@ export async function generateMetadata({ params }) {
 export default async function StudioTenantLayout({ children, params }) {
     const rootDomain = getRootDomain();
     const resolvedParams = await params;
-    const slug = (resolvedParams?.subdomain || '').toLowerCase();
+    const rawSlug = (resolvedParams?.subdomain || params?.subdomain || '').toLowerCase().trim();
+    const slug = rawSlug.replace(/[^a-z0-9-]/g, '');
 
     if (!slug) {
         notFound();

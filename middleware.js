@@ -28,6 +28,7 @@ export function middleware(req) {
             subdomain = parts.slice(0, parts.length - rootCount).join('.');
         }
     }
+    subdomain = (subdomain || '').replace(/[^a-z0-9-]/g, '');
 
     // 2. Jika merupakan root domain utama, IP langsung, atau reserved subdomain → teruskan normal
     const isRoot = !subdomain || subdomain === hostname || RESERVED_SUBDOMAINS.includes(subdomain);

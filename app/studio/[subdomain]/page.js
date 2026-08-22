@@ -8,7 +8,8 @@ export const revalidate = 0;
 
 export default async function StudioLandingPage({ params }) {
     const resolvedParams = await params;
-    const slug = (resolvedParams?.subdomain || params?.subdomain || '').toLowerCase();
+    const rawSlug = (resolvedParams?.subdomain || params?.subdomain || '').toLowerCase().trim();
+    const slug = rawSlug.replace(/[^a-z0-9-]/g, '');
     const rootDomain = getRootDomain();
 
     const vendor = db.prepare(`
