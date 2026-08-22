@@ -944,6 +944,51 @@ export default function AdminSettings({
     }
   };
 
+  const handleToggleAutoBackup = async (nextVal) => {
+    setSysEnableBackup(nextVal);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          enable_auto_backup: nextVal,
+          backup_interval_hours: sysBackupInterval || 6
+        })
+      });
+      if (res.ok) {
+        if (addToast) addToast(nextVal ? `✅ Auto-Backup otomatis diaktifkan (Tiap ${sysBackupInterval || 6} Jam).` : '⚪ Auto-Backup otomatis dinonaktifkan.', 'info');
+      } else {
+        if (addToast) addToast('Gagal menyimpan pengaturan auto-backup.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to update auto backup setting:', err);
+      if (addToast) addToast('Gagal memperbarui pengaturan auto-backup.', 'error');
+    }
+  };
+
+  const handleChangeBackupInterval = async (newInterval) => {
+    const parsedInterval = parseInt(newInterval) || 6;
+    setSysBackupInterval(parsedInterval);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          enable_auto_backup: sysEnableBackup,
+          backup_interval_hours: parsedInterval
+        })
+      });
+      if (res.ok) {
+        if (addToast) addToast(`✅ Interval auto-backup otomatis disimpan (Tiap ${parsedInterval} Jam).`, 'success');
+      } else {
+        if (addToast) addToast('Gagal menyimpan interval auto-backup.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to update backup interval:', err);
+      if (addToast) addToast('Gagal memperbarui interval auto-backup.', 'error');
+    }
+  };
+
   const fetchAdminList = async () => {
     setLoadingAdmins(true);
     try {
@@ -2768,7 +2813,7 @@ export default function AdminSettings({
                     type="checkbox"
                     id="enable_auto_backup"
                     checked={!!sysEnableBackup}
-                    onChange={e => setSysEnableBackup(e.target.checked)}
+                    onChange={e => handleToggleAutoBackup(e.target.checked)}
                     style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                   />
                   <div>
@@ -2786,7 +2831,7 @@ export default function AdminSettings({
                   <select
                     className="input-text"
                     value={sysBackupInterval ?? 6}
-                    onChange={e => setSysBackupInterval(parseInt(e.target.value) || 6)}
+                    onChange={e => handleChangeBackupInterval(e.target.value)}
                     disabled={!sysEnableBackup}
                     style={{ maxWidth: '140px', padding: '6px 10px', fontSize: '12px' }}
                   >
