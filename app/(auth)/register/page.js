@@ -132,6 +132,9 @@ export default function RegisterPage() {
                         if (session.whatsapp) setWhatsapp(session.whatsapp);
 
                         if (session.hasPending && session.pendingOrder) {
+                            if (session.planId || session.pendingOrder.planId) {
+                                setPlan(String(session.planId || session.pendingOrder.planId));
+                            }
                             setPendingOrder(session.pendingOrder);
                             setShowSummary(false);
                             setExpiredNotice(false);
@@ -429,9 +432,23 @@ export default function RegisterPage() {
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <button
                                 type="button"
-                                onClick={() => {
+                                onClick={async () => {
+                                    const targetPlanId = pendingOrder?.planId || plan;
+                                    if (targetPlanId) {
+                                        setPlan(String(targetPlanId));
+                                    }
                                     setPendingOrder(null);
                                     setShowSummary(true);
+                                    setExpiredNotice(false);
+
+                                    // Revert vendor status to draft_plan in database
+                                    try {
+                                        await fetch('/api/payment/cancel', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ email })
+                                        });
+                                    } catch (e) {}
                                 }}
                                 style={{
                                     flex: 1,
