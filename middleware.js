@@ -13,20 +13,12 @@ export function middleware(req) {
     const host = req.headers.get('host') || '';
     const hostname = host.replace(/:\d+$/, '').toLowerCase(); // buang port :3000 / :80
 
-    // 1. Ekstrak subdomain (Dinamis untuk semua TLD: .my.id, .co.id, .com, dll)
+    // 1. Ekstrak subdomain
     let subdomain = '';
-    if (ROOT_DOMAIN && hostname.endsWith(`.${ROOT_DOMAIN}`)) {
+    if (hostname.endsWith(`.${ROOT_DOMAIN.toLowerCase()}`)) {
         subdomain = hostname.slice(0, -(ROOT_DOMAIN.length + 1));
     } else if (hostname.endsWith('.localhost')) {
         subdomain = hostname.slice(0, -('.localhost'.length));
-    } else if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) && hostname !== 'localhost') {
-        const parts = hostname.split('.');
-        const twoPartTlds = ['my.id', 'co.id', 'ac.id', 'go.id', 'or.id', 'web.id', 'sch.id', 'biz.id', 'co.uk', 'com.au', 'com.sg'];
-        const isTwoPart = twoPartTlds.some(t => hostname.endsWith('.' + t));
-        const rootCount = isTwoPart ? 3 : 2;
-        if (parts.length > rootCount) {
-            subdomain = parts.slice(0, parts.length - rootCount).join('.');
-        }
     }
 
     // 2. Jika merupakan root domain utama, IP langsung, atau reserved subdomain → teruskan normal
