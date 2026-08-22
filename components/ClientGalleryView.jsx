@@ -537,10 +537,24 @@ export default function ClientGalleryPage({ params }) {
                                         const pickNumber = isSelected ? getPickNumber(photo.id) : null;
                                         const num = ((originalIndex >= 0 ? originalIndex : index) + 1).toString().padStart(3, '0');
 
+                                        const thumbSrc = photo.driveFileId ? `https://lh3.googleusercontent.com/d/${photo.driveFileId}=w600` : photo.thumbnailPath;
+
                                         return (
                                             <div key={photo.id} className={`photo-card ${isSelected ? 'is-selected' : ''}`} onClick={() => handleToggleSelect(photo.id)}>
                                                 <div className="photo-card-frame">
-                                                    <img src={photo.thumbnailPath} alt={`Frame ${index + 1}`} loading="lazy" decoding="async" />
+                                                    <img
+                                                        src={thumbSrc}
+                                                        alt={`Frame ${index + 1}`}
+                                                        loading="lazy"
+                                                        decoding="async"
+                                                        referrerPolicy="no-referrer"
+                                                        onError={(e) => {
+                                                            if (!e.target.dataset.fallback && photo.thumbnailPath) {
+                                                                e.target.dataset.fallback = '1';
+                                                                e.target.src = photo.thumbnailPath;
+                                                            }
+                                                        }}
+                                                    />
 
                                                     {themeKey === 'contactSheet' && (
                                                         <>
@@ -730,7 +744,18 @@ export default function ClientGalleryPage({ params }) {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', position: 'relative' }}>
                         <button onClick={handlePrevImage} className="lightbox-nav lightbox-nav-left">&#10094;</button>
                         <div style={{ position: 'relative', display: 'inline-flex', overflow: 'hidden', borderRadius: '12px' }} onClick={e => e.stopPropagation()}>
-                            <img src={photos[activeLightboxIndex].originalPath} alt="Preview" style={{ maxHeight: '74vh', maxWidth: '85vw', objectFit: 'contain', userSelect: 'none', display: 'block' }} />
+                            <img
+                                src={photos[activeLightboxIndex].driveFileId ? `https://lh3.googleusercontent.com/d/${photos[activeLightboxIndex].driveFileId}=w1600` : photos[activeLightboxIndex].originalPath}
+                                alt="Preview"
+                                referrerPolicy="no-referrer"
+                                onError={(e) => {
+                                    if (!e.target.dataset.fallback && photos[activeLightboxIndex].originalPath) {
+                                        e.target.dataset.fallback = '1';
+                                        e.target.src = photos[activeLightboxIndex].originalPath;
+                                    }
+                                }}
+                                style={{ maxHeight: '74vh', maxWidth: '85vw', objectFit: 'contain', userSelect: 'none', display: 'block' }}
+                            />
                             
                             {/* SLEEK SMOOTH BLACK GRADIENT BRANDING OVERLAY (100% DEAD CENTER VERTICAL STACK) */}
                             <div style={{
@@ -770,7 +795,17 @@ export default function ClientGalleryPage({ params }) {
                             <div className="lightbox-filmstrip">
                                 {photos.map((p, i) => (
                                     <button key={p.id} className={`lightbox-filmstrip-thumb ${i === activeLightboxIndex ? 'is-active' : ''} ${selectedIds.has(p.id) ? 'is-selected' : ''}`} onClick={() => setActiveLightboxIndex(i)}>
-                                        <img src={p.thumbnailPath} alt={`Frame ${i + 1}`} />
+                                        <img
+                                            src={p.driveFileId ? `https://lh3.googleusercontent.com/d/${p.driveFileId}=w200` : p.thumbnailPath}
+                                            alt={`Frame ${i + 1}`}
+                                            referrerPolicy="no-referrer"
+                                            onError={(e) => {
+                                                if (!e.target.dataset.fallback && p.thumbnailPath) {
+                                                    e.target.dataset.fallback = '1';
+                                                    e.target.src = p.thumbnailPath;
+                                                }
+                                            }}
+                                        />
                                     </button>
                                 ))}
                             </div>
