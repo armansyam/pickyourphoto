@@ -327,10 +327,17 @@ export default function AdminSettings({
     setIsEditingIdentity(false);
     setIsEditingGoogleCredentials(false);
     setIsEditingSmtp(false);
-    setIsEditingBankDetails(false);
-    setIsEditingPaymentGateway(false);
-    setIsEditingSystem(false);
     setActiveSubTab(newTab);
+  };
+
+  const copyToClipboard = (text, label = 'Teks') => {
+    if (typeof window !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (addToast) addToast(`✅ ${label} berhasil disalin ke clipboard!`, 'success');
+      }).catch(() => {
+        if (addToast) addToast(`Gagal menyalin ${label}.`, 'error');
+      });
+    }
   };
 
   const handleSaveIdentity = async () => {
@@ -1650,6 +1657,151 @@ export default function AdminSettings({
                   </div>
                 </div>
               )}
+
+              {/* ── GOOGLE CLOUD CONSOLE URI HELPER & COPY BOX ── */}
+              <div style={{ background: 'rgba(56, 189, 248, 0.04)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: '12px', padding: '16px 18px', marginTop: '18px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>📋</span>
+                    <strong style={{ color: '#38bdf8', fontSize: '13px' }}>
+                      URL Konfigurasi Google Cloud Console (OAuth 2.0 Client)
+                    </strong>
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', background: 'rgba(255,255,255,0.06)', padding: '3px 8px', borderRadius: '6px' }}>
+                    Host: <span style={{ color: '#38bdf8', fontFamily: 'monospace', fontWeight: 'bold' }}>{typeof window !== 'undefined' ? window.location.origin : 'https://photota.my.id'}</span>
+                  </span>
+                </div>
+
+                <p style={{ margin: '0 0 14px 0', fontSize: '12px', color: '#94a3b8', lineHeight: '1.5' }}>
+                  Salin dan tempel URL berikut ke menu <strong>Google Auth Platform &gt; Clients &gt; Web Application</strong> di Google Cloud Console:
+                </p>
+
+                {/* 1. Authorized JavaScript Origins */}
+                <div style={{ marginBottom: '14px' }}>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    1. Authorized JavaScript origins (Asal JavaScript yang diotorisasi)
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.4)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <code style={{ flex: 1, color: '#34d399', fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                      {typeof window !== 'undefined' ? window.location.origin : 'https://photota.my.id'}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(typeof window !== 'undefined' ? window.location.origin : 'https://photota.my.id', 'Authorized JavaScript Origin')}
+                      style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#38bdf8', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
+                    >
+                      📋 Salin
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Authorized Redirect URIs */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      2. Authorized redirect URIs (URI Pengalihan yang diotorisasi)
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const origin = typeof window !== 'undefined' ? window.location.origin : 'https://photota.my.id';
+                        const allUrls = [
+                          `${origin}/api/auth/google/callback`,
+                          `${origin}/api/admin/auth/google/callback`,
+                          `${origin}/api/admin/auth/google/worker/callback`,
+                          `${origin}/api/storage/external/callback`
+                        ].join('\n');
+                        copyToClipboard(allUrls, 'Semua Redirect URI');
+                      }}
+                      style={{ background: 'rgba(129, 140, 248, 0.15)', border: '1px solid rgba(129, 140, 248, 0.3)', color: '#818cf8', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                    >
+                      📋 Salin Semua Sekaligus
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {/* Item 1: Login & Register */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.4)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ minWidth: '220px', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '10px', background: 'rgba(52, 211, 153, 0.2)', color: '#34d399', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>WAJIB</span>
+                          <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: '600' }}>Login, Registrasi Vendor, &amp; BYOS Drive</span>
+                        </div>
+                        <code style={{ color: '#38bdf8', fontSize: '11.5px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                          {typeof window !== 'undefined' ? `${window.location.origin}/api/auth/google/callback` : 'https://photota.my.id/api/auth/google/callback'}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(typeof window !== 'undefined' ? `${window.location.origin}/api/auth/google/callback` : 'https://photota.my.id/api/auth/google/callback', 'URI Callback Login')}
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#ffffff', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        📋 Salin
+                      </button>
+                    </div>
+
+                    {/* Item 2: Master Google Drive SaaS */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.4)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ minWidth: '220px', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '10px', background: 'rgba(52, 211, 153, 0.2)', color: '#34d399', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>WAJIB</span>
+                          <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: '600' }}>Akun Master Google Drive Platform (Superadmin)</span>
+                        </div>
+                        <code style={{ color: '#38bdf8', fontSize: '11.5px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                          {typeof window !== 'undefined' ? `${window.location.origin}/api/admin/auth/google/callback` : 'https://photota.my.id/api/admin/auth/google/callback'}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(typeof window !== 'undefined' ? `${window.location.origin}/api/admin/auth/google/callback` : 'https://photota.my.id/api/admin/auth/google/callback', 'URI Callback Master Drive')}
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#ffffff', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        📋 Salin
+                      </button>
+                    </div>
+
+                    {/* Item 3: Worker Google Drive SaaS */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.4)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ minWidth: '220px', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '10px', background: 'rgba(148, 163, 184, 0.2)', color: '#94a3b8', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>OPSIONAL</span>
+                          <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: '600' }}>Akun Worker Drive Paralel (Multi-Account)</span>
+                        </div>
+                        <code style={{ color: '#38bdf8', fontSize: '11.5px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                          {typeof window !== 'undefined' ? `${window.location.origin}/api/admin/auth/google/worker/callback` : 'https://photota.my.id/api/admin/auth/google/worker/callback'}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(typeof window !== 'undefined' ? `${window.location.origin}/api/admin/auth/google/worker/callback` : 'https://photota.my.id/api/admin/auth/google/worker/callback', 'URI Callback Worker Drive')}
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#ffffff', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        📋 Salin
+                      </button>
+                    </div>
+
+                    {/* Item 4: External Storage Callback */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(0,0,0,0.4)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ minWidth: '220px', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '10px', background: 'rgba(148, 163, 184, 0.2)', color: '#94a3b8', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>OPSIONAL</span>
+                          <span style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: '600' }}>Koneksi Storage Eksternal Pribadi Vendor (Cadangan)</span>
+                        </div>
+                        <code style={{ color: '#38bdf8', fontSize: '11.5px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                          {typeof window !== 'undefined' ? `${window.location.origin}/api/storage/external/callback` : 'https://photota.my.id/api/storage/external/callback'}
+                        </code>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(typeof window !== 'undefined' ? `${window.location.origin}/api/storage/external/callback` : 'https://photota.my.id/api/storage/external/callback', 'URI Callback Storage Eksternal')}
+                        style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#ffffff', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        📋 Salin
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* EMAIL SMTP SECTION */}
