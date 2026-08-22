@@ -662,7 +662,17 @@ export default function ClientGalleryPage({ params }) {
                                 <div className="filmstrip">
                                     {selectedPhotosList.map((p, i) => (
                                         <div key={p.id} className="filmstrip-thumb">
-                                            <img src={p.thumbnailPath} alt={`Pilihan ${i + 1}`} />
+                                            <img
+                                                src={p.driveFileId ? `https://lh3.googleusercontent.com/d/${p.driveFileId}=w200` : p.thumbnailPath}
+                                                alt={`Pilihan ${i + 1}`}
+                                                referrerPolicy="no-referrer"
+                                                onError={(e) => {
+                                                    if (!e.target.dataset.fallback && p.thumbnailPath) {
+                                                        e.target.dataset.fallback = '1';
+                                                        e.target.src = p.thumbnailPath;
+                                                    }
+                                                }}
+                                            />
                                             <span className="filmstrip-index">{i + 1}</span>
                                             {!submitted && !project.isProjectExpired && (
                                                 <button className="filmstrip-remove" onClick={() => handleToggleSelect(p.id)} aria-label="Batal pilih">&times;</button>
@@ -831,7 +841,17 @@ export default function ClientGalleryPage({ params }) {
                         <div className="confirm-thumb-grid">
                             {selectedPhotosList.map((p, i) => (
                                 <div key={p.id} className="confirm-thumb">
-                                    <img src={p.thumbnailPath} alt="Thumbnail" />
+                                    <img
+                                        src={p.driveFileId ? `https://lh3.googleusercontent.com/d/${p.driveFileId}=w200` : p.thumbnailPath}
+                                        alt="Thumbnail"
+                                        referrerPolicy="no-referrer"
+                                        onError={(e) => {
+                                            if (!e.target.dataset.fallback && p.thumbnailPath) {
+                                                e.target.dataset.fallback = '1';
+                                                e.target.src = p.thumbnailPath;
+                                            }
+                                        }}
+                                    />
                                     <span className="confirm-thumb-index">{i + 1}</span>
                                     <button className="confirm-thumb-remove" onClick={(e) => { e.stopPropagation(); handleToggleSelect(p.id); }}>&times;</button>
                                 </div>
@@ -854,7 +874,17 @@ export default function ClientGalleryPage({ params }) {
                         <div className="confirm-thumb-grid">
                             {selectedPhotosList.map((p, i) => (
                                 <div key={p.id} className="confirm-thumb">
-                                    <img src={p.thumbnailPath} alt="Thumbnail" />
+                                    <img
+                                        src={p.driveFileId ? `https://lh3.googleusercontent.com/d/${p.driveFileId}=w200` : p.thumbnailPath}
+                                        alt="Thumbnail"
+                                        referrerPolicy="no-referrer"
+                                        onError={(e) => {
+                                            if (!e.target.dataset.fallback && p.thumbnailPath) {
+                                                e.target.dataset.fallback = '1';
+                                                e.target.src = p.thumbnailPath;
+                                            }
+                                        }}
+                                    />
                                     <span className="confirm-thumb-index">{i + 1}</span>
                                 </div>
                             ))}
