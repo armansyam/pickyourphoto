@@ -426,7 +426,7 @@ export default function RegisterPage() {
                         </h1>
                     </Link>
                     <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0 0' }}>
-                        {pendingOrder ? 'Pembayaran QRIS' : showSummary ? 'Konfirmasi Pesanan' : step === 2 ? 'Pilih Paket Langganan' : 'Pendaftaran Studio Baru'}
+                        {pendingOrder ? (pendingOrder.isManual ? 'Pembayaran Transfer Bank' : 'Pembayaran QRIS') : showSummary ? 'Konfirmasi Pesanan' : step === 2 ? 'Pilih Paket Langganan' : 'Pendaftaran Studio Baru'}
                     </p>
                 </div>
 
@@ -593,27 +593,54 @@ export default function RegisterPage() {
                             >
                                 Batalkan Pembayaran
                             </button>
-                            <a
-                                href={`https://wa.me/?text=${encodeURIComponent(`Halo Admin ${platformName}, saya sudah melakukan transfer untuk pendaftaran paket ${pendingOrder.planName} dengan email ${email}. Mohon bantuannya untuk verifikasi akun saya. Terima kasih!`)}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{
-                                    flex: 2,
-                                    background: '#25D366',
-                                    color: '#ffffff',
-                                    textDecoration: 'none',
-                                    borderRadius: '10px',
-                                    padding: '12px',
-                                    fontSize: '13px',
-                                    fontWeight: '700',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '6px'
-                                }}
-                            >
-                                Konfirmasi via WhatsApp
-                            </a>
+                            
+                            {proofUploaded ? (
+                                <a
+                                    href={`https://wa.me/?text=${encodeURIComponent(`Halo Admin ${platformName}, saya sudah mengunggah bukti transfer untuk pendaftaran paket ${pendingOrder.planName} dengan email ${email}. Mohon bantuannya untuk verifikasi akun saya. Terima kasih!`)}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                        flex: 2,
+                                        background: '#25D366',
+                                        color: '#ffffff',
+                                        textDecoration: 'none',
+                                        borderRadius: '10px',
+                                        padding: '12px',
+                                        fontSize: '13px',
+                                        fontWeight: '700',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px',
+                                        boxShadow: '0 4px 14px rgba(37, 211, 102, 0.3)'
+                                    }}
+                                >
+                                    Konfirmasi via WhatsApp
+                                </a>
+                            ) : (
+                                <button
+                                    type="button"
+                                    disabled={true}
+                                    title="Silakan unggah bukti transfer terlebih dahulu"
+                                    style={{
+                                        flex: 2,
+                                        background: 'rgba(255, 255, 255, 0.04)',
+                                        color: '#64748b',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                        borderRadius: '10px',
+                                        padding: '12px',
+                                        fontSize: '13px',
+                                        fontWeight: '600',
+                                        cursor: 'not-allowed',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px'
+                                    }}
+                                >
+                                    Konfirmasi via WhatsApp
+                                </button>
+                            )}
                         </div>
                     </div>
                 ) : pendingOrder ? (
