@@ -18,7 +18,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
   const [error, setError] = useState('');
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [activePhoto, setActivePhoto] = useState(null); // Lightbox modal
-  const [timeLeft, setTimeLeft] = useState({ minutes: 0, seconds: 0, totalSec: 0 });
+  const [timeLeft, setTimeLeft] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -117,7 +117,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
     }
   };
 
-  // Timer Countdown 1 Jam
+  // Timer Countdown
   useEffect(() => {
     if (!data?.expiresAt) return;
 
@@ -128,7 +128,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
       return new Date(iso).getTime();
     };
 
-    const interval = setInterval(() => {
+    const updateTimer = () => {
       const now = new Date().getTime();
       const expiry = parseDateUTC(data.expiresAt);
       const diff = Math.max(0, Math.floor((expiry - now) / 1000));
@@ -137,8 +137,16 @@ export default function TrialGalleryPage({ params: propsParams }) {
       const seconds = diff % 60;
 
       setTimeLeft({ minutes, seconds, totalSec: diff });
+      return diff;
+    };
 
-      if (diff <= 0) {
+    // Hitung langsung saat pertama kali render (tanpa tunggu 1 detik)
+    const initialDiff = updateTimer();
+    if (initialDiff <= 0) return;
+
+    const interval = setInterval(() => {
+      const remaining = updateTimer();
+      if (remaining <= 0) {
         clearInterval(interval);
       }
     }, 1000);
@@ -187,7 +195,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
   }, [activePhoto, data?.photos]);
 
   const toggleSelectPhoto = (filename) => {
-    if (data?.isExpired || timeLeft.totalSec <= 0 || submitted) return;
+    if (data?.isExpired || (timeLeft !== null && timeLeft.totalSec <= 0) || submitted) return;
 
     // Tandai bahwa perubahan ini dari user (bukan dari server load)
     userModifiedRef.current = true;
@@ -312,7 +320,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
     );
   }
 
-  const isExpired = data?.isExpired || timeLeft.totalSec <= 0;
+  const isExpired = Boolean(data?.isExpired) || (data?.expiresAt && timeLeft !== null && timeLeft.totalSec <= 0);
 
   if (isExpired) {
     return (
