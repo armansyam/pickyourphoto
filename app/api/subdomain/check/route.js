@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { validateSubdomain, isSubdomainAvailable, suggestAlternatives } from '@/lib/subdomain';
+import { validateSubdomain, isSubdomainAvailable, suggestAlternatives, getRootDomain } from '@/lib/subdomain';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,10 +32,12 @@ export async function GET(request) {
             });
         }
 
+        const rootDomain = getRootDomain(request);
+
         return NextResponse.json({
             available: true,
             slug,
-            previewUrl: `https://${slug}.${process.env.ROOT_DOMAIN || 'photota.my.id'}`
+            previewUrl: rootDomain ? `https://${slug}.${rootDomain}` : slug
         });
     } catch (error) {
         console.error('[Subdomain Check API Error]:', error);

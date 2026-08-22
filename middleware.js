@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const ROOT_DOMAIN = process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'photota.my.id';
+const ROOT_DOMAIN = (process.env.ROOT_DOMAIN || process.env.NEXT_PUBLIC_ROOT_DOMAIN || '').toLowerCase();
 
 const RESERVED_SUBDOMAINS = [
     'www', 'api', 'admin', 'app', 'mail', 'ftp', 'static', 'help',

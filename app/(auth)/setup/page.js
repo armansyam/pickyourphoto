@@ -19,7 +19,7 @@ export default function SetupWizardPage() {
     const [studioWhatsapp, setStudioWhatsapp] = useState('');
     const [sameAsOwnerWa, setSameAsOwnerWa] = useState(true);
     const [subdomain, setSubdomain] = useState('');
-    const [rootDomain, setRootDomain] = useState('photota.com');
+    const [rootDomain, setRootDomain] = useState('');
 
     // Subdomain Validation State
     const [subdomainChecking, setSubdomainChecking] = useState(false);
@@ -34,6 +34,9 @@ export default function SetupWizardPage() {
     // Fetch initial vendor data for pre-fill
     useEffect(() => {
         let isMounted = true;
+        if (typeof window !== 'undefined' && window.location.host) {
+            setRootDomain(window.location.host);
+        }
         const fetchInitialData = async () => {
             try {
                 const res = await fetch('/api/vendor/setup');

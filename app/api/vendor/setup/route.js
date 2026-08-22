@@ -8,7 +8,7 @@ import { validateSubdomain, isSubdomainAvailable, suggestAlternatives, getRootDo
 export const dynamic = 'force-dynamic';
 
 // GET: Ambil data vendor terkini untuk pre-fill Form Setup Wizard
-export async function GET() {
+export async function GET(request) {
     try {
         const authUser = getAuthVendor();
         if (!authUser) {
@@ -26,7 +26,7 @@ export async function GET() {
             return NextResponse.json({ message: 'Data vendor tidak ditemukan.' }, { status: 404 });
         }
 
-        const rootDomain = getRootDomain();
+        const rootDomain = getRootDomain(request);
 
         return NextResponse.json({
             success: true,

@@ -844,7 +844,7 @@ export default function DashboardPage() {
     // ── Helper Generator Link Galeri Klien (Subdomain Tenant vs Root Origin) ──
     const getClientGalleryLink = (projectId, accessKey) => {
         const keyParam = accessKey ? `?key=${accessKey}` : '';
-        const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'photota.my.id';
+        const rootDomain = typeof window !== 'undefined' && window.location.host ? window.location.host : (process.env.NEXT_PUBLIC_ROOT_DOMAIN || '');
         if (vendorDetails?.subdomain && (vendorDetails?.subdomain_active === 1 || vendorDetails?.subdomain_active === true)) {
             if (typeof window !== 'undefined') {
                 const host = window.location.hostname;
@@ -854,7 +854,7 @@ export default function DashboardPage() {
             }
             return `https://${vendorDetails.subdomain}.${rootDomain}/gallery/${projectId}${keyParam}`;
         }
-        const origin = typeof window !== 'undefined' ? window.location.origin : `https://${rootDomain}`;
+        const origin = typeof window !== 'undefined' ? window.location.origin : (rootDomain ? `https://${rootDomain}` : '');
         return `${origin}/gallery/${projectId}${keyParam}`;
     };
 
@@ -2822,7 +2822,7 @@ export default function DashboardPage() {
                                         />
                                     </div>
                                     <span style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: 700, fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
-                                        .{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'photota.my.id'}
+                                        .{typeof window !== 'undefined' && window.location.host ? window.location.host : (process.env.NEXT_PUBLIC_ROOT_DOMAIN || '')}
                                     </span>
                                     <button
                                         type="button"
@@ -2890,7 +2890,7 @@ export default function DashboardPage() {
                                     <div style={{ background: 'rgba(197, 160, 89, 0.05)', border: '1px solid rgba(197, 160, 89, 0.2)', padding: '6px 12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span style={{ fontSize: '10px', color: '#c5a059', fontWeight: 'bold' }}>PREVIEW URL:</span>
                                         <span style={{ fontSize: '11px', color: '#34d399', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            https://{subdomainInput}.{process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'photota.my.id'}
+                                            https://{subdomainInput}.{typeof window !== 'undefined' && window.location.host ? window.location.host : (process.env.NEXT_PUBLIC_ROOT_DOMAIN || '')}
                                         </span>
                                     </div>
                                 )}
