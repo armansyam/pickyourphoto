@@ -106,6 +106,14 @@ export default function TrialGalleryPage({ params: propsParams }) {
       const json = await res.json();
       const gallery = json.gallery;
       setData(gallery);
+      if (gallery.remainingSeconds !== undefined) {
+        const sec = Math.max(0, gallery.remainingSeconds);
+        setTimeLeft({
+          minutes: Math.floor(sec / 60),
+          seconds: sec % 60,
+          totalSec: sec
+        });
+      }
       setSelectedPhotos(gallery.selectedPhotos || []);
       if (gallery.selectionStatus === 'completed') {
         setSubmitted(true);

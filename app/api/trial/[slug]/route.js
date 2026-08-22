@@ -56,6 +56,8 @@ export async function GET(request, { params }) {
       }
     } catch (e) {}
 
+    const remainingSeconds = Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000));
+
     return NextResponse.json({
       gallery: {
         id: gallery.id,
@@ -66,6 +68,7 @@ export async function GET(request, { params }) {
         createdAt: createdAt.toISOString(),
         expiresAt: expiresAt.toISOString(),
         trialDurationMinutes,
+        remainingSeconds,
         isExpired,
         photos: stagingFiles,
         selectedPhotos,
