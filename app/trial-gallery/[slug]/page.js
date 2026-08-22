@@ -163,7 +163,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
     const prevIdx = (currentIdx - 1 + data.photos.length) % data.photos.length;
     const file = data.photos[prevIdx];
     const fileName = file.name || file.filename || `Photo_${prevIdx + 1}.jpg`;
-    const origSrc = file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w1200` : (file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`);
+    const origSrc = `https://lh3.googleusercontent.com/d/${file.id}=w1200`;
     setActivePhoto({ ...file, fileName, origSrc, index: prevIdx });
   };
 
@@ -174,7 +174,7 @@ export default function TrialGalleryPage({ params: propsParams }) {
     const nextIdx = (currentIdx + 1) % data.photos.length;
     const file = data.photos[nextIdx];
     const fileName = file.name || file.filename || `Photo_${nextIdx + 1}.jpg`;
-    const origSrc = file.id ? `https://lh3.googleusercontent.com/d/${file.id}=w1200` : (file.origUrl || file.popupUrl || `/api/proxy/thumb/${file.id}?sz=w1200`);
+    const origSrc = `https://lh3.googleusercontent.com/d/${file.id}=w1200`;
     setActivePhoto({ ...file, fileName, origSrc, index: nextIdx });
   };
 

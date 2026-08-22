@@ -265,8 +265,8 @@ async function runImportTask(projectId, folderId) {
                 const categoryName = file.category || '';
                 const sizeBytes = parseInt(file.size) || 0;
                 totalImportedBytes += sizeBytes;
-                const thumbPath = `/api/proxy/thumb/${file.id}/${encodeURIComponent(cleanName)}?sz=w400`;
-                const origPath = `/api/proxy/thumb/${file.id}/${encodeURIComponent(cleanName)}?sz=w1200`;
+                const thumbPath = `https://lh3.googleusercontent.com/d/${file.id}=w600`;
+                const origPath = `https://lh3.googleusercontent.com/d/${file.id}=w1600`;
                 insertPhoto.run(projectId, origPath, thumbPath, origPath, sizeBytes, categoryName);
             }
         });

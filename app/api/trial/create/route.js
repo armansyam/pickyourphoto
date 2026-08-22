@@ -70,8 +70,8 @@ export async function POST(request) {
             id: file.id,
             name: file.name || `Photo_${fileIdx + 1}.jpg`,
             category: cat,
-            thumbUrl: `/api/proxy/thumb/${file.id}?sz=w400`,
-            origUrl: `/api/proxy/thumb/${file.id}?sz=w1200`,
+            thumbUrl: `https://lh3.googleusercontent.com/d/${file.id}=w400`,
+            origUrl: `https://lh3.googleusercontent.com/d/${file.id}=w1200`,
           });
         });
       } else {
